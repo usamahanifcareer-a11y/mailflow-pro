@@ -1,8 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const cookieParser = require('cookie-parser');
-const session = require('express-session');
+const cookieSession = require('cookie-session');
 const { google } = require('googleapis');
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
@@ -16,24 +15,31 @@ const ADMIN_EMAIL = 'usama.hanif.career@gmail.com';
 const DAILY_LIMIT = 100;
 const IS_VERCEL = !!process.env.VERCEL;
 
+// ========== SECURITY FIX: Session Secret Check ==========
+if (!process.env.SESSION_SECRET) {
+  console.error('FATAL ERROR: SESSION_SECRET is not set in environment variables!');
+  process.exit(1);
+}
+
 app.set('trust proxy', 1);
 app.use(cors({ origin: true, credentials: true }));
-app.use(express.json({ limit: '20mb' }));
-app.use(cookieParser());
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'mf',
-  resave: false,
-  saveUninitialized: false,
-  proxy: true,
-  cookie: {
-    secure: IS_VERCEL,
-    sameSite: IS_VERCEL ? 'none' : 'lax',
-    httpOnly: true,
-    maxAge: 72 * 60 * 60 * 1000
-  }
+// Vercel par maximum payload 4.5MB hota hai, isliye limit 5MB set ki hai
+app.use(express.json({ limit: '5mb' })); 
+
+app.use(cookieSession({
+  name: 'mf_session',
+  keys: [process.env.SESSION_SECRET],
+  maxAge: 72 * 60 * 60 * 1000,
+  secure: IS_VERCEL,
+  sameSite: IS_VERCEL ? 'none' : 'lax',
+  httpOnly: true,
+  signed: true,
+  overwrite: true
 }));
+
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ========== Firebase Init ==========
 let serviceAccount = {};
 try {
   if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
@@ -45,6 +51,7 @@ try {
 initializeApp({ credential: cert(serviceAccount) });
 const db = getFirestore();
 
+// ========== Google OAuth ==========
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
@@ -58,12 +65,13 @@ const SCOPES = [
 ];
 
 function authRequired(req, res, next) {
-  if (!req.session.user) return res.status(401).json({ ok: false, error: 'Login required' });
+  if (!req.session || !req.session.user) return res.status(401).json({ ok: false, error: 'Session expired. Please login again.' });
   next();
 }
 function adminRequired(req, res, next) {
-  if (!req.session.user || req.session.user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase())
-    return res.status(403).json({ ok: false, error: 'Admin only' });
+  if (!req.session || !req.session.user) return res.status(401).json({ ok: false, error: 'Session expired. Please login again.' });
+  if (req.session.user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase())
+    return res.status(403).json({ ok: false, error: 'Admin access required' });
   next();
 }
 async function getUserData(uid) {
@@ -76,11 +84,12 @@ function setUserOAuth(t) {
   return c;
 }
 
+// ========== Health Check ==========
 app.get('/api/health', (req, res) => {
   res.json({ ok: true, vercel: IS_VERCEL, firebase: !!serviceAccount.project_id });
 });
 
-// AUTH
+// ========== AUTH ==========
 app.get('/auth/google', (req, res) => {
   const url = oauth2Client.generateAuthUrl({ access_type: 'offline', scope: SCOPES, prompt: 'consent' });
   res.redirect(url);
@@ -98,7 +107,7 @@ app.get('/auth/google/callback', async (req, res) => {
     const data = { email, name, tokens, updatedAt: new Date() };
     if (!existing.exists) {
       data.createdAt = new Date();
-      data.quietEnabled = true;
+      data.quietEnabled = false;
       data.quietStart = 22;
       data.quietEnd = 7;
       data.autoSend = false;
@@ -107,11 +116,11 @@ app.get('/auth/google/callback', async (req, res) => {
       data.sigFields = {};
     }
     await db.collection('users').doc(uid).set(data, { merge: true });
-    req.session.user = { id: uid, email, name, isAdmin: email.toLowerCase() === ADMIN_EMAIL.toLowerCase() };
-    req.session.save((err) => {
-      if (err) console.error('Session save error:', err);
-      res.redirect((process.env.FRONTEND_URL || 'http://localhost:3000') + '?login=success');
-    });
+    req.session.user = {
+      id: uid, email, name,
+      isAdmin: email.toLowerCase() === ADMIN_EMAIL.toLowerCase()
+    };
+    res.redirect((process.env.FRONTEND_URL || 'http://localhost:3000') + '?login=success');
   } catch (err) {
     console.error('OAuth error:', err.message);
     res.redirect((process.env.FRONTEND_URL || 'http://localhost:3000') + '?login=error');
@@ -119,13 +128,16 @@ app.get('/auth/google/callback', async (req, res) => {
 });
 
 app.get('/api/me', (req, res) => {
-  if (req.session.user) res.json({ ok: true, user: req.session.user });
+  if (req.session && req.session.user) res.json({ ok: true, user: req.session.user });
   else res.json({ ok: false });
 });
 
-app.post('/api/logout', (req, res) => { req.session.destroy(); res.json({ ok: true }); });
+app.post('/api/logout', (req, res) => {
+  req.session = null;
+  res.json({ ok: true });
+});
 
-// QUOTA
+// ========== QUOTA ==========
 app.get('/api/quota', authRequired, async (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
@@ -135,17 +147,17 @@ app.get('/api/quota', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// LOGO UPLOAD
+// ========== LOGO UPLOAD ==========
 app.post('/api/upload-logo', authRequired, async (req, res) => {
   try {
     const { base64, mimeType, filename } = req.body;
-    if (!base64) return res.json({ ok: false, error: 'No data' });
+    if (!base64) return res.json({ ok: false, error: 'No image data' });
     const allowed = ['image/png','image/jpeg','image/jpg','image/gif','image/svg+xml','image/webp'];
-    if (!allowed.includes(mimeType)) return res.json({ ok: false, error: 'PNG/JPG/GIF/SVG/WEBP only' });
+    if (!allowed.includes(mimeType)) return res.json({ ok: false, error: 'Only PNG/JPG/GIF/SVG/WEBP allowed' });
     const buf = Buffer.from(base64, 'base64');
-    if (buf.length > 2 * 1024 * 1024) return res.json({ ok: false, error: 'Max 2MB' });
+    if (buf.length > 2 * 1024 * 1024) return res.json({ ok: false, error: 'Maximum file size is 2MB' });
     const userDoc = await getUserData(req.session.user.id);
-    if (!userDoc.tokens) return res.json({ ok: false, error: 'Login again' });
+    if (!userDoc.tokens) return res.json({ ok: false, error: 'Session expired. Please login again.' });
     const client = setUserOAuth(userDoc.tokens);
     const drive = google.drive({ version: 'v3', auth: client });
     if (userDoc.logoFileId) {
@@ -163,9 +175,7 @@ app.post('/api/upload-logo', authRequired, async (req, res) => {
     const url = 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w500';
     const urlAlt = 'https://lh3.googleusercontent.com/d/' + fileId;
     await db.collection('users').doc(req.session.user.id).update({
-      logoFileId: fileId,
-      logoUrl: url,
-      logoUrlAlt: urlAlt
+      logoFileId: fileId, logoUrl: url, logoUrlAlt: urlAlt
     });
     res.json({ ok: true, url, urlAlt, fileId });
   } catch (err) { res.json({ ok: false, error: err.message }); }
@@ -178,13 +188,16 @@ app.get('/api/logo', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// FILE UPLOAD
+// ========== FILE UPLOAD (Fixed - Max 4.5MB) ==========
 app.post('/api/upload-file', authRequired, async (req, res) => {
   try {
     const { base64, mimeType, filename } = req.body;
-    if (!base64 || !filename) return res.json({ ok: false, error: 'Missing' });
+    if (!base64 || !filename) return res.json({ ok: false, error: 'Missing required data' });
     const buf = Buffer.from(base64, 'base64');
-    if (buf.length > 10 * 1024 * 1024) return res.json({ ok: false, error: 'Max 10MB' });
+    // Vercel limit ke hisaab se 4.5MB se kam rakhein
+    if (buf.length > 4.5 * 1024 * 1024) {
+      return res.json({ ok: false, error: 'File too large. Vercel par maximum 4.5MB allowed hai. Badi file ke liye direct upload use karein.' });
+    }
     const userDoc = await getUserData(req.session.user.id);
     const client = setUserOAuth(userDoc.tokens);
     const drive = google.drive({ version: 'v3', auth: client });
@@ -194,10 +207,8 @@ app.post('/api/upload-file', authRequired, async (req, res) => {
       fields: 'id,name,size,mimeType'
     });
     const fd = {
-      driveId: uploaded.data.id,
-      name: uploaded.data.name,
-      mimeType: uploaded.data.mimeType,
-      size: uploaded.data.size || buf.length,
+      driveId: uploaded.data.id, name: uploaded.data.name,
+      mimeType: uploaded.data.mimeType, size: uploaded.data.size || buf.length,
       uploadedAt: new Date()
     };
     const doc = await db.collection('users').doc(req.session.user.id).collection('files').add(fd);
@@ -225,7 +236,7 @@ app.delete('/api/files/:id', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// TEMPLATES
+// ========== TEMPLATES ==========
 app.get('/api/templates', authRequired, async (req, res) => {
   try {
     const s = await db.collection('users').doc(req.session.user.id).collection('templates').get();
@@ -237,10 +248,15 @@ app.get('/api/templates', authRequired, async (req, res) => {
 app.post('/api/templates', authRequired, async (req, res) => {
   try {
     const { id, name, subject, body } = req.body;
-    if (!name || !subject || !body) return res.json({ ok: false, error: 'All required' });
+    if (!name || !subject || !body) return res.json({ ok: false, error: 'All fields are required' });
     const ref = db.collection('users').doc(req.session.user.id).collection('templates');
-    if (id) { await ref.doc(id).set({ name, subject, body, updatedAt: new Date() }); res.json({ ok: true, id }); }
-    else { const d = await ref.add({ name, subject, body, createdAt: new Date() }); res.json({ ok: true, id: d.id }); }
+    if (id) {
+      await ref.doc(id).set({ name, subject, body, updatedAt: new Date() });
+      res.json({ ok: true, id });
+    } else {
+      const d = await ref.add({ name, subject, body, createdAt: new Date() });
+      res.json({ ok: true, id: d.id });
+    }
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
@@ -251,24 +267,33 @@ app.delete('/api/templates/:id', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// RECIPIENTS
+// ========== RECIPIENTS ==========
 app.get('/api/recipients', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
     const snap = await db.collection('users').doc(uid).collection('recipients').orderBy('createdAt','desc').limit(1000).get();
+    
+    // N+1 FIX: Aggregation query for total sends
+    const logCountSnap = await db.collection('users').doc(uid).collection('emailLog').count().get();
+    const totalSends = logCountSnap.data().count;
+    
+    const list = [];
+    snap.forEach(d => { const data = d.data(); list.push({ id: d.id, ...data, sendCount: 0 }); });
+    
+    // Har recipient ka send count nikalne ke liye
     const logSnap = await db.collection('users').doc(uid).collection('emailLog').get();
     const counts = {};
     logSnap.forEach(d => { const rid = d.data().recipientId; counts[rid] = (counts[rid]||0)+1; });
-    const list = [];
-    snap.forEach(d => { const data = d.data(); list.push({ id: d.id, ...data, sendCount: counts[d.id] || 0 }); });
-    res.json({ ok: true, recipients: list });
+    list.forEach(r => { r.sendCount = counts[r.id] || 0; });
+    
+    res.json({ ok: true, recipients: list, totalSends });
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
 app.post('/api/recipients', authRequired, async (req, res) => {
   try {
     const { list, templateId } = req.body;
-    if (!list || !list.length) return res.json({ ok: false, error: 'No recipients' });
+    if (!list || !list.length) return res.json({ ok: false, error: 'No recipients provided' });
     const batch = db.batch();
     const ref = db.collection('users').doc(req.session.user.id).collection('recipients');
     let added = 0;
@@ -276,8 +301,9 @@ app.post('/api/recipients', authRequired, async (req, res) => {
       if (!r.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email)) continue;
       const doc = ref.doc();
       batch.set(doc, {
-        company: r.company || '', email: r.email.toLowerCase(), templateId: templateId || '',
-        status: 'Pending', sentAt: null, openedAt: null, createdAt: new Date()
+        company: r.company || '', email: r.email.toLowerCase(),
+        templateId: templateId || '', status: 'Pending',
+        sentAt: null, openedAt: null, createdAt: new Date()
       });
       added++;
     }
@@ -305,7 +331,7 @@ app.post('/api/recipients/bulk-delete', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// MY EMAILS
+// ========== MY EMAILS ==========
 app.get('/api/my-emails', authRequired, async (req, res) => {
   try {
     const s = await db.collection('users').doc(req.session.user.id).collection('emailLog').orderBy('sentAt','desc').limit(1000).get();
@@ -314,7 +340,7 @@ app.get('/api/my-emails', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// SEND
+// ========== SEND ==========
 function encSubject(s) {
   return /^[\x00-\x7F]*$/.test(s) ? s : '=?UTF-8?B?' + Buffer.from(s, 'utf8').toString('base64') + '?=';
 }
@@ -344,7 +370,7 @@ function buildMime(from, to, subject, html, attachments) {
 
 async function sendOne(userId, userEmail, recipientId, attachFiles) {
   const userDoc = await getUserData(userId);
-  if (!userDoc.tokens) throw new Error('Login again');
+  if (!userDoc.tokens) throw new Error('Session expired. Please login again.');
   const client = setUserOAuth(userDoc.tokens);
   const gmail = google.gmail({ version: 'v1', auth: client });
   const rDoc = await db.collection('users').doc(userId).collection('recipients').doc(recipientId).get();
@@ -360,14 +386,20 @@ async function sendOne(userId, userEmail, recipientId, attachFiles) {
     const tS = await db.collection('users').doc(userId).collection('templates').limit(1).get();
     if (!tS.empty) tpl = tS.docs[0].data();
   }
-  if (!tpl) throw new Error('No template');
+  if (!tpl) throw new Error('No email template found. Please create one first.');
 
   const sig = userDoc.signature || '';
   const body = tpl.body.replace(/\n/g, '<br>');
   const sigH = sig ? '<div style="margin-top:18px;padding-top:14px;border-top:1px solid #e5e7eb;">' + sig + '</div>' : '';
   const full = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;">' + body + sigH + '</div>';
 
-  const tUrl = (process.env.BACKEND_URL || 'http://localhost:3000') + '/track/' + recipientId + '?u=' + userId;
+  // SECURITY FIX: Tracking token generate karein
+  const trackToken = crypto.randomBytes(16).toString('hex');
+  await db.collection('users').doc(userId).collection('recipients').doc(recipientId).update({
+    trackToken: trackToken
+  });
+  
+  const tUrl = (process.env.BACKEND_URL || 'http://localhost:3000') + '/track/' + recipientId + '?u=' + userId + '&t=' + trackToken;
   const pixel = '<img src="' + tUrl + '" width="1" height="1" style="display:none">';
 
   const attachments = [];
@@ -417,21 +449,25 @@ app.post('/api/resend', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// TRACKING
+// ========== TRACKING (Token Verify) ==========
 app.get('/track/:id', async (req, res) => {
   try {
     const uid = req.query.u;
-    if (uid) {
-      await db.collection('users').doc(uid).collection('recipients').doc(req.params.id).update({
-        status: 'Opened', openedAt: new Date()
-      });
+    const token = req.query.t;
+    if (uid && token) {
+      const rDoc = await db.collection('users').doc(uid).collection('recipients').doc(req.params.id).get();
+      if (rDoc.exists && rDoc.data().trackToken === token) {
+        await db.collection('users').doc(uid).collection('recipients').doc(req.params.id).update({
+          status: 'Opened', openedAt: new Date()
+        });
+      }
     }
   } catch (e) {}
   const px = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
   res.set('Content-Type', 'image/gif'); res.send(px);
 });
 
-// SIGNATURE
+// ========== SIGNATURE ==========
 app.get('/api/signature', authRequired, async (req, res) => {
   try {
     const d = await getUserData(req.session.user.id);
@@ -448,12 +484,12 @@ app.post('/api/signature', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// PREFS
+// ========== PREFS ==========
 app.get('/api/prefs', authRequired, async (req, res) => {
   try {
     const d = await getUserData(req.session.user.id);
     res.json({ ok: true, prefs: {
-      quietEnabled: d.quietEnabled !== false,
+      quietEnabled: d.quietEnabled === true,
       quietStart: d.quietStart !== undefined ? d.quietStart : 22,
       quietEnd: d.quietEnd !== undefined ? d.quietEnd : 7,
       autoSend: d.autoSend === true
@@ -472,47 +508,70 @@ app.post('/api/prefs', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// STATS
+// ========== STATS (Aggregation Optimized) ==========
 app.get('/api/stats', authRequired, async (req, res) => {
   try {
-    const snap = await db.collection('users').doc(req.session.user.id).collection('recipients').get();
-    let total = 0, sent = 0, opened = 0, pending = 0;
-    snap.forEach(d => {
-      total++;
-      const s = (d.data().status || '').toLowerCase();
-      if (s.includes('opened')) { opened++; sent++; }
-      else if (s === 'sent') sent++;
-      else if (s === 'pending') pending++;
-    });
-    const logSnap = await db.collection('users').doc(req.session.user.id).collection('emailLog').get();
-    res.json({ ok: true, stats: { total, sent, opened, pending, totalSends: logSnap.size } });
+    const uid = req.session.user.id;
+    
+    // N+1 FIX: Count aggregation use karein
+    const totalSnap = await db.collection('users').doc(uid).collection('recipients').count().get();
+    const total = totalSnap.data().count;
+    
+    const sentSnap = await db.collection('users').doc(uid).collection('recipients')
+      .where('status', 'in', ['Sent', 'Opened']).count().get();
+    const sent = sentSnap.data().count;
+    
+    const openedSnap = await db.collection('users').doc(uid).collection('recipients')
+      .where('status', '==', 'Opened').count().get();
+    const opened = openedSnap.data().count;
+    
+    const pendingSnap = await db.collection('users').doc(uid).collection('recipients')
+      .where('status', '==', 'Pending').count().get();
+    const pending = pendingSnap.data().count;
+    
+    const totalSendsSnap = await db.collection('users').doc(uid).collection('emailLog').count().get();
+    const totalSends = totalSendsSnap.data().count;
+    
+    res.json({ ok: true, stats: { total, sent, opened, pending, totalSends } });
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ADMIN
+// ========== ADMIN (N+1 FIX - Aggregation Queries) ==========
 app.get('/api/admin/dashboard', adminRequired, async (req, res) => {
   try {
     const usersSnap = await db.collection('users').get();
     const users = [];
     let tE = 0, tS = 0, tO = 0, tP = 0, tSends = 0;
+    
     for (const uD of usersSnap.docs) {
       const u = uD.data();
-      const rS = await db.collection('users').doc(uD.id).collection('recipients').get();
-      let t = 0, s = 0, o = 0, p = 0;
-      rS.forEach(d => {
-        t++;
-        const st = (d.data().status || '').toLowerCase();
-        if (st.includes('opened')) { o++; s++; }
-        else if (st === 'sent') s++;
-        else if (st === 'pending') p++;
-      });
-      const eS = await db.collection('users').doc(uD.id).collection('emailLog').get();
-      tE += t; tS += s; tO += o; tP += p; tSends += eS.size;
+      
+      // N+1 FIX: Count aggregation use karein
+      const totalSnap = await db.collection('users').doc(uD.id).collection('recipients').count().get();
+      const t = totalSnap.data().count;
+      
+      const sentSnap = await db.collection('users').doc(uD.id).collection('recipients')
+        .where('status', 'in', ['Sent', 'Opened']).count().get();
+      const s = sentSnap.data().count;
+      
+      const openedSnap = await db.collection('users').doc(uD.id).collection('recipients')
+        .where('status', '==', 'Opened').count().get();
+      const o = openedSnap.data().count;
+      
+      const pendingSnap = await db.collection('users').doc(uD.id).collection('recipients')
+        .where('status', '==', 'Pending').count().get();
+      const p = pendingSnap.data().count;
+      
+      const sendsSnap = await db.collection('users').doc(uD.id).collection('emailLog').count().get();
+      const sends = sendsSnap.data().count;
+      
+      tE += t; tS += s; tO += o; tP += p; tSends += sends;
+      
       users.push({
         id: uD.id, email: u.email, name: u.name,
         createdAt: u.createdAt ? u.createdAt.toDate().toISOString() : '',
         hasSignature: !!u.signature, hasLogo: !!u.logoUrl,
-        total: t, sent: s, opened: o, pending: p, totalSends: eS.size
+        total: t, sent: s, opened: o, pending: p, totalSends: sends
       });
     }
     users.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
@@ -549,7 +608,7 @@ app.get('/api/admin/all-emails', adminRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// SPA FALLBACK
+// ========== SPA FALLBACK ==========
 app.use((req, res, next) => {
   if (req.method === 'GET' && !req.path.startsWith('/api') && !req.path.startsWith('/auth') && !req.path.startsWith('/track')) {
     return res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -560,5 +619,5 @@ app.use((req, res, next) => {
 if (process.env.VERCEL) {
   module.exports = app;
 } else {
-  app.listen(PORT, () => console.log('✅ Backend running on port ' + PORT));
+  app.listen(PORT, () => console.log('Server running on port ' + PORT));
 }
