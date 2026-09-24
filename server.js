@@ -13,6 +13,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_EMAIL = 'usama.hanif.career@gmail.com';
 const DAILY_LIMIT = 100;
+const IS_VERCEL = !!process.env.VERCEL;
 
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '20mb' }));
@@ -21,11 +22,27 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'mf',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: process.env.VERCEL ? true : false, sameSite: process.env.VERCEL ? 'none' : 'lax', maxAge: 72 * 60 * 60 * 1000 }
+  cookie: {
+    secure: IS_VERCEL,
+    sameSite: IS_VERCEL ? 'none' : 'lax',
+    maxAge: 72 * 60 * 60 * 1000
+  }
 }));
 app.use(express.static('public'));
 
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
+// ============ FIREBASE INIT (base64 + fallback) ============
+let serviceAccount = {};
+try {
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
+    serviceAccount = JSON.parse(
+      Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf8')
+    );
+  } else if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  }
+} catch (e) {
+  console.error('Firebase parse error:', e.message);
+}
 initializeApp({ credential: cert(serviceAccount) });
 const db = getFirestore();
 
@@ -64,9 +81,23 @@ function setUserOAuth(t) {
   return c;
 }
 
+// ============ HEALTH (very first — no DB calls) ============
+app.get('/api/health', (req, res) => {
+  res.json({
+    ok: true,
+    vercel: IS_VERCEL,
+    firebase: !!serviceAccount.project_id,
+    projectId: serviceAccount.project_id || 'missing'
+  });
+});
+
 // ============ AUTH ============
 app.get('/auth/google', (req, res) => {
-  const url = oauth2Client.generateAuthUrl({ access_type: 'offline', scope: SCOPES, prompt: 'consent' });
+  const url = oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    scope: SCOPES,
+    prompt: 'consent'
+  });
   res.redirect(url);
 });
 
@@ -91,7 +122,12 @@ app.get('/auth/google/callback', async (req, res) => {
       data.sigFields = {};
     }
     await db.collection('users').doc(uid).set(data, { merge: true });
-    req.session.user = { id: uid, email, name, isAdmin: email.toLowerCase() === ADMIN_EMAIL.toLowerCase() };
+    req.session.user = {
+      id: uid,
+      email,
+      name,
+      isAdmin: email.toLowerCase() === ADMIN_EMAIL.toLowerCase()
+    };
     res.redirect((process.env.FRONTEND_URL || 'http://localhost:3000') + '?login=success');
   } catch (err) {
     console.error('OAuth error:', err.message);
@@ -113,9 +149,15 @@ app.post('/api/logout', (req, res) => {
 app.get('/api/quota', authRequired, async (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
-    const sd = await db.collection('users').doc(req.session.user.id).collection('stats').doc(today).get();
+    const sd = await db.collection('users').doc(req.session.user.id)
+      .collection('stats').doc(today).get();
     const sent = sd.exists ? (sd.data().sent || 0) : 0;
-    res.json({ ok: true, sentToday: sent, limit: DAILY_LIMIT, remaining: Math.max(0, DAILY_LIMIT - sent) });
+    res.json({
+      ok: true,
+      sentToday: sent,
+      limit: DAILY_LIMIT,
+      remaining: Math.max(0, DAILY_LIMIT - sent)
+    });
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
@@ -142,10 +184,16 @@ app.post('/api/upload-logo', authRequired, async (req, res) => {
     });
     const fileId = uploaded.data.id;
     try {
-      await drive.permissions.create({ fileId, requestBody: { role: 'reader', type: 'anyone' } });
+      await drive.permissions.create({
+        fileId,
+        requestBody: { role: 'reader', type: 'anyone' }
+      });
     } catch (e) {}
     const url = 'https://lh3.googleusercontent.com/d/' + fileId + '=w400';
-    await db.collection('users').doc(req.session.user.id).update({ logoFileId: fileId, logoUrl: url });
+    await db.collection('users').doc(req.session.user.id).update({
+      logoFileId: fileId,
+      logoUrl: url
+    });
     res.json({ ok: true, url, fileId });
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
@@ -168,8 +216,14 @@ app.post('/api/upload-file', authRequired, async (req, res) => {
     const client = setUserOAuth(userDoc.tokens);
     const drive = google.drive({ version: 'v3', auth: client });
     const uploaded = await drive.files.create({
-      requestBody: { name: filename, mimeType: mimeType || 'application/octet-stream' },
-      media: { mimeType: mimeType || 'application/octet-stream', body: Readable.from(buf) },
+      requestBody: {
+        name: filename,
+        mimeType: mimeType || 'application/octet-stream'
+      },
+      media: {
+        mimeType: mimeType || 'application/octet-stream',
+        body: Readable.from(buf)
+      },
       fields: 'id,name,size,mimeType'
     });
     const fd = {
@@ -179,14 +233,16 @@ app.post('/api/upload-file', authRequired, async (req, res) => {
       size: uploaded.data.size || buf.length,
       uploadedAt: new Date()
     };
-    const doc = await db.collection('users').doc(req.session.user.id).collection('files').add(fd);
+    const doc = await db.collection('users').doc(req.session.user.id)
+      .collection('files').add(fd);
     res.json({ ok: true, file: { id: doc.id, ...fd } });
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
 app.get('/api/files', authRequired, async (req, res) => {
   try {
-    const s = await db.collection('users').doc(req.session.user.id).collection('files').orderBy('uploadedAt', 'desc').get();
+    const s = await db.collection('users').doc(req.session.user.id)
+      .collection('files').orderBy('uploadedAt', 'desc').get();
     const l = [];
     s.forEach(d => l.push({ id: d.id, ...d.data() }));
     res.json({ ok: true, files: l });
@@ -195,12 +251,15 @@ app.get('/api/files', authRequired, async (req, res) => {
 
 app.delete('/api/files/:id', authRequired, async (req, res) => {
   try {
-    const fDoc = await db.collection('users').doc(req.session.user.id).collection('files').doc(req.params.id).get();
+    const fDoc = await db.collection('users').doc(req.session.user.id)
+      .collection('files').doc(req.params.id).get();
     if (!fDoc.exists) return res.json({ ok: false });
     const userDoc = await getUserData(req.session.user.id);
     const client = setUserOAuth(userDoc.tokens);
     try {
-      await google.drive({ version: 'v3', auth: client }).files.delete({ fileId: fDoc.data().driveId });
+      await google.drive({ version: 'v3', auth: client }).files.delete({
+        fileId: fDoc.data().driveId
+      });
     } catch (e) {}
     await fDoc.ref.delete();
     res.json({ ok: true });
@@ -210,7 +269,8 @@ app.delete('/api/files/:id', authRequired, async (req, res) => {
 // ============ TEMPLATES ============
 app.get('/api/templates', authRequired, async (req, res) => {
   try {
-    const s = await db.collection('users').doc(req.session.user.id).collection('templates').get();
+    const s = await db.collection('users').doc(req.session.user.id)
+      .collection('templates').get();
     const l = [];
     s.forEach(d => l.push({ id: d.id, ...d.data() }));
     res.json({ ok: true, templates: l });
@@ -234,7 +294,8 @@ app.post('/api/templates', authRequired, async (req, res) => {
 
 app.delete('/api/templates/:id', authRequired, async (req, res) => {
   try {
-    await db.collection('users').doc(req.session.user.id).collection('templates').doc(req.params.id).delete();
+    await db.collection('users').doc(req.session.user.id)
+      .collection('templates').doc(req.params.id).delete();
     res.json({ ok: true });
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
@@ -243,7 +304,8 @@ app.delete('/api/templates/:id', authRequired, async (req, res) => {
 app.get('/api/recipients', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
-    const snap = await db.collection('users').doc(uid).collection('recipients').orderBy('createdAt', 'desc').limit(1000).get();
+    const snap = await db.collection('users').doc(uid)
+      .collection('recipients').orderBy('createdAt', 'desc').limit(1000).get();
     const logSnap = await db.collection('users').doc(uid).collection('emailLog').get();
     const counts = {};
     logSnap.forEach(d => {
@@ -287,7 +349,8 @@ app.post('/api/recipients', authRequired, async (req, res) => {
 
 app.delete('/api/recipients/:id', authRequired, async (req, res) => {
   try {
-    await db.collection('users').doc(req.session.user.id).collection('recipients').doc(req.params.id).delete();
+    await db.collection('users').doc(req.session.user.id)
+      .collection('recipients').doc(req.params.id).delete();
     res.json({ ok: true });
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
@@ -304,10 +367,11 @@ app.post('/api/recipients/bulk-delete', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ============ MY EMAILS ============
+// ============ MY EMAIL HISTORY ============
 app.get('/api/my-emails', authRequired, async (req, res) => {
   try {
-    const s = await db.collection('users').doc(req.session.user.id).collection('emailLog').orderBy('sentAt', 'desc').limit(1000).get();
+    const s = await db.collection('users').doc(req.session.user.id)
+      .collection('emailLog').orderBy('sentAt', 'desc').limit(1000).get();
     const l = [];
     s.forEach(d => l.push({ id: d.id, ...d.data() }));
     res.json({ ok: true, emails: l });
@@ -316,7 +380,9 @@ app.get('/api/my-emails', authRequired, async (req, res) => {
 
 // ============ SEND EMAIL ============
 function encSubject(s) {
-  return /^[\x00-\x7F]*$/.test(s) ? s : '=?UTF-8?B?' + Buffer.from(s, 'utf8').toString('base64') + '?=';
+  return /^[\x00-\x7F]*$/.test(s)
+    ? s
+    : '=?UTF-8?B?' + Buffer.from(s, 'utf8').toString('base64') + '?=';
 }
 
 function buildMime(from, to, subject, html, attachments) {
@@ -326,16 +392,22 @@ function buildMime(from, to, subject, html, attachments) {
   if (attachments && attachments.length) {
     p.push('Content-Type: multipart/mixed; boundary="' + mB + '"', '', '--' + mB);
     p.push('Content-Type: multipart/alternative; boundary="' + aB + '"', '', '--' + aB);
-    p.push('Content-Type: text/html; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', Buffer.from(html, 'utf8').toString('base64'), '', '--' + aB + '--', '');
+    p.push('Content-Type: text/html; charset=UTF-8', 'Content-Transfer-Encoding: base64', '',
+      Buffer.from(html, 'utf8').toString('base64'), '', '--' + aB + '--', '');
     for (const att of attachments) {
-      p.push('--' + mB, 'Content-Type: ' + att.mimeType + '; name="' + att.filename + '"', 'Content-Disposition: attachment; filename="' + att.filename + '"', 'Content-Transfer-Encoding: base64', '', att.data, '');
+      p.push('--' + mB,
+        'Content-Type: ' + att.mimeType + '; name="' + att.filename + '"',
+        'Content-Disposition: attachment; filename="' + att.filename + '"',
+        'Content-Transfer-Encoding: base64', '', att.data, '');
     }
     p.push('--' + mB + '--');
   } else {
     p.push('Content-Type: multipart/alternative; boundary="' + aB + '"', '', '--' + aB);
-    p.push('Content-Type: text/html; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', Buffer.from(html, 'utf8').toString('base64'), '', '--' + aB + '--');
+    p.push('Content-Type: text/html; charset=UTF-8', 'Content-Transfer-Encoding: base64', '',
+      Buffer.from(html, 'utf8').toString('base64'), '', '--' + aB + '--');
   }
-  return Buffer.from(p.join('\r\n')).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return Buffer.from(p.join('\r\n')).toString('base64')
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 async function sendOne(userId, userEmail, recipientId, attachFiles) {
@@ -344,13 +416,15 @@ async function sendOne(userId, userEmail, recipientId, attachFiles) {
   const client = setUserOAuth(userDoc.tokens);
   const gmail = google.gmail({ version: 'v1', auth: client });
 
-  const rDoc = await db.collection('users').doc(userId).collection('recipients').doc(recipientId).get();
+  const rDoc = await db.collection('users').doc(userId)
+    .collection('recipients').doc(recipientId).get();
   if (!rDoc.exists) throw new Error('Recipient not found');
   const rec = rDoc.data();
 
   let tpl;
   if (rec.templateId) {
-    const t = await db.collection('users').doc(userId).collection('templates').doc(rec.templateId).get();
+    const t = await db.collection('users').doc(userId)
+      .collection('templates').doc(rec.templateId).get();
     if (t.exists) tpl = t.data();
   }
   if (!tpl) {
@@ -361,7 +435,9 @@ async function sendOne(userId, userEmail, recipientId, attachFiles) {
 
   const sig = userDoc.signature || '';
   const body = tpl.body.replace(/\n/g, '<br>');
-  const sigH = sig ? '<div style="margin-top:18px;padding-top:14px;border-top:1px solid #e5e7eb;">' + sig + '</div>' : '';
+  const sigH = sig
+    ? '<div style="margin-top:18px;padding-top:14px;border-top:1px solid #e5e7eb;">' + sig + '</div>'
+    : '';
   const full = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;">' + body + sigH + '</div>';
 
   const tUrl = (process.env.BACKEND_URL || 'http://localhost:3000') + '/track/' + recipientId + '?u=' + userId;
@@ -374,7 +450,10 @@ async function sendOne(userId, userEmail, recipientId, attachFiles) {
     for (const fD of fS.docs) {
       const f = fD.data();
       try {
-        const fd = await drive.files.get({ fileId: f.driveId, alt: 'media' }, { responseType: 'arraybuffer' });
+        const fd = await drive.files.get(
+          { fileId: f.driveId, alt: 'media' },
+          { responseType: 'arraybuffer' }
+        );
         attachments.push({
           filename: f.name,
           mimeType: f.mimeType || 'application/octet-stream',
@@ -405,21 +484,34 @@ async function sendOne(userId, userEmail, recipientId, attachFiles) {
   const today = new Date().toISOString().split('T')[0];
   const sRef = db.collection('users').doc(userId).collection('stats').doc(today);
   const sDoc = await sRef.get();
-  await sRef.set({ sent: ((sDoc.exists ? sDoc.data().sent : 0) || 0) + 1, updatedAt: new Date() }, { merge: true });
+  await sRef.set(
+    { sent: ((sDoc.exists ? sDoc.data().sent : 0) || 0) + 1, updatedAt: new Date() },
+    { merge: true }
+  );
 
   return rec.email;
 }
 
 app.post('/api/send', authRequired, async (req, res) => {
   try {
-    const e = await sendOne(req.session.user.id, req.session.user.email, req.body.recipientId, req.body.attachFiles !== false);
+    const e = await sendOne(
+      req.session.user.id,
+      req.session.user.email,
+      req.body.recipientId,
+      req.body.attachFiles !== false
+    );
     res.json({ ok: true, email: e });
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
 app.post('/api/resend', authRequired, async (req, res) => {
   try {
-    const e = await sendOne(req.session.user.id, req.session.user.email, req.body.recipientId, req.body.attachFiles !== false);
+    const e = await sendOne(
+      req.session.user.id,
+      req.session.user.email,
+      req.body.recipientId,
+      req.body.attachFiles !== false
+    );
     res.json({ ok: true, email: e });
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
@@ -429,13 +521,17 @@ app.get('/track/:id', async (req, res) => {
   try {
     const uid = req.query.u;
     if (uid) {
-      await db.collection('users').doc(uid).collection('recipients').doc(req.params.id).update({
-        status: 'Opened',
-        openedAt: new Date()
-      });
+      await db.collection('users').doc(uid).collection('recipients')
+        .doc(req.params.id).update({
+          status: 'Opened',
+          openedAt: new Date()
+        });
     }
   } catch (e) {}
-  const px = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+  const px = Buffer.from(
+    'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+    'base64'
+  );
   res.set('Content-Type', 'image/gif');
   res.send(px);
 });
@@ -444,7 +540,11 @@ app.get('/track/:id', async (req, res) => {
 app.get('/api/signature', authRequired, async (req, res) => {
   try {
     const d = await getUserData(req.session.user.id);
-    res.json({ ok: true, signature: d.signature || '', fields: d.sigFields || {} });
+    res.json({
+      ok: true,
+      signature: d.signature || '',
+      fields: d.sigFields || {}
+    });
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
@@ -490,7 +590,8 @@ app.post('/api/prefs', authRequired, async (req, res) => {
 // ============ STATS ============
 app.get('/api/stats', authRequired, async (req, res) => {
   try {
-    const snap = await db.collection('users').doc(req.session.user.id).collection('recipients').get();
+    const snap = await db.collection('users').doc(req.session.user.id)
+      .collection('recipients').get();
     let total = 0, sent = 0, opened = 0, pending = 0;
     snap.forEach(d => {
       total++;
@@ -499,8 +600,12 @@ app.get('/api/stats', authRequired, async (req, res) => {
       else if (s === 'sent') sent++;
       else if (s === 'pending') pending++;
     });
-    const logSnap = await db.collection('users').doc(req.session.user.id).collection('emailLog').get();
-    res.json({ ok: true, stats: { total, sent, opened, pending, totalSends: logSnap.size } });
+    const logSnap = await db.collection('users').doc(req.session.user.id)
+      .collection('emailLog').get();
+    res.json({
+      ok: true,
+      stats: { total, sent, opened, pending, totalSends: logSnap.size }
+    });
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
@@ -537,14 +642,22 @@ app.get('/api/admin/dashboard', adminRequired, async (req, res) => {
     res.json({
       ok: true,
       users,
-      stats: { totalUsers: users.length, totalEmails: tE, totalSent: tS, totalOpened: tO, totalPending: tP, totalSends: tSends }
+      stats: {
+        totalUsers: users.length,
+        totalEmails: tE,
+        totalSent: tS,
+        totalOpened: tO,
+        totalPending: tP,
+        totalSends: tSends
+      }
     });
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
 app.get('/api/admin/user/:id/emails', adminRequired, async (req, res) => {
   try {
-    const s = await db.collection('users').doc(req.params.id).collection('emailLog').orderBy('sentAt', 'desc').limit(500).get();
+    const s = await db.collection('users').doc(req.params.id)
+      .collection('emailLog').orderBy('sentAt', 'desc').limit(500).get();
     const l = [];
     s.forEach(d => l.push({ id: d.id, ...d.data() }));
     res.json({ ok: true, emails: l });
@@ -557,7 +670,8 @@ app.get('/api/admin/all-emails', adminRequired, async (req, res) => {
     const all = [];
     for (const uD of usersSnap.docs) {
       const u = uD.data();
-      const eS = await db.collection('users').doc(uD.id).collection('emailLog').orderBy('sentAt', 'desc').limit(500).get();
+      const eS = await db.collection('users').doc(uD.id)
+        .collection('emailLog').orderBy('sentAt', 'desc').limit(500).get();
       eS.forEach(d => {
         const dd = d.data();
         all.push({
@@ -581,9 +695,7 @@ app.get('/api/admin/all-emails', adminRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-app.get('/api/health', (req, res) => res.json({ ok: true }));
-
-// ============ VERCEL / LOCAL STARTUP ============
+// ============ STARTUP: Vercel vs Local ============
 if (process.env.VERCEL) {
   module.exports = app;
 } else {
