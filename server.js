@@ -16,6 +16,8 @@ const ADMIN_EMAIL = 'usama.hanif.career@gmail.com';
 const DAILY_LIMIT = 100;
 const IS_VERCEL = !!process.env.VERCEL;
 
+app.set('trust proxy', 1);
+
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '20mb' }));
 app.use(cookieParser());
@@ -23,15 +25,16 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'mf',
   resave: false,
   saveUninitialized: false,
+  proxy: true,
   cookie: {
     secure: IS_VERCEL,
     sameSite: IS_VERCEL ? 'none' : 'lax',
+    httpOnly: true,
     maxAge: 72 * 60 * 60 * 1000
   }
 }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ============ FIREBASE INIT ============
 let serviceAccount = {};
 try {
   if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
@@ -82,7 +85,6 @@ function setUserOAuth(t) {
   return c;
 }
 
-// ============ HEALTH ============
 app.get('/api/health', (req, res) => {
   res.json({
     ok: true,
@@ -92,7 +94,6 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// ============ AUTH ============
 app.get('/auth/google', (req, res) => {
   const url = oauth2Client.generateAuthUrl({
     access_type: 'offline',
@@ -129,7 +130,10 @@ app.get('/auth/google/callback', async (req, res) => {
       name,
       isAdmin: email.toLowerCase() === ADMIN_EMAIL.toLowerCase()
     };
-    res.redirect((process.env.FRONTEND_URL || 'http://localhost:3000') + '?login=success');
+    req.session.save((err) => {
+      if (err) console.error('Session save error:', err);
+      res.redirect((process.env.FRONTEND_URL || 'http://localhost:3000') + '?login=success');
+    });
   } catch (err) {
     console.error('OAuth error:', err.message);
     res.redirect((process.env.FRONTEND_URL || 'http://localhost:3000') + '?login=error');
@@ -146,7 +150,6 @@ app.post('/api/logout', (req, res) => {
   res.json({ ok: true });
 });
 
-// ============ QUOTA ============
 app.get('/api/quota', authRequired, async (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
@@ -162,7 +165,6 @@ app.get('/api/quota', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ============ LOGO UPLOAD ============
 app.post('/api/upload-logo', authRequired, async (req, res) => {
   try {
     const { base64, mimeType, filename } = req.body;
@@ -206,7 +208,6 @@ app.get('/api/logo', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ============ FILE UPLOAD ============
 app.post('/api/upload-file', authRequired, async (req, res) => {
   try {
     const { base64, mimeType, filename } = req.body;
@@ -267,7 +268,6 @@ app.delete('/api/files/:id', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ============ TEMPLATES ============
 app.get('/api/templates', authRequired, async (req, res) => {
   try {
     const s = await db.collection('users').doc(req.session.user.id)
@@ -301,7 +301,6 @@ app.delete('/api/templates/:id', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ============ RECIPIENTS ============
 app.get('/api/recipients', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -368,7 +367,6 @@ app.post('/api/recipients/bulk-delete', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ============ MY EMAIL HISTORY ============
 app.get('/api/my-emails', authRequired, async (req, res) => {
   try {
     const s = await db.collection('users').doc(req.session.user.id)
@@ -379,7 +377,6 @@ app.get('/api/my-emails', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ============ SEND EMAIL ============
 function encSubject(s) {
   return /^[\x00-\x7F]*$/.test(s)
     ? s
@@ -517,7 +514,6 @@ app.post('/api/resend', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ============ TRACKING ============
 app.get('/track/:id', async (req, res) => {
   try {
     const uid = req.query.u;
@@ -537,7 +533,6 @@ app.get('/track/:id', async (req, res) => {
   res.send(px);
 });
 
-// ============ SIGNATURE ============
 app.get('/api/signature', authRequired, async (req, res) => {
   try {
     const d = await getUserData(req.session.user.id);
@@ -558,7 +553,6 @@ app.post('/api/signature', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ============ PREFS ============
 app.get('/api/prefs', authRequired, async (req, res) => {
   try {
     const d = await getUserData(req.session.user.id);
@@ -588,7 +582,6 @@ app.post('/api/prefs', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ============ STATS ============
 app.get('/api/stats', authRequired, async (req, res) => {
   try {
     const snap = await db.collection('users').doc(req.session.user.id)
@@ -610,7 +603,6 @@ app.get('/api/stats', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ============ ADMIN ============
 app.get('/api/admin/dashboard', adminRequired, async (req, res) => {
   try {
     const usersSnap = await db.collection('users').get();
@@ -696,7 +688,6 @@ app.get('/api/admin/all-emails', adminRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ============ SPA FALLBACK ============
 app.use((req, res, next) => {
   if (req.method === 'GET' && !req.path.startsWith('/api') && !req.path.startsWith('/auth') && !req.path.startsWith('/track')) {
     return res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -704,7 +695,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// ============ STARTUP ============
 if (process.env.VERCEL) {
   module.exports = app;
 } else {
