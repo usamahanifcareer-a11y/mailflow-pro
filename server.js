@@ -8,6 +8,7 @@ const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const crypto = require('crypto');
 const { Readable } = require('stream');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,9 +29,9 @@ app.use(session({
     maxAge: 72 * 60 * 60 * 1000
   }
 }));
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
-// ============ FIREBASE INIT (base64 + fallback) ============
+// ============ FIREBASE INIT ============
 let serviceAccount = {};
 try {
   if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
@@ -81,7 +82,7 @@ function setUserOAuth(t) {
   return c;
 }
 
-// ============ HEALTH (very first — no DB calls) ============
+// ============ HEALTH ============
 app.get('/api/health', (req, res) => {
   res.json({
     ok: true,
@@ -695,7 +696,15 @@ app.get('/api/admin/all-emails', adminRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ============ STARTUP: Vercel vs Local ============
+// ============ SPA FALLBACK ============
+app.use((req, res, next) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api') && !req.path.startsWith('/auth') && !req.path.startsWith('/track')) {
+    return res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  }
+  next();
+});
+
+// ============ STARTUP ============
 if (process.env.VERCEL) {
   module.exports = app;
 } else {
