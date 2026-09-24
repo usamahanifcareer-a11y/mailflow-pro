@@ -12,7 +12,7 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_EMAIL = 'usama.hanif.career@gmail.com';
-const DAILY_LIMIT = 500;
+const DAILY_LIMIT = 100;
 const IS_VERCEL = !!process.env.VERCEL;
 const CRON_SECRET = process.env.CRON_SECRET || 'mf-cron-default-change-me';
 
@@ -60,8 +60,9 @@ const SCOPES = [
   'https://www.googleapis.com/auth/drive.file'
 ];
 
+// ========== HELPERS ==========
 function authRequired(req, res, next) {
-  if (!req.session || !req.session.user) return res.status(401).json({ ok: false, error: 'Session expired.' });
+  if (!req.session || !req.session.user) return res.status(401).json({ ok: false, error: 'Session expired. Please login again.' });
   next();
 }
 function adminRequired(req, res, next) {
@@ -99,9 +100,24 @@ function getCurrentHourKey() {
   return now.toISOString().split('T')[0] + '-' + now.getHours();
 }
 
+// ========== SPAM CONTENT CHECKER ==========
+const SPAM_WORDS = ['free', 'guarantee', 'act now', 'click here', 'limited time', 'buy now', 'cash', 'prize', 'winner', 'urgent', 'risk-free', 'no obligation', 'earn money', 'work from home', 'make money', 'weight loss', 'viagra', 'casino', 'lottery', 'credit card', 'lowest price', 'special promotion', 'order now', 'apply now', 'sign up free', 'trial', 'sample', 'no cost', 'no fees', 'no purchase'];
+function checkSpamContent(subject, body) {
+  const text = ((subject || '') + ' ' + (body || '')).toLowerCase();
+  const found = [];
+  for (const w of SPAM_WORDS) {
+    if (text.includes(w)) found.push(w);
+  }
+  const hasTooManyLinks = (body.match(/https?:\/\//g) || []).length > 3;
+  const hasExclamation = ((subject.match(/!/g) || []).length) > 1;
+  const isAllCaps = subject === subject.toUpperCase() && subject.length > 5;
+  const score = found.length * 15 + (hasTooManyLinks ? 25 : 0) + (hasExclamation ? 15 : 0) + (isAllCaps ? 20 : 0);
+  return { found, hasTooManyLinks, hasExclamation, isAllCaps, score: Math.min(100, score), safe: score === 0 };
+}
+
 // ========== HEALTH ==========
 app.get('/api/health', (req, res) => {
-  res.json({ ok: true, vercel: IS_VERCEL, firebase: !!serviceAccount.project_id, timestamp: new Date().toISOString() });
+  res.json({ ok: true, vercel: IS_VERCEL, firebase: !!serviceAccount.project_id });
 });
 
 // ========== AUTH ==========
@@ -127,18 +143,21 @@ app.get('/auth/google/callback', async (req, res) => {
       data.quietStart = 22;
       data.quietEnd = 7;
       data.autoSend = false;
-      data.autoSendBatchSize = 25;
+      data.autoSendBatchSize = 5;
       data.signature = '';
       data.logoUrl = '';
       data.sigFields = {};
       data.appAccountId = generateAppAccountId();
       data.lastAutoSendRun = null;
       data.totalAutoSent = 0;
+      data.warmupStartDate = new Date();
+      data.lastSendTime = null;
     } else {
       const ex = existing.data();
       if (!ex.appAccountId) data.appAccountId = generateAppAccountId();
-      if (ex.autoSendBatchSize === undefined) data.autoSendBatchSize = 25;
+      if (ex.autoSendBatchSize === undefined) data.autoSendBatchSize = 5;
       if (ex.totalAutoSent === undefined) data.totalAutoSent = 0;
+      if (!ex.warmupStartDate) data.warmupStartDate = new Date();
     }
     await db.collection('users').doc(uid).set(data, { merge: true });
     const fresh = await db.collection('users').doc(uid).get();
@@ -196,6 +215,99 @@ app.get('/api/quota', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
+// ========== WARM-UP STATUS ==========
+app.get('/api/warmup/status', authRequired, async (req, res) => {
+  try {
+    const userDoc = await getUserData(req.session.user.id);
+    if (!userDoc) return res.json({ ok: false, error: 'User not found' });
+    const start = userDoc.warmupStartDate ? new Date(userDoc.warmupStartDate._seconds ? userDoc.warmupStartDate._seconds * 1000 : userDoc.warmupStartDate) : new Date();
+    const days = Math.floor((Date.now() - start.getTime()) / (1000 * 60 * 60 * 24));
+    let rate = 5, stage = 'Very Early', left = 3, week = 1;
+    if (days >= 30) { rate = 50; stage = 'Fully Warmed'; left = 0; week = 5; }
+    else if (days >= 21) { rate = 40; stage = 'Advanced'; left = 30 - days; week = 4; }
+    else if (days >= 14) { rate = 25; stage = 'Late Warm-up'; left = 21 - days; week = 3; }
+    else if (days >= 7) { rate = 15; stage = 'Mid Warm-up'; left = 14 - days; week = 2; }
+    else if (days >= 3) { rate = 10; stage = 'Early Warm-up'; left = 7 - days; week = 1; }
+    res.json({
+      ok: true,
+      daysSinceStart: days,
+      recommendedRate: rate,
+      stage,
+      daysLeft: left,
+      week,
+      totalAutoSent: userDoc.totalAutoSent || 0,
+      schedule: [
+        { week: 1, days: '1-3', rate: 5, note: 'Send to friends only. Ask for replies.' },
+        { week: 2, days: '4-7', rate: 10, note: 'Expand to colleagues. Encourage replies.' },
+        { week: 3, days: '8-14', rate: 15, note: 'Gradually increase volume.' },
+        { week: 4, days: '15-21', rate: 25, note: 'Stable sending. Monitor bounce rate.' },
+        { week: 5, days: '22-30', rate: 40, note: 'Nearly warmed. Keep engagement high.' },
+        { week: 6, days: '31+', rate: 50, note: 'Fully warmed. You can now scale.' }
+      ]
+    });
+  } catch (err) { res.json({ ok: false, error: err.message }); }
+});
+
+// ========== SPAM CHECK API ==========
+app.get('/api/spam-check', authRequired, (req, res) => {
+  const { subject, body } = req.query;
+  const result = checkSpamContent(subject || '', body || '');
+  res.json({ ok: true, ...result });
+});
+
+// ========== TEST CENTER ==========
+app.post('/api/test/send', authRequired, async (req, res) => {
+  try {
+    const { testEmail, subject, body, useTemplate } = req.body;
+    if (!testEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testEmail)) return res.json({ ok: false, error: 'Invalid email' });
+    const userId = req.session.user.id;
+    const userDoc = await getUserData(userId);
+    let finalSubject = subject || 'Quick Test';
+    let finalBody = body || 'This is a test.';
+    if (useTemplate) {
+      const tS = await db.collection('users').doc(userId).collection('templates').limit(1).get();
+      if (!tS.empty) { const tpl = tS.docs[0].data(); finalSubject = tpl.subject; finalBody = tpl.body; }
+    }
+    const sig = userDoc.signature || '';
+    const bodyHtml = finalBody.replace(/\n/g, '<br>');
+    const sigH = sig ? '<div style="margin-top:18px;padding-top:14px;border-top:1px solid #e5e7eb;">' + sig + '</div>' : '';
+    const full = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;">' + bodyHtml + sigH + '</div>';
+    
+    const client = setUserOAuth(userDoc.tokens);
+    const gmail = google.gmail({ version: 'v1', auth: client });
+    const raw = buildMime(userDoc.name || 'MailFlow User', req.session.user.email, testEmail, finalSubject, full, []);
+    await gmail.users.messages.send({ userId: 'me', requestBody: { raw } });
+    
+    const doc = await db.collection('users').doc(userId).collection('testLog').add({
+      testEmail, subject: finalSubject, sentAt: new Date(), placement: 'PENDING'
+    });
+    res.json({ ok: true, testId: doc.id, subject: finalSubject });
+  } catch (err) { res.json({ ok: false, error: err.message }); }
+});
+
+app.get('/api/test/history', authRequired, async (req, res) => {
+  try {
+    const snap = await db.collection('users').doc(req.session.user.id).collection('testLog').orderBy('sentAt', 'desc').limit(100).get();
+    const list = []; snap.forEach(d => list.push({ id: d.id, ...d.data() }));
+    res.json({ ok: true, tests: list });
+  } catch (err) { res.json({ ok: false, error: err.message }); }
+});
+
+app.post('/api/test/mark/:id', authRequired, async (req, res) => {
+  try {
+    const { placement } = req.body;
+    await db.collection('users').doc(req.session.user.id).collection('testLog').doc(req.params.id).update({ placement, markedAt: new Date() });
+    res.json({ ok: true });
+  } catch (err) { res.json({ ok: false, error: err.message }); }
+});
+
+app.delete('/api/test/:id', authRequired, async (req, res) => {
+  try {
+    await db.collection('users').doc(req.session.user.id).collection('testLog').doc(req.params.id).delete();
+    res.json({ ok: true });
+  } catch (err) { res.json({ ok: false, error: err.message }); }
+});
+
 // ========== LOGO UPLOAD ==========
 app.post('/api/upload-logo', authRequired, async (req, res) => {
   try {
@@ -212,8 +324,7 @@ app.post('/api/upload-logo', authRequired, async (req, res) => {
     if (userDoc.logoFileId) { try { await drive.files.delete({ fileId: userDoc.logoFileId }); } catch (e) {} }
     const uploaded = await drive.files.create({
       requestBody: { name: filename || 'logo', mimeType },
-      media: { mimeType, body: Readable.from(buf) },
-      fields: 'id'
+      media: { mimeType, body: Readable.from(buf) }, fields: 'id'
     });
     const fileId = uploaded.data.id;
     try { await drive.permissions.create({ fileId, requestBody: { role: 'reader', type: 'anyone' } }); } catch (e) {}
@@ -302,8 +413,7 @@ app.get('/api/recipients', authRequired, async (req, res) => {
     let query = db.collection('users').doc(uid).collection('recipients');
     if (status && status !== 'all') query = query.where('status', '==', status);
     if (range && range !== 'all') {
-      const now = new Date();
-      let fromDate;
+      const now = new Date(); let fromDate;
       if (range === 'today') fromDate = new Date(now.setHours(0,0,0,0));
       else if (range === '7d') fromDate = new Date(Date.now() - 7*24*60*60*1000);
       else if (range === '30d') fromDate = new Date(Date.now() - 30*24*60*60*1000);
@@ -317,10 +427,7 @@ app.get('/api/recipients', authRequired, async (req, res) => {
     logSnap.forEach(d => { const rid = d.data().recipientId; counts[rid] = (counts[rid]||0)+1; });
     let list = [];
     snap.forEach(d => { const data = d.data(); list.push({ id: d.id, ...data, sendCount: counts[d.id] || 0 }); });
-    if (search) {
-      const q = search.toLowerCase();
-      list = list.filter(r => (r.email||'').toLowerCase().includes(q) || (r.company||'').toLowerCase().includes(q));
-    }
+    if (search) { const q = search.toLowerCase(); list = list.filter(r => (r.email||'').toLowerCase().includes(q) || (r.company||'').toLowerCase().includes(q)); }
     res.json({ ok: true, recipients: list });
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
@@ -338,8 +445,7 @@ app.post('/api/recipients', authRequired, async (req, res) => {
       batch.set(doc, {
         company: (r.company || '').trim(),
         email: r.email.toLowerCase(),
-        templateId: templateId || '',
-        status: 'Pending',
+        templateId: templateId || '', status: 'Pending',
         sentAt: null, openedAt: null, createdAt: new Date()
       });
       added++;
@@ -372,8 +478,7 @@ app.get('/api/my-emails', authRequired, async (req, res) => {
     const { range, search } = req.query;
     let query = db.collection('users').doc(req.session.user.id).collection('emailLog').orderBy('sentAt','desc');
     if (range && range !== 'all') {
-      const now = new Date();
-      let fromDate;
+      const now = new Date(); let fromDate;
       if (range === 'today') fromDate = new Date(now.setHours(0,0,0,0));
       else if (range === '7d') fromDate = new Date(Date.now() - 7*24*60*60*1000);
       else if (range === '30d') fromDate = new Date(Date.now() - 30*24*60*60*1000);
@@ -383,27 +488,57 @@ app.get('/api/my-emails', authRequired, async (req, res) => {
     query = query.limit(1000);
     const s = await query.get();
     let l = []; s.forEach(d => l.push({ id: d.id, ...d.data() }));
-    if (search) {
-      const q = search.toLowerCase();
-      l = l.filter(e => (e.recipientEmail||'').toLowerCase().includes(q) || (e.subject||'').toLowerCase().includes(q) || (e.company||'').toLowerCase().includes(q));
-    }
+    if (search) { const q = search.toLowerCase(); l = l.filter(e => (e.recipientEmail||'').toLowerCase().includes(q) || (e.subject||'').toLowerCase().includes(q) || (e.company||'').toLowerCase().includes(q)); }
     res.json({ ok: true, emails: l });
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ========== MIME ==========
+// ========== MIME BUILDER (Optimized for Inbox) ==========
 function encSubject(s) {
   return /^[\x00-\x7F]*$/.test(s) ? s : '=?UTF-8?B?' + Buffer.from(s, 'utf8').toString('base64') + '?=';
 }
-function buildMime(from, to, subject, html, attachments) {
-  const mB = 'm_' + crypto.randomBytes(8).toString('hex');
-  const aB = 'a_' + crypto.randomBytes(8).toString('hex');
-  const p = ['From: ' + from, 'To: ' + to, 'Subject: ' + encSubject(subject), 'MIME-Version: 1.0'];
+function htmlToPlain(html) {
+  return html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/\n\s*\n\s*\n/g, '\n\n')
+    .trim();
+}
+function buildMime(fromName, fromEmail, to, subject, html, attachments) {
+  const mB = 'mixed_' + crypto.randomBytes(8).toString('hex');
+  const aB = 'alt_' + crypto.randomBytes(8).toString('hex');
+  const domain = fromEmail.split('@')[1] || 'gmail.com';
+  const msgId = '<' + crypto.randomBytes(16).toString('hex') + '.' + Date.now() + '@' + domain + '>';
+  const dateStr = new Date().toUTCString();
+  const plainText = htmlToPlain(html);
+  const p = [
+    'From: "' + fromName.replace(/"/g, '') + '" <' + fromEmail + '>',
+    'To: ' + to,
+    'Subject: ' + encSubject(subject),
+    'Date: ' + dateStr,
+    'Message-ID: ' + msgId,
+    'MIME-Version: 1.0',
+    'X-Mailer: MailFlow Pro',
+    'List-Unsubscribe: <mailto:' + fromEmail + '?subject=unsubscribe>',
+    'List-Unsubscribe-Post: List-Unsubscribe=One-Click',
+    'Precedence: bulk',
+    'X-Priority: 3',
+    'Importance: Normal'
+  ];
   if (attachments && attachments.length) {
     p.push('Content-Type: multipart/mixed; boundary="' + mB + '"', '', '--' + mB);
     p.push('Content-Type: multipart/alternative; boundary="' + aB + '"', '', '--' + aB);
-    p.push('Content-Type: text/html; charset=UTF-8', 'Content-Transfer-Encoding: base64', '',
-      Buffer.from(html, 'utf8').toString('base64'), '', '--' + aB + '--', '');
+    p.push('Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', Buffer.from(plainText, 'utf8').toString('base64'), '');
+    p.push('--' + aB);
+    p.push('Content-Type: text/html; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', Buffer.from(html, 'utf8').toString('base64'), '', '--' + aB + '--', '');
     for (const att of attachments) {
       p.push('--' + mB, 'Content-Type: ' + att.mimeType + '; name="' + att.filename + '"',
         'Content-Disposition: attachment; filename="' + att.filename + '"',
@@ -412,8 +547,9 @@ function buildMime(from, to, subject, html, attachments) {
     p.push('--' + mB + '--');
   } else {
     p.push('Content-Type: multipart/alternative; boundary="' + aB + '"', '', '--' + aB);
-    p.push('Content-Type: text/html; charset=UTF-8', 'Content-Transfer-Encoding: base64', '',
-      Buffer.from(html, 'utf8').toString('base64'), '', '--' + aB + '--');
+    p.push('Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', Buffer.from(plainText, 'utf8').toString('base64'), '');
+    p.push('--' + aB);
+    p.push('Content-Type: text/html; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', Buffer.from(html, 'utf8').toString('base64'), '', '--' + aB + '--');
   }
   return Buffer.from(p.join('\r\n')).toString('base64').replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 }
@@ -423,7 +559,6 @@ async function sendOne(userId, userEmail, recipientId, attachFiles, options) {
   options = options || {};
   const userDoc = await getUserData(userId);
   if (!userDoc.tokens) throw new Error('Session expired. Please login again.');
-
   const inQuiet = isQuietHours(userDoc);
   if (inQuiet && !options.force) {
     const err = new Error('QUIET_HOURS');
@@ -431,13 +566,20 @@ async function sendOne(userId, userEmail, recipientId, attachFiles, options) {
     err.quietEnd = userDoc.quietEnd;
     throw err;
   }
-
+  // Human-like delay
+  if (userDoc.lastSendTime && !options.skipDelay) {
+    const last = userDoc.lastSendTime._seconds ? userDoc.lastSendTime._seconds * 1000 : new Date(userDoc.lastSendTime).getTime();
+    const elapsed = Date.now() - last;
+    const minGap = 8000 + Math.floor(Math.random() * 7000);
+    if (elapsed < minGap) {
+      await new Promise(resolve => setTimeout(resolve, minGap - elapsed));
+    }
+  }
   const client = setUserOAuth(userDoc.tokens);
   const gmail = google.gmail({ version: 'v1', auth: client });
   const rDoc = await db.collection('users').doc(userId).collection('recipients').doc(recipientId).get();
   if (!rDoc.exists) throw new Error('Recipient not found');
   const rec = rDoc.data();
-
   let tpl;
   if (rec.templateId) {
     const t = await db.collection('users').doc(userId).collection('templates').doc(rec.templateId).get();
@@ -448,17 +590,14 @@ async function sendOne(userId, userEmail, recipientId, attachFiles, options) {
     if (!tS.empty) tpl = tS.docs[0].data();
   }
   if (!tpl) throw new Error('No email template found. Please create one first.');
-
   const sig = userDoc.signature || '';
   const body = tpl.body.replace(/\n/g, '<br>');
   const sigH = sig ? '<div style="margin-top:18px;padding-top:14px;border-top:1px solid #e5e7eb;">' + sig + '</div>' : '';
   const full = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;">' + body + sigH + '</div>';
-
   const trackToken = crypto.randomBytes(16).toString('hex');
   await db.collection('users').doc(userId).collection('recipients').doc(recipientId).update({ trackToken });
   const tUrl = (process.env.BACKEND_URL || 'http://localhost:3000') + '/track/' + recipientId + '?u=' + userId + '&t=' + trackToken;
-  const pixel = '<img src="' + tUrl + '" width="1" height="1" style="display:none">';
-
+  const pixel = '<img src="' + tUrl + '" width="1" height="1" alt="" style="border:0;outline:none;text-decoration:none;display:block;width:1px;height:1px">';
   const attachments = [];
   if (attachFiles !== false) {
     const fS = await db.collection('users').doc(userId).collection('files').get();
@@ -471,30 +610,26 @@ async function sendOne(userId, userEmail, recipientId, attachFiles, options) {
       } catch (e) {}
     }
   }
-
-  const raw = buildMime(userEmail, rec.email, tpl.subject, full + pixel, attachments);
+  const raw = buildMime(userDoc.name || 'MailFlow User', userEmail, rec.email, tpl.subject, full + pixel, attachments);
   await gmail.users.messages.send({ userId: 'me', requestBody: { raw } });
-
   await db.collection('users').doc(userId).collection('emailLog').add({
     recipientId, recipientEmail: rec.email, company: rec.company || '',
     subject: tpl.subject, sentAt: new Date(), attachmentsCount: attachments.length
   });
-
   await db.collection('users').doc(userId).collection('recipients').doc(recipientId).update({
     status: 'Sent', sentAt: new Date(), lastSentAt: new Date()
   });
-
+  await db.collection('users').doc(userId).update({ lastSendTime: new Date() });
   const today = new Date().toISOString().split('T')[0];
   const sRef = db.collection('users').doc(userId).collection('stats').doc(today);
   const sDoc = await sRef.get();
   await sRef.set({ sent: ((sDoc.exists ? sDoc.data().sent : 0) || 0) + 1, updatedAt: new Date() }, { merge: true });
-
   return rec.email;
 }
 
 app.post('/api/send', authRequired, async (req, res) => {
   try {
-    const e = await sendOne(req.session.user.id, req.session.user.email, req.body.recipientId, req.body.attachFiles !== false, { force: req.body.force === true });
+    const e = await sendOne(req.session.user.id, req.session.user.email, req.body.recipientId, req.body.attachFiles !== false, { force: req.body.force === true, skipDelay: req.body.skipDelay === true });
     res.json({ ok: true, email: e });
   } catch (err) {
     if (err.code === 'QUIET_HOURS') return res.json({ ok: false, error: 'QUIET_HOURS', quietEnd: err.quietEnd });
@@ -504,7 +639,7 @@ app.post('/api/send', authRequired, async (req, res) => {
 
 app.post('/api/resend', authRequired, async (req, res) => {
   try {
-    const e = await sendOne(req.session.user.id, req.session.user.email, req.body.recipientId, req.body.attachFiles !== false, { force: req.body.force === true });
+    const e = await sendOne(req.session.user.id, req.session.user.email, req.body.recipientId, req.body.attachFiles !== false, { force: req.body.force === true, skipDelay: req.body.skipDelay === true });
     res.json({ ok: true, email: e });
   } catch (err) {
     if (err.code === 'QUIET_HOURS') return res.json({ ok: false, error: 'QUIET_HOURS', quietEnd: err.quietEnd });
@@ -515,8 +650,7 @@ app.post('/api/resend', authRequired, async (req, res) => {
 // ========== TRACKING ==========
 app.get('/track/:id', async (req, res) => {
   try {
-    const uid = req.query.u;
-    const token = req.query.t;
+    const uid = req.query.u; const token = req.query.t;
     if (uid && token) {
       const rDoc = await db.collection('users').doc(uid).collection('recipients').doc(req.params.id).get();
       if (rDoc.exists && rDoc.data().trackToken === token) {
@@ -528,7 +662,7 @@ app.get('/track/:id', async (req, res) => {
   res.set('Content-Type', 'image/gif'); res.send(px);
 });
 
-// ========== SIGNATURE ==========
+// ========== SIGNATURE & PREFS ==========
 app.get('/api/signature', authRequired, async (req, res) => {
   try { const d = await getUserData(req.session.user.id); res.json({ ok: true, signature: d.signature || '', fields: d.sigFields || {} }); }
   catch (err) { res.json({ ok: false, error: err.message }); }
@@ -542,7 +676,6 @@ app.post('/api/signature', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ========== PREFS ==========
 app.get('/api/prefs', authRequired, async (req, res) => {
   try {
     const d = await getUserData(req.session.user.id);
@@ -551,7 +684,7 @@ app.get('/api/prefs', authRequired, async (req, res) => {
       quietStart: d.quietStart !== undefined ? d.quietStart : 22,
       quietEnd: d.quietEnd !== undefined ? d.quietEnd : 7,
       autoSend: d.autoSend === true,
-      autoSendBatchSize: d.autoSendBatchSize !== undefined ? d.autoSendBatchSize : 25,
+      autoSendBatchSize: d.autoSendBatchSize !== undefined ? d.autoSendBatchSize : 5,
       appAccountId: d.appAccountId || '',
       totalAutoSent: d.totalAutoSent || 0
     }});
@@ -562,15 +695,11 @@ app.post('/api/prefs', authRequired, async (req, res) => {
   try {
     const { quietEnabled, quietStart, quietEnd, autoSend, autoSendBatchSize } = req.body;
     let batchSize = Number(autoSendBatchSize);
-    if (isNaN(batchSize) || batchSize < 1) batchSize = 25;
+    if (isNaN(batchSize) || batchSize < 1) batchSize = 5;
     if (batchSize > 100) batchSize = 100;
     await db.collection('users').doc(req.session.user.id).update({
-      quietEnabled: !!quietEnabled,
-      quietStart: Number(quietStart),
-      quietEnd: Number(quietEnd),
-      autoSend: !!autoSend,
-      autoSendBatchSize: batchSize,
-      updatedAt: new Date()
+      quietEnabled: !!quietEnabled, quietStart: Number(quietStart), quietEnd: Number(quietEnd),
+      autoSend: !!autoSend, autoSendBatchSize: batchSize, updatedAt: new Date()
     });
     res.json({ ok: true });
   } catch (err) { res.json({ ok: false, error: err.message }); }
@@ -596,17 +725,16 @@ app.get('/api/stats', authRequired, async (req, res) => {
 // ========== AUTO-SEND ==========
 async function runAutoSendForUser(userId, userEmail, userDoc) {
   if (isQuietHours(userDoc)) return { skipped: true, reason: 'quiet_hours' };
-  const batchSize = Number(userDoc.autoSendBatchSize) || 25;
+  const batchSize = Number(userDoc.autoSendBatchSize) || 5;
   const pendingSnap = await db.collection('users').doc(userId).collection('recipients')
     .where('status', '==', 'Pending').limit(batchSize).get();
   if (pendingSnap.empty) return { sent: 0, failed: 0, reason: 'no_pending' };
-
   let sent = 0, failed = 0;
   for (const rDoc of pendingSnap.docs) {
     try {
       await sendOne(userId, userEmail, rDoc.id, true, { force: true });
       sent++;
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await new Promise(resolve => setTimeout(resolve, 10000 + Math.floor(Math.random() * 10000)));
     } catch (e) {
       failed++;
       if (e.code === 'QUIET_HOURS') break;
@@ -621,7 +749,6 @@ async function runAutoSendForUser(userId, userEmail, userDoc) {
   return { sent, failed };
 }
 
-// Cron endpoint - External service calls this
 app.get('/api/cron/auto-send', async (req, res) => {
   try {
     const secret = req.query.secret || req.headers['x-cron-secret'];
@@ -635,16 +762,12 @@ app.get('/api/cron/auto-send', async (req, res) => {
         const result = await runAutoSendForUser(uD.id, u.email, u);
         if (result.skipped) skipped++;
         else if (result.sent > 0) { totalSent += result.sent; totalUsers++; }
-      } catch (e) {
-        errors++;
-        console.error('Auto-send error for', u.email, e.message);
-      }
+      } catch (e) { errors++; console.error('Auto-send error for', u.email, e.message); }
     }
     res.json({ ok: true, totalSent, totalUsers, skipped, errors, timestamp: new Date().toISOString() });
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// Client-side hourly check (backup when dashboard open)
 app.post('/api/auto-send-check', authRequired, async (req, res) => {
   try {
     const userDoc = await getUserData(req.session.user.id);
@@ -671,18 +794,14 @@ app.get('/api/admin/dashboard', adminRequired, async (req, res) => {
       const openedSnap = await db.collection('users').doc(uD.id).collection('recipients').where('status', '==', 'Opened').count().get();
       const pendingSnap = await db.collection('users').doc(uD.id).collection('recipients').where('status', '==', 'Pending').count().get();
       const sendsSnap = await db.collection('users').doc(uD.id).collection('emailLog').count().get();
-      const t = totalSnap.data().count;
-      const s = sentSnap.data().count;
-      const o = openedSnap.data().count;
-      const p = pendingSnap.data().count;
+      const t = totalSnap.data().count; const s = sentSnap.data().count;
+      const o = openedSnap.data().count; const p = pendingSnap.data().count;
       const sends = sendsSnap.data().count;
       tE += t; tS += s; tO += o; tP += p; tSends += sends;
       users.push({
         id: uD.id, email: u.email, name: u.name, picture: u.picture || '',
-        appAccountId: u.appAccountId || 'N/A',
-        autoSend: !!u.autoSend,
-        autoSendBatchSize: u.autoSendBatchSize || 25,
-        totalAutoSent: u.totalAutoSent || 0,
+        appAccountId: u.appAccountId || 'N/A', autoSend: !!u.autoSend,
+        autoSendBatchSize: u.autoSendBatchSize || 5, totalAutoSent: u.totalAutoSent || 0,
         createdAt: u.createdAt ? u.createdAt.toDate().toISOString() : '',
         hasSignature: !!u.signature, hasLogo: !!u.logoUrl,
         total: t, sent: s, opened: o, pending: p, totalSends: sends
@@ -722,7 +841,6 @@ app.get('/api/admin/all-emails', adminRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ========== SPA FALLBACK ==========
 app.use((req, res, next) => {
   if (req.method === 'GET' && !req.path.startsWith('/api') && !req.path.startsWith('/auth') && !req.path.startsWith('/track')) {
     return res.sendFile(path.join(__dirname, 'public', 'index.html'));

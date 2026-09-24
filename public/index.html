@@ -191,6 +191,8 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .bulk-help .desc{font-size:12px;color:#94a3b8;line-height:1.7}
 .bulk-help .example{background:#0a0e1a;border:1px solid #1e293b;border-radius:8px;padding:10px 12px;margin-top:10px;font-family:'Courier New',monospace;font-size:12px;color:#86efac;line-height:1.8}
 .bulk-help code{background:rgba(56,189,248,.15);color:#7dd3fc;padding:1px 6px;border-radius:4px;font-size:11px;font-family:'Courier New',monospace}
+.bulk-area{width:100%;min-height:240px;background:#0a0e1a;color:#e2e8f0;border:1px solid #1e293b;border-radius:10px;padding:16px;font-family:'Courier New',monospace;font-size:13px;resize:none;outline:none;transition:.15s;line-height:1.8}
+.bulk-area:focus{border-color:#38bdf8;box-shadow:0 0 0 3px rgba(56,189,248,.15)}
 .bulk-preview-wrap{margin-top:14px;border:1px solid #1e293b;border-radius:12px;overflow:hidden;display:none}
 .bulk-preview-wrap.show{display:block}
 .bulk-preview-head{background:rgba(10,14,26,.6);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1e293b;flex-wrap:wrap;gap:8px}
@@ -223,10 +225,40 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .batch-box.show{display:block}
 .batch-marks{display:flex;justify-content:space-between;font-size:11px;color:#64748b;margin-top:6px}
 .app-id-pill{background:linear-gradient(135deg,#38bdf8,#6366f1);color:white;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:0.5px;font-family:'Courier New',monospace}
+.save-btn{width:100%;margin-top:20px;padding:16px;font-size:16px;font-weight:700;border-radius:12px;background:linear-gradient(135deg,#22c55e,#16a34a);box-shadow:0 8px 24px rgba(34,197,94,.35);letter-spacing:0.5px}
+.save-btn:hover{box-shadow:0 12px 32px rgba(34,197,94,.5);transform:translateY(-2px)}
+
+/* LOGO WARNING */
+.logo-warning{background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(239,68,68,.1));border:1px solid rgba(245,158,11,.4);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:flex-start;gap:10px}
+.logo-warning .warn-ic{font-size:20px;flex-shrink:0;line-height:1.2}
+.logo-warning .warn-text{font-size:12px;color:#fcd34d;line-height:1.6}
+.logo-warning .warn-text b{color:#fff}
+
+/* SPAM CHECKER */
+.spam-checker{margin-top:14px;padding:14px;background:#0a0e1a;border:1px solid #1e293b;border-radius:12px}
+.spam-checker .title{font-size:12px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.spam-meter{height:8px;background:#1e293b;border-radius:8px;overflow:hidden;margin-bottom:10px}
+.spam-meter-fill{height:100%;width:0;transition:.5s;border-radius:8px}
+.spam-meter-fill.safe{background:linear-gradient(90deg,#22c55e,#16a34a)}
+.spam-meter-fill.warn{background:linear-gradient(90deg,#f59e0b,#ef4444)}
+.spam-meter-fill.danger{background:linear-gradient(90deg,#ef4444,#dc2626)}
+.spam-result{font-size:12px;color:#94a3b8;line-height:1.6}
+.spam-result .word-badge{display:inline-block;background:rgba(239,68,68,.15);color:#fca5a5;padding:2px 8px;border-radius:6px;font-size:11px;margin:2px;font-family:'Courier New',monospace}
+.spam-result .ok-msg{color:#86efac}
+
+/* WARM-UP SCHEDULE */
+.warmup-schedule{margin-top:16px;overflow-x:auto;border-radius:10px}
+.warmup-schedule table{width:100%;border-collapse:collapse;font-size:12px}
+.warmup-schedule th{text-align:left;background:rgba(10,14,26,.6);color:#94a3b8;font-size:10px;text-transform:uppercase;padding:10px 12px;border-bottom:1px solid #1e293b;letter-spacing:.5px;font-weight:700}
+.warmup-schedule td{padding:10px 12px;border-bottom:1px solid #0f172a;color:#cbd5e1}
+.warmup-schedule tr.active td{background:rgba(56,189,248,.08)}
+.warmup-schedule tr.active td:first-child{color:#38bdf8;font-weight:700}
+.warmup-schedule .rate-badge{display:inline-block;background:rgba(56,189,248,.15);color:#7dd3fc;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700}
 </style>
 </head>
 <body>
 
+<!-- ============ LOGIN VIEW ============ -->
 <div id="loginView" class="auth-wrap">
   <div class="auth-card">
     <div class="brand-logo">⚡</div>
@@ -257,6 +289,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
   </div>
 </div>
 
+<!-- ============ APP VIEW ============ -->
 <div id="appView" class="hidden">
   <div class="topbar">
     <div class="logo-top">⚡ MailFlow Pro</div>
@@ -270,6 +303,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
   </div>
   <div class="maintabs">
     <div class="maintab active" id="tabMy" onclick="switchMain('my')">📊 Dashboard</div>
+    <div class="maintab" id="tabTest" onclick="switchMain('test')">🧪 Test Center</div>
     <div class="maintab hidden" id="tabAdmin" onclick="switchMain('admin')">👑 Admin Panel</div>
   </div>
   <div class="container" id="myView">
@@ -277,7 +311,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
       <span class="icn">🌙</span>
       <div class="info">
         <div class="ttl">Quiet Hours Active</div>
-        <div class="dsc">Auto-send paused hai. Manual send ke liye confirmation aayega. <span id="quietMsg"></span></div>
+        <div class="dsc">Auto-send paused. A confirmation popup will appear for manual sends. <span id="quietMsg"></span></div>
       </div>
     </div>
     <div class="stats">
@@ -290,34 +324,44 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
     <div class="panel">
       <h2>📊 Live Gmail Quota <span id="quotaSub">Live from your Gmail account</span></h2>
       <div class="info-box">
-        <div class="row"><span class="k">Sent today (last 24h):</span><span class="v" id="quotaSent">0 / 500</span></div>
-        <div class="row"><span class="k">Remaining:</span><span class="v" id="quotaRemaining">500</span></div>
+        <div class="row"><span class="k">Sent today (last 24h):</span><span class="v" id="quotaSent">0 / 100</span></div>
+        <div class="row"><span class="k">Remaining:</span><span class="v" id="quotaRemaining">100</span></div>
       </div>
       <div class="quota-bar"><div class="quota-fill" id="quotaFill"></div></div>
     </div>
+
+    <!-- WARM-UP SCHEDULE -->
     <div class="panel">
-      <h2>⚙️ Automation Settings <span>Server 24/7 chalta hai — browser band ho ya on</span></h2>
+      <h2>🔥 Warm-up Schedule <span>Follow this to avoid spam folder</span></h2>
+      <div id="warmupContent">
+        <div class="empty">Loading...</div>
+      </div>
+    </div>
+
+    <!-- AUTOMATION SETTINGS -->
+    <div class="panel">
+      <h2>⚙️ Automation Settings <span>Server runs 24/7 — even if browser is closed</span></h2>
       <div class="toggle-row">
-        <div><div class="lbl">🤖 Auto-Send Emails</div><div class="sub">Har ghante automatically pending emails bhejega (browser band ho tab bhi)</div></div>
+        <div><div class="lbl">🤖 Auto-Send Emails</div><div class="sub">Automatically send pending emails every hour (works even when browser is closed)</div></div>
         <label class="switch"><input type="checkbox" id="autoSendToggle"><span class="slider"></span></label>
       </div>
       <div class="batch-box" id="batchSizeBox">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
           <div>
             <div class="lbl" style="font-size:14px; color:#e2e8f0; font-weight:600">📊 Emails Per Hour</div>
-            <div class="sub" style="font-size:12px; color:#94a3b8; margin-top:2px">Har ghante kitni emails bhejega (1-100)</div>
+            <div class="sub" style="font-size:12px; color:#94a3b8; margin-top:2px">How many emails to send per hour (1-100)</div>
           </div>
-          <div class="batch-display"><span id="batchSizeDisplay">25</span></div>
+          <div class="batch-display"><span id="batchSizeDisplay">5</span></div>
         </div>
-        <input type="range" id="batchSizeRange" min="1" max="100" value="25" step="1" class="batch-slider" oninput="updateBatchSize(this.value)">
+        <input type="range" id="batchSizeRange" min="1" max="100" value="5" step="1" class="batch-slider" oninput="updateBatchSize(this.value)">
         <div class="batch-marks"><span>1</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
         <div class="info-box" style="margin-top:12px">
-          <div class="row"><span class="k">Auto-sent total:</span><span class="v" id="totalAutoSent">0</span></div>
-          <div class="row"><span class="k">Next run:</span><span class="v">Har ghante ke start par</span></div>
+          <div class="row"><span class="k">Total auto-sent:</span><span class="v" id="totalAutoSent">0</span></div>
+          <div class="row"><span class="k">Next run:</span><span class="v">At the start of every hour</span></div>
         </div>
       </div>
       <div class="toggle-row" style="margin-top:14px">
-        <div><div class="lbl">🌙 Quiet Hours</div><div class="sub">In hours mein email nahi jayegi (auto + manual dono)</div></div>
+        <div><div class="lbl">🌙 Quiet Hours</div><div class="sub">Do not send emails during these hours (auto + manual)</div></div>
         <label class="switch"><input type="checkbox" id="quietToggle"><span class="slider"></span></label>
       </div>
       <div id="quietTimesBox" style="margin-top:14px">
@@ -326,17 +370,27 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
           <div class="field" style="margin:0"><label>☀️ End</label><select id="quietEndSel"></select></div>
         </div>
       </div>
-      <button class="btn ghost" onclick="savePrefs()" style="margin-top:16px">💾 Save Settings</button>
+      <button class="btn save-btn" onclick="savePrefs()">💾 Save Settings</button>
     </div>
+
+    <!-- SIGNATURE -->
     <div class="panel">
       <h2>✍️ My Signature <span>Logo + details</span></h2>
+
+      <div class="logo-warning">
+        <div class="warn-ic">⚠️</div>
+        <div class="warn-text">
+          <b>Warning:</b> Adding a logo or large image may increase the chance of your email landing in the <b>Spam folder</b>. If you care about inbox placement, <b>skip the logo</b> or use a very small one.
+        </div>
+      </div>
+
       <div class="upload-area">
         <input type="file" id="logoInput" accept="image/*">
         <label for="logoInput">
           <div class="preview-box"><div class="ph" id="logoPh">📷</div><img id="logoImg" src="" style="display:none" alt=""></div>
           <div class="upload-info">
             <div class="t" id="logoTitle">Click to upload company logo</div>
-            <div class="s" id="logoSub">PNG · JPG · JPEG · GIF · SVG · WEBP — max 2MB</div>
+            <div class="s" id="logoSub">PNG · JPG · JPEG · GIF · SVG · WEBP — max 2MB (Optional)</div>
           </div>
         </label>
       </div>
@@ -360,6 +414,8 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
         <div class="sig-preview-canvas" id="sigPreviewContent"></div>
       </div>
     </div>
+
+    <!-- ATTACHMENTS -->
     <div class="panel">
       <h2>📎 Attachments <span>Multiple files allowed</span></h2>
       <div class="upload-area">
@@ -374,18 +430,29 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
       </div>
       <div id="filesList"></div>
     </div>
+
+    <!-- TEMPLATES -->
     <div class="panel">
       <h2>📝 Email Templates</h2>
       <div id="tplList"></div>
       <div style="background:#0a0e1a;border:1px dashed #334155;border-radius:12px;padding:16px;margin-top:14px">
         <input type="hidden" id="tplEditId">
         <div class="field"><label>Template Name</label><input type="text" id="tplName" placeholder="Enter template name"></div>
-        <div class="field"><label>Subject</label><input type="text" id="tplSubject" placeholder="Enter email subject"></div>
-        <div class="field"><label>Body</label><textarea id="tplBody" rows="6" placeholder="Enter email body content"></textarea></div>
-        <button class="btn" onclick="saveTpl()">💾 Save Template</button>
+        <div class="field"><label>Subject</label><input type="text" id="tplSubject" placeholder="Enter email subject" oninput="runSpamCheck()"></div>
+        <div class="field"><label>Body</label><textarea id="tplBody" rows="6" placeholder="Enter email body content" oninput="runSpamCheck()"></textarea></div>
+        <div class="spam-checker">
+          <div class="title">🛡️ Spam Content Checker</div>
+          <div class="spam-meter"><div class="spam-meter-fill safe" id="spamMeterFill"></div></div>
+          <div class="spam-result" id="spamResult">
+            <span class="ok-msg">✅ Content looks clean.</span>
+          </div>
+        </div>
+        <button class="btn" onclick="saveTpl()" style="margin-top:14px">💾 Save Template</button>
         <button class="btn ghost" onclick="cancelTpl()" style="margin-left:6px">Cancel</button>
       </div>
     </div>
+
+    <!-- RECIPIENTS -->
     <div class="panel">
       <h2>➕ Add Recipients</h2>
       <div class="field"><label>Template</label><select id="tplSelect"></select></div>
@@ -401,7 +468,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
       <div id="bulkTab" class="hidden">
         <div class="bulk-help">
           <div class="title">📋 Paste Recipients (Company Name Optional)</div>
-          <div class="desc">Har line mein ek recipient likhein. <b style="color:#86efac">Company name optional hai!</b> Sirf email bhi de sakte hain. Company aur email ko <code>comma (,)</code>, <code>tab</code>, ya <code>Company &lt;email&gt;</code> format se alag karein.</div>
+          <div class="desc">Enter one recipient per line. <b style="color:#86efac">Company name is optional!</b> You can just provide the email. Separate company and email using <code>comma (,)</code>, <code>tab</code>, or <code>Company &lt;email&gt;</code> format.</div>
           <div class="example">
             ✅ hr@google.com<br>
             ✅ Google Inc, hr@google.com<br>
@@ -427,6 +494,8 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
         </div>
       </div>
     </div>
+
+    <!-- TRACKING DASHBOARD -->
     <div class="panel">
       <h2>📊 Tracking Dashboard <span id="trackCount"></span></h2>
       <div class="filter-bar">
@@ -458,6 +527,8 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
       </div>
       <div id="tableWrap" class="tbl-wrap"></div>
     </div>
+
+    <!-- EMAIL HISTORY -->
     <div class="panel">
       <h2>📧 Email History <span>All sent emails</span></h2>
       <div class="filter-bar">
@@ -473,6 +544,63 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
       <div id="myEmailsWrap" class="tbl-wrap"></div>
     </div>
   </div>
+
+  <!-- TEST CENTER VIEW -->
+  <div class="container hidden" id="testView">
+    <div class="panel" style="background:linear-gradient(135deg,rgba(34,197,94,.05),rgba(56,189,248,.05));border-color:rgba(34,197,94,.3)">
+      <h2>🧪 Test Center <span>Test emails before sending to real recipients</span></h2>
+      <div style="font-size:13px;color:#94a3b8;line-height:1.7">
+        This section lets you test how your emails will look. Send a test to your other email ID and check whether it lands in <b style="color:#86efac">Inbox</b> or <b style="color:#fca5a5">Spam</b>. Mark the result below to track your deliverability.
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>🔥 Warm-up Status <span>Build Gmail trust</span></h2>
+      <div id="warmupContentTest">
+        <div class="empty">Loading...</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>📤 Send Test Email</h2>
+      <div class="field">
+        <label>Test Email Address</label>
+        <input type="email" id="testEmail" placeholder="your-other-email@gmail.com">
+      </div>
+      <div class="field">
+        <label>Subject</label>
+        <input type="text" id="testSubject" placeholder="Test Subject" value="Quick Test">
+      </div>
+      <div class="field">
+        <label>Body (Optional)</label>
+        <textarea id="testBody" rows="4" placeholder="Test message..."></textarea>
+      </div>
+      <div class="toggle-row" style="border:none;padding:8px 0">
+        <div><div class="lbl" style="font-size:13px">Use my latest template</div></div>
+        <label class="switch"><input type="checkbox" id="useTestTemplate"><span class="slider"></span></label>
+      </div>
+      <button class="btn" onclick="sendTestEmail()" style="margin-top:12px;width:100%">📤 Send Test Email</button>
+    </div>
+
+    <div class="panel">
+      <h2>📬 Email Placement Checker <span>Inbox vs Spam</span></h2>
+      <div class="bulk-help" style="margin-bottom:14px">
+        <div class="title">📌 How to use this</div>
+        <div class="desc">
+          1. Send a test email (above)<br>
+          2. Check your test ID's <b style="color:#cbd5e1">Inbox</b> and <b style="color:#cbd5e1">Spam</b> folders<br>
+          3. Mark the result using the buttons below<br>
+          4. Your data will be saved for tracking
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+        <button class="btn ghost small" onclick="loadTestHistory()">🔄 Refresh</button>
+      </div>
+      <div id="testHistoryWrap" class="tbl-wrap"></div>
+    </div>
+  </div>
+
+  <!-- ADMIN VIEW -->
   <div class="container hidden" id="adminView">
     <div class="stats">
       <div class="stat s1"><div class="label">Users</div><div class="value" id="adTotalUsers">0</div></div>
@@ -564,6 +692,7 @@ function enterApp(){
   loadQuota();
   loadMyEmails();
   checkQuietStatus();
+  loadWarmupStatus();
   startHourlyAutoSend();
   if(POLL_TIMER) clearInterval(POLL_TIMER);
   POLL_TIMER = setInterval(function(){
@@ -574,14 +703,15 @@ function enterApp(){
 }
 function logout(){api('/api/logout','POST').then(function(){location.reload();});}
 function switchMain(t){
-  if(t==='my'){$('tabMy').classList.add('active');$('tabAdmin').classList.remove('active');$('myView').classList.remove('hidden');$('adminView').classList.add('hidden');}
-  else{$('tabAdmin').classList.add('active');$('tabMy').classList.remove('active');$('adminView').classList.remove('hidden');$('myView').classList.add('hidden');loadAdmin();}
+  if(t==='my'){$('tabMy').classList.add('active');$('tabTest').classList.remove('active');$('tabAdmin').classList.remove('active');$('myView').classList.remove('hidden');$('testView').classList.add('hidden');$('adminView').classList.add('hidden');}
+  else if(t==='test'){$('tabTest').classList.add('active');$('tabMy').classList.remove('active');$('tabAdmin').classList.remove('active');$('testView').classList.remove('hidden');$('myView').classList.add('hidden');$('adminView').classList.add('hidden');loadWarmupStatus();loadTestHistory();}
+  else{$('tabAdmin').classList.add('active');$('tabMy').classList.remove('active');$('tabTest').classList.remove('active');$('adminView').classList.remove('hidden');$('myView').classList.add('hidden');$('testView').classList.add('hidden');loadAdmin();}
 }
 function checkQuietStatus(){
   api('/api/quiet-status').then(function(r){
     if(!r.ok) return;
     var b = $('quietBanner');
-    if(r.inQuiet){b.classList.add('show');$('quietMsg').innerText = 'Quiet hours ' + r.quietEnd + ':00 tak chalenge.';}
+    if(r.inQuiet){b.classList.add('show');$('quietMsg').innerText = 'Quiet hours active until ' + r.quietEnd + ':00.';}
     else {b.classList.remove('show');}
   });
 }
@@ -612,7 +742,7 @@ function loadPrefs(){
     $('quietEndSel').value = p.quietEnd;
     $('quietTimesBox').style.display = p.quietEnabled ? 'block' : 'none';
     $('batchSizeBox').classList.toggle('show', p.autoSend);
-    var bs = p.autoSendBatchSize || 25;
+    var bs = p.autoSendBatchSize || 5;
     $('batchSizeRange').value = bs;
     $('batchSizeDisplay').innerText = bs;
     $('totalAutoSent').innerText = p.totalAutoSent || 0;
@@ -627,7 +757,7 @@ function savePrefs(){
     quietEnabled: $('quietToggle').checked,
     quietStart: Number($('quietStartSel').value),
     quietEnd: Number($('quietEndSel').value)
-  }).then(function(r){ if(r.ok) toast('Settings saved'); else toast('Error: '+r.error,'err'); });
+  }).then(function(r){ if(r.ok) toast('✅ Settings saved successfully!'); else toast('Error: '+r.error,'err'); });
 }
 function loadQuota(){
   api('/api/quota').then(function(r){
@@ -638,6 +768,120 @@ function loadQuota(){
     $('quotaFill').style.width=Math.min(100,pct)+'%';
     if(pct>80)$('quotaFill').classList.add('warn');else $('quotaFill').classList.remove('warn');
   });
+}
+function loadWarmupStatus() {
+  api('/api/warmup/status').then(function(r) {
+    if (!r.ok) { 
+      var html = '<div class="empty">Error loading warm-up status</div>';
+      $('warmupContent').innerHTML = html;
+      var tc = $('warmupContentTest'); if(tc) tc.innerHTML = html;
+      return;
+    }
+    var colors = {'Very Early':'#ef4444','Early Warm-up':'#f59e0b','Mid Warm-up':'#f59e0b','Late Warm-up':'#22c55e','Advanced':'#22c55e','Fully Warmed':'#38bdf8'};
+    var color = colors[r.stage] || '#38bdf8';
+    var percent = Math.min(100, (r.daysSinceStart / 30) * 100);
+    var h = '';
+    h += '<div style="text-align:center;padding:20px 0">';
+    h += '<div style="font-size:48px;margin-bottom:8px">' + (r.daysLeft === 0 ? '🔥' : '🌱') + '</div>';
+    h += '<div style="font-size:24px;font-weight:800;color:' + color + ';margin-bottom:4px">' + r.stage + '</div>';
+    h += '<div style="font-size:13px;color:#94a3b8;margin-bottom:16px">Day ' + r.daysSinceStart + ' of warm-up · Week ' + r.week + '</div>';
+    h += '<div class="quota-bar" style="height:12px"><div class="quota-fill" style="width:' + percent + '%;background:linear-gradient(90deg,#38bdf8,' + color + ')"></div></div>';
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px">';
+    h += '<div class="info-box" style="margin:0"><div class="row"><span class="k">Recommended rate:</span><span class="v">' + r.recommendedRate + ' / hour</span></div></div>';
+    h += '<div class="info-box" style="margin:0"><div class="row"><span class="k">Days remaining:</span><span class="v">' + r.daysLeft + '</span></div></div>';
+    h += '</div>';
+    h += '<div style="margin-top:14px;font-size:12px;color:#64748b;line-height:1.6;text-align:left">';
+    if (r.daysLeft === 0) { h += '✅ <b style="color:#22c55e">Your account is fully warmed!</b> You can now send 50+ emails/hour.'; }
+    else { h += '⚠️ <b>Tip:</b> Set your "Emails Per Hour" slider to <b style="color:#38bdf8">' + r.recommendedRate + '</b> to avoid spam.'; }
+    h += '</div></div>';
+
+    // Schedule table
+    h += '<div class="warmup-schedule"><table><thead><tr><th>Week</th><th>Days</th><th>Rate</th><th>Recommendation</th></tr></thead><tbody>';
+    var currentWeek = r.week;
+    r.schedule.forEach(function(s){
+      var active = (s.week === currentWeek) ? ' class="active"' : '';
+      h += '<tr' + active + '>';
+      h += '<td><b>Week ' + s.week + '</b></td>';
+      h += '<td>' + s.days + '</td>';
+      h += '<td><span class="rate-badge">' + s.rate + ' / hour</span></td>';
+      h += '<td>' + s.note + '</td>';
+      h += '</tr>';
+    });
+    h += '</tbody></table></div>';
+
+    $('warmupContent').innerHTML = h;
+    var tc = $('warmupContentTest'); if(tc) tc.innerHTML = h;
+  });
+}
+function runSpamCheck() {
+  var subject = $('tplSubject').value;
+  var body = $('tplBody').value;
+  api('/api/spam-check?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body)).then(function(r) {
+    if (!r.ok) return;
+    var fill = $('spamMeterFill');
+    var result = $('spamResult');
+    fill.style.width = r.score + '%';
+    fill.className = 'spam-meter-fill ' + (r.score === 0 ? 'safe' : (r.score < 40 ? 'warn' : 'danger'));
+    var msg = '';
+    if (r.safe) {
+      msg = '<span class="ok-msg">✅ Content looks clean.</span>';
+    } else {
+      if (r.found.length) msg += '<div style="margin-bottom:6px">⚠️ Spam trigger words: ' + r.found.map(function(w){return '<span class="word-badge">'+esc(w)+'</span>';}).join('') + '</div>';
+      if (r.hasTooManyLinks) msg += '<div>⚠️ Too many links (keep under 3)</div>';
+      if (r.hasExclamation) msg += '<div>⚠️ Too many exclamation marks in subject</div>';
+      if (r.isAllCaps) msg += '<div>⚠️ Subject is in ALL CAPS</div>';
+    }
+    result.innerHTML = msg;
+  });
+}
+function sendTestEmail() {
+  var email = $('testEmail').value.trim();
+  var subject = $('testSubject').value.trim();
+  var body = $('testBody').value.trim();
+  var useTemplate = $('useTestTemplate').checked;
+  if (!email) return toast('Please enter test email address', 'err');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast('Invalid email address', 'err');
+  toast('Sending test email...');
+  api('/api/test/send', 'POST', { testEmail: email, subject: subject || 'Quick Test', body: body, useTemplate: useTemplate }).then(function(r) {
+    if (r.ok) { toast('✅ Test email sent to ' + email); $('testEmail').value=''; $('testBody').value=''; loadTestHistory(); }
+    else { toast('Error: ' + r.error, 'err'); }
+  });
+}
+function loadTestHistory() {
+  api('/api/test/history').then(function(r) {
+    if (!r.ok) return;
+    var w = $('testHistoryWrap');
+    if (!r.tests || !r.tests.length) { w.innerHTML = '<div class="empty"><div class="ico">🧪</div>No test emails yet. Send one above!</div>'; return; }
+    var h = '<table class="data-table"><thead><tr><th>Recipient</th><th>Subject</th><th>Sent At</th><th>Placement</th><th>Actions</th></tr></thead><tbody>';
+    r.tests.forEach(function(t) {
+      var badge = '';
+      if (t.placement === 'INBOX') badge = '<span class="badge opened">✅ Inbox</span>';
+      else if (t.placement === 'SPAM') badge = '<span class="badge pending" style="background:rgba(239,68,68,.15);color:#fca5a5;border-color:rgba(239,68,68,.3)">❌ Spam</span>';
+      else badge = '<span class="badge">⏳ Pending</span>';
+      h += '<tr>';
+      h += '<td style="word-break:break-all">' + esc(t.testEmail) + '</td>';
+      h += '<td style="max-width:250px;font-size:12px">' + esc(t.subject) + '</td>';
+      h += '<td style="font-size:11px">' + fmtDate(t.sentAt) + '</td>';
+      h += '<td>' + badge + '</td>';
+      h += '<td style="white-space:nowrap">';
+      h += '<button class="btn ghost small" onclick="markPlacement(\'' + t.id + '\',\'INBOX\')" style="color:#86efac">✅ Inbox</button> ';
+      h += '<button class="btn ghost small" onclick="markPlacement(\'' + t.id + '\',\'SPAM\')" style="color:#fca5a5">❌ Spam</button> ';
+      h += '<button class="btn danger small" onclick="delTest(\'' + t.id + '\')">✕</button>';
+      h += '</td></tr>';
+    });
+    h += '</tbody></table>';
+    w.innerHTML = h;
+  });
+}
+function markPlacement(id, placement) {
+  api('/api/test/mark/' + id, 'POST', { placement: placement }).then(function(r) {
+    if (r.ok) { toast('Marked as ' + placement); loadTestHistory(); }
+  });
+}
+async function delTest(id) {
+  var ok = await showConfirm({ icon: '🗑', title: 'Delete test log?', message: 'This entry will be removed.', okText: 'Delete' });
+  if (!ok) return;
+  api('/api/test/' + id, 'DELETE').then(function(r) { if (r.ok) { toast('Deleted'); loadTestHistory(); } });
 }
 function loadLogo(){
   api('/api/logo').then(function(r){
@@ -729,8 +973,8 @@ async function delFile(id){var ok=await showConfirm({icon:'🗑',title:'Delete f
 function buildHourSelects(){var s=$('quietStartSel'),e=$('quietEndSel');s.innerHTML='';e.innerHTML='';for(var h=0;h<24;h++){var lbl=(h<12?(h||12):(h-12))+':00 '+(h<12?'AM':'PM');var o1=document.createElement('option');o1.value=h;o1.text=lbl;s.appendChild(o1);var o2=document.createElement('option');o2.value=h;o2.text=lbl;e.appendChild(o2);}}
 function loadTemplates(){api('/api/templates').then(function(r){TEMPLATES=r.templates||[];var w=$('tplList');w.innerHTML='';if(!TEMPLATES.length)w.innerHTML='<div class="empty"><div class="ico">📝</div>No templates yet. Create one below.</div>';else TEMPLATES.forEach(function(t){var d=document.createElement('div');d.className='tpl-card';d.innerHTML='<div class="info"><div class="name">'+esc(t.name)+'</div><div class="sub">'+esc(t.subject)+'</div></div><button onclick="editTpl(\''+t.id+'\')">Edit</button><button class="danger" onclick="delTpl(\''+t.id+'\')">Delete</button>';w.appendChild(d);});var s=$('tplSelect');s.innerHTML='';if(!TEMPLATES.length)s.innerHTML='<option value="">(No templates)</option>';else TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;s.appendChild(o);});});}
 function saveTpl(){var id=$('tplEditId').value,n=$('tplName').value.trim(),s=$('tplSubject').value.trim(),b=$('tplBody').value.trim();if(!n||!s||!b)return toast('Please fill in all fields','err');api('/api/templates','POST',{id:id,name:n,subject:s,body:b}).then(function(r){if(r.ok){toast('Template saved');cancelTpl();loadTemplates();}else toast('Error: '+r.error,'err');});}
-function editTpl(id){var t=TEMPLATES.filter(function(x){return x.id===id;})[0];if(!t)return;$('tplEditId').value=t.id;$('tplName').value=t.name;$('tplSubject').value=t.subject;$('tplBody').value=t.body;}
-function cancelTpl(){$('tplEditId').value='';$('tplName').value='';$('tplSubject').value='';$('tplBody').value='';}
+function editTpl(id){var t=TEMPLATES.filter(function(x){return x.id===id;})[0];if(!t)return;$('tplEditId').value=t.id;$('tplName').value=t.name;$('tplSubject').value=t.subject;$('tplBody').value=t.body;runSpamCheck();}
+function cancelTpl(){$('tplEditId').value='';$('tplName').value='';$('tplSubject').value='';$('tplBody').value='';runSpamCheck();}
 async function delTpl(id){var ok=await showConfirm({icon:'🗑',title:'Delete template?',message:'This template will be deleted.',okText:'Delete'});if(!ok)return;api('/api/templates/'+id,'DELETE').then(function(r){if(r.ok){toast('Template deleted');loadTemplates();}});}
 function addRow(){var w=$('recipients'),d=document.createElement('div');d.className='recip-row';d.innerHTML='<input type="text" placeholder="Company name (optional)"><input type="email" placeholder="hr@company.com"><button class="del" onclick="this.parentNode.remove()">✕</button>';w.appendChild(d);}
 function submitRecipients(){var rows=$('recipients').querySelectorAll('.recip-row'),list=[];rows.forEach(function(r){var i=r.querySelectorAll('input');if(i[1].value.trim())list.push({company:i[0].value.trim(),email:i[1].value.trim()});});if(!list.length)return toast('No email addresses found','err');api('/api/recipients','POST',{list:list,templateId:$('tplSelect').value}).then(function(r){if(r.ok){toast(r.added+' recipients added');$('recipients').innerHTML='';addRow();loadAll();}else toast('Error: '+r.error,'err');});}
@@ -850,7 +1094,7 @@ function sendOne(id, attachFiles, btn){
       if(btn){ btn.disabled = false; btn.innerText = '📤'; }
     } else if(r.error === 'QUIET_HOURS') {
       if(btn){ btn.disabled = false; btn.innerText = '📤'; }
-      showConfirm({icon: '🌙', title: 'Quiet Hours Active', message: 'Aapne quiet hours ON kiye hue hain (till ' + r.quietEnd + ':00). Kya aap phir bhi yeh email bhejna chahte hain?', okText: 'Send Anyway', primary: true}).then(function(force){
+      showConfirm({icon: '🌙', title: 'Quiet Hours Active', message: 'Quiet hours are enabled (until ' + r.quietEnd + ':00). Do you want to send this email anyway?', okText: 'Send Anyway', primary: true}).then(function(force){
         if(!force) return;
         if(btn){ btn.disabled = true; btn.innerText = '⏳'; }
         api('/api/send','POST',{recipientId:id,attachFiles:attachFiles!==false,force:true}).then(function(r2){
