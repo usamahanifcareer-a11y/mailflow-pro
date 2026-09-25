@@ -8,18 +8,16 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --bg:#060912;--bg2:#0a0e1a;--bg3:#0f172a;--panel:rgba(15,23,42,.7);
+  --bg:#060912;--bg2:#0a0e1a;--bg3:#0f172a;--panel:rgba(15,23,42,.72);
   --border:#1a2338;--border2:#243049;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
   --cyan:#38bdf8;--indigo:#6366f1;--purple:#a78bfa;--green:#22c55e;--amber:#f59e0b;--red:#ef4444;--pink:#ec4899;
   --grad:linear-gradient(135deg,#38bdf8,#6366f1,#a78bfa);
-  --shadow:0 20px 60px rgba(0,0,0,.5);
 }
 html,body{min-height:100vh;overflow-x:hidden}
 body{font-family:-apple-system,'Segoe UI',Roboto,'Inter',Arial,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
-body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at top left,rgba(56,189,248,.08),transparent 50%),radial-gradient(ellipse at bottom right,rgba(168,85,247,.08),transparent 50%);pointer-events:none;z-index:0}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at top left,rgba(56,189,248,.07),transparent 50%),radial-gradient(ellipse at bottom right,rgba(168,85,247,.07),transparent 50%);pointer-events:none;z-index:0}
 .hidden{display:none!important}
 button,input,textarea,select{font-family:inherit;font-size:16px}
-input,textarea,select{autocomplete:off}
 ::selection{background:rgba(56,189,248,.3)}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
 @keyframes float{0%,100%{transform:translate(0,0)}50%{transform:translate(-5%,5%)}}
@@ -56,7 +54,7 @@ input,textarea,select{autocomplete:off}
 @media(max-width:480px){.app-id-pill{display:none}}
 
 /* TABS */
-.maintabs{display:flex;gap:4px;padding:6px 14px;background:rgba(10,14,26,.8);border-bottom:1px solid var(--border);overflow-x:auto;position:sticky;top:55px;z-index:99;backdrop-filter:blur(20px);-webkit-overflow-scrolling:touch}
+.maintabs{display:flex;gap:4px;padding:6px 14px;background:rgba(10,14,26,.85);border-bottom:1px solid var(--border);overflow-x:auto;position:sticky;top:55px;z-index:99;backdrop-filter:blur(20px);-webkit-overflow-scrolling:touch}
 .maintabs::-webkit-scrollbar{display:none}
 .maintab{padding:10px 16px;font-size:12px;color:var(--text2);cursor:pointer;font-weight:600;white-space:nowrap;border-radius:8px;transition:.2s;flex-shrink:0}
 .maintab.active{color:var(--cyan);background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2)}
@@ -91,6 +89,7 @@ input,textarea,select{autocomplete:off}
 .field{margin-bottom:12px}
 .field label{display:block;font-size:10px;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.6px;font-weight:700}
 .field input,.field textarea,.field select{width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:11px 13px;font-size:15px;transition:.2s;outline:none;-webkit-appearance:none;appearance:none}
+.field select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
 .field input:focus,.field textarea:focus,.field select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.15);background:#0c1220}
 .field input::placeholder,.field textarea::placeholder{color:#475569}
 .field input[type=number]{-moz-appearance:textfield}
@@ -128,7 +127,7 @@ input:checked+.slider:before{transform:translateX(20px);background:#fff}
 
 /* SEARCH */
 .filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
-.filter-bar select{background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;font-weight:500;cursor:pointer;outline:none}
+.filter-bar select{background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px 34px 10px 12px;font-size:13px;font-weight:500;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
 .search-bar{width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:11px 14px 11px 40px;font-size:14px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:12px center;outline:none;transition:.2s}
 .search-bar:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.1)}
 .filter-bar .search-bar{flex:1;min-width:200px;margin:0}
@@ -151,11 +150,12 @@ table.data-table tbody tr:last-child td{border-bottom:none}
 .badge.interested{background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.3)}
 .badge.not-interested{background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.3)}
 .badge.question{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3)}
-.badge.meeting{background:rgba(168,85,247,.15);color:#c4b5fd;border:1px solid rgba(168,85,247,.3)}
-.badge.auto{background:rgba(56,189,248,.15);color:#7dd3fc;border:1px solid rgba(56,189,248,.3)}
+.badge.meeting-request{background:rgba(168,85,247,.15);color:#c4b5fd;border:1px solid rgba(168,85,247,.3)}
+.badge.auto-reply{background:rgba(56,189,248,.15);color:#7dd3fc;border:1px solid rgba(56,189,248,.3)}
 .badge.spam{background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.3)}
 .badge.newsletter{background:rgba(100,116,139,.15);color:#94a3b8;border:1px solid rgba(100,116,139,.3)}
 .badge.follow-up{background:rgba(236,72,153,.15);color:#f9a8d4;border:1px solid rgba(236,72,153,.3)}
+.badge.other{background:rgba(100,116,139,.15);color:#94a3b8;border:1px solid rgba(100,116,139,.3)}
 
 /* CHECKBOX */
 .cbox{appearance:none;-webkit-appearance:none;width:18px;height:18px;border:2px solid #475569;border-radius:5px;cursor:pointer;position:relative;background:var(--bg2);vertical-align:middle;transition:.15s}
@@ -180,7 +180,6 @@ table.data-table tbody tr:last-child td{border-bottom:none}
 .bulk-help{background:linear-gradient(135deg,rgba(56,189,248,.08),rgba(99,102,241,.08));border:1px solid rgba(56,189,248,.25);border-radius:12px;padding:12px 14px;margin-bottom:12px}
 .bulk-help .title{font-size:12px;color:#7dd3fc;font-weight:700;margin-bottom:6px}
 .bulk-help .desc{font-size:11px;color:var(--text2);line-height:1.6}
-.bulk-help .example{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-top:8px;font-family:'Courier New',monospace;font-size:11px;color:#86efac;line-height:1.7}
 .bulk-area{width:100%;min-height:200px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:14px;font-family:'Courier New',monospace;font-size:13px;resize:vertical;outline:none;line-height:1.7;transition:.2s}
 .bulk-area:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.1)}
 .bulk-preview-wrap{margin-top:12px;border:1px solid var(--border);border-radius:12px;overflow:hidden;display:none}
@@ -190,12 +189,6 @@ table.data-table tbody tr:last-child td{border-bottom:none}
 .bulk-preview-head .stat-pill{padding:4px 10px;border-radius:20px;font-weight:700;font-size:11px}
 .bulk-preview-head .stat-pill.ok{background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.3)}
 .bulk-preview-head .stat-pill.dup{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3)}
-.bulk-preview-table{max-height:280px;overflow-y:auto}
-.bulk-preview-table table{width:100%;border-collapse:collapse;font-size:12px}
-.bulk-preview-table th{text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);font-weight:700;background:rgba(10,14,26,.3);position:sticky;top:0}
-.bulk-preview-table td{padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#cbd5e1}
-.bulk-preview-table .row-num{color:var(--text3);font-size:11px;width:36px;font-family:'Courier New',monospace}
-.bulk-preview-table .email-cell{color:#7dd3fc;font-family:'Courier New',monospace;font-size:11px;word-break:break-all}
 
 /* INFO BOX */
 .info-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-top:12px}
@@ -208,6 +201,8 @@ table.data-table tbody tr:last-child td{border-bottom:none}
 .quota-fill{height:100%;background:linear-gradient(90deg,#22c55e,#38bdf8);transition:.5s;width:0;border-radius:8px;box-shadow:0 0 12px rgba(56,189,248,.5)}
 .quota-fill.warn{background:linear-gradient(90deg,#f59e0b,#ef4444);box-shadow:0 0 12px rgba(239,68,68,.5)}
 .quota-fill.crit{background:linear-gradient(90deg,#ef4444,#991b1b);animation:pulse 1.5s infinite}
+.quota-live{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--green);font-weight:600}
+.quota-live .dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 1.5s infinite}
 
 /* TOAST */
 .toast{position:fixed;bottom:20px;right:20px;left:20px;background:rgba(15,23,42,.97);backdrop-filter:blur(20px);border:1px solid var(--border);color:var(--text);padding:14px 18px;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.6);font-size:13px;z-index:5000;opacity:0;transform:translateY(20px);transition:.3s;max-width:400px;margin:0 auto;font-weight:500;pointer-events:none}
@@ -281,15 +276,23 @@ table.data-table tbody tr:last-child td{border-bottom:none}
 .quiet-banner .info .ttl{font-weight:700;color:#fcd34d;font-size:13px}
 .quiet-banner .info .dsc{font-size:11px;color:var(--text2);margin-top:2px}
 
-/* BATCH BOX */
-.batch-box{margin-top:12px;padding:14px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;display:none}
+/* BATCH SLIDER */
+.batch-box{margin-top:12px;padding:16px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;display:none}
 .batch-box.show{display:block}
-.batch-input-wrap{display:flex;align-items:center;gap:10px}
-.batch-input{flex:1;background:#0c1220;border:1px solid var(--border2);border-radius:10px;padding:11px 14px;font-size:20px;font-weight:800;color:var(--cyan);text-align:center;outline:none;transition:.2s}
-.batch-input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.15)}
-.batch-input.error{border-color:var(--red);color:#fca5a5}
-.batch-hint{font-size:11px;color:var(--text3);margin-top:6px}
-.batch-hint.err{color:#fca5a5}
+.batch-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap}
+.batch-header .label-txt{font-size:14px;color:var(--text);font-weight:700}
+.batch-header .sub-txt{font-size:11px;color:var(--text2);margin-top:2px}
+.batch-value{background:var(--grad);color:white;padding:8px 20px;border-radius:12px;font-weight:800;font-size:22px;min-width:80px;text-align:center;box-shadow:0 4px 16px rgba(56,189,248,.4);letter-spacing:-.5px}
+.batch-slider{width:100%;height:8px;background:#1e293b;border-radius:8px;outline:none;-webkit-appearance:none;appearance:none;margin:8px 0;cursor:pointer}
+.batch-slider::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--grad);cursor:pointer;box-shadow:0 4px 12px rgba(56,189,248,.6);transition:.15s;border:3px solid #0a0e1a}
+.batch-slider::-webkit-slider-thumb:hover{transform:scale(1.15)}
+.batch-slider::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:#6366f1;cursor:pointer;border:3px solid #0a0e1a}
+.batch-marks{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:2px}
+.batch-number-row{display:flex;gap:8px;align-items:center;margin-top:12px}
+.batch-number-row input{flex:1;background:#0c1220;border:1px solid var(--border2);border-radius:10px;padding:10px 14px;font-size:16px;font-weight:700;color:var(--cyan);text-align:center;outline:none;transition:.2s}
+.batch-number-row input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.15)}
+.batch-hint{font-size:11px;color:var(--text3);margin-top:8px;padding:8px 10px;background:rgba(56,189,248,.05);border-radius:8px;border-left:3px solid var(--cyan);line-height:1.5}
+.batch-hint.err{color:#fca5a5;background:rgba(239,68,68,.05);border-left-color:var(--red)}
 
 /* COMPOSER */
 .composer-layout{display:grid;grid-template-columns:1fr 340px;gap:18px}
@@ -331,62 +334,48 @@ table.data-table tbody tr:last-child td{border-bottom:none}
 
 .bulk-action-bar{display:none;gap:8px;padding:12px;background:linear-gradient(135deg,rgba(56,189,248,.1),rgba(99,102,241,.1));border:1px solid rgba(56,189,248,.3);border-radius:12px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
 
-/* REPLY / INBOX VIEW */
+/* INBOX */
 .inbox-layout{display:grid;grid-template-columns:380px 1fr;gap:0;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--bg2);min-height:600px}
 @media(max-width:900px){.inbox-layout{grid-template-columns:1fr;min-height:auto}.inbox-list{max-height:400px}}
-.inbox-list{border-right:1px solid var(--border);background:rgba(10,14,26,.4);max-height:700px;overflow-y:auto}
+.inbox-list{border-right:1px solid var(--border);background:rgba(10,14,26,.4);max-height:700px;overflow-y:auto;-webkit-overflow-scrolling:touch}
 @media(max-width:900px){.inbox-list{border-right:none;border-bottom:1px solid var(--border)}}
 .inbox-item{padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:.15s;position:relative}
 .inbox-item:hover{background:rgba(56,189,248,.05)}
 .inbox-item.active{background:rgba(56,189,248,.1);border-left:3px solid var(--cyan)}
+.inbox-item.unread{border-left:3px solid var(--cyan)}
+.inbox-item.unread .from-name{color:var(--cyan)}
 .inbox-item .from{font-size:13px;font-weight:700;color:var(--text);display:flex;justify-content:space-between;gap:8px;align-items:center}
 .inbox-item .from-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
 .inbox-item .date{font-size:10px;color:var(--text3);white-space:nowrap}
 .inbox-item .subj{font-size:12px;color:#cbd5e1;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
 .inbox-item .prev{font-size:11px;color:var(--text3);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .inbox-item .badges{margin-top:6px;display:flex;gap:4px;flex-wrap:wrap}
-.inbox-item.unread{border-left:3px solid var(--cyan)}
-.inbox-item.unread .from{color:var(--cyan)}
 
 .inbox-viewer{display:flex;flex-direction:column;background:var(--bg)}
 .email-head{padding:16px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.5)}
 .email-head h4{font-size:16px;font-weight:700;color:var(--text);margin-bottom:10px;word-break:break-word}
 .email-meta{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--text2)}
-.email-meta .row{display:flex;gap:8px}
+.email-meta .row{display:flex;gap:8px;flex-wrap:wrap}
 .email-meta .row b{color:var(--text);font-weight:600;min-width:60px}
 .email-body{padding:20px;overflow-y:auto;flex:1;max-height:500px;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;font-size:14px;line-height:1.7;color:#cbd5e1;white-space:pre-wrap;word-break:break-word}
 .email-actions{padding:14px;border-top:1px solid var(--border);background:rgba(10,14,26,.5);display:flex;gap:8px;flex-wrap:wrap}
 
-/* Mobile nav */
+/* TAG */
+.tag{display:inline-block;background:rgba(56,189,248,.1);color:#7dd3fc;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;border:1px solid rgba(56,189,248,.2)}
+
+/* TEST BANNER */
+.test-banner{background:linear-gradient(135deg,rgba(236,72,153,.15),rgba(168,85,247,.15));border:1px solid rgba(236,72,153,.4);border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px}
+.test-banner .ico{font-size:22px}
+.test-banner .txt{font-size:12px;color:#f9a8d4;font-weight:600;line-height:1.5}
+
+/* MOBILE NAV */
 @media(max-width:768px){
-  .maintabs{position:fixed;bottom:0;top:auto;left:0;right:0;padding:6px 8px;z-index:200;border-top:1px solid var(--border);border-bottom:none;justify-content:space-around}
+  .maintabs{position:fixed;bottom:0;top:auto;left:0;right:0;padding:6px 8px;z-index:200;border-top:1px solid var(--border);border-bottom:none;justify-content:space-around;box-shadow:0 -10px 30px rgba(0,0,0,.3)}
   .maintab{flex:1;text-align:center;font-size:10px;padding:8px 4px}
   .container{padding-bottom:80px}
   .toast{bottom:80px}
 }
 
-/* Tag pills */
-.tag{display:inline-block;background:rgba(56,189,248,.1);color:#7dd3fc;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;border:1px solid rgba(56,189,248,.2)}
-
-/* Test mode banner */
-.test-banner{background:linear-gradient(135deg,rgba(236,72,153,.15),rgba(168,85,247,.15));border:1px solid rgba(236,72,153,.4);border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px}
-.test-banner .ico{font-size:22px}
-.test-banner .txt{font-size:12px;color:#f9a8d4;font-weight:600}
-
-/* Number input group */
-.input-group{display:flex;gap:8px;align-items:stretch}
-.input-group input{flex:1}
-.input-group .btn{flex-shrink:0}
-
-/* Small screens */
-@media(max-width:640px){
-  .stats{grid-template-columns:repeat(2,1fr)}
-  .composer-layout{gap:14px}
-  .panel h2{font-size:14px}
-  .btn{padding:10px 16px;font-size:13px}
-}
-
-/* Scrollbars */
 ::-webkit-scrollbar{width:8px;height:8px}
 ::-webkit-scrollbar-track{background:var(--bg2)}
 ::-webkit-scrollbar-thumb{background:#334155;border-radius:4px}
@@ -395,7 +384,6 @@ table.data-table tbody tr:last-child td{border-bottom:none}
 </head>
 <body>
 
-<!-- LOGIN -->
 <div id="loginView" class="auth-wrap">
   <div class="auth-card">
     <div class="brand-logo">⚡</div>
@@ -411,12 +399,11 @@ table.data-table tbody tr:last-child td{border-bottom:none}
       <div class="feat"><span class="ico">📤</span> Bulk personalized campaigns</div>
       <div class="feat"><span class="ico">👁️</span> Open tracking & analytics</div>
       <div class="feat"><span class="ico">💬</span> Reply analysis & categories</div>
-      <div class="feat"><span class="ico">⚡</span> 100% private & free</div>
+      <div class="feat"><span class="ico">🔒</span> End-to-end encrypted tokens</div>
     </div>
   </div>
 </div>
 
-<!-- APP -->
 <div id="appView" class="hidden">
   <div class="topbar">
     <div class="logo-top">⚡ MailFlow Pro</div>
@@ -447,7 +434,6 @@ table.data-table tbody tr:last-child td{border-bottom:none}
             <div class="tip"><span class="tip-ic">🔗</span><div><b>Max 2 links</b><span>Too many links trigger filters</span></div></div>
             <div class="tip"><span class="tip-ic">❌</span><div><b>No trigger words</b><span>Free, Guarantee, Act now</span></div></div>
             <div class="tip"><span class="tip-ic">🔠</span><div><b>No ALL CAPS</b><span>Write subject in normal case</span></div></div>
-            <div class="tip"><span class="tip-ic">❗</span><div><b>Max 1 exclamation</b><span>Multiple "!!!" = spam</span></div></div>
             <div class="tip"><span class="tip-ic">⏱️</span><div><b>Slow sending</b><span>20-40 sec gap per email</span></div></div>
             <div class="tip"><span class="tip-ic">💬</span><div><b>Personalize content</b><span>Use {name} & {company}</span></div></div>
           </div>
@@ -472,10 +458,10 @@ table.data-table tbody tr:last-child td{border-bottom:none}
         </div>
 
         <div class="panel">
-          <h2>📊 Gmail Quota <span id="quotaSub">Live from Google</span></h2>
+          <h2>📊 Gmail Quota <span id="quotaSub" class="quota-live"><span class="dot"></span>Live from Google</span></h2>
           <div class="info-box">
-            <div class="row"><span class="k">Sent today (last 24h):</span><span class="v" id="quotaSent">—</span></div>
-            <div class="row"><span class="k">Total daily limit:</span><span class="v" id="quotaTotal">500</span></div>
+            <div class="row"><span class="k">Sent today:</span><span class="v" id="quotaSent">—</span></div>
+            <div class="row"><span class="k">Daily limit:</span><span class="v" id="quotaLimit">500</span></div>
             <div class="row"><span class="k">Remaining:</span><span class="v" id="quotaRemaining">—</span></div>
           </div>
           <div class="quota-bar"><div class="quota-fill" id="quotaFill"></div></div>
@@ -556,14 +542,22 @@ table.data-table tbody tr:last-child td{border-bottom:none}
             <label class="switch"><input type="checkbox" id="autoSendToggle"><span class="slider"></span></label>
           </div>
           <div class="batch-box" id="batchSizeBox">
-            <div style="font-size:13px;color:var(--text);font-weight:600;margin-bottom:10px">📊 Emails Per Hour</div>
-            <div class="batch-input-wrap">
-              <input type="number" id="batchSizeInput" class="batch-input" min="1" max="500" value="5" oninput="validateBatchSize()">
+            <div class="batch-header">
+              <div>
+                <div class="label-txt">📊 Emails Per Hour</div>
+                <div class="sub-txt">Rate for auto-send</div>
+              </div>
+              <div class="batch-value" id="batchValue">5</div>
             </div>
-            <div class="batch-hint" id="batchHint">Max allowed: <b id="batchMax">500</b> (based on your Gmail quota)</div>
+            <input type="range" id="batchSlider" class="batch-slider" min="1" max="500" value="5" oninput="onSliderChange(this.value)">
+            <div class="batch-marks"><span>1</span><span>125</span><span>250</span><span>375</span><span>500</span></div>
+            <div class="batch-number-row">
+              <input type="number" id="batchNumber" min="1" max="500" value="5" placeholder="Enter exact number" oninput="onNumberChange(this.value)" onblur="onNumberBlur()">
+            </div>
+            <div class="batch-hint" id="batchHint">Max allowed: <b>500</b> · Scheduled: <b>5/hour</b></div>
             <div class="info-box" style="margin-top:12px">
               <div class="row"><span class="k">Total auto-sent:</span><span class="v" id="totalAutoSent">0</span></div>
-              <div class="row"><span class="k">Remaining quota today:</span><span class="v" id="autoRemaining">—</span></div>
+              <div class="row"><span class="k">Remaining today:</span><span class="v" id="autoRemaining">—</span></div>
               <div class="row"><span class="k">Scheduled rate:</span><span class="v" id="scheduledRate">5 / hour</span></div>
             </div>
           </div>
@@ -609,12 +603,12 @@ table.data-table tbody tr:last-child td{border-bottom:none}
           </div>
           <div class="field" style="margin-top:12px"><label>Greeting Line</label><input type="text" id="sbGreeting" placeholder="Optional greeting" autocomplete="off"></div>
           <div class="field"><label>Extra Line</label><input type="text" id="sbExtra" placeholder="Optional extra line" autocomplete="off"></div>
-          
+
           <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
             <div style="font-size:13px;color:var(--text);font-weight:600;margin-bottom:10px">🤖 Auto-Send Options</div>
             <div class="send-options-row">
-              <label><input type="checkbox" id="optAutoSig" checked> ✍️ Include Signature in auto-send</label>
-              <label><input type="checkbox" id="optAutoLogo" checked> 🖼️ Include Logo in auto-send</label>
+              <label><input type="checkbox" id="optAutoSig" checked> ✍️ Include Signature</label>
+              <label><input type="checkbox" id="optAutoLogo" checked> 🖼️ Include Logo</label>
             </div>
           </div>
 
@@ -659,12 +653,7 @@ table.data-table tbody tr:last-child td{border-bottom:none}
           <div id="bulkTab" class="hidden">
             <div class="bulk-help">
               <div class="title">📋 Paste Emails — Any Format</div>
-              <div class="desc"><b style="color:#86efac">Company name optional hai!</b> Emails ko kisi bhi format se de sakte hain.</div>
-              <div class="example">
-                ✅ usamahanif@gmail.com, friend@gmail.com<br>
-                ✅ Google Inc, hr@google.com<br>
-                ✅ Microsoft &lt;jobs@microsoft.com&gt;
-              </div>
+              <div class="desc"><b style="color:#86efac">Company name optional!</b> Emails ko kisi bhi format se de sakte hain. AI automatically detect karega.</div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
               <input type="file" id="bulkFileInput" accept=".txt,.csv,.xlsx,.xls,.json" style="display:none">
@@ -680,7 +669,7 @@ table.data-table tbody tr:last-child td{border-bottom:none}
                   <span class="stat-pill dup" id="bulkDupPill">🔁 0</span>
                 </div>
               </div>
-              <div class="bulk-preview-table" id="bulkPreviewTable"></div>
+              <div class="bulk-preview-table" id="bulkPreviewTable" style="max-height:280px;overflow-y:auto"></div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
               <button class="btn" onclick="submitBulk()">➕ Add All</button>
@@ -694,10 +683,10 @@ table.data-table tbody tr:last-child td{border-bottom:none}
           <div class="filter-bar">
             <input type="text" class="search-bar" id="recipSearch" placeholder="Search..." oninput="renderRecipients()">
             <select id="statusFilter" onchange="renderRecipients()">
-              <option value="all">All</option>
-              <option value="Pending">⏳ Pending</option>
-              <option value="Sent">📤 Sent</option>
-              <option value="Opened">👁 Opened</option>
+              <option value="all">All Status</option>
+              <option value="Pending">Pending</option>
+              <option value="Sent">Sent</option>
+              <option value="Opened">Opened</option>
             </select>
           </div>
           <div class="bulk-action-bar" id="bulkActionBar">
@@ -705,6 +694,10 @@ table.data-table tbody tr:last-child td{border-bottom:none}
             <button class="btn ghost small" onclick="resendSelected()">🔁 Resend</button>
             <button class="btn danger small" onclick="deleteSelected()">🗑 Delete</button>
             <button class="btn ghost small" onclick="clearSelection()">Clear</button>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+            <button class="btn ghost small" onclick="loadAll(true)">🔄 Refresh</button>
+            <button class="btn ghost small" onclick="selectAll()">☑️ Select All</button>
           </div>
           <div id="tableWrap" class="tbl-wrap"></div>
         </div>
@@ -723,7 +716,7 @@ table.data-table tbody tr:last-child td{border-bottom:none}
   <!-- INBOX -->
   <div class="container hidden" id="inboxView">
     <div class="panel">
-      <h2>📥 Inbox & Sent <span>Advanced Reply Analyzer</span></h2>
+      <h2>📥 Inbox & Sent <span>AI-powered</span></h2>
       <div class="filter-bar">
         <select id="inboxFolder" onchange="loadInbox()">
           <option value="inbox">📥 Inbox</option>
@@ -740,10 +733,10 @@ table.data-table tbody tr:last-child td{border-bottom:none}
       </div>
       <div class="inbox-layout">
         <div class="inbox-list" id="inboxList">
-          <div class="empty"><div class="ico">📭</div>Loading emails...</div>
+          <div class="empty"><div class="ico">⏳</div>Loading...</div>
         </div>
         <div class="inbox-viewer">
-          <div class="empty" id="inboxEmpty"><div class="ico">📩</div>Select an email to view</div>
+          <div class="empty" id="inboxEmpty"><div class="ico">📩</div>Select an email</div>
           <div id="inboxViewerContent" class="hidden" style="display:flex;flex-direction:column;height:100%">
             <div class="email-head">
               <h4 id="viewSubject"></h4>
@@ -757,7 +750,6 @@ table.data-table tbody tr:last-child td{border-bottom:none}
             <div class="email-body" id="viewBody"></div>
             <div class="email-actions">
               <button class="btn" onclick="openReplyCompose()">↩️ Reply</button>
-              <button class="btn ghost" onclick="openReplyCompose(true)">↪️ Reply All</button>
             </div>
           </div>
         </div>
@@ -768,12 +760,12 @@ table.data-table tbody tr:last-child td{border-bottom:none}
   <!-- AI TOOLS -->
   <div class="container hidden" id="testView">
     <div class="panel" style="background:linear-gradient(135deg,rgba(168,85,247,.08),rgba(56,189,248,.08));border-color:rgba(168,85,247,.3)">
-      <h2>🤖 AI Tools <span>Groq + Gemini + OpenRouter + Mistral</span></h2>
-      <div style="font-size:12px;color:var(--text2);line-height:1.6">Advanced AI features for deliverability improvement.</div>
+      <h2>🤖 AI Tools <span>Multi-provider</span></h2>
+      <div style="font-size:12px;color:var(--text2);line-height:1.6">Advanced AI features for deliverability.</div>
     </div>
     <div class="panel">
       <h2>⏰ Best Sending Time</h2>
-      <div id="bestTimeContent"><div class="empty">Click below to analyze</div></div>
+      <div id="bestTimeContent"><div class="empty">Click below</div></div>
       <button class="btn" onclick="loadBestTime()" style="margin-top:12px">✨ Analyze</button>
     </div>
     <div class="panel">
@@ -782,11 +774,11 @@ table.data-table tbody tr:last-child td{border-bottom:none}
     </div>
   </div>
 
-  <!-- TEST DASHBOARD (ADMIN ONLY) -->
+  <!-- TEST LAB -->
   <div class="container hidden" id="testDashView">
     <div class="test-banner">
       <div class="ico">🧪</div>
-      <div class="txt">TEST LAB MODE — Ye emails aapke normal dashboard/stats mein count nahi honge. Sirf test ke liye hai.</div>
+      <div class="txt">TEST LAB — Ye emails normal dashboard/stats mein count nahi honge. Sirf testing ke liye.</div>
     </div>
 
     <div class="stats">
@@ -799,23 +791,23 @@ table.data-table tbody tr:last-child td{border-bottom:none}
 
     <div class="panel">
       <h2>➕ Add Test Recipients</h2>
-      <textarea class="bulk-area" id="testBulkInput" placeholder="Paste test emails here...&#10;Example: test1@gmail.com, test2@gmail.com"></textarea>
+      <textarea class="bulk-area" id="testBulkInput" placeholder="Paste test emails..."></textarea>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
-        <button class="btn" onclick="addTestRecipients()">➕ Add Test Recipients</button>
-        <button class="btn danger" onclick="clearTestData()">🗑 Clear All Test Data</button>
+        <button class="btn" onclick="addTestRecipients()">➕ Add</button>
+        <button class="btn danger" onclick="clearTestData()">🗑 Clear All</button>
       </div>
     </div>
 
     <div class="panel">
       <h2>📤 Send Test Email</h2>
-      <div class="field"><label>To (Email)</label><input type="text" id="testTo" placeholder="test@example.com" autocomplete="off"></div>
+      <div class="field"><label>To</label><input type="text" id="testTo" placeholder="test@example.com" autocomplete="off"></div>
       <div class="field"><label>Subject</label><input type="text" id="testSubject" placeholder="Test subject" autocomplete="off"></div>
       <div class="field"><label>Body</label><textarea id="testBody" class="bulk-area" placeholder="Test body..." style="min-height:150px;font-family:inherit"></textarea></div>
       <div class="send-options-row">
-        <label><input type="checkbox" id="testIncludeSig" checked> ✍️ Include Signature</label>
-        <label><input type="checkbox" id="testIncludeLogo" checked> 🖼️ Include Logo</label>
+        <label><input type="checkbox" id="testIncludeSig" checked> ✍️ Signature</label>
+        <label><input type="checkbox" id="testIncludeLogo" checked> 🖼️ Logo</label>
       </div>
-      <button class="btn" onclick="sendTestEmail()">🚀 Send Test Email</button>
+      <button class="btn" onclick="sendTestEmail()">🚀 Send Test</button>
     </div>
 
     <div class="panel">
@@ -824,7 +816,7 @@ table.data-table tbody tr:last-child td{border-bottom:none}
     </div>
 
     <div class="panel">
-      <h2>📜 Test Send Log</h2>
+      <h2>📜 Test Log</h2>
       <div id="testLogWrap" class="tbl-wrap"></div>
     </div>
   </div>
@@ -851,7 +843,6 @@ table.data-table tbody tr:last-child td{border-bottom:none}
   </div>
 </div>
 
-<!-- MODALS -->
 <div id="aiWriterModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeAIWriter()">
   <div class="modal" style="max-width:560px">
     <button class="close-btn" onclick="closeAIWriter()">✕</button>
@@ -931,7 +922,7 @@ table.data-table tbody tr:last-child td{border-bottom:none}
 <script>
 var USER=null, TEMPLATES=[], SELECTED={}, CURRENT_ROWS=[], ALL_ROWS=[];
 var LOGO_URL='', LOGO_URL_ALT='', ADMIN_USERS=[], ADMIN_ALL_EMAILS=[], MY_EMAILS=[];
-var INBOX_EMAILS=[], ACTIVE_EMAIL=null, MY_QUOTA={sent:0,total:500,remaining:500};
+var INBOX_EMAILS=[], ACTIVE_EMAIL=null, MY_QUOTA={sent:0,limit:500,remaining:500};
 var POLL_TIMER=null, HOURLY_TIMER=null, analysisTimer=null, lastAnalyzedHash='';
 var MAX_UPLOAD_SIZE = 4.5 * 1024 * 1024;
 var _currentSendId = null;
@@ -992,48 +983,64 @@ function checkQuietStatus(){api('/api/quiet-status').then(function(r){if(!r.ok)r
 function startHourlyAutoSend(){setTimeout(function(){runAutoCheck();},8000);if(HOURLY_TIMER)clearInterval(HOURLY_TIMER);HOURLY_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;runAutoCheck();},60*60*1000);}
 function runAutoCheck(){api('/api/auto-send-check','POST').then(function(r){if(r.ok&&r.sent>0){toast('🤖 Auto-send: '+r.sent+' emails sent');loadAll();loadQuota();loadMyEmails();}}).catch(function(){});}
 
-// ============ LIVE QUOTA ============
+// ============ QUOTA ============
 function loadQuota(){
   api('/api/quota').then(function(r){
     if(!r.ok)return;
-    MY_QUOTA={sent:r.sentToday,total:r.totalLimit,remaining:r.remaining};
-    $('quotaSent').innerText=r.sentToday;
-    $('quotaTotal').innerText=r.totalLimit;
+    MY_QUOTA={sent:r.sent,limit:r.limit,remaining:r.remaining};
+    $('quotaSent').innerText=r.sent;
+    $('quotaLimit').innerText=r.limit;
     $('quotaRemaining').innerText=r.remaining;
-    var pct=(r.sentToday/r.totalLimit)*100;
+    var pct=(r.sent/r.limit)*100;
     $('quotaFill').style.width=Math.min(100,pct)+'%';
     $('quotaFill').className='quota-fill'+(pct>90?' crit':(pct>70?' warn':''));
-    $('quotaSub').innerHTML='<span style="display:inline-block;width:6px;height:6px;background:#22c55e;border-radius:50%;margin-right:6px"></span>Live from Google';
     if($('autoRemaining'))$('autoRemaining').innerText=r.remaining;
-    if($('batchMax'))$('batchMax').innerText=r.remaining;
+    // Update batch slider max
+    var slider=$('batchSlider'), numInput=$('batchNumber');
+    if(slider)slider.max=Math.max(1,r.remaining);
+    if(numInput)numInput.max=Math.max(1,r.remaining);
     validateBatchSize();
   });
 }
 
-// ============ BATCH SIZE VALIDATION ============
+// ============ BATCH SIZE ============
+function onSliderChange(v){
+  v=parseInt(v)||1;
+  $('batchValue').innerText=v;
+  $('batchNumber').value=v;
+  validateBatchSize();
+}
+function onNumberChange(v){
+  var n=parseInt(v)||1;
+  $('batchValue').innerText=n;
+  $('batchSlider').value=Math.min(n,parseInt($('batchSlider').max)||500);
+  validateBatchSize();
+}
+function onNumberBlur(){
+  var n=parseInt($('batchNumber').value)||1;
+  var max=MY_QUOTA.remaining||500;
+  if(n<1)n=1;
+  if(n>max)n=max;
+  $('batchNumber').value=n;
+  $('batchValue').innerText=n;
+  $('batchSlider').value=Math.min(n,parseInt($('batchSlider').max)||500);
+  validateBatchSize();
+}
 function validateBatchSize(){
-  var input=$('batchSizeInput');
-  if(!input)return;
-  var val=parseInt(input.value)||1;
+  var val=parseInt($('batchNumber').value)||1;
   var max=MY_QUOTA.remaining||500;
   var hint=$('batchHint');
   if(val>max){
-    input.classList.add('error');
     hint.innerHTML='❌ Cannot exceed remaining quota: <b>'+max+'</b>';
     hint.className='batch-hint err';
-  } else if(val<1){
-    input.classList.add('error');
-    hint.innerHTML='❌ Minimum 1';
-    hint.className='batch-hint err';
   } else {
-    input.classList.remove('error');
-    hint.innerHTML='Max allowed: <b>'+max+'</b> (based on Gmail quota) · Scheduled: <b>'+val+'/hour</b>';
+    hint.innerHTML='Max allowed: <b>'+max+'</b> · Scheduled: <b>'+val+'/hour</b>';
     hint.className='batch-hint';
     if($('scheduledRate'))$('scheduledRate').innerText=val+' / hour';
   }
 }
 
-// ============ AI ANALYSIS ============
+// ============ AI ============
 function scheduleAnalysis(){
   if(analysisTimer)clearTimeout(analysisTimer);
   $('aiLiveStatus').innerText='Typing...';
@@ -1262,8 +1269,8 @@ function updateBulk(){
   $('bulkValidPill').innerText='✅ '+r.valid.length;$('bulkDupPill').innerText='🔁 '+r.dup;
   if(!text.trim()||r.valid.length===0){wrap.classList.remove('show');return;}
   wrap.classList.add('show');
-  var h='<table><thead><tr><th style="width:36px">#</th><th>Company</th><th>Email</th></tr></thead><tbody>';
-  r.valid.slice(0,50).forEach(function(row,idx){h+='<tr><td class="row-num">'+(idx+1)+'</td><td>'+(row.company?esc(row.company):'—')+'</td><td class="email-cell">'+esc(row.email)+'</td></tr>';});
+  var h='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3);position:sticky;top:0">#</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3)">Company</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3)">Email</th></tr></thead><tbody>';
+  r.valid.slice(0,50).forEach(function(row,idx){h+='<tr><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:var(--text3);font-size:11px">'+(idx+1)+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#cbd5e1">'+(row.company?esc(row.company):'—')+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#7dd3fc;font-family:Courier New,monospace;font-size:11px;word-break:break-all">'+esc(row.email)+'</td></tr>';});
   if(r.valid.length>50)h+='<tr><td colspan="3" style="text-align:center;color:var(--text3);font-style:italic;padding:10px">... +'+(r.valid.length-50)+'</td></tr>';
   h+='</tbody></table>';table.innerHTML=h;
 }
@@ -1403,7 +1410,8 @@ function loadPrefs(){
     $('quietEndSel').value=p.quietEnd;
     $('quietTimesBox').style.display=p.quietEnabled?'block':'none';
     $('batchSizeBox').classList.toggle('show',p.autoSend);
-    $('batchSizeInput').value=p.autoSendBatchSize||5;
+    var bs=p.autoSendBatchSize||5;
+    $('batchSlider').value=bs;$('batchNumber').value=bs;$('batchValue').innerText=bs;
     $('totalAutoSent').innerText=p.totalAutoSent||0;
     if($('optAutoSig'))$('optAutoSig').checked=p.autoSendIncludeSignature!==false;
     if($('optAutoLogo'))$('optAutoLogo').checked=p.autoSendIncludeLogo!==false;
@@ -1413,7 +1421,7 @@ function loadPrefs(){
 document.getElementById('quietToggle').addEventListener('change',function(){$('quietTimesBox').style.display=this.checked?'block':'none';});
 document.getElementById('autoSendToggle').addEventListener('change',function(){$('batchSizeBox').classList.toggle('show',this.checked);});
 function savePrefs(){
-  var bs=parseInt($('batchSizeInput').value)||5;
+  var bs=parseInt($('batchNumber').value)||5;
   if(bs>MY_QUOTA.remaining){toast('❌ Cannot exceed remaining quota ('+MY_QUOTA.remaining+')','err');return;}
   var payload={autoSend:$('autoSendToggle').checked,autoSendBatchSize:bs,quietEnabled:$('quietToggle').checked,quietStart:Number($('quietStartSel').value),quietEnd:Number($('quietEndSel').value)};
   if($('optAutoSig'))payload.autoSendIncludeSignature=$('optAutoSig').checked;
@@ -1435,13 +1443,14 @@ function loadInbox(){
     var h='';
     INBOX_EMAILS.forEach(function(e,i){
       var catClass=(e.category||'other').toLowerCase().replace('_','-');
+      var dateStr=(e.date||'').split(',')[0];
       h+='<div class="inbox-item'+(e.isRead?'':' unread')+'" onclick="openInboxEmail('+i+')">';
-      h+='<div class="from"><span class="from-name">'+esc(e.fromName||e.fromEmail)+'</span><span class="date">'+esc((e.date||'').split(',')[0])+'</span></div>';
+      h+='<div class="from"><span class="from-name">'+esc(e.fromName||e.fromEmail)+'</span><span class="date">'+esc(dateStr)+'</span></div>';
       h+='<div class="subj">'+esc(e.subject)+'</div>';
       h+='<div class="prev">'+esc(e.bodyPreview||e.snippet)+'</div>';
       h+='<div class="badges"><span class="tag">'+esc(e.folder)+'</span>';
       if(e.category)h+='<span class="badge '+catClass+'">'+esc(e.category)+'</span>';
-      if(e.needsReply)h+='<span class="badge question">↩️ Reply</span>';
+      if(e.needsReply)h+='<span class="badge question">↩️</span>';
       h+='</div></div>';
     });
     $('inboxList').innerHTML=h;
@@ -1464,7 +1473,7 @@ function openInboxEmail(i){
   } else $('viewCategoryRow').style.display='none';
   $('viewBody').textContent=e.body || e.snippet || '(no body)';
 }
-function openReplyCompose(replyAll){
+function openReplyCompose(){
   if(!ACTIVE_EMAIL)return;
   $('replyTo').value=ACTIVE_EMAIL.fromEmail;
   $('replySubject').value=/^re:/i.test(ACTIVE_EMAIL.subject)?ACTIVE_EMAIL.subject:('Re: '+ACTIVE_EMAIL.subject);
@@ -1488,7 +1497,7 @@ function sendReply(){
   });
 }
 
-// ============ TEST DASHBOARD ============
+// ============ TEST LAB ============
 function loadTestDashboard(){
   api('/api/test/stats').then(function(r){if(!r.ok)return;var s=r.stats;$('tstTotal').innerText=s.total;$('tstSent').innerText=s.sent;$('tstOpened').innerText=s.opened;$('tstPending').innerText=s.pending;$('tstLog').innerText=s.totalSends;});
   api('/api/test/recipients').then(function(r){
