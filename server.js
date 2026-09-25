@@ -54,7 +54,7 @@ async function fetchWithTimeout(url, opts, ms) {
   catch (e) { clearTimeout(t); throw e; }
 }
 
-// ============ FREE AI PROVIDERS ONLY ============
+// ============ FREE AI PROVIDERS ============
 
 async function callGroq(prompt) {
   if (!GROQ_KEY) throw new Error('No key');
@@ -109,11 +109,9 @@ async function callMistral(prompt) {
   throw lastErr;
 }
 
-// ============ AI CHAIN — Free providers, fastest first ============
 async function callAI(prompt) {
   const cached = getCachedResponse(prompt);
   if (cached) { console.log('AI: CACHE'); return cached; }
-
   const providers = [
     { name: 'Groq', fn: callGroq },
     { name: 'Gemini', fn: callGemini },
@@ -594,7 +592,23 @@ function buildMime(fn, fe, to, sub, h, atts) {
   const dom = fe.split('@')[1] || 'gmail.com';
   const mid = '<' + crypto.randomBytes(16).toString('hex') + '.' + Date.now() + '@' + dom + '>';
   const pt = htmlToPlain(h);
-  const p = ['From: "' + fn.replace(/"/g, '') + '" <' + fe + '>', 'To: ' + to, 'Subject: ' + encS(sub), 'Date: ' + new Date().toUTCString(), 'Message-ID: ' + mid, 'MIME-Version: 1.0', 'X-Mailer: MailFlow Pro', 'List-Unsubscribe: <mailto:' + fe + '?subject=unsubscribe>', 'List-Unsubscribe-Post: List-Unsubscribe=One-Click', 'Precedence: bulk', 'X-Priority: 3', 'Importance: Normal'];
+  const p = [
+    'From: "' + fn.replace(/"/g, '') + '" <' + fe + '>',
+    'Reply-To: ' + fe,
+    'Return-Path: <' + fe + '>',
+    'To: ' + to,
+    'Subject: ' + encS(sub),
+    'Date: ' + new Date().toUTCString(),
+    'Message-ID: ' + mid,
+    'MIME-Version: 1.0',
+    'X-Mailer: Gmail',
+    'List-Unsubscribe: <mailto:' + fe + '?subject=unsubscribe>',
+    'List-Unsubscribe-Post: List-Unsubscribe=One-Click',
+    'Precedence: bulk',
+    'X-Priority: 3',
+    'Importance: Normal',
+    'Content-Language: en-US'
+  ];
   if (atts && atts.length) {
     p.push('Content-Type: multipart/mixed; boundary="' + mB + '"', '', '--' + mB);
     p.push('Content-Type: multipart/alternative; boundary="' + aB + '"', '', '--' + aB);
@@ -617,44 +631,79 @@ async function sendOne(userId, userEmail, recipientId, attachFiles, options) {
   const u = await getUserData(userId);
   if (!u.tokens) throw new Error('Expired');
   if (isQuietHours(u) && !options.force) { const e = new Error('QUIET_HOURS'); e.code = 'QUIET_HOURS'; e.quietEnd = u.quietEnd; throw e; }
+  
+  // ✅ 20-40 seconds gap (safe but not too slow)
   if (u.lastSendTime && !options.skipDelay) {
     const l = u.lastSendTime._seconds ? u.lastSendTime._seconds * 1000 : new Date(u.lastSendTime).getTime();
-    const el = Date.now() - l; const mg = 8000 + Math.floor(Math.random() * 7000);
+    const el = Date.now() - l;
+    const mg = 20000 + Math.floor(Math.random() * 20000);
     if (el < mg) await sleep(mg - el);
   }
+  
   const c = setUserOAuth(u.tokens);
   const g = google.gmail({ version: 'v1', auth: c });
   const r = await db.collection('users').doc(userId).collection('recipients').doc(recipientId).get();
   if (!r.exists) throw new Error('Not found');
   const rec = r.data();
+  
   let t;
   if (rec.templateId) { const tt = await db.collection('users').doc(userId).collection('templates').doc(rec.templateId).get(); if (tt.exists) t = tt.data(); }
   if (!t) { const ts = await db.collection('users').doc(userId).collection('templates').limit(1).get(); if (!ts.empty) t = ts.docs[0].data(); }
   if (!t) throw new Error('No template');
+  
+  // ✅ Personalization
+  const recipientName = (rec.company || '').split(' ')[0] || 'there';
+  const recipientCompany = rec.company || '';
+  const recipientEmail = rec.email || '';
+  
+  let subject = t.subject || '';
+  let body = t.body || '';
+  
+  const replacements = {
+    '{name}': recipientName,
+    '{company}': recipientCompany,
+    '{email}': recipientEmail,
+    '{firstName}': recipientName,
+    '{{name}}': recipientName,
+    '{{company}}': recipientCompany,
+    '{{email}}': recipientEmail
+  };
+  
+  for (const [k, v] of Object.entries(replacements)) {
+    subject = subject.split(k).join(v);
+    body = body.split(k).join(v);
+  }
+  
   const sig = u.signature || '';
-  const b = t.body.replace(/\n/g, '<br>');
-  const sh = sig ? '<div style="margin-top:18px;padding-top:14px;border-top:1px solid #e5e7eb;">' + sig + '</div>' : '';
-  const full = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;">' + b + sh + '</div>';
-  const lp = localAnalysis(t.subject, full);
+  const bodyHtml = body.replace(/\n/g, '<br>');
+  const sigHtml = sig ? '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>' : '';
+  const full = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">' + bodyHtml + sigHtml + '</div>';
+  
+  const lp = localAnalysis(subject, full);
   const tok = crypto.randomBytes(16).toString('hex');
   await db.collection('users').doc(userId).collection('recipients').doc(recipientId).update({ trackToken: tok });
-  const tu = (process.env.BACKEND_URL || 'http://localhost:3000') + '/track/' + recipientId + '?u=' + userId + '&t=' + tok;
+  
+  const tu = (process.env.BACKEND_URL || 'https://mailflow-pro-ten.vercel.app') + '/track/' + recipientId + '?u=' + userId + '&t=' + tok;
   const pix = '<img src="' + tu + '" width="1" height="1" alt="" style="border:0;outline:none;text-decoration:none;display:block;width:1px;height:1px">';
+  
   const atts = [];
   if (attachFiles !== false) {
     const fs = await db.collection('users').doc(userId).collection('files').get();
     const dr = google.drive({ version: 'v3', auth: c });
     for (const fd of fs.docs) { const f = fd.data(); try { const r2 = await dr.files.get({ fileId: f.driveId, alt: 'media' }, { responseType: 'arraybuffer' }); atts.push({ filename: f.name, mimeType: f.mimeType || 'application/octet-stream', data: Buffer.from(r2.data).toString('base64') }); } catch (e) {} }
   }
-  const raw = buildMime(u.name || 'MailFlow User', userEmail, rec.email, t.subject, full + pix, atts);
+  
+  const raw = buildMime(u.name || 'MailFlow User', userEmail, rec.email, subject, full + pix, atts);
   await g.users.messages.send({ userId: 'me', requestBody: { raw } });
-  await db.collection('users').doc(userId).collection('emailLog').add({ recipientId, recipientEmail: rec.email, company: rec.company || '', subject: t.subject, sentAt: new Date(), attachmentsCount: atts.length, aiPrediction: lp.prediction, aiScore: lp.score, aiInboxProb: lp.inboxProbability });
+  
+  await db.collection('users').doc(userId).collection('emailLog').add({ recipientId, recipientEmail: rec.email, company: rec.company || '', subject: subject, sentAt: new Date(), attachmentsCount: atts.length, aiPrediction: lp.prediction, aiScore: lp.score, aiInboxProb: lp.inboxProbability });
   await db.collection('users').doc(userId).collection('recipients').doc(recipientId).update({ status: 'Sent', sentAt: new Date(), lastSentAt: new Date() });
   await db.collection('users').doc(userId).update({ lastSendTime: new Date() });
+  
   const td = new Date().toISOString().split('T')[0];
   const sr = db.collection('users').doc(userId).collection('stats').doc(td);
   const sd = await sr.get();
-  await sr.set({ sent: ((sd.exists ? sd.data().sent : 0) || 0) + 1, updatedAt: new Date() }, { merge: true });
+  await sr.set({ sent: ((sd.exists ? sd.data().sent : 0) + 1), updatedAt: new Date() }, { merge: true });
   return rec.email;
 }
 
@@ -701,7 +750,7 @@ async function runAutoSend(uid, ue, ud) {
   const ps = await db.collection('users').doc(uid).collection('recipients').where('status', '==', 'Pending').limit(bs).get();
   if (ps.empty) return { sent: 0, failed: 0 };
   let s = 0, f = 0;
-  for (const r of ps.docs) { try { await sendOne(uid, ue, r.id, true, { force: true }); s++; await sleep(10000 + Math.floor(Math.random() * 10000)); } catch (e) { f++; if (e.code === 'QUIET_HOURS') break; } }
+  for (const r of ps.docs) { try { await sendOne(uid, ue, r.id, true, { force: true }); s++; await sleep(20000 + Math.floor(Math.random() * 20000)); } catch (e) { f++; if (e.code === 'QUIET_HOURS') break; } }
   if (s > 0) await db.collection('users').doc(uid).update({ totalAutoSent: (ud.totalAutoSent || 0) + s, lastAutoSendRun: new Date() });
   return { sent: s, failed: f };
 }
