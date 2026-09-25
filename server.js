@@ -69,7 +69,7 @@ async function callCerebras(prompt) {
   if (!CEREBRAS_KEY) throw new Error('No key');
   const r = await fetchWithTimeout('https://api.cerebras.ai/v1/chat/completions', {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CEREBRAS_KEY },
-    body: JSON.stringify({ model: 'llama-4-scout-17b-16e-instruct', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 900 })
+    body: JSON.stringify({ model: 'llama3.1-70b', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 900 })
   }, 12000);
   if (!r.ok) { const t = await r.text(); throw new Error('Cerebras ' + r.status + ' ' + t.substring(0, 100)); }
   const d = await r.json(); return (d.choices?.[0]?.message?.content || '').trim();
@@ -88,7 +88,7 @@ async function callMistral(prompt) {
 async function callGemini(prompt) {
   if (!GEMINI_KEY) throw new Error('No key');
   const client = new GoogleGenerativeAI(GEMINI_KEY);
-  const model = client.getGenerativeModel({ model: 'gemini-2.5-flash' });
+  const model = client.getGenerativeModel({ model: 'gemini-1.5-flash' });
   const result = await model.generateContent(prompt);
   return result.response.text().trim();
 }
@@ -97,7 +97,7 @@ async function callOpenRouter(prompt) {
   if (!OPENROUTER_KEY) throw new Error('No key');
   const r = await fetchWithTimeout('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENROUTER_KEY, 'HTTP-Referer': process.env.BACKEND_URL || 'https://mailflow-pro-ten.vercel.app', 'X-Title': 'MailFlow Pro' },
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENROUTER_KEY, 'HTTP-Referer': process.env.BACKEND_URL || 'https://mailflow-pro.vercel.app', 'X-Title': 'MailFlow Pro' },
     body: JSON.stringify({ model: 'meta-llama/llama-3.3-70b-instruct:free', messages: [{ role: 'user', content: prompt + '\nReturn valid JSON only.' }], temperature: 0.7, max_tokens: 900 })
   }, 12000);
   if (!r.ok) { const t = await r.text(); throw new Error('OpenRouter ' + r.status + ' ' + t.substring(0, 100)); }
@@ -350,9 +350,7 @@ app.post('/api/ai/parse-bulk', authRequired, async (req, res) => {
         const compacted = cleanLine.replace(/\s/g, '');
         const looksLikeDomain = /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(compacted);
         const isSingleWord = !cleanLine.includes(' ');
-        if (!looksLikeDomain && !(isSingleWord && /^[a-z0-9._-]+$/i.test(cleanLine))) {
-          company = cleanLine;
-        }
+        if (!looksLikeDomain && !(isSingleWord && /^[a-z0-9._-]+$/i.test(cleanLine))) company = cleanLine;
       }
       for (const e of emails) {
         const lower = e.toLowerCase();
@@ -706,12 +704,14 @@ async function runAutoSend(uid, ue, ud) {
 
 app.get('/api/cron/auto-send', async (req, res) => {
   try {
-    const sec = req.query.secret || req.headers['x-cron-secret'];
-    if (sec !== CRON_SECRET) return res.status(401).json({ ok: false });
+    const authHeader = req.headers.authorization || '';
+    const bearer = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : '';
+    const sec = req.query.secret || req.headers['x-cron-secret'] || bearer;
+    if (sec !== CRON_SECRET) return res.status(401).json({ ok: false, error: 'Unauthorized' });
     const us = await db.collection('users').where('autoSend', '==', true).get();
     let ts = 0, tu = 0, sk = 0, er = 0;
     for (const u of us.docs) { const d = u.data(); if (!d.tokens || !d.email) continue; try { const r = await runAutoSend(u.id, d.email, d); if (r.skipped) sk++; else if (r.sent > 0) { ts += r.sent; tu++; } } catch (e) { er++; } }
-    res.json({ ok: true, totalSent: ts, totalUsers: tu, skipped: sk, errors: er });
+    res.json({ ok: true, totalSent: ts, totalUsers: tu, skipped: sk, errors: er, timestamp: new Date().toISOString() });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -765,4 +765,4 @@ app.use((req, res, next) => {
 });
 
 if (process.env.VERCEL) module.exports = app;
-else app.listen(PORT, () => console.log('Server on port ' + PORT));
+else app.listen(PORT, () => console.log('✅ MailFlow Pro running on port ' + PORT));

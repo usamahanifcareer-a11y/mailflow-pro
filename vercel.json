@@ -2,7 +2,8 @@
   "version": 2,
   "functions": {
     "server.js": {
-      "includeFiles": "public/**"
+      "includeFiles": "public/**",
+      "maxDuration": 60
     }
   },
   "routes": [

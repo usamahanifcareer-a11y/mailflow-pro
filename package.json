@@ -7,17 +7,19 @@
     "start": "node server.js",
     "dev": "node server.js"
   },
-  "dependencies": {
-    "@google/generative-ai": "^0.21.0",
-    "cookie-session": "^2.1.1",
-    "cors": "^2.8.6",
-    "dotenv": "^16.4.5",
-    "express": "^4.21.0",
-    "firebase-admin": "^12.7.0",
-    "googleapis": "^144.0.0"
-  },
   "engines": {
     "node": ">=18.0.0"
   },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "cookie-session": "^2.1.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "firebase-admin": "^13.0.2",
+    "googleapis": "^144.0.0"
+  },
+  "keywords": ["email", "automation", "ai", "gmail"],
+  "author": "Usama Hanif",
   "license": "MIT"
 }
