@@ -59,9 +59,9 @@ async function callGroq(prompt) {
   if (!GROQ_KEY) throw new Error('No key');
   const r = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY },
-    body: JSON.stringify({ model: 'llama-3.1-8b-instant', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 900 })
+    body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 900 })
   }, 12000);
-  if (!r.ok) { const t = await r.text(); throw new Error('Groq ' + r.status + ' ' + t.substring(0, 80)); }
+  if (!r.ok) { const t = await r.text(); throw new Error('Groq ' + r.status + ' ' + t.substring(0, 100)); }
   const d = await r.json(); return (d.choices?.[0]?.message?.content || '').trim();
 }
 
@@ -69,9 +69,9 @@ async function callCerebras(prompt) {
   if (!CEREBRAS_KEY) throw new Error('No key');
   const r = await fetchWithTimeout('https://api.cerebras.ai/v1/chat/completions', {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CEREBRAS_KEY },
-    body: JSON.stringify({ model: 'llama3.1-8b', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 900 })
+    body: JSON.stringify({ model: 'llama-4-scout-17b-16e-instruct', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 900 })
   }, 12000);
-  if (!r.ok) { const t = await r.text(); throw new Error('Cerebras ' + r.status + ' ' + t.substring(0, 80)); }
+  if (!r.ok) { const t = await r.text(); throw new Error('Cerebras ' + r.status + ' ' + t.substring(0, 100)); }
   const d = await r.json(); return (d.choices?.[0]?.message?.content || '').trim();
 }
 
@@ -81,14 +81,14 @@ async function callMistral(prompt) {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + MISTRAL_KEY },
     body: JSON.stringify({ model: 'mistral-small-latest', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 900 })
   }, 12000);
-  if (!r.ok) { const t = await r.text(); throw new Error('Mistral ' + r.status + ' ' + t.substring(0, 80)); }
+  if (!r.ok) { const t = await r.text(); throw new Error('Mistral ' + r.status + ' ' + t.substring(0, 100)); }
   const d = await r.json(); return (d.choices?.[0]?.message?.content || '').trim();
 }
 
 async function callGemini(prompt) {
   if (!GEMINI_KEY) throw new Error('No key');
   const client = new GoogleGenerativeAI(GEMINI_KEY);
-  const model = client.getGenerativeModel({ model: 'gemini-2.0-flash' });
+  const model = client.getGenerativeModel({ model: 'gemini-2.5-flash' });
   const result = await model.generateContent(prompt);
   return result.response.text().trim();
 }
@@ -98,9 +98,9 @@ async function callOpenRouter(prompt) {
   const r = await fetchWithTimeout('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENROUTER_KEY, 'HTTP-Referer': process.env.BACKEND_URL || 'https://mailflow-pro-ten.vercel.app', 'X-Title': 'MailFlow Pro' },
-    body: JSON.stringify({ model: 'meta-llama/llama-3.1-8b-instruct:free', messages: [{ role: 'user', content: prompt + '\nReturn valid JSON only.' }], temperature: 0.7, max_tokens: 900 })
+    body: JSON.stringify({ model: 'meta-llama/llama-3.3-70b-instruct:free', messages: [{ role: 'user', content: prompt + '\nReturn valid JSON only.' }], temperature: 0.7, max_tokens: 900 })
   }, 12000);
-  if (!r.ok) { const t = await r.text(); throw new Error('OpenRouter ' + r.status + ' ' + t.substring(0, 80)); }
+  if (!r.ok) { const t = await r.text(); throw new Error('OpenRouter ' + r.status + ' ' + t.substring(0, 100)); }
   const d = await r.json(); return (d.choices?.[0]?.message?.content || '').trim();
 }
 
@@ -123,9 +123,9 @@ async function callAI(prompt) {
       console.log('AI OK: ' + p.name);
       setCachedResponse(prompt, text);
       return text;
-    } catch (err) { console.error('AI FAIL ' + p.name + ':', err.message); errors.push(p.name + '(' + err.message.substring(0,30) + ')'); }
+    } catch (err) { console.error('AI FAIL ' + p.name + ':', err.message); errors.push(p.name); }
   }
-  throw new Error('All AI failed: ' + errors.join(' | '));
+  throw new Error('All AI failed: ' + errors.join(','));
 }
 
 app.set('trust proxy', 1);
@@ -156,7 +156,6 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL, firebase: !!serviceAccount.project_id, ai: { groq: !!GROQ_KEY, cerebras: !!CEREBRAS_KEY, gemini: !!GEMINI_KEY, mistral: !!MISTRAL_KEY, openrouter: !!OPENROUTER_KEY } }));
 
-// ============ DEBUG ENDPOINT ============
 app.get('/api/ai/debug', authRequired, async (req, res) => {
   const testPrompt = 'Return ONLY JSON: {"message":"hello","status":"ok"}';
   const results = {};
@@ -170,12 +169,8 @@ app.get('/api/ai/debug', authRequired, async (req, res) => {
   for (const t of testers) {
     if (!t.key) { results[t.name] = { status: 'no_key' }; continue; }
     const start = Date.now();
-    try {
-      const text = await t.fn(testPrompt);
-      results[t.name] = { status: 'ok', time: (Date.now() - start) + 'ms', preview: text.substring(0, 100) };
-    } catch (e) {
-      results[t.name] = { status: 'fail', time: (Date.now() - start) + 'ms', error: e.message };
-    }
+    try { const text = await t.fn(testPrompt); results[t.name] = { status: 'ok', time: (Date.now() - start) + 'ms', preview: text.substring(0, 80) }; }
+    catch (e) { results[t.name] = { status: 'fail', time: (Date.now() - start) + 'ms', error: e.message.substring(0, 150) }; }
   }
   res.json({ ok: true, results });
 });
@@ -231,15 +226,12 @@ app.get('/api/quota', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ============ REAL-TIME AI ANALYSIS ============
 app.post('/api/ai/analyze-live', authRequired, async (req, res) => {
   try {
     const { subject, body } = req.body;
     const hasS = subject && subject.trim().length > 0;
     const hasB = body && body.trim().length > 0;
     if (!hasS && !hasB) return res.json({ ok: true, empty: true });
-
-    // Try REAL AI first
     try {
       const u = await getUserData(req.session.user.id);
       const hasLogo = !!(u && u.logoUrl);
@@ -252,12 +244,8 @@ Return: {"score":0-100,"prediction":"EXCELLENT"|"GOOD"|"RISKY"|"SPAM","inboxProb
 Rules: <= 15 EXCELLENT, 16-40 GOOD, 41-70 RISKY, 71+ SPAM.`;
       const text = await callAI(prompt);
       const parsed = safeParseJSON(text);
-      if (parsed && typeof parsed.score === 'number') {
-        return res.json({ ok: true, ...parsed, aiPowered: true });
-      }
+      if (parsed && typeof parsed.score === 'number') return res.json({ ok: true, ...parsed, aiPowered: true });
     } catch (aiErr) { console.error('Live AI:', aiErr.message); }
-
-    // Fallback to local
     res.json({ ok: true, ...localAnalysis(subject, body), aiPowered: false });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
@@ -343,35 +331,29 @@ app.post('/api/ai/improve-email', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ============ AI-POWERED BULK PARSING ============
 app.post('/api/ai/parse-bulk', authRequired, async (req, res) => {
   try {
     const { text } = req.body;
-    if (!text || !text.trim()) return res.json({ ok: false, error: 'No text provided' });
-
+    if (!text || !text.trim()) return res.json({ ok: false, error: 'No text' });
     const emailRx = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
     const lines = text.split(/\r?\n/).filter(l => l.trim());
     const foundEmails = {};
     const seenEmails = new Set();
-
     for (const line of lines) {
       const emails = line.match(emailRx) || [];
       if (!emails.length) continue;
-
       let cleanLine = line;
       for (const e of emails) cleanLine = cleanLine.replace(e, ' ');
       cleanLine = cleanLine.replace(/[,;|<>"'\(\)\[\]]/g, ' ').replace(/\s+/g, ' ').trim();
-
       let company = '';
       if (cleanLine.length >= 2 && cleanLine.length <= 80) {
         const compacted = cleanLine.replace(/\s/g, '');
         const looksLikeDomain = /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(compacted);
         const isSingleWord = !cleanLine.includes(' ');
-        if (!looksLikeDomain && !(isSingleWord && /^[a-z0-9._-]+$/i.test(cleanLine) && foundEmails[emails[0].toLowerCase()])) {
+        if (!looksLikeDomain && !(isSingleWord && /^[a-z0-9._-]+$/i.test(cleanLine))) {
           company = cleanLine;
         }
       }
-
       for (const e of emails) {
         const lower = e.toLowerCase();
         if (seenEmails.has(lower)) continue;
@@ -379,17 +361,11 @@ app.post('/api/ai/parse-bulk', authRequired, async (req, res) => {
         foundEmails[lower] = company;
       }
     }
-
     const items = Object.keys(foundEmails).map(e => ({ email: e, company: foundEmails[e] }));
-
-    // If some have empty company, try AI to fill
     const emptyCount = items.filter(i => !i.company).length;
-    if (emptyCount > 0 && emptyCount < items.length && (GROQ_KEY || CEREBRAS_KEY)) {
+    if (emptyCount > 0 && emptyCount < items.length) {
       try {
-        const prompt = `Extract company/name for each email. Return ONLY JSON.
-Text:
-${text.substring(0, 1500)}
-Return: {"items":[{"email":"...","company":"..."}]}`;
+        const prompt = `Extract company/name for each email. Return ONLY JSON.\nText:\n${text.substring(0, 1500)}\nReturn: {"items":[{"email":"...","company":"..."}]}`;
         const aiText = await callAI(prompt);
         const parsed = safeParseJSON(aiText);
         if (parsed && parsed.items) {
@@ -400,7 +376,6 @@ Return: {"items":[{"email":"...","company":"..."}]}`;
         }
       } catch (e) { console.error('parse-bulk AI:', e.message); }
     }
-
     res.json({ ok: true, items: items, aiPowered: false });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
@@ -434,7 +409,6 @@ app.post('/api/ai/analyze-replies', authRequired, async (req, res) => {
     const since = Math.floor((Date.now() - 30 * 24 * 60 * 60 * 1000) / 1000);
     const list = await gmail.users.messages.list({ userId: 'me', q: `in:inbox after:${since}`, maxResults: 10 });
     if (!list.data.messages || !list.data.messages.length) return res.json({ ok: true, replies: [] });
-
     const replies = [];
     for (const msg of list.data.messages.slice(0, 8)) {
       try {
@@ -450,7 +424,6 @@ app.post('/api/ai/analyze-replies', authRequired, async (req, res) => {
       } catch (e) {}
     }
     if (!replies.length) return res.json({ ok: true, replies: [] });
-
     try {
       const prompt = `Categorize email replies. Return ONLY JSON.
 ${replies.map((r, i) => `[${i}] From: ${r.from}\nSubject: ${r.subject}\nBody: ${r.bodyPreview}`).join('\n\n')}
@@ -462,13 +435,11 @@ Return: {"categories":[{"index":0,"type":"INTERESTED"|"NOT_INTERESTED"|"AUTO_REP
         return res.json({ ok: true, replies: enriched, aiPowered: true });
       }
     } catch (e) { console.error('analyze-replies:', e.message); }
-
     const enriched = replies.map(r => ({ ...r, category: 'OTHER', sentiment: 'NEUTRAL', summary: 'AI unavailable' }));
     res.json({ ok: true, replies: enriched, aiPowered: false });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// LOGO
 app.post('/api/upload-logo', authRequired, async (req, res) => {
   try {
     const { base64, mimeType, filename } = req.body;
@@ -501,7 +472,6 @@ app.post('/api/remove-logo', authRequired, async (req, res) => {
 });
 app.get('/api/logo', authRequired, async (req, res) => { try { const d = await getUserData(req.session.user.id); res.json({ ok: true, url: d.logoUrl || '', urlAlt: d.logoUrlAlt || '' }); } catch (e) { res.json({ ok: false, error: e.message }); } });
 
-// FILES
 app.post('/api/upload-file', authRequired, async (req, res) => {
   try {
     const { base64, mimeType, filename } = req.body;
@@ -529,7 +499,6 @@ app.delete('/api/files/:id', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// TEMPLATES
 app.get('/api/templates', authRequired, async (req, res) => { try { const s = await db.collection('users').doc(req.session.user.id).collection('templates').get(); const l = []; s.forEach(d => l.push({ id: d.id, ...d.data() })); res.json({ ok: true, templates: l }); } catch (e) { res.json({ ok: false, error: e.message }); } });
 app.post('/api/templates', authRequired, async (req, res) => {
   try {
@@ -542,7 +511,6 @@ app.post('/api/templates', authRequired, async (req, res) => {
 });
 app.delete('/api/templates/:id', authRequired, async (req, res) => { try { await db.collection('users').doc(req.session.user.id).collection('templates').doc(req.params.id).delete(); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); } });
 
-// RECIPIENTS
 app.get('/api/recipients', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -596,7 +564,6 @@ app.post('/api/recipients/bulk-delete', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// EMAIL LOG
 app.get('/api/my-emails', authRequired, async (req, res) => {
   try {
     const { range, search } = req.query;
@@ -617,7 +584,6 @@ app.get('/api/my-emails', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// MIME
 function encS(s) { return /^[\x00-\x7F]*$/.test(s) ? s : '=?UTF-8?B?' + Buffer.from(s, 'utf8').toString('base64') + '?='; }
 function htmlToPlain(h) { return h.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '').replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '').replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/\n\s*\n\s*\n/g, '\n\n').trim(); }
 function buildMime(fn, fe, to, sub, h, atts) {
