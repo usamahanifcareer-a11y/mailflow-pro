@@ -13,7 +13,7 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_EMAIL = 'usama.hanif.career@gmail.com';
-const DAILY_LIMIT = 100;
+const DEFAULT_DAILY_LIMIT = 100;
 const IS_VERCEL = !!process.env.VERCEL;
 const CRON_SECRET = process.env.CRON_SECRET || 'mf-cron-default-change-me';
 
@@ -54,8 +54,20 @@ async function fetchWithTimeout(url, opts, ms) {
   catch (e) { clearTimeout(t); throw e; }
 }
 
-// ============ FREE AI PROVIDERS ============
+// Strip signatures from AI output
+function stripSignature(text) {
+  if (!text) return text;
+  let t = text;
+  // Remove common signature patterns (multi-line blocks at end)
+  t = t.replace(/\n{1,}(Best regards|Regards|Sincerely|Thanks|Thank you|Warm regards|Kind regards|Yours truly|Cheers|Warmly|Yours|Respectfully|Looking forward)[^\n]*[\s\S]*$/i, '');
+  t = t.replace(/\n{1,}[-—=_]{2,}[\s\S]*$/i, '');
+  t = t.replace(/\n{1,}(Sent from|Sent via)[^\n]*[\s\S]*$/i, '');
+  // Remove trailing placeholder signature blocks
+  t = t.replace(/\n{1,}\[?(Your Name|Full Name|Your Title|Your Position|Your Company|Your Email|Your Phone|Your LinkedIn|Name|Title|Company|Phone|Email|LinkedIn)\]?[\s\S]*$/i, '');
+  return t.trim();
+}
 
+// ============ FREE AI PROVIDERS ============
 async function callGroq(prompt) {
   if (!GROQ_KEY) throw new Error('No key');
   const r = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
@@ -101,9 +113,8 @@ async function callMistral(prompt) {
     try { return await doFetch(); }
     catch (e) {
       lastErr = e;
-      if (e.retryAfter !== undefined || e.message.includes('429')) {
-        await sleep((e.retryAfter || Math.pow(2, attempt) * 1000));
-      } else { throw e; }
+      if (e.retryAfter !== undefined || e.message.includes('429')) await sleep((e.retryAfter || Math.pow(2, attempt) * 1000));
+      else throw e;
     }
   }
   throw lastErr;
@@ -192,11 +203,13 @@ app.get('/auth/google/callback', async (req, res) => {
       data.createdAt = new Date(); data.quietEnabled = false; data.quietStart = 22; data.quietEnd = 7;
       data.autoSend = false; data.autoSendBatchSize = 5; data.signature = ''; data.logoUrl = ''; data.sigFields = {};
       data.appAccountId = generateAppAccountId(); data.lastAutoSendRun = null; data.totalAutoSent = 0; data.lastSendTime = null;
+      data.dailyLimit = DEFAULT_DAILY_LIMIT;
     } else {
       const ex = existing.data();
       if (!ex.appAccountId) data.appAccountId = generateAppAccountId();
       if (ex.autoSendBatchSize === undefined) data.autoSendBatchSize = 5;
       if (ex.totalAutoSent === undefined) data.totalAutoSent = 0;
+      if (ex.dailyLimit === undefined) data.dailyLimit = DEFAULT_DAILY_LIMIT;
     }
     await db.collection('users').doc(uid).set(data, { merge: true });
     const fresh = await db.collection('users').doc(uid).get();
@@ -222,9 +235,22 @@ app.get('/api/quota', authRequired, async (req, res) => {
     const gmail = google.gmail({ version: 'v1', auth: client });
     const oneDayAgo = Math.floor((Date.now() - 24 * 60 * 60 * 1000) / 1000);
     let sent = 0;
-    try { const r = await gmail.users.messages.list({ userId: 'me', q: `in:sent after:${oneDayAgo}`, maxResults: 500 }); sent = r.data.resultSizeEstimate || (r.data.messages ? r.data.messages.length : 0); }
-    catch (e) { const t = new Date().toISOString().split('T')[0]; const sd = await db.collection('users').doc(req.session.user.id).collection('stats').doc(t).get(); sent = sd.exists ? (sd.data().sent || 0) : 0; }
-    res.json({ ok: true, sentToday: sent, limit: DAILY_LIMIT, remaining: Math.max(0, DAILY_LIMIT - sent) });
+    let source = 'gmail';
+    try {
+      const r = await gmail.users.messages.list({ userId: 'me', q: `in:sent after:${oneDayAgo}`, maxResults: 500 });
+      sent = r.data.resultSizeEstimate || (r.data.messages ? r.data.messages.length : 0);
+    } catch (e) {
+      source = 'local';
+      const t = new Date().toISOString().split('T')[0];
+      const sd = await db.collection('users').doc(req.session.user.id).collection('stats').doc(t).get();
+      sent = sd.exists ? (sd.data().sent || 0) : 0;
+    }
+    const userLimit = u.dailyLimit || DEFAULT_DAILY_LIMIT;
+    res.json({
+      ok: true, sentToday: sent, limit: userLimit, googleLimit: 500,
+      remaining: Math.max(0, userLimit - sent), googleRemaining: Math.max(0, 500 - sent),
+      source, timestamp: new Date().toISOString()
+    });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -279,27 +305,36 @@ function localAnalysis(subject, body) {
   return { score, prediction, inboxProbability, issues, suggestions, tone: 'professional', readability: 75, emotionalTone: 'neutral' };
 }
 
+// ============ AI WRITE — NO SIGNATURE ============
 app.post('/api/ai/write-email', authRequired, async (req, res) => {
   try {
     const { context, recipientName, recipientCompany, tone, length } = req.body;
     if (!context) return res.json({ ok: false, error: 'Context required' });
     const TM = { formal: 'professional', friendly: 'warm', casual: 'casual', persuasive: 'confident' };
     const LM = { short: 'under 80 words', medium: '100-150 words', long: '200-250 words' };
-    const prompt = `Write professional email. Return ONLY JSON.
+    const prompt = `Write a professional email MESSAGE BODY ONLY (no signature, no sign-off block, no contact info). Return ONLY JSON.
 Context: ${context}
 Recipient: ${recipientName || 'unknown'}
 Company: ${recipientCompany || 'unknown'}
 Tone: ${TM[tone] || TM.formal}
 Length: ${LM[length] || LM.medium}
+STRICT RULES:
+- Return ONLY the message content — nothing else.
+- Do NOT add any signature, sign-off, name, title, phone, email, or contact block.
+- Do NOT write "Best regards", "Regards", "Sincerely", "Thanks", or any closing with a name.
+- End the body after the last sentence of the message. Nothing after that.
 Return: {"subject":"under 60 chars","body":"with \\n\\n breaks"}`;
     try {
       const text = await callAI(prompt);
       const parsed = safeParseJSON(text);
-      if (parsed && parsed.subject && parsed.body) return res.json({ ok: true, ...parsed, aiPowered: true });
+      if (parsed && parsed.subject && parsed.body) {
+        const cleanBody = stripSignature(parsed.body);
+        return res.json({ ok: true, subject: parsed.subject, body: cleanBody, aiPowered: true });
+      }
     } catch (e) { console.error('write:', e.message); }
     const r = recipientName || (recipientCompany ? recipientCompany + ' Team' : 'Hiring Team');
     const s = context.length > 55 ? context.substring(0, 52) + '...' : context;
-    const b = `Dear ${r},\n\nI hope this message finds you well. I'm reaching out regarding ${context}.\n\nI believe this could be a great fit, and I would welcome the chance to discuss further.\n\nPlease let me know if you need any additional information.\n\nThank you for your time.\n\nBest regards`;
+    const b = `Dear ${r},\n\nI hope this message finds you well. I'm reaching out regarding ${context}.\n\nI believe this could be a great fit, and I would welcome the chance to discuss further.\n\nPlease let me know if you need any additional information.`;
     res.json({ ok: true, subject: s, body: b, aiPowered: false });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
@@ -321,14 +356,17 @@ app.post('/api/ai/generate-subjects', authRequired, async (req, res) => {
 app.post('/api/ai/improve-email', authRequired, async (req, res) => {
   try {
     const { subject, body } = req.body;
-    const prompt = `Improve this email for inbox placement. Return ONLY JSON.\nSubject: "${subject || ''}"\nBody: "${(body||'').substring(0, 800)}"\nReturn: {"improvedSubject":"...","improvedBody":"...","beforeScore":50,"afterScore":85}`;
+    const prompt = `Improve this email body for inbox placement. Return ONLY JSON.\nSubject: "${subject || ''}"\nBody: "${(body||'').substring(0, 800)}"\nSTRICT: Do not add any signature, sign-off, name, or contact block.\nReturn: {"improvedSubject":"...","improvedBody":"...","beforeScore":50,"afterScore":85}`;
     try {
       const text = await callAI(prompt);
       const parsed = safeParseJSON(text);
-      if (parsed && parsed.improvedSubject) return res.json({ ok: true, ...parsed, aiPowered: true });
+      if (parsed && parsed.improvedSubject) {
+        const cleanBody = stripSignature(parsed.improvedBody || '');
+        return res.json({ ok: true, improvedSubject: parsed.improvedSubject, improvedBody: cleanBody, beforeScore: parsed.beforeScore || 50, afterScore: parsed.afterScore || 85, aiPowered: true });
+      }
     } catch (e) { console.error('improve:', e.message); }
     const cs = (subject || '').replace(/[!]{2,}/g, '!').replace(/\bfree\b/gi, '').trim();
-    const cb = (body || '').replace(/\bfree\b/gi, '').replace(/[!]{2,}/g, '!').trim();
+    const cb = stripSignature((body || '').replace(/\bfree\b/gi, '').replace(/[!]{2,}/g, '!').trim());
     res.json({ ok: true, improvedSubject: cs || subject, improvedBody: cb || body, beforeScore: 50, afterScore: 75, aiPowered: false });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
@@ -499,16 +537,39 @@ app.delete('/api/files/:id', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-app.get('/api/templates', authRequired, async (req, res) => { try { const s = await db.collection('users').doc(req.session.user.id).collection('templates').get(); const l = []; s.forEach(d => l.push({ id: d.id, ...d.data() })); res.json({ ok: true, templates: l }); } catch (e) { res.json({ ok: false, error: e.message }); } });
+app.get('/api/templates', authRequired, async (req, res) => {
+  try {
+    const s = await db.collection('users').doc(req.session.user.id).collection('templates').get();
+    const l = [];
+    s.forEach(d => l.push({ id: d.id, ...d.data() }));
+    res.json({ ok: true, templates: l });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
 app.post('/api/templates', authRequired, async (req, res) => {
   try {
     const { id, name, subject, body } = req.body;
     if (!name || !subject || !body) return res.json({ ok: false, error: 'Required' });
     const ref = db.collection('users').doc(req.session.user.id).collection('templates');
-    if (id) { await ref.doc(id).set({ name, subject, body, updatedAt: new Date() }); res.json({ ok: true, id }); }
-    else { const d = await ref.add({ name, subject, body, createdAt: new Date() }); res.json({ ok: true, id: d.id }); }
+    if (id) {
+      await ref.doc(id).set({ name, subject, body, updatedAt: new Date() });
+      res.json({ ok: true, id, name });
+    } else {
+      const existing = await ref.get();
+      const existingNames = [];
+      existing.forEach(d => { const n = d.data().name; if (n) existingNames.push(n); });
+      let finalName = name;
+      if (existingNames.includes(name)) {
+        let counter = 1;
+        while (existingNames.includes(name + ' ' + counter)) counter++;
+        finalName = name + ' ' + counter;
+      }
+      const d = await ref.add({ name: finalName, subject, body, createdAt: new Date() });
+      res.json({ ok: true, id: d.id, name: finalName, renamed: finalName !== name });
+    }
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
+
 app.delete('/api/templates/:id', authRequired, async (req, res) => { try { await db.collection('users').doc(req.session.user.id).collection('templates').doc(req.params.id).delete(); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); } });
 
 app.get('/api/recipients', authRequired, async (req, res) => {
@@ -579,6 +640,13 @@ app.get('/api/my-emails', authRequired, async (req, res) => {
     q = q.limit(1000);
     const s = await q.get();
     let l = []; s.forEach(d => l.push({ id: d.id, ...d.data() }));
+    const recSnap = await db.collection('users').doc(req.session.user.id).collection('recipients').get();
+    const recMap = {};
+    recSnap.forEach(d => { recMap[d.id] = d.data(); });
+    l = l.map(e => {
+      const rec = recMap[e.recipientId];
+      return { ...e, recipientStatus: rec ? rec.status : 'Unknown', recipientOpenedAt: rec ? rec.openedAt : null };
+    });
     if (search) { const sq = search.toLowerCase(); l = l.filter(e => (e.recipientEmail||'').toLowerCase().includes(sq) || (e.subject||'').toLowerCase().includes(sq) || (e.company||'').toLowerCase().includes(sq)); }
     res.json({ ok: true, emails: l });
   } catch (e) { res.json({ ok: false, error: e.message }); }
@@ -631,93 +699,152 @@ async function sendOne(userId, userEmail, recipientId, attachFiles, options) {
   const u = await getUserData(userId);
   if (!u.tokens) throw new Error('Expired');
   if (isQuietHours(u) && !options.force) { const e = new Error('QUIET_HOURS'); e.code = 'QUIET_HOURS'; e.quietEnd = u.quietEnd; throw e; }
-  
-  // ✅ 20-40 seconds gap (safe but not too slow)
+
+  const r = await db.collection('users').doc(userId).collection('recipients').doc(recipientId).get();
+  if (!r.exists) throw new Error('Not found');
+  const rec = r.data();
+
+  // Daily limit
+  const userLimit = u.dailyLimit || DEFAULT_DAILY_LIMIT;
+  const todayKey = new Date().toISOString().split('T')[0];
+  const statDoc = await db.collection('users').doc(userId).collection('stats').doc(todayKey).get();
+  const todaySent = statDoc.exists ? (statDoc.data().sent || 0) : 0;
+  if (todaySent >= userLimit && !options.force) {
+    const e = new Error('DAILY_LIMIT');
+    e.code = 'DAILY_LIMIT';
+    e.limit = userLimit;
+    e.sent = todaySent;
+    throw e;
+  }
+
+  // 20-40 sec gap
   if (u.lastSendTime && !options.skipDelay) {
     const l = u.lastSendTime._seconds ? u.lastSendTime._seconds * 1000 : new Date(u.lastSendTime).getTime();
     const el = Date.now() - l;
     const mg = 20000 + Math.floor(Math.random() * 20000);
     if (el < mg) await sleep(mg - el);
   }
-  
+
   const c = setUserOAuth(u.tokens);
   const g = google.gmail({ version: 'v1', auth: c });
-  const r = await db.collection('users').doc(userId).collection('recipients').doc(recipientId).get();
-  if (!r.exists) throw new Error('Not found');
-  const rec = r.data();
-  
+
   let t;
   if (rec.templateId) { const tt = await db.collection('users').doc(userId).collection('templates').doc(rec.templateId).get(); if (tt.exists) t = tt.data(); }
   if (!t) { const ts = await db.collection('users').doc(userId).collection('templates').limit(1).get(); if (!ts.empty) t = ts.docs[0].data(); }
   if (!t) throw new Error('No template');
-  
-  // ✅ Personalization
+
   const recipientName = (rec.company || '').split(' ')[0] || 'there';
   const recipientCompany = rec.company || '';
   const recipientEmail = rec.email || '';
-  
+
   let subject = t.subject || '';
   let body = t.body || '';
-  
+
   const replacements = {
-    '{name}': recipientName,
-    '{company}': recipientCompany,
-    '{email}': recipientEmail,
-    '{firstName}': recipientName,
-    '{{name}}': recipientName,
-    '{{company}}': recipientCompany,
-    '{{email}}': recipientEmail
+    '{name}': recipientName, '{company}': recipientCompany, '{email}': recipientEmail, '{firstName}': recipientName,
+    '{{name}}': recipientName, '{{company}}': recipientCompany, '{{email}}': recipientEmail
   };
-  
   for (const [k, v] of Object.entries(replacements)) {
     subject = subject.split(k).join(v);
     body = body.split(k).join(v);
   }
-  
-  const sig = u.signature || '';
+
+  // Signature — only user's saved signature
+  let sigHtml = '';
+  if (u.signature && options.includeSignature !== false) {
+    let sig = u.signature;
+    if (options.includeLogo === false) sig = sig.replace(/<img[^>]*>/gi, '');
+    sigHtml = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>';
+  }
+
   const bodyHtml = body.replace(/\n/g, '<br>');
-  const sigHtml = sig ? '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>' : '';
   const full = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">' + bodyHtml + sigHtml + '</div>';
-  
+
   const lp = localAnalysis(subject, full);
   const tok = crypto.randomBytes(16).toString('hex');
   await db.collection('users').doc(userId).collection('recipients').doc(recipientId).update({ trackToken: tok });
-  
+
   const tu = (process.env.BACKEND_URL || 'https://mailflow-pro-ten.vercel.app') + '/track/' + recipientId + '?u=' + userId + '&t=' + tok;
   const pix = '<img src="' + tu + '" width="1" height="1" alt="" style="border:0;outline:none;text-decoration:none;display:block;width:1px;height:1px">';
-  
+
   const atts = [];
-  if (attachFiles !== false) {
+  if (attachFiles !== false && options.includeAttachments !== false) {
     const fs = await db.collection('users').doc(userId).collection('files').get();
     const dr = google.drive({ version: 'v3', auth: c });
     for (const fd of fs.docs) { const f = fd.data(); try { const r2 = await dr.files.get({ fileId: f.driveId, alt: 'media' }, { responseType: 'arraybuffer' }); atts.push({ filename: f.name, mimeType: f.mimeType || 'application/octet-stream', data: Buffer.from(r2.data).toString('base64') }); } catch (e) {} }
   }
-  
+
   const raw = buildMime(u.name || 'MailFlow User', userEmail, rec.email, subject, full + pix, atts);
   await g.users.messages.send({ userId: 'me', requestBody: { raw } });
-  
-  await db.collection('users').doc(userId).collection('emailLog').add({ recipientId, recipientEmail: rec.email, company: rec.company || '', subject: subject, sentAt: new Date(), attachmentsCount: atts.length, aiPrediction: lp.prediction, aiScore: lp.score, aiInboxProb: lp.inboxProbability });
-  await db.collection('users').doc(userId).collection('recipients').doc(recipientId).update({ status: 'Sent', sentAt: new Date(), lastSentAt: new Date() });
+
+  await db.collection('users').doc(userId).collection('emailLog').add({
+    recipientId, recipientEmail: rec.email, company: rec.company || '', subject: subject,
+    sentAt: new Date(), attachmentsCount: atts.length,
+    aiPrediction: lp.prediction, aiScore: lp.score, aiInboxProb: lp.inboxProbability
+  });
+
+  // If already opened, keep Opened status but update lastSentAt. Otherwise mark Sent.
+  const currentStatus = rec.status || 'Pending';
+  const newStatus = (currentStatus === 'Opened') ? 'Opened' : 'Sent';
+  const updateData = { status: newStatus, lastSentAt: new Date() };
+  if (currentStatus !== 'Opened') updateData.sentAt = new Date();
+  await db.collection('users').doc(userId).collection('recipients').doc(recipientId).update(updateData);
   await db.collection('users').doc(userId).update({ lastSendTime: new Date() });
-  
-  const td = new Date().toISOString().split('T')[0];
-  const sr = db.collection('users').doc(userId).collection('stats').doc(td);
-  const sd = await sr.get();
-  await sr.set({ sent: ((sd.exists ? sd.data().sent : 0) + 1), updatedAt: new Date() }, { merge: true });
+
+  const sr = db.collection('users').doc(userId).collection('stats').doc(todayKey);
+  await sr.set({ sent: (todaySent + 1), updatedAt: new Date() }, { merge: true });
   return rec.email;
 }
 
 app.post('/api/send', authRequired, async (req, res) => {
-  try { const e = await sendOne(req.session.user.id, req.session.user.email, req.body.recipientId, req.body.attachFiles !== false, { force: req.body.force === true, skipDelay: req.body.skipDelay === true }); res.json({ ok: true, email: e }); }
-  catch (e) { if (e.code === 'QUIET_HOURS') return res.json({ ok: false, error: 'QUIET_HOURS', quietEnd: e.quietEnd }); res.json({ ok: false, error: e.message }); }
+  try {
+    const e = await sendOne(req.session.user.id, req.session.user.email, req.body.recipientId,
+      req.body.includeAttachments !== false,
+      {
+        force: req.body.force === true,
+        skipDelay: req.body.skipDelay === true,
+        includeSignature: req.body.includeSignature !== false,
+        includeLogo: req.body.includeLogo !== false,
+        includeAttachments: req.body.includeAttachments !== false
+      });
+    res.json({ ok: true, email: e });
+  } catch (e) {
+    if (e.code === 'QUIET_HOURS') return res.json({ ok: false, error: 'QUIET_HOURS', quietEnd: e.quietEnd });
+    if (e.code === 'DAILY_LIMIT') return res.json({ ok: false, error: 'DAILY_LIMIT', limit: e.limit, sent: e.sent, message: 'Daily limit reached (' + e.sent + '/' + e.limit + ')' });
+    res.json({ ok: false, error: e.message });
+  }
 });
+
 app.post('/api/resend', authRequired, async (req, res) => {
-  try { const e = await sendOne(req.session.user.id, req.session.user.email, req.body.recipientId, req.body.attachFiles !== false, { force: req.body.force === true, skipDelay: req.body.skipDelay === true }); res.json({ ok: true, email: e }); }
-  catch (e) { if (e.code === 'QUIET_HOURS') return res.json({ ok: false, error: 'QUIET_HOURS', quietEnd: e.quietEnd }); res.json({ ok: false, error: e.message }); }
+  try {
+    const e = await sendOne(req.session.user.id, req.session.user.email, req.body.recipientId,
+      req.body.includeAttachments !== false,
+      {
+        force: true, skipDelay: req.body.skipDelay === true,
+        includeSignature: req.body.includeSignature !== false,
+        includeLogo: req.body.includeLogo !== false,
+        includeAttachments: req.body.includeAttachments !== false
+      });
+    res.json({ ok: true, email: e });
+  } catch (e) {
+    if (e.code === 'QUIET_HOURS') return res.json({ ok: false, error: 'QUIET_HOURS', quietEnd: e.quietEnd });
+    if (e.code === 'DAILY_LIMIT') return res.json({ ok: false, error: 'DAILY_LIMIT', limit: e.limit, sent: e.sent });
+    res.json({ ok: false, error: e.message });
+  }
 });
 
 app.get('/track/:id', async (req, res) => {
-  try { const u = req.query.u; const t = req.query.t; if (u && t) { const r = await db.collection('users').doc(u).collection('recipients').doc(req.params.id).get(); if (r.exists && r.data().trackToken === t) await db.collection('users').doc(u).collection('recipients').doc(req.params.id).update({ status: 'Opened', openedAt: new Date() }); } } catch (e) {}
+  try {
+    const u = req.query.u; const t = req.query.t;
+    if (u && t) {
+      const r = await db.collection('users').doc(u).collection('recipients').doc(req.params.id).get();
+      if (r.exists && r.data().trackToken === t) {
+        if (r.data().status !== 'Opened') {
+          await db.collection('users').doc(u).collection('recipients').doc(req.params.id).update({ status: 'Opened', openedAt: new Date() });
+        }
+      }
+    }
+  } catch (e) {}
   const px = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
   res.set('Content-Type', 'image/gif'); res.send(px);
 });
@@ -726,10 +853,19 @@ app.get('/api/signature', authRequired, async (req, res) => { try { const d = aw
 app.post('/api/signature', authRequired, async (req, res) => { try { const u = { signature: req.body.signature || '' }; if (req.body.fields) u.sigFields = req.body.fields; await db.collection('users').doc(req.session.user.id).update(u); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); } });
 
 app.get('/api/prefs', authRequired, async (req, res) => {
-  try { const d = await getUserData(req.session.user.id); res.json({ ok: true, prefs: { quietEnabled: d.quietEnabled === true, quietStart: d.quietStart !== undefined ? d.quietStart : 22, quietEnd: d.quietEnd !== undefined ? d.quietEnd : 7, autoSend: d.autoSend === true, autoSendBatchSize: d.autoSendBatchSize !== undefined ? d.autoSendBatchSize : 5, appAccountId: d.appAccountId || '', totalAutoSent: d.totalAutoSent || 0 } }); } catch (e) { res.json({ ok: false, error: e.message }); }
+  try { const d = await getUserData(req.session.user.id); res.json({ ok: true, prefs: { quietEnabled: d.quietEnabled === true, quietStart: d.quietStart !== undefined ? d.quietStart : 22, quietEnd: d.quietEnd !== undefined ? d.quietEnd : 7, autoSend: d.autoSend === true, autoSendBatchSize: d.autoSendBatchSize !== undefined ? d.autoSendBatchSize : 5, appAccountId: d.appAccountId || '', totalAutoSent: d.totalAutoSent || 0, dailyLimit: d.dailyLimit || DEFAULT_DAILY_LIMIT, autoSendIncludeLogo: d.autoSendIncludeLogo !== false, autoSendIncludeSignature: d.autoSendIncludeSignature !== false } }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.post('/api/prefs', authRequired, async (req, res) => {
-  try { const { quietEnabled, quietStart, quietEnd, autoSend, autoSendBatchSize } = req.body; let bs = Number(autoSendBatchSize); if (isNaN(bs) || bs < 1) bs = 5; if (bs > 100) bs = 100; await db.collection('users').doc(req.session.user.id).update({ quietEnabled: !!quietEnabled, quietStart: Number(quietStart), quietEnd: Number(quietEnd), autoSend: !!autoSend, autoSendBatchSize: bs, updatedAt: new Date() }); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); }
+  try {
+    const { quietEnabled, quietStart, quietEnd, autoSend, autoSendBatchSize, autoSendIncludeLogo, autoSendIncludeSignature, dailyLimit } = req.body;
+    let bs = Number(autoSendBatchSize); if (isNaN(bs) || bs < 1) bs = 5; if (bs > 100) bs = 100;
+    let dl = Number(dailyLimit); if (isNaN(dl) || dl < 1) dl = DEFAULT_DAILY_LIMIT; if (dl > 500) dl = 500;
+    const update = { quietEnabled: !!quietEnabled, quietStart: Number(quietStart), quietEnd: Number(quietEnd), autoSend: !!autoSend, autoSendBatchSize: bs, dailyLimit: dl, updatedAt: new Date() };
+    if (autoSendIncludeLogo !== undefined) update.autoSendIncludeLogo = !!autoSendIncludeLogo;
+    if (autoSendIncludeSignature !== undefined) update.autoSendIncludeSignature = !!autoSendIncludeSignature;
+    await db.collection('users').doc(req.session.user.id).update(update);
+    res.json({ ok: true });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
 app.get('/api/stats', authRequired, async (req, res) => {
@@ -750,7 +886,18 @@ async function runAutoSend(uid, ue, ud) {
   const ps = await db.collection('users').doc(uid).collection('recipients').where('status', '==', 'Pending').limit(bs).get();
   if (ps.empty) return { sent: 0, failed: 0 };
   let s = 0, f = 0;
-  for (const r of ps.docs) { try { await sendOne(uid, ue, r.id, true, { force: true }); s++; await sleep(20000 + Math.floor(Math.random() * 20000)); } catch (e) { f++; if (e.code === 'QUIET_HOURS') break; } }
+  for (const r of ps.docs) {
+    try {
+      await sendOne(uid, ue, r.id, true, {
+        force: true,
+        includeSignature: ud.autoSendIncludeSignature !== false,
+        includeLogo: ud.autoSendIncludeLogo !== false,
+        includeAttachments: true
+      });
+      s++;
+      await sleep(20000 + Math.floor(Math.random() * 20000));
+    } catch (e) { f++; if (e.code === 'QUIET_HOURS') break; }
+  }
   if (s > 0) await db.collection('users').doc(uid).update({ totalAutoSent: (ud.totalAutoSent || 0) + s, lastAutoSendRun: new Date() });
   return { sent: s, failed: f };
 }
@@ -795,7 +942,7 @@ app.get('/api/admin/dashboard', adminRequired, async (req, res) => {
       const sd = await db.collection('users').doc(u.id).collection('emailLog').count().get();
       const tc = t.data().count, sc = s.data().count, oc = o.data().count, pc = p.data().count, sdc = sd.data().count;
       tE += tc; tS += sc; tO += oc; tP += pc; tSd += sdc;
-      users.push({ id: u.id, email: d.email, name: d.name, picture: d.picture || '', appAccountId: d.appAccountId || 'N/A', autoSend: !!d.autoSend, totalAutoSent: d.totalAutoSent || 0, createdAt: d.createdAt ? d.createdAt.toDate().toISOString() : '', hasSignature: !!d.signature, hasLogo: !!d.logoUrl, total: tc, sent: sc, opened: oc, pending: pc, totalSends: sdc });
+      users.push({ id: u.id, email: d.email, name: d.name, picture: d.picture || '', appAccountId: d.appAccountId || 'N/A', autoSend: !!d.autoSend, totalAutoSent: d.totalAutoSent || 0, dailyLimit: d.dailyLimit || DEFAULT_DAILY_LIMIT, createdAt: d.createdAt ? d.createdAt.toDate().toISOString() : '', hasSignature: !!d.signature, hasLogo: !!d.logoUrl, total: tc, sent: sc, opened: oc, pending: pc, totalSends: sdc });
     }
     users.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
     res.json({ ok: true, users, stats: { totalUsers: users.length, totalEmails: tE, totalSent: tS, totalOpened: tO, totalPending: tP, totalSends: tSd } });
@@ -809,6 +956,16 @@ app.get('/api/admin/all-emails', adminRequired, async (req, res) => {
     for (const u of us.docs) { const d = u.data(); const es = await db.collection('users').doc(u.id).collection('emailLog').orderBy('sentAt','desc').limit(500).get(); es.forEach(e => { const dd = e.data(); all.push({ id: e.id, userId: u.id, userEmail: d.email, userAppId: d.appAccountId || 'N/A', recipientEmail: dd.recipientEmail, company: dd.company || '', subject: dd.subject || '', sentAt: dd.sentAt, attachmentsCount: dd.attachmentsCount || 0 }); }); }
     all.sort((a, b) => { const ta = a.sentAt?._seconds || 0; const tb = b.sentAt?._seconds || 0; return tb - ta; });
     res.json({ ok: true, emails: all.slice(0, 1000) });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/admin/set-limit', adminRequired, async (req, res) => {
+  try {
+    const { userId, dailyLimit } = req.body;
+    if (!userId) return res.json({ ok: false, error: 'userId required' });
+    let dl = Number(dailyLimit); if (isNaN(dl) || dl < 1) dl = DEFAULT_DAILY_LIMIT; if (dl > 500) dl = 500;
+    await db.collection('users').doc(userId).update({ dailyLimit: dl });
+    res.json({ ok: true, dailyLimit: dl });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
