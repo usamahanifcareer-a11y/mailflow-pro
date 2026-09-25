@@ -42,7 +42,7 @@ button,input,textarea,select{font-family:inherit;font-size:16px}
 @media(max-width:1000px){.page-layout{flex-direction:column}.sidebar{width:100%;position:static}}
 .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px}
 @media(min-width:700px){.stats{grid-template-columns:repeat(5,1fr)}}
-.stat{background:linear-gradient(135deg,rgba(30,41,59,.8),rgba(15,23,42,.8));border:1px solid #1e293b;border-radius:14px;padding:16px;position:relative;overflow:hidden}
+.stat{background:linear-gradient(135deg,rgba(30,41,59,.8),rgba(15,23,42,.8));border:1px solid #1e293b;border-radius:14px;padding:16px;position:relative;overflow:hidden;transition:.25s}
 .stat::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#38bdf8,#a78bfa);opacity:0;transition:.2s}
 .stat:hover{border-color:#334155;transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,.3)}
 .stat:hover::before{opacity:1}
@@ -61,7 +61,7 @@ button,input,textarea,select{font-family:inherit;font-size:16px}
 .btn{background:linear-gradient(135deg,#38bdf8,#6366f1);color:white;border:none;padding:12px 22px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;justify-content:center}
 .btn:hover{box-shadow:0 8px 24px rgba(56,189,248,.4);transform:translateY(-1px)}
 .btn.ghost{background:transparent;border:1px solid #334155;color:#cbd5e1}
-.btn.ghost:hover{background:#1e293b}
+.btn.ghost:hover{background:#1e293b;box-shadow:none}
 .btn.danger{background:linear-gradient(135deg,#ef4444,#dc2626)}
 .btn.small{padding:8px 14px;font-size:13px}
 .btn:disabled{opacity:.5;cursor:not-allowed}
@@ -213,7 +213,6 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .quiet-banner .info .dsc{font-size:12px;color:#94a3b8;margin-top:2px}
 .batch-slider{width:100%;height:6px;background:#1e293b;border-radius:3px;outline:none;-webkit-appearance:none}
 .batch-slider::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#38bdf8,#6366f1);cursor:pointer;box-shadow:0 4px 12px rgba(56,189,248,.5)}
-.batch-slider::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#38bdf8,#6366f1);cursor:pointer;border:none}
 .batch-display{background:linear-gradient(135deg,#38bdf8,#6366f1);color:white;padding:6px 16px;border-radius:10px;font-weight:800;font-size:16px;min-width:60px;text-align:center}
 .batch-box{margin-top:14px;padding:14px;background:#0a0e1a;border:1px solid #1e293b;border-radius:12px;display:none}
 .batch-box.show{display:block}
@@ -725,15 +724,10 @@ function scheduleAnalysis(){
   $('aiLiveStatus').innerText='Typing...';
   analysisTimer=setTimeout(runLiveAnalysis,1200);
 }
-
 function runLiveAnalysis(){
   var subject=$('composerSubject').value.trim();
   var body=$('composerBody').value.trim();
-  if(!subject && !body){
-    resetAIAnalysisUI();
-    $('aiLiveStatus').innerText='Waiting';
-    return;
-  }
+  if(!subject && !body){ resetAIAnalysisUI(); $('aiLiveStatus').innerText='Waiting'; return; }
   var hash=subject+'|'+body;
   if(hash===lastAnalyzedHash){$('aiLiveStatus').innerText='Live';return;}
   lastAnalyzedHash=hash;
@@ -745,19 +739,14 @@ function runLiveAnalysis(){
     renderAIAnalysis(r);
   }).catch(function(){$('aiLiveStatus').innerText='Offline';});
 }
-
 function resetAIAnalysisUI(){
-  $('aiScoreValue').innerText='—';
-  $('aiScoreLabel').innerText='Waiting';
+  $('aiScoreValue').innerText='—';$('aiScoreLabel').innerText='Waiting';
   $('aiScoreCircle').style.background='conic-gradient(#1e293b 0%, #1e293b 100%)';
   $('aiScoreValue').style.color='#94a3b8';
-  $('aiProbValue').innerText='—';
-  $('aiProbValue').style.color='#94a3b8';
+  $('aiProbValue').innerText='—';$('aiProbValue').style.color='#94a3b8';
   $('aiProbFill').style.width='0%';
-  $('aiIssues').innerHTML='';
-  $('aiSuggestions').innerHTML='';
+  $('aiIssues').innerHTML='';$('aiSuggestions').innerHTML='';
 }
-
 function renderAIAnalysis(r){
   var score=r.score||0,prob=r.inboxProbability||0;
   var deg=Math.min(360,(score/100)*360);
@@ -771,20 +760,12 @@ function renderAIAnalysis(r){
   $('aiProbFill').style.width=prob+'%';
   $('aiProbFill').style.background=prob>=70?'linear-gradient(90deg,#22c55e,#38bdf8)':prob>=40?'linear-gradient(90deg,#f59e0b,#fcd34d)':'linear-gradient(90deg,#ef4444,#f97316)';
   var issuesHtml='';
-  if(r.issues&&r.issues.length){
-    issuesHtml=r.issues.map(function(i){
-      var cls=i.severity==='high'?'high':(i.severity==='low'?'low':'');
-      return '<div class="ai-issue '+cls+'">⚠️ '+esc(i.message)+'</div>';
-    }).join('');
-  }
+  if(r.issues&&r.issues.length){ issuesHtml=r.issues.map(function(i){ var cls=i.severity==='high'?'high':(i.severity==='low'?'low':''); return '<div class="ai-issue '+cls+'">⚠️ '+esc(i.message)+'</div>';}).join(''); }
   $('aiIssues').innerHTML=issuesHtml;
   var sugHtml='';
-  if(r.suggestions&&r.suggestions.length){
-    sugHtml=r.suggestions.map(function(s){return '<div class="ai-suggestion">💡 '+esc(s)+'</div>';}).join('');
-  }
+  if(r.suggestions&&r.suggestions.length){ sugHtml=r.suggestions.map(function(s){return '<div class="ai-suggestion">💡 '+esc(s)+'</div>';}).join(''); }
   $('aiSuggestions').innerHTML=sugHtml;
 }
-
 function openAIWriter(){$('aiWriterModal').classList.remove('hidden');}
 function closeAIWriter(){$('aiWriterModal').classList.add('hidden');}
 function runAIWriter(){
@@ -800,10 +781,7 @@ function aiGenerateSubjects(){
   var ctx=$('composerBody').value.trim().substring(0,200)||'professional outreach';
   toast('✨ Generating...');
   api('/api/ai/generate-subjects','POST',{context:ctx}).then(function(r){
-    if(r.ok&&r.subjects){
-      var html=r.subjects.map(function(s){return '<div class="ai-subject-item" onclick="pickSubject(\''+esc(s).replace(/'/g,"\\'")+'\')">'+esc(s)+'</div>';}).join('');
-      $('aiSubjectList').innerHTML=html;$('aiSubjectSuggestions').style.display='block';
-    }
+    if(r.ok&&r.subjects){ var html=r.subjects.map(function(s){return '<div class="ai-subject-item" onclick="pickSubject(\''+esc(s).replace(/'/g,"\\'")+'\')">'+esc(s)+'</div>';}).join(''); $('aiSubjectList').innerHTML=html;$('aiSubjectSuggestions').style.display='block'; }
   });
 }
 function pickSubject(s){$('composerSubject').value=s;$('aiSubjectSuggestions').style.display='none';lastAnalyzedHash='';scheduleAnalysis();}
@@ -823,9 +801,7 @@ function saveComposerTemplate(){
 }
 function clearComposer(){
   $('composerName').value='';$('composerSubject').value='';$('composerBody').value='';
-  lastAnalyzedHash='';
-  resetAIAnalysisUI();
-  $('aiLiveStatus').innerText='Waiting';
+  lastAnalyzedHash='';resetAIAnalysisUI();$('aiLiveStatus').innerText='Waiting';
 }
 
 // ==================== AI ANALYSIS TAB ====================
@@ -844,20 +820,12 @@ function loadAIPredictions(){
     summary+='</div>';
     var h=summary+'<table class="data-table"><thead><tr><th>Recipient</th><th>Subject</th><th>Sent At</th><th>AI Prediction</th><th>Inbox %</th></tr></thead><tbody>';
     emails.slice(0,100).forEach(function(e){
-      var pred=e.aiPrediction||'GOOD';
-      var prob=(typeof e.aiInboxProb==='number')?e.aiInboxProb:75;
+      var pred=e.aiPrediction||'GOOD';var prob=(typeof e.aiInboxProb==='number')?e.aiInboxProb:75;
       var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';
       var ic=pred==='EXCELLENT'?'✅':pred==='GOOD'?'👍':pred==='RISKY'?'⚠️':'❌';
-      h+='<tr>';
-      h+='<td style="word-break:break-all;font-size:12px;max-width:200px">'+esc(e.recipientEmail)+'</td>';
-      h+='<td style="font-size:12px;max-width:250px">'+esc(e.subject||'—')+'</td>';
-      h+='<td style="font-size:11px">'+fmtDate(e.sentAt)+'</td>';
-      h+='<td><span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:'+pc+'22;color:'+pc+';border:1px solid '+pc+'44">'+ic+' '+esc(pred)+'</span></td>';
-      h+='<td><span style="color:'+pc+';font-weight:800;font-size:14px">'+prob+'%</span></td>';
-      h+='</tr>';
+      h+='<tr><td style="word-break:break-all;font-size:12px;max-width:200px">'+esc(e.recipientEmail)+'</td><td style="font-size:12px;max-width:250px">'+esc(e.subject||'—')+'</td><td style="font-size:11px">'+fmtDate(e.sentAt)+'</td><td><span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:'+pc+'22;color:'+pc+';border:1px solid '+pc+'44">'+ic+' '+esc(pred)+'</span></td><td><span style="color:'+pc+';font-weight:800;font-size:14px">'+prob+'%</span></td></tr>';
     });
-    h+='</tbody></table>';
-    w.innerHTML=h;
+    h+='</tbody></table>';w.innerHTML=h;
   });
 }
 function loadBestTime(){
@@ -1001,7 +969,6 @@ function parseBulk(text){
   }
   return {valid:valid,dup:dup,err:err};
 }
-
 function updateBulk(){
   var text=$('bulkInput').value;
   var r=parseBulk(text);
@@ -1103,14 +1070,7 @@ function renderMyEmails(){
     var prob=(typeof e.aiInboxProb==='number')?e.aiInboxProb:75;
     var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';
     var ic=pred==='EXCELLENT'?'✅':pred==='GOOD'?'👍':pred==='RISKY'?'⚠️':'❌';
-    html+='<tr>';
-    html+='<td>'+esc(e.company||'—')+'</td>';
-    html+='<td style="word-break:break-all;max-width:180px">'+esc(e.recipientEmail)+'</td>';
-    html+='<td style="max-width:200px;font-size:12px">'+esc(e.subject||'—')+'</td>';
-    html+='<td style="font-size:11px">'+fmtDate(e.sentAt)+'</td>';
-    html+='<td><span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:'+pc+'22;color:'+pc+';border:1px solid '+pc+'44">'+ic+' '+esc(pred)+' · '+prob+'%</span></td>';
-    html+='<td>'+(e.attachmentsCount||0)+'</td>';
-    html+='</tr>';
+    html+='<tr><td>'+esc(e.company||'—')+'</td><td style="word-break:break-all;max-width:180px">'+esc(e.recipientEmail)+'</td><td style="max-width:200px;font-size:12px">'+esc(e.subject||'—')+'</td><td style="font-size:11px">'+fmtDate(e.sentAt)+'</td><td><span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:'+pc+'22;color:'+pc+';border:1px solid '+pc+'44">'+ic+' '+esc(pred)+' · '+prob+'%</span></td><td>'+(e.attachmentsCount||0)+'</td></tr>';
   });
   html+='</tbody></table>';
   w.innerHTML=html;

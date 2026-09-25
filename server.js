@@ -19,72 +19,106 @@ const CRON_SECRET = process.env.CRON_SECRET || 'mf-cron-default-change-me';
 
 if (!process.env.SESSION_SECRET) { console.error('FATAL: SESSION_SECRET missing!'); process.exit(1); }
 
-// ==================== MULTI-AI: GROQ → GEMINI → MISTRAL ====================
+// ==================== MULTI-AI SETUP ====================
 const GEMINI_KEY = process.env.GEMINI_API_KEY || '';
 const GROQ_KEY = process.env.GROQ_API_KEY || '';
 const MISTRAL_KEY = process.env.MISTRAL_API_KEY || '';
 
+function safeParseJSON(text) {
+  if (!text) return null;
+  let cleaned = text.trim();
+  cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+  if (firstBrace === -1 || lastBrace === -1) return null;
+  try { return JSON.parse(cleaned.substring(firstBrace, lastBrace + 1)); }
+  catch (e) { console.error('JSON parse error:', e.message); return null; }
+}
+
 async function callGroq(prompt) {
   if (!GROQ_KEY) throw new Error('No Groq key');
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY },
-    body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-      max_tokens: 1500
-    })
-  });
-  if (!res.ok) throw new Error('Groq HTTP ' + res.status);
-  const data = await res.json();
-  return (data.choices?.[0]?.message?.content || '').trim();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        messages: [
+          { role: 'system', content: 'You always respond in valid JSON format only. Never use markdown code fences.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 1200,
+        response_format: { type: 'json_object' }
+      })
+    });
+    clearTimeout(timeout);
+    if (!res.ok) { const t = await res.text(); throw new Error('Groq ' + res.status + ': ' + t.substring(0, 150)); }
+    const data = await res.json();
+    return (data.choices?.[0]?.message?.content || '').trim();
+  } catch (e) { clearTimeout(timeout); throw e; }
 }
 
 async function callGemini(prompt) {
   if (!GEMINI_KEY) throw new Error('No Gemini key');
   const client = new GoogleGenerativeAI(GEMINI_KEY);
-  const model = client.getGenerativeModel({ model: 'gemini-2.5-flash' });
+  const model = client.getGenerativeModel({
+    model: 'gemini-2.0-flash',
+    generationConfig: { responseMimeType: 'application/json' }
+  });
   const result = await model.generateContent(prompt);
   return result.response.text().trim();
 }
 
 async function callMistral(prompt) {
   if (!MISTRAL_KEY) throw new Error('No Mistral key');
-  const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + MISTRAL_KEY },
-    body: JSON.stringify({
-      model: 'mistral-small-latest',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-      max_tokens: 1500
-    })
-  });
-  if (!res.ok) throw new Error('Mistral HTTP ' + res.status);
-  const data = await res.json();
-  return (data.choices?.[0]?.message?.content || '').trim();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + MISTRAL_KEY },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: 'mistral-small-latest',
+        messages: [
+          { role: 'system', content: 'You always respond in valid JSON format only. Never use markdown code fences.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 1200,
+        response_format: { type: 'json_object' }
+      })
+    });
+    clearTimeout(timeout);
+    if (!res.ok) { const t = await res.text(); throw new Error('Mistral ' + res.status + ': ' + t.substring(0, 150)); }
+    const data = await res.json();
+    return (data.choices?.[0]?.message?.content || '').trim();
+  } catch (e) { clearTimeout(timeout); throw e; }
 }
 
 async function callAI(prompt) {
-  // Order: Groq (fastest) → Gemini (best quality) → Mistral (backup)
   const providers = [
     { name: 'Groq', fn: callGroq },
     { name: 'Gemini', fn: callGemini },
     { name: 'Mistral', fn: callMistral }
   ];
-  let lastError;
+  const errors = [];
   for (const p of providers) {
     try {
       const text = await p.fn(prompt);
-      console.log('AI provider: ' + p.name);
+      if (!text || text.length < 5) { errors.push(p.name + ': empty'); continue; }
+      console.log('✅ AI: ' + p.name);
       return text;
     } catch (err) {
-      console.error(p.name + ' failed:', err.message);
-      lastError = err;
+      console.error('❌ ' + p.name + ':', err.message);
+      errors.push(p.name + ': ' + err.message);
     }
   }
-  throw lastError || new Error('All AI providers failed');
+  throw new Error('All AI failed. ' + errors.join(' | '));
 }
 
 app.set('trust proxy', 1);
@@ -182,16 +216,16 @@ app.post('/api/ai/analyze-live', authRequired, async (req, res) => {
       const cleanBody = (body || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 1500);
       const linkCount = (body.match(/https?:\/\//g) || []).length;
       const wordCount = cleanBody.split(/\s+/).filter(w => w).length;
-      const prompt = `You are an elite email deliverability expert. Analyze this DRAFT. Return ONLY valid JSON, no markdown.
+      const prompt = `You are an elite email deliverability expert. Analyze this email DRAFT. Return ONLY JSON.
 DRAFT:
 - Subject: "${(subject || '').substring(0, 200)}"
 - Body: "${cleanBody}"
 - Words: ${wordCount}, Links: ${linkCount}, Logo: ${hasLogo ? 'yes' : 'no'}
 Return JSON: {"score":0-100,"prediction":"EXCELLENT"|"GOOD"|"RISKY"|"SPAM","inboxProbability":0-100,"tone":"string","issues":[{"type":"string","severity":"low"|"medium"|"high","message":"string"}],"suggestions":["string"],"emotionalTone":"string","readability":0-100}
-Rules: score <= 15 EXCELLENT, 16-40 GOOD, 41-70 RISKY, 71+ SPAM. Return ONLY JSON.`;
+Rules: score <= 15 EXCELLENT, 16-40 GOOD, 41-70 RISKY, 71+ SPAM.`;
       const text = await callAI(prompt);
-      const match = text.match(/\{[\s\S]*\}/);
-      const parsed = JSON.parse(match ? match[0] : text);
+      const parsed = safeParseJSON(text);
+      if (!parsed) throw new Error('Invalid AI response');
       res.json({ ok: true, ...parsed, aiPowered: true });
     } catch (aiErr) { console.error('AI failed:', aiErr.message); res.json({ ok: true, ...localAnalysis(subject, body), aiPowered: false }); }
   } catch (err) { res.json({ ok: false, error: err.message }); }
@@ -230,7 +264,7 @@ app.post('/api/ai/write-email', authRequired, async (req, res) => {
     if (!context) return res.json({ ok: false, error: 'Please provide context' });
     const toneMap = { formal: 'professional and formal', friendly: 'warm and friendly', casual: 'casual and conversational', persuasive: 'persuasive and confident' };
     const lengthMap = { short: 'under 80 words', medium: 'between 100-150 words', long: 'between 200-250 words' };
-    const prompt = `You are an elite email copywriter. Write a professional email. Return ONLY valid JSON.
+    const prompt = `You are an elite email copywriter. Write a professional email. Return ONLY JSON.
 CONTEXT: ${context}
 RECIPIENT: ${recipientName || 'unknown'}
 COMPANY: ${recipientCompany || 'unknown'}
@@ -239,8 +273,8 @@ LENGTH: ${lengthMap[length] || lengthMap.medium}
 Requirements: natural human-like, no spam words, personalized, clear purpose, strong closing. Plain text with \\n\\n line breaks.
 Return JSON: {"subject":"under 60 chars","body":"with \\n\\n breaks","tone":"string","wordCount":number,"keyPoints":["point"]}`;
     const text = await callAI(prompt);
-    const match = text.match(/\{[\s\S]*\}/);
-    const parsed = JSON.parse(match ? match[0] : text);
+    const parsed = safeParseJSON(text);
+    if (!parsed) throw new Error('Invalid AI response');
     res.json({ ok: true, ...parsed });
   } catch (err) { res.json({ ok: false, error: 'AI limit reached. Try again.' }); }
 });
@@ -253,8 +287,8 @@ CONTEXT: ${context || 'professional outreach'}
 Rules: max 60 chars, no ALL CAPS, no spam words, vary styles.
 Return: {"subjects":["s1","s2","s3","s4","s5"]}`;
     const text = await callAI(prompt);
-    const match = text.match(/\{[\s\S]*\}/);
-    const parsed = JSON.parse(match ? match[0] : text);
+    const parsed = safeParseJSON(text);
+    if (!parsed) throw new Error('Invalid AI response');
     res.json({ ok: true, subjects: parsed.subjects || [] });
   } catch (err) { res.json({ ok: false, error: 'AI limit reached. Try later.' }); }
 });
@@ -267,8 +301,8 @@ SUBJECT: "${subject || ''}"
 BODY: "${(body||'').substring(0, 1000)}"
 Return JSON: {"improvedSubject":"...","improvedBody":"...","changes":["c1"],"beforeScore":0-100,"afterScore":0-100}`;
     const text = await callAI(prompt);
-    const match = text.match(/\{[\s\S]*\}/);
-    const parsed = JSON.parse(match ? match[0] : text);
+    const parsed = safeParseJSON(text);
+    if (!parsed) throw new Error('Invalid AI response');
     res.json({ ok: true, ...parsed });
   } catch (err) { res.json({ ok: false, error: 'AI limit reached. Try later.' }); }
 });
@@ -285,8 +319,8 @@ app.get('/api/ai/best-time', authRequired, async (req, res) => {
       const history = Object.entries(hourStats).map(([h, s]) => `Hour ${h}: sent=${s.sent}, opened=${s.opened || 0}`).join('\n');
       const prompt = `Recommend 3 best sending hours (0-23) for highest open rate. Return ONLY JSON.\nHISTORY:\n${history || 'No data yet'}\nReturn: {"bestHours":[h1,h2,h3],"reasoning":"short"}`;
       const text = await callAI(prompt);
-      const match = text.match(/\{[\s\S]*\}/);
-      const parsed = JSON.parse(match ? match[0] : text);
+      const parsed = safeParseJSON(text);
+      if (!parsed) throw new Error('Invalid AI response');
       res.json({ ok: true, ...parsed });
     } catch (aiErr) { res.json({ ok: true, bestHours: [9, 11, 14], reasoning: 'Default business hours' }); }
   } catch (err) { res.json({ ok: true, bestHours: [9, 11, 14], reasoning: 'Default' }); }
@@ -320,8 +354,8 @@ app.post('/api/ai/analyze-replies', authRequired, async (req, res) => {
     try {
       const prompt = `Categorize these email replies. Return ONLY JSON.\n${replies.map((r, i) => `[${i}] From: ${r.from}\nSubject: ${r.subject}\nBody: ${r.bodyPreview}`).join('\n\n')}\nReturn JSON: {"categories":[{"index":0,"type":"INTERESTED"|"NOT_INTERESTED"|"AUTO_REPLY"|"QUESTION"|"SPAM"|"MEETING_REQUEST"|"OTHER","sentiment":"POSITIVE"|"NEUTRAL"|"NEGATIVE","summary":"line","actionSuggestion":"string"}]}`;
       const text = await callAI(prompt);
-      const match = text.match(/\{[\s\S]*\}/);
-      const parsed = JSON.parse(match ? match[0] : text);
+      const parsed = safeParseJSON(text);
+      if (!parsed) throw new Error('Invalid AI response');
       const enriched = replies.map((r, i) => { const cat = (parsed.categories || []).find(c => c.index === i) || {}; return { ...r, category: cat.type || 'OTHER', sentiment: cat.sentiment || 'NEUTRAL', summary: cat.summary || '', actionSuggestion: cat.actionSuggestion || '' }; });
       res.json({ ok: true, replies: enriched });
     } catch (aiErr) { res.json({ ok: false, error: 'AI limit reached. Try later.' }); }
@@ -548,10 +582,8 @@ async function sendOne(userId, userEmail, recipientId, attachFiles, options) {
     const cleanBody = full.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 800);
     const prompt = `Rate this email for spam risk. Return ONLY JSON: {"score":0-100,"prediction":"EXCELLENT"|"GOOD"|"RISKY"|"SPAM","inboxProbability":0-100}\nSUBJECT: "${tpl.subject}"\nBODY: "${cleanBody}"`;
     const text = await callAI(prompt);
-    const match = text.match(/\{[\s\S]*\}/);
-    aiPrediction = JSON.parse(match ? match[0] : text);
+    aiPrediction = safeParseJSON(text) || { score: 20, prediction: 'GOOD', inboxProbability: 80 };
   } catch (e) { aiPrediction = { score: 20, prediction: 'GOOD', inboxProbability: 80 }; }
-  if (!aiPrediction) aiPrediction = { score: 20, prediction: 'GOOD', inboxProbability: 80 };
 
   const trackToken = crypto.randomBytes(16).toString('hex');
   await db.collection('users').doc(userId).collection('recipients').doc(recipientId).update({ trackToken });
