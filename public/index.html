@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>MailFlow Pro — AI Email Automation</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:#0a0e1a;color:#e2e8f0;min-height:100vh;font-size:15px;line-height:1.5}
@@ -12,9 +13,9 @@ button,input,textarea,select{font-family:inherit;font-size:16px}
 .auth-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;background:radial-gradient(circle at 20% 10%,#1e3a5f 0%,#0a0e1a 50%,#050810 100%);position:relative;overflow:hidden}
 .auth-wrap::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 20%,rgba(56,189,248,.15) 0%,transparent 40%),radial-gradient(circle at 70% 80%,rgba(168,85,247,.15) 0%,transparent 40%);animation:float 20s infinite ease-in-out}
 @keyframes float{0%,100%{transform:translate(0,0)}50%{transform:translate(-5%,5%)}}
-.auth-card{background:rgba(15,23,42,.75);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);padding:56px 44px;border-radius:24px;width:100%;max-width:460px;box-shadow:0 32px 100px rgba(0,0,0,.8),0 0 0 1px rgba(56,189,248,.15);border:1px solid rgba(51,65,85,.6);text-align:center;position:relative;z-index:1}
-.brand-logo{width:72px;height:72px;margin:0 auto 24px;background:linear-gradient(135deg,#38bdf8,#6366f1,#a78bfa);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:36px;box-shadow:0 16px 48px rgba(56,189,248,.5),inset 0 0 0 1px rgba(255,255,255,.1)}
-.auth-card h1{font-size:32px;margin-bottom:10px;background:linear-gradient(90deg,#38bdf8,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;letter-spacing:-.5px}
+.auth-card{background:rgba(15,23,42,.75);backdrop-filter:blur(30px);padding:56px 44px;border-radius:24px;width:100%;max-width:460px;box-shadow:0 32px 100px rgba(0,0,0,.8),0 0 0 1px rgba(56,189,248,.15);border:1px solid rgba(51,65,85,.6);text-align:center;position:relative;z-index:1}
+.brand-logo{width:72px;height:72px;margin:0 auto 24px;background:linear-gradient(135deg,#38bdf8,#6366f1,#a78bfa);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:36px;box-shadow:0 16px 48px rgba(56,189,248,.5)}
+.auth-card h1{font-size:32px;margin-bottom:10px;background:linear-gradient(90deg,#38bdf8,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800}
 .auth-card p.sub{color:#94a3b8;margin-bottom:36px;font-size:15px;line-height:1.6}
 .google-btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;background:#fff;color:#1f2937;border:none;padding:16px;border-radius:14px;font-size:16px;font-weight:600;cursor:pointer;text-decoration:none;transition:.25s;box-shadow:0 8px 24px rgba(0,0,0,.2)}
 .google-btn:hover{box-shadow:0 12px 36px rgba(56,189,248,.4);transform:translateY(-2px)}
@@ -24,13 +25,13 @@ button,input,textarea,select{font-family:inherit;font-size:16px}
 .auth-features .feat .ico{font-size:18px;width:32px;height:32px;background:rgba(56,189,248,.1);border-radius:8px;display:flex;align-items:center;justify-content:center}
 .auth-foot{margin-top:24px;font-size:12px;color:#64748b}
 .topbar{background:rgba(15,23,42,.95);backdrop-filter:blur(20px);border-bottom:1px solid #1e293b;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;flex-wrap:wrap;gap:10px}
-.logo-top{font-size:18px;font-weight:700;background:linear-gradient(90deg,#38bdf8,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:flex;align-items:center;gap:8px}
+.logo-top{font-size:18px;font-weight:700;background:linear-gradient(90deg,#38bdf8,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .user-chip{display:flex;align-items:center;gap:12px;font-size:13px;color:#94a3b8;flex-wrap:wrap}
 .user-avatar{width:32px;height:32px;border-radius:50%;border:2px solid #38bdf8;object-fit:cover}
 .user-chip button{background:#1e293b;border:1px solid #334155;color:#cbd5e1;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600}
 .user-chip button:hover{background:#334155}
 .badge.admin{background:linear-gradient(90deg,rgba(168,85,247,.3),rgba(56,189,248,.3));color:#e9d5ff;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;border:1px solid rgba(168,85,247,.4)}
-.app-id-pill{background:linear-gradient(135deg,#38bdf8,#6366f1);color:white;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:0.5px;font-family:'Courier New',monospace}
+.app-id-pill{background:linear-gradient(135deg,#38bdf8,#6366f1);color:white;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;font-family:'Courier New',monospace}
 .maintabs{display:flex;gap:4px;padding:0 20px;background:rgba(15,23,42,.8);border-bottom:1px solid #1e293b;overflow-x:auto}
 .maintab{padding:14px 18px;font-size:13px;color:#94a3b8;cursor:pointer;font-weight:600;white-space:nowrap;border-bottom:2px solid transparent}
 .maintab.active{color:#38bdf8;border-bottom-color:#38bdf8}
@@ -43,11 +44,9 @@ button,input,textarea,select{font-family:inherit;font-size:16px}
 .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px}
 @media(min-width:700px){.stats{grid-template-columns:repeat(5,1fr)}}
 .stat{background:linear-gradient(135deg,rgba(30,41,59,.8),rgba(15,23,42,.8));border:1px solid #1e293b;border-radius:14px;padding:16px;position:relative;overflow:hidden;transition:.25s}
-.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#38bdf8,#a78bfa);opacity:0;transition:.2s}
 .stat:hover{border-color:#334155;transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,.3)}
-.stat:hover::before{opacity:1}
 .stat .label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;font-weight:600}
-.stat .value{font-size:26px;font-weight:800;margin-top:6px;letter-spacing:-.5px}
+.stat .value{font-size:26px;font-weight:800;margin-top:6px}
 .stat.s1 .value{color:#38bdf8}.stat.s2 .value{color:#22c55e}.stat.s3 .value{color:#a78bfa}.stat.s4 .value{color:#f59e0b}.stat.s5 .value{color:#ec4899}
 .panel{background:rgba(15,23,42,.6);backdrop-filter:blur(10px);border:1px solid #1e293b;border-radius:16px;padding:20px;margin-bottom:20px}
 .panel:hover{border-color:#334155}
@@ -86,7 +85,7 @@ input:checked+.slider:before{transform:translateX(22px);background:#fff}
 .search-bar::placeholder{color:#475569}
 .tbl-wrap{overflow-x:auto;border-radius:10px}
 table.data-table{width:100%;border-collapse:collapse;font-size:13px}
-table.data-table th{text-align:left;font-size:11px;color:#94a3b8;text-transform:uppercase;padding:12px 10px;border-bottom:1px solid #1e293b;font-weight:700;letter-spacing:.5px;background:rgba(10,14,26,.5)}
+table.data-table th{text-align:left;font-size:11px;color:#94a3b8;text-transform:uppercase;padding:12px 10px;border-bottom:1px solid #1e293b;font-weight:700;background:rgba(10,14,26,.5)}
 table.data-table td{padding:12px 10px;border-bottom:1px solid #0f172a;color:#cbd5e1;vertical-align:middle}
 table.data-table tbody tr:hover td{background:rgba(56,189,248,.04)}
 table.data-table tr.selected td{background:rgba(56,189,248,.08)}
@@ -130,7 +129,6 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .bulk-preview-head .stat-pill{padding:4px 10px;border-radius:20px;font-weight:600;font-size:11px}
 .bulk-preview-head .stat-pill.ok{background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.3)}
 .bulk-preview-head .stat-pill.dup{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3)}
-.bulk-preview-head .stat-pill.err{background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.3)}
 .bulk-preview-table{max-height:280px;overflow-y:auto}
 .bulk-preview-table table{width:100%;border-collapse:collapse;font-size:13px}
 .bulk-preview-table th{text-align:left;font-size:11px;color:#94a3b8;text-transform:uppercase;padding:10px 14px;border-bottom:1px solid #1e293b;font-weight:700;background:rgba(10,14,26,.3);position:sticky;top:0}
@@ -212,7 +210,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .quiet-banner .info .ttl{font-weight:700;color:#fcd34d;font-size:14px}
 .quiet-banner .info .dsc{font-size:12px;color:#94a3b8;margin-top:2px}
 .batch-slider{width:100%;height:6px;background:#1e293b;border-radius:3px;outline:none;-webkit-appearance:none}
-.batch-slider::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#38bdf8,#6366f1);cursor:pointer;box-shadow:0 4px 12px rgba(56,189,248,.5)}
+.batch-slider::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#38bdf8,#6366f1);cursor:pointer}
 .batch-display{background:linear-gradient(135deg,#38bdf8,#6366f1);color:white;padding:6px 16px;border-radius:10px;font-weight:800;font-size:16px;min-width:60px;text-align:center}
 .batch-box{margin-top:14px;padding:14px;background:#0a0e1a;border:1px solid #1e293b;border-radius:12px;display:none}
 .batch-box.show{display:block}
@@ -334,7 +332,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
         </div>
 
         <div class="panel">
-          <h2>✉️ AI Email Composer <span>Instant local analysis · 5-AI powered</span></h2>
+          <h2>✉️ AI Email Composer <span>Real-time AI · 5-AI powered</span></h2>
           <div class="composer-layout">
             <div class="composer-main">
               <div class="field">
@@ -372,7 +370,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
                 <div class="ai-header">
                   <span class="ai-dot"></span>
                   <span>AI Analysis</span>
-                  <button class="deep-btn" onclick="runDeepAIAnalysis()" title="Deep AI analysis (uses 1 API call)">🤖 Deep AI</button>
+                  <button class="deep-btn" onclick="runDeepAIAnalysis()" title="Force deep AI analysis">🤖 Deep AI</button>
                   <span id="aiLiveStatus" style="font-size:10px;color:#94a3b8;text-transform:none;letter-spacing:0">Waiting</span>
                 </div>
                 <div class="ai-score-section">
@@ -505,23 +503,27 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
           </div>
           <div id="bulkTab" class="hidden">
             <div class="bulk-help">
-              <div class="title">📋 Paste Recipients (Company optional)</div>
-              <div class="desc">One per line. <b style="color:#86efac">Company name is optional!</b> Formats: <code>Company, email</code> · <code>email</code> · <code>Company &lt;email&gt;</code> · <code>Company[TAB]email</code></div>
+              <div class="title">📋 Paste Emails — Any Format Works</div>
+              <div class="desc"><b style="color:#86efac">Company name optional hai!</b> Emails ko comma, newline, space, ya kisi bhi format se de sakte hain. AI automatically company name detect karega.</div>
               <div class="example">
-                ✅ hr@google.com<br>
+                ✅ usamahanif@gmail.com, friend@gmail.com,<br>
                 ✅ Google Inc, hr@google.com<br>
                 ✅ Microsoft &lt;jobs@microsoft.com&gt;<br>
-                ✅ Amazon	careers@amazon.com
+                ✅ Single line: a@gmail.com, b@yahoo.com, c@outlook.com
               </div>
             </div>
-            <textarea class="bulk-area" id="bulkInput" placeholder="Google Inc, hr@google.com&#10;Microsoft Corp, jobs@microsoft.com&#10;simple@gmail.com&#10;Amazon, careers@amazon.com"></textarea>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+              <input type="file" id="bulkFileInput" accept=".txt,.csv,.xlsx,.xls,.json" style="display:none">
+              <button class="btn ghost" onclick="document.getElementById('bulkFileInput').click()" style="border:1px dashed #38bdf8;color:#7dd3fc;padding:12px 20px">📁 Upload CSV / Excel / TXT File</button>
+              <span style="font-size:11px;color:#64748b;align-self:center">Supports .csv, .txt, .xlsx, .xls, .json</span>
+            </div>
+            <textarea class="bulk-area" id="bulkInput" placeholder="Paste emails here — comma separated, newline, or mixed with company names...&#10;&#10;Examples:&#10;usamahanif@gmail.com, friend@gmail.com&#10;Google Inc, hr@google.com&#10;Any text with email@company.com inside"></textarea>
             <div class="bulk-preview-wrap" id="bulkPreviewWrap">
               <div class="bulk-preview-head">
                 <div class="lbl">🔍 Live Preview</div>
                 <div class="stats">
                   <span class="stat-pill ok" id="bulkValidPill">✅ 0 valid</span>
-                  <span class="stat-pill dup" id="bulkDupPill">🔁 0 dup</span>
-                  <span class="stat-pill err" id="bulkErrPill" style="display:none">❌ 0 invalid</span>
+                  <span class="stat-pill dup" id="bulkDupPill">🔁 0 duplicate</span>
                 </div>
               </div>
               <div class="bulk-preview-table" id="bulkPreviewTable"></div>
@@ -587,7 +589,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
     <div class="panel" style="background:linear-gradient(135deg,rgba(168,85,247,.08),rgba(56,189,248,.08));border-color:rgba(168,85,247,.3)">
       <h2>🤖 AI-Powered Insights <span>5-AI: Groq + Cerebras + Mistral + Gemini + OpenRouter</span></h2>
       <div style="font-size:13px;color:#94a3b8;line-height:1.7">
-        Advanced AI features to improve your email deliverability. Automatic fallback ensures zero downtime — if one AI is busy, the next one takes over.
+        Advanced AI features to improve your email deliverability. Automatic fallback ensures zero downtime.
       </div>
     </div>
     <div class="panel">
@@ -721,11 +723,10 @@ function startHourlyAutoSend(){setTimeout(function(){runAutoCheck();},8000);if(H
 function runAutoCheck(){api('/api/auto-send-check','POST').then(function(r){if(r.ok&&r.sent>0){toast('🤖 Auto-send: '+r.sent+' emails sent');loadAll();loadQuota();loadMyEmails();}}).catch(function(){});}
 function loadQuota(){api('/api/quota').then(function(r){if(!r.ok)return;$('quotaSent').innerText=r.sentToday+' / '+r.limit;$('quotaRemaining').innerText=r.remaining;var pct=(r.sentToday/r.limit)*100;$('quotaFill').style.width=Math.min(100,pct)+'%';if(pct>80)$('quotaFill').classList.add('warn');else $('quotaFill').classList.remove('warn');var sub=$('quotaSub');if(sub)sub.innerText='🟢 Live · '+new Date().toLocaleTimeString();});}
 
-// ==================== AI COMPOSER ====================
 function scheduleAnalysis(){
   if(analysisTimer) clearTimeout(analysisTimer);
   $('aiLiveStatus').innerText='Typing...';
-  analysisTimer=setTimeout(runLiveAnalysis,1200);
+  analysisTimer=setTimeout(runLiveAnalysis,1500);
 }
 function runLiveAnalysis(){
   var subject=$('composerSubject').value.trim();
@@ -734,11 +735,11 @@ function runLiveAnalysis(){
   var hash=subject+'|'+body;
   if(hash===lastAnalyzedHash){ return; }
   lastAnalyzedHash=hash;
-  $('aiLiveStatus').innerText='Analyzing...';
+  $('aiLiveStatus').innerText='🤖 Analyzing...';
   api('/api/ai/analyze-live','POST',{subject:subject,body:body}).then(function(r){
     if(!r.ok){$('aiLiveStatus').innerText='Error';return;}
     if(r.empty){resetAIAnalysisUI();$('aiLiveStatus').innerText='Waiting';return;}
-    $('aiLiveStatus').innerText='⚡ Live';
+    $('aiLiveStatus').innerText = r.aiPowered ? '🤖 AI Powered' : '⚡ Local';
     renderAIAnalysis(r);
   }).catch(function(){$('aiLiveStatus').innerText='Offline';});
 }
@@ -746,11 +747,11 @@ function runDeepAIAnalysis(){
   var subject=$('composerSubject').value.trim();
   var body=$('composerBody').value.trim();
   if(!subject && !body){ toast('Write something first','err'); return; }
-  $('aiLiveStatus').innerText='🤖 AI Analyzing...';
-  api('/api/ai/deep-analyze','POST',{subject:subject,body:body}).then(function(r){
+  $('aiLiveStatus').innerText='🤖 Deep AI...';
+  api('/api/ai/analyze-live','POST',{subject:subject,body:body}).then(function(r){
     if(!r.ok){$('aiLiveStatus').innerText='Error';return;}
     if(r.empty){resetAIAnalysisUI();$('aiLiveStatus').innerText='Waiting';return;}
-    $('aiLiveStatus').innerText= r.aiPowered ? '🤖 AI Powered' : '⚠️ Local Mode';
+    $('aiLiveStatus').innerText = r.aiPowered ? '🤖 AI Powered' : '⚠️ Local Mode';
     renderAIAnalysis(r);
     toast(r.aiPowered ? '✅ Deep AI analysis complete' : '⚠️ AI busy — showing local analysis');
   }).catch(function(){$('aiLiveStatus').innerText='Offline';});
@@ -821,7 +822,6 @@ function clearComposer(){
   lastAnalyzedHash='';resetAIAnalysisUI();$('aiLiveStatus').innerText='Waiting';
 }
 
-// ==================== AI ANALYSIS TAB ====================
 function loadAIPredictions(){
   api('/api/my-emails?range=all').then(function(r){
     if(!r.ok) return;
@@ -875,7 +875,6 @@ function loadReplyAnalysis(){
   });
 }
 
-// ==================== SIGNATURE ====================
 function buildSigHtml(){
   var name=$('sbName').value.trim(),pos=$('sbPos').value.trim(),comp=$('sbCompany').value.trim();
   var phone=$('sbPhone').value.trim(),mail=$('sbEmail').value.trim(),li=$('sbLinkedin').value.trim();
@@ -905,7 +904,6 @@ function saveSig(){var h=buildSigHtml();if(!h)return toast('Please fill some fie
 async function resetSig(){var ok=await showConfirm({icon:'🗑',title:'Reset Signature?',message:'All fields cleared.',okText:'Reset',primary:false});if(!ok)return;['sbName','sbPos','sbCompany','sbPhone','sbEmail','sbLinkedin','sbExtra'].forEach(function(id){$(id).value='';});$('sbGreeting').value='';$('sigPreviewBox').style.display='none';}
 function loadSignature(){api('/api/signature').then(function(r){if(!r.ok)return;var f=r.fields||{};if(f.name)$('sbName').value=f.name;if(f.pos)$('sbPos').value=f.pos;if(f.company)$('sbCompany').value=f.company;if(f.phone)$('sbPhone').value=f.phone;if(f.email)$('sbEmail').value=f.email;if(f.linkedin)$('sbLinkedin').value=f.linkedin;if(f.greeting)$('sbGreeting').value=f.greeting;if(f.extra)$('sbExtra').value=f.extra;if(r.signature){$('sigPreviewContent').innerHTML=r.signature;$('sigPreviewBox').style.display='block';}});}
 
-// ==================== LOGO ====================
 function loadLogo(){api('/api/logo').then(function(r){if(r.ok && r.url){LOGO_URL=r.url;LOGO_URL_ALT=r.urlAlt||'';var img=$('logoImg');img.onerror=function(){if(LOGO_URL_ALT && this.src!==LOGO_URL_ALT){this.src=LOGO_URL_ALT;}else{this.style.display='none';$('logoPh').style.display='block';}};img.src=r.url;img.style.display='block';$('logoPh').style.display='none';$('logoTitle').innerText='Logo uploaded';$('logoSub').innerText='Click to change';$('logoActions').style.display='block';}});}
 document.getElementById('logoInput').addEventListener('change',function(e){
   var f=e.target.files[0];if(!f)return;
@@ -928,7 +926,6 @@ document.getElementById('logoInput').addEventListener('change',function(e){
 });
 async function removeLogo(){var ok=await showConfirm({icon:'🗑',title:'Remove logo?',message:'Logo will be removed.',okText:'Remove'});if(!ok)return;api('/api/remove-logo','POST',{}).then(function(r){if(r.ok){toast('Logo removed');LOGO_URL='';LOGO_URL_ALT='';$('logoImg').style.display='none';$('logoPh').style.display='block';$('logoTitle').innerText='Click to upload company logo';$('logoSub').innerText='PNG · JPG · GIF · SVG · WEBP — max 2MB (Optional)';$('logoActions').style.display='none';}});}
 
-// ==================== FILES ====================
 document.getElementById('fileInput').addEventListener('change',function(e){
   var files=e.target.files;if(!files.length)return;
   var upload=function(i){
@@ -944,74 +941,151 @@ document.getElementById('fileInput').addEventListener('change',function(e){
 function loadFiles(){api('/api/files').then(function(r){if(!r.ok)return;var w=$('filesList');if(!r.files.length){w.innerHTML='<div class="empty">No files uploaded</div>';return;}var h='';r.files.forEach(function(f){h+='<div class="file-card"><div class="info"><div class="name">📄 '+esc(f.name)+'</div><div class="meta">'+fmtSize(f.size)+' · '+esc(f.mimeType||'')+'</div></div><div class="btns"><button class="danger" onclick="delFile(\''+f.id+'\')">Delete</button></div></div>';});w.innerHTML=h;});}
 async function delFile(id){var ok=await showConfirm({icon:'🗑',title:'Delete file?',message:'This file will be removed.',okText:'Delete'});if(!ok)return;api('/api/files/'+id,'DELETE').then(function(r){if(r.ok){toast('Deleted');loadFiles();}});}
 
-// ==================== TEMPLATES ====================
 function loadTemplates(){api('/api/templates').then(function(r){TEMPLATES=r.templates||[];var w=$('tplList');w.innerHTML='';if(!TEMPLATES.length)w.innerHTML='<div class="empty">No templates yet</div>';else TEMPLATES.forEach(function(t){var d=document.createElement('div');d.className='tpl-card';d.innerHTML='<div class="info"><div class="name">'+esc(t.name)+'</div><div class="sub">'+esc(t.subject)+'</div></div><button onclick="loadTemplateToComposer(\''+t.id+'\')">Load</button><button class="danger" onclick="delTpl(\''+t.id+'\')">Delete</button>';w.appendChild(d);});var s=$('tplSelect');s.innerHTML='';if(!TEMPLATES.length)s.innerHTML='<option value="">(No templates)</option>';else TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;s.appendChild(o);});});}
 function loadTemplateToComposer(id){var t=TEMPLATES.filter(function(x){return x.id===id;})[0];if(!t)return;$('composerName').value=t.name;$('composerSubject').value=t.subject;$('composerBody').value=t.body;lastAnalyzedHash='';runLiveAnalysis();$('composerBody').scrollIntoView({behavior:'smooth',block:'center'});}
 async function delTpl(id){var ok=await showConfirm({icon:'🗑',title:'Delete template?',message:'',okText:'Delete'});if(!ok)return;api('/api/templates/'+id,'DELETE').then(function(r){if(r.ok){toast('Deleted');loadTemplates();}});}
 
-// ==================== RECIPIENTS ====================
 function addRow(){var w=$('recipients'),d=document.createElement('div');d.className='recip-row';d.innerHTML='<input type="text" placeholder="Company (optional)"><input type="email" placeholder="hr@company.com"><button class="del" onclick="this.parentNode.remove()">✕</button>';w.appendChild(d);}
 function submitRecipients(){var rows=$('recipients').querySelectorAll('.recip-row'),list=[];rows.forEach(function(r){var i=r.querySelectorAll('input');if(i[1].value.trim())list.push({company:i[0].value.trim(),email:i[1].value.trim()});});if(!list.length)return toast('No emails found','err');api('/api/recipients','POST',{list:list,templateId:$('tplSelect').value}).then(function(r){if(r.ok){toast(r.added+' recipients added');$('recipients').innerHTML='';addRow();loadAll();}else toast('Error: '+r.error,'err');});}
 function switchTab(t){if(t==='manual'){$('tabManual').classList.add('active');$('tabBulk').classList.remove('active');$('manualTab').classList.remove('hidden');$('bulkTab').classList.add('hidden');}else{$('tabBulk').classList.add('active');$('tabManual').classList.remove('active');$('bulkTab').classList.remove('hidden');$('manualTab').classList.add('hidden');updateBulk();}}
 
 function parseBulk(text){
-  var valid=[],dup=0,err=0,seen={};
-  var emailRx=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  var lines=text.split(/\r?\n/);
-  for(var i=0;i<lines.length;i++){
-    var line=lines[i].trim();if(!line)continue;
-    var company='',email='';
-    if(line.indexOf('\t')!==-1||line.indexOf(',')!==-1){
-      var parts=line.split(/\t|,/).map(function(p){return p.trim();}).filter(function(p){return p;});
-      if(parts.length>=2){
-        var lastPart=parts[parts.length-1];
-        if(emailRx.test(lastPart)){email=lastPart.toLowerCase();company=parts.slice(0,-1).join(', ').trim();}
-        else if(emailRx.test(parts[0])){email=parts[0].toLowerCase();company=parts.slice(1).join(', ').trim();}
-        else{err++;continue;}
-      }else if(parts.length===1){if(emailRx.test(parts[0])){email=parts[0].toLowerCase();}else{err++;continue;}}
+  var emailRx = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+  var lines = text.split(/\r?\n/);
+  var found = {};
+  var seen = new Set();
+  var dup = 0;
+  
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (!line.trim()) continue;
+    var emails = line.match(emailRx) || [];
+    if (!emails.length) continue;
+    
+    var cleanLine = line;
+    for (var j = 0; j < emails.length; j++) cleanLine = cleanLine.replace(emails[j], ' ');
+    cleanLine = cleanLine.replace(/[,;|<>"'\(\)\[\]]/g, ' ').replace(/\s+/g, ' ').trim();
+    
+    var company = '';
+    if (cleanLine.length >= 2 && cleanLine.length <= 80) {
+      var compacted = cleanLine.replace(/\s/g, '');
+      var looksLikeDomain = /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(compacted);
+      var isSingleWord = !cleanLine.includes(' ');
+      if (!looksLikeDomain && !(isSingleWord && /^[a-z0-9._-]+$/i.test(cleanLine))) {
+        company = cleanLine;
+      }
     }
-    else if(line.indexOf('<')!==-1&&line.indexOf('>')!==-1){
-      var m=line.match(/^(.+?)\s*<([^>]+)>$/);
-      if(m){company=m[1].trim();if(emailRx.test(m[2].trim())){email=m[2].trim().toLowerCase();}}
+    
+    for (var k = 0; k < emails.length; k++) {
+      var em = emails[k].toLowerCase();
+      if (seen.has(em)) { dup++; continue; }
+      seen.add(em);
+      found[em] = company;
     }
-    else{if(emailRx.test(line)){email=line.toLowerCase();}else{err++;continue;}}
-    if(!email){err++;continue;}
-    if(company){
-      if(company.indexOf('@')!==-1){company='';}
-      else if(/^[a-z0-9._-]+$/.test(company) && company.length>3 && email.indexOf(company)===0){company='';}
-    }
-    if(seen[email]){dup++;continue;}
-    seen[email]=true;
-    valid.push({company:company,email:email});
   }
-  return {valid:valid,dup:dup,err:err};
+  
+  var valid = Object.keys(found).map(function(e) { return { email: e, company: found[e] }; });
+  return { valid: valid, dup: dup, err: 0 };
 }
-function updateBulk(){
-  var text=$('bulkInput').value;
-  var r=parseBulk(text);
-  var wrap=$('bulkPreviewWrap');
-  var table=$('bulkPreviewTable');
-  $('bulkValidPill').innerText='✅ '+r.valid.length+' valid';
-  $('bulkDupPill').innerText='🔁 '+r.dup+' duplicate';
-  if(r.err>0){$('bulkErrPill').style.display='inline-block';$('bulkErrPill').innerText='❌ '+r.err+' invalid';}
-  else{$('bulkErrPill').style.display='none';}
-  if(!text.trim()||r.valid.length===0){wrap.classList.remove('show');return;}
-  wrap.classList.add('show');
-  var h='<table><thead><tr><th style="width:40px">#</th><th>🏢 Company</th><th>✉️ Email</th></tr></thead><tbody>';
-  r.valid.slice(0,50).forEach(function(row,idx){h+='<tr><td class="row-num">'+(idx+1)+'</td><td class="company-cell'+(row.company?'':' empty')+'">'+(row.company?esc(row.company):'— no company —')+'</td><td class="email-cell">'+esc(row.email)+'</td></tr>';});
-  if(r.valid.length>50){h+='<tr><td colspan="3" style="text-align:center;color:#64748b;font-style:italic;padding:12px">... and '+(r.valid.length-50)+' more</td></tr>';}
-  h+='</tbody></table>';
-  table.innerHTML=h;
-}
-function clearBulk(){$('bulkInput').value='';updateBulk();}
-function submitBulk(){
-  var r=parseBulk($('bulkInput').value);
-  if(!r.valid.length)return toast('No valid emails found','err');
-  api('/api/recipients','POST',{list:r.valid,templateId:$('tplSelect').value}).then(function(res){if(res.ok){toast(res.added+' recipients added');$('bulkInput').value='';updateBulk();loadAll();switchTab('manual');}else toast('Error: '+res.error,'err');});
-}
-document.addEventListener('DOMContentLoaded',function(){var ta=$('bulkInput');if(ta)ta.addEventListener('input',updateBulk);});
 
-// ==================== TRACKING ====================
+function updateBulk(){
+  var text = $('bulkInput').value;
+  var r = parseBulk(text);
+  var wrap = $('bulkPreviewWrap');
+  var table = $('bulkPreviewTable');
+  $('bulkValidPill').innerText = '✅ ' + r.valid.length + ' valid';
+  $('bulkDupPill').innerText = '🔁 ' + r.dup + ' duplicate';
+  if (!text.trim() || r.valid.length === 0) { wrap.classList.remove('show'); return; }
+  wrap.classList.add('show');
+  var h = '<table><thead><tr><th style="width:40px">#</th><th>🏢 Company / Name</th><th>✉️ Email</th></tr></thead><tbody>';
+  r.valid.slice(0, 50).forEach(function(row, idx) {
+    h += '<tr><td class="row-num">' + (idx + 1) + '</td><td class="company-cell' + (row.company ? '' : ' empty') + '">' + (row.company ? esc(row.company) : '— no company —') + '</td><td class="email-cell">' + esc(row.email) + '</td></tr>';
+  });
+  if (r.valid.length > 50) h += '<tr><td colspan="3" style="text-align:center;color:#64748b;font-style:italic;padding:12px">... and ' + (r.valid.length - 50) + ' more</td></tr>';
+  h += '</tbody></table>';
+  table.innerHTML = h;
+}
+
+function clearBulk(){ $('bulkInput').value = ''; updateBulk(); }
+
+function submitBulk(){
+  var r = parseBulk($('bulkInput').value);
+  if (!r.valid.length) return toast('No valid emails found', 'err');
+  
+  var itemsToSend = r.valid;
+  var withEmpty = r.valid.filter(function(x) { return !x.company; }).length;
+  
+  if (withEmpty > 0 && withEmpty < r.valid.length) {
+    toast('🤖 AI extracting company names...');
+    api('/api/ai/parse-bulk', 'POST', { text: $('bulkInput').value }).then(function(aiRes) {
+      if (aiRes.ok && aiRes.items && aiRes.items.length) {
+        itemsToSend = aiRes.items.map(function(i) { return { email: i.email, company: i.company || '' }; });
+      }
+      sendBulkRecipients(itemsToSend);
+    }).catch(function() { sendBulkRecipients(itemsToSend); });
+  } else {
+    sendBulkRecipients(itemsToSend);
+  }
+}
+
+function sendBulkRecipients(items) {
+  api('/api/recipients', 'POST', { list: items, templateId: $('tplSelect').value }).then(function(res) {
+    if (res.ok) {
+      toast(res.added + ' recipients added');
+      $('bulkInput').value = '';
+      updateBulk();
+      loadAll();
+      switchTab('manual');
+    } else toast('Error: ' + res.error, 'err');
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var ta = $('bulkInput');
+  if (ta) ta.addEventListener('input', updateBulk);
+  
+  var fi = $('bulkFileInput');
+  if (fi) {
+    fi.addEventListener('change', function(e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      var name = file.name.toLowerCase();
+      var reader = new FileReader();
+      
+      if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+        if (typeof XLSX === 'undefined') { toast('Excel reader not loaded. Please refresh.', 'err'); return; }
+        reader.onload = function(ev) {
+          try {
+            var data = new Uint8Array(ev.target.result);
+            var wb = XLSX.read(data, { type: 'array' });
+            var text = '';
+            wb.SheetNames.forEach(function(sn) {
+              var sheet = wb.Sheets[sn];
+              var rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+              rows.forEach(function(row) {
+                var parts = row.filter(function(c) { return c !== undefined && c !== ''; });
+                if (parts.length) text += parts.join(', ') + '\n';
+              });
+            });
+            $('bulkInput').value = text;
+            updateBulk();
+            toast('✅ File loaded: ' + file.name);
+          } catch (err) { toast('Error reading Excel: ' + err.message, 'err'); }
+        };
+        reader.readAsArrayBuffer(file);
+      } else {
+        reader.onload = function(ev) {
+          $('bulkInput').value = ev.target.result;
+          updateBulk();
+          toast('✅ File loaded: ' + file.name);
+        };
+        reader.readAsText(file);
+      }
+      e.target.value = '';
+    });
+  }
+});
+
 function loadAll(isManual){
   if(isManual)toast('Refreshing...');
   if(isManual){$('refreshBtn').innerText='⏳';$('refreshBtn').disabled=true;}
@@ -1074,7 +1148,6 @@ async function resendSelected(){
 }
 async function deleteSelected(){var ids=Object.keys(SELECTED);if(!ids.length)return toast('No recipients selected','err');var ok=await showConfirm({icon:'⚠️',title:'Delete Recipients?',message:ids.length+' will be deleted.',okText:'Delete All'});if(!ok)return;api('/api/recipients/bulk-delete','POST',{ids:ids}).then(function(r){if(r.ok){toast(r.deleted+' deleted');clearSelection();loadAll();}else toast('Error: '+r.error,'err');});}
 
-// ==================== EMAIL HISTORY ====================
 function loadMyEmails(){var tm=$('myEmailTimeFilter').value;api('/api/my-emails?range='+encodeURIComponent(tm)).then(function(r){if(!r.ok)return;MY_EMAILS=r.emails||[];renderMyEmails();});}
 function renderMyEmails(){
   var w=$('myEmailsWrap');
@@ -1093,7 +1166,6 @@ function renderMyEmails(){
   w.innerHTML=html;
 }
 
-// ==================== PREFS ====================
 function buildHourSelects(){var s=$('quietStartSel'),e=$('quietEndSel');s.innerHTML='';e.innerHTML='';for(var h=0;h<24;h++){var lbl=(h<12?(h||12):(h-12))+':00 '+(h<12?'AM':'PM');var o1=document.createElement('option');o1.value=h;o1.text=lbl;s.appendChild(o1);var o2=document.createElement('option');o2.value=h;o2.text=lbl;e.appendChild(o2);}}
 function loadPrefs(){api('/api/prefs').then(function(r){if(!r.ok)return;var p=r.prefs;$('autoSendToggle').checked=p.autoSend;$('quietToggle').checked=p.quietEnabled;$('quietStartSel').value=p.quietStart;$('quietEndSel').value=p.quietEnd;$('quietTimesBox').style.display=p.quietEnabled?'block':'none';$('batchSizeBox').classList.toggle('show',p.autoSend);var bs=p.autoSendBatchSize||5;$('batchSizeRange').value=bs;$('batchSizeDisplay').innerText=bs;$('totalAutoSent').innerText=p.totalAutoSent||0;});}
 document.getElementById('quietToggle').addEventListener('change',function(){$('quietTimesBox').style.display=this.checked?'block':'none';});
@@ -1101,7 +1173,6 @@ document.getElementById('autoSendToggle').addEventListener('change',function(){$
 function updateBatchSize(v){$('batchSizeDisplay').innerText=v;}
 function savePrefs(){api('/api/prefs','POST',{autoSend:$('autoSendToggle').checked,autoSendBatchSize:Number($('batchSizeRange').value),quietEnabled:$('quietToggle').checked,quietStart:Number($('quietStartSel').value),quietEnd:Number($('quietEndSel').value)}).then(function(r){if(r.ok)toast('✅ Settings saved');else toast('Error: '+r.error,'err');});}
 
-// ==================== ADMIN ====================
 function loadAdmin(){$('adminUsersList').innerHTML='<div class="empty">Loading...</div>';api('/api/admin/dashboard').then(function(r){if(!r.ok){$('adminUsersList').innerHTML='<div class="empty">Error: '+esc(r.error)+'</div>';return;}ADMIN_USERS=r.users||[];$('adTotalUsers').innerText=r.stats.totalUsers;$('adTotalEmails').innerText=r.stats.totalEmails;$('adTotalOpened').innerText=r.stats.totalOpened;$('adTotalPending').innerText=r.stats.totalPending;$('adTotalSends').innerText=r.stats.totalSends||0;renderAdminUsers();});api('/api/admin/all-emails').then(function(r){if(!r.ok)return;ADMIN_ALL_EMAILS=r.emails||[];renderAllEmails();});}
 function renderAdminUsers(){var q=($('adminSearch').value||'').toLowerCase();var filtered=ADMIN_USERS.filter(function(u){return !q||u.email.toLowerCase().indexOf(q)!==-1||(u.name||'').toLowerCase().indexOf(q)!==-1||(u.appAccountId||'').toLowerCase().indexOf(q)!==-1;});if(!filtered.length){$('adminUsersList').innerHTML='<div class="empty">No users</div>';return;}var h='';filtered.forEach(function(u){h+='<div class="tpl-card" style="flex-direction:column;align-items:stretch;cursor:pointer" onclick="openUserEmails(\''+u.id+'\',\''+esc(u.email)+'\')"><div class="info"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div class="name">'+esc(u.name||'(no name)')+'</div><span class="app-id-pill">'+esc(u.appAccountId||'N/A')+'</span></div><div class="sub" style="white-space:normal;word-break:break-all;margin-top:4px">'+esc(u.email)+'</div><div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap"><span class="badge sent">📨 '+u.total+'</span><span class="badge opened">✅ '+u.sent+'</span><span class="badge opened">👁 '+u.opened+'</span><span class="badge pending">⏳ '+u.pending+'</span><span class="badge count">📤 '+u.totalSends+'</span>'+(u.autoSend?'<span class="badge sent">🤖 Auto</span>':'')+'</div></div><div style="font-size:11px;color:#64748b;margin-top:8px">Click to view history →</div></div>';});$('adminUsersList').innerHTML=h;}
 function renderAllEmails(){var w=$('adminAllEmailsWrap');var q=($('adminEmailSearch').value||'').toLowerCase();var filtered=ADMIN_ALL_EMAILS.filter(function(e){return !q||(e.userEmail||'').toLowerCase().indexOf(q)!==-1||(e.recipientEmail||'').toLowerCase().indexOf(q)!==-1||(e.subject||'').toLowerCase().indexOf(q)!==-1;});if(!filtered.length){w.innerHTML='<div class="empty">No emails</div>';return;}var h='<table class="data-table"><thead><tr><th>User</th><th>App ID</th><th>Recipient</th><th>Subject</th><th>Sent</th></tr></thead><tbody>';filtered.slice(0,500).forEach(function(e){h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(e.userEmail)+'</td><td><span class="app-id-pill">'+esc(e.userAppId||'N/A')+'</span></td><td style="font-size:12px;word-break:break-all">'+esc(e.recipientEmail)+'</td><td style="font-size:11px">'+esc(e.subject||'—')+'</td><td style="font-size:11px">'+fmtDate(e.sentAt)+'</td></tr>';});h+='</tbody></table>';w.innerHTML=h;}
