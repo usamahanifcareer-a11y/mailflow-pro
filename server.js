@@ -22,7 +22,6 @@ if (!process.env.SESSION_SECRET) { console.error('FATAL: SESSION_SECRET missing!
 const GEMINI_KEY = process.env.GEMINI_API_KEY || '';
 const GROQ_KEY = process.env.GROQ_API_KEY || '';
 const MISTRAL_KEY = process.env.MISTRAL_API_KEY || '';
-const CEREBRAS_KEY = process.env.CEREBRAS_API_KEY || '';
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY || '';
 
 const aiCache = new Map();
@@ -55,7 +54,7 @@ async function fetchWithTimeout(url, opts, ms) {
   catch (e) { clearTimeout(t); throw e; }
 }
 
-// ============ FREE AI PROVIDERS ============
+// ============ FREE AI PROVIDERS ONLY ============
 
 async function callGroq(prompt) {
   if (!GROQ_KEY) throw new Error('No key');
@@ -67,13 +66,22 @@ async function callGroq(prompt) {
   const d = await r.json(); return (d.choices?.[0]?.message?.content || '').trim();
 }
 
-async function callCerebras(prompt) {
-  if (!CEREBRAS_KEY) throw new Error('No key');
-  const r = await fetchWithTimeout('https://api.cerebras.ai/v1/chat/completions', {
-    method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CEREBRAS_KEY },
-    body: JSON.stringify({ model: 'gpt-oss-120b', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 900 })
+async function callGemini(prompt) {
+  if (!GEMINI_KEY) throw new Error('No key');
+  const client = new GoogleGenerativeAI(GEMINI_KEY);
+  const model = client.getGenerativeModel({ model: 'gemini-3.5-flash' });
+  const result = await model.generateContent(prompt);
+  return result.response.text().trim();
+}
+
+async function callOpenRouter(prompt) {
+  if (!OPENROUTER_KEY) throw new Error('No key');
+  const r = await fetchWithTimeout('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENROUTER_KEY, 'HTTP-Referer': process.env.BACKEND_URL || 'https://mailflow-pro-ten.vercel.app', 'X-Title': 'MailFlow Pro' },
+    body: JSON.stringify({ model: 'openrouter/free', messages: [{ role: 'user', content: prompt + '\nReturn valid JSON only.' }], temperature: 0.7, max_tokens: 900 })
   }, 15000);
-  if (!r.ok) { const t = await r.text(); throw new Error('Cerebras ' + r.status + ' ' + t.substring(0, 100)); }
+  if (!r.ok) { const t = await r.text(); throw new Error('OpenRouter ' + r.status + ' ' + t.substring(0, 100)); }
   const d = await r.json(); return (d.choices?.[0]?.message?.content || '').trim();
 }
 
@@ -101,35 +109,16 @@ async function callMistral(prompt) {
   throw lastErr;
 }
 
-async function callGemini(prompt) {
-  if (!GEMINI_KEY) throw new Error('No key');
-  const client = new GoogleGenerativeAI(GEMINI_KEY);
-  const model = client.getGenerativeModel({ model: 'gemini-3.5-flash' });
-  const result = await model.generateContent(prompt);
-  return result.response.text().trim();
-}
-
-async function callOpenRouter(prompt) {
-  if (!OPENROUTER_KEY) throw new Error('No key');
-  const r = await fetchWithTimeout('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENROUTER_KEY, 'HTTP-Referer': process.env.BACKEND_URL || 'https://mailflow-pro-ten.vercel.app', 'X-Title': 'MailFlow Pro' },
-    body: JSON.stringify({ model: 'openrouter/free', messages: [{ role: 'user', content: prompt + '\nReturn valid JSON only.' }], temperature: 0.7, max_tokens: 900 })
-  }, 15000);
-  if (!r.ok) { const t = await r.text(); throw new Error('OpenRouter ' + r.status + ' ' + t.substring(0, 100)); }
-  const d = await r.json(); return (d.choices?.[0]?.message?.content || '').trim();
-}
-
+// ============ AI CHAIN — Free providers, fastest first ============
 async function callAI(prompt) {
   const cached = getCachedResponse(prompt);
   if (cached) { console.log('AI: CACHE'); return cached; }
 
   const providers = [
     { name: 'Groq', fn: callGroq },
-    { name: 'Cerebras', fn: callCerebras },
     { name: 'Gemini', fn: callGemini },
-    { name: 'Mistral', fn: callMistral },
-    { name: 'OpenRouter', fn: callOpenRouter }
+    { name: 'OpenRouter', fn: callOpenRouter },
+    { name: 'Mistral', fn: callMistral }
   ];
   const errors = [];
   for (const p of providers) {
@@ -170,17 +159,16 @@ function isQuietHours(p) { if (!p || !p.quietEnabled) return false; const n = ne
 function getCurrentHourKey() { const n = new Date(); return n.toISOString().split('T')[0] + '-' + n.getHours(); }
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL, firebase: !!serviceAccount.project_id, ai: { groq: !!GROQ_KEY, cerebras: !!CEREBRAS_KEY, gemini: !!GEMINI_KEY, mistral: !!MISTRAL_KEY, openrouter: !!OPENROUTER_KEY } }));
+app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL, firebase: !!serviceAccount.project_id, ai: { groq: !!GROQ_KEY, gemini: !!GEMINI_KEY, mistral: !!MISTRAL_KEY, openrouter: !!OPENROUTER_KEY } }));
 
 app.get('/api/ai/debug', authRequired, async (req, res) => {
   const testPrompt = 'Return ONLY JSON: {"message":"hello","status":"ok"}';
   const results = {};
   const testers = [
     { name: 'groq', key: GROQ_KEY, fn: callGroq },
-    { name: 'cerebras', key: CEREBRAS_KEY, fn: callCerebras },
     { name: 'gemini', key: GEMINI_KEY, fn: callGemini },
-    { name: 'mistral', key: MISTRAL_KEY, fn: callMistral },
-    { name: 'openrouter', key: OPENROUTER_KEY, fn: callOpenRouter }
+    { name: 'openrouter', key: OPENROUTER_KEY, fn: callOpenRouter },
+    { name: 'mistral', key: MISTRAL_KEY, fn: callMistral }
   ];
   for (const t of testers) {
     if (!t.key) { results[t.name] = { status: 'no_key' }; continue; }
