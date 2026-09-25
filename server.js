@@ -50,17 +50,19 @@ function safeParseJSON(text) {
 
 async function fetchWithTimeout(url, opts, ms) {
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), ms || 12000);
+  const t = setTimeout(() => ctrl.abort(), ms || 15000);
   try { const r = await fetch(url, { ...opts, signal: ctrl.signal }); clearTimeout(t); return r; }
   catch (e) { clearTimeout(t); throw e; }
 }
+
+// ============ FREE AI PROVIDERS ============
 
 async function callGroq(prompt) {
   if (!GROQ_KEY) throw new Error('No key');
   const r = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY },
-    body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 900 })
-  }, 12000);
+    body: JSON.stringify({ model: 'openai/gpt-oss-120b', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 900 })
+  }, 15000);
   if (!r.ok) { const t = await r.text(); throw new Error('Groq ' + r.status + ' ' + t.substring(0, 100)); }
   const d = await r.json(); return (d.choices?.[0]?.message?.content || '').trim();
 }
@@ -69,26 +71,40 @@ async function callCerebras(prompt) {
   if (!CEREBRAS_KEY) throw new Error('No key');
   const r = await fetchWithTimeout('https://api.cerebras.ai/v1/chat/completions', {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CEREBRAS_KEY },
-    body: JSON.stringify({ model: 'llama3.1-70b', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 900 })
-  }, 12000);
+    body: JSON.stringify({ model: 'gpt-oss-120b', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 900 })
+  }, 15000);
   if (!r.ok) { const t = await r.text(); throw new Error('Cerebras ' + r.status + ' ' + t.substring(0, 100)); }
   const d = await r.json(); return (d.choices?.[0]?.message?.content || '').trim();
 }
 
 async function callMistral(prompt) {
   if (!MISTRAL_KEY) throw new Error('No key');
-  const r = await fetchWithTimeout('https://api.mistral.ai/v1/chat/completions', {
-    method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + MISTRAL_KEY },
-    body: JSON.stringify({ model: 'mistral-small-latest', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 900 })
-  }, 12000);
-  if (!r.ok) { const t = await r.text(); throw new Error('Mistral ' + r.status + ' ' + t.substring(0, 100)); }
-  const d = await r.json(); return (d.choices?.[0]?.message?.content || '').trim();
+  const doFetch = async () => {
+    const r = await fetchWithTimeout('https://api.mistral.ai/v1/chat/completions', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + MISTRAL_KEY },
+      body: JSON.stringify({ model: 'mistral-small-latest', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 900 })
+    }, 15000);
+    if (r.status === 429) { const e = new Error('Rate limited'); e.retryAfter = parseInt(r.headers.get('retry-after') || '5', 10); throw e; }
+    if (!r.ok) { const t = await r.text(); throw new Error('Mistral ' + r.status + ' ' + t.substring(0, 100)); }
+    const d = await r.json(); return (d.choices?.[0]?.message?.content || '').trim();
+  };
+  let lastErr;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try { return await doFetch(); }
+    catch (e) {
+      lastErr = e;
+      if (e.retryAfter !== undefined || e.message.includes('429')) {
+        await sleep((e.retryAfter || Math.pow(2, attempt) * 1000));
+      } else { throw e; }
+    }
+  }
+  throw lastErr;
 }
 
 async function callGemini(prompt) {
   if (!GEMINI_KEY) throw new Error('No key');
   const client = new GoogleGenerativeAI(GEMINI_KEY);
-  const model = client.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = client.getGenerativeModel({ model: 'gemini-3.5-flash' });
   const result = await model.generateContent(prompt);
   return result.response.text().trim();
 }
@@ -97,9 +113,9 @@ async function callOpenRouter(prompt) {
   if (!OPENROUTER_KEY) throw new Error('No key');
   const r = await fetchWithTimeout('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENROUTER_KEY, 'HTTP-Referer': process.env.BACKEND_URL || 'https://mailflow-pro.vercel.app', 'X-Title': 'MailFlow Pro' },
-    body: JSON.stringify({ model: 'meta-llama/llama-3.3-70b-instruct:free', messages: [{ role: 'user', content: prompt + '\nReturn valid JSON only.' }], temperature: 0.7, max_tokens: 900 })
-  }, 12000);
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENROUTER_KEY, 'HTTP-Referer': process.env.BACKEND_URL || 'https://mailflow-pro-ten.vercel.app', 'X-Title': 'MailFlow Pro' },
+    body: JSON.stringify({ model: 'openrouter/free', messages: [{ role: 'user', content: prompt + '\nReturn valid JSON only.' }], temperature: 0.7, max_tokens: 900 })
+  }, 15000);
   if (!r.ok) { const t = await r.text(); throw new Error('OpenRouter ' + r.status + ' ' + t.substring(0, 100)); }
   const d = await r.json(); return (d.choices?.[0]?.message?.content || '').trim();
 }
