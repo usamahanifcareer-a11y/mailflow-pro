@@ -5,6 +5,7 @@ const cookieSession = require('cookie-session');
 const { google } = require('googleapis');
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const crypto = require('crypto');
 const { Readable } = require('stream');
 const path = require('path');
@@ -16,10 +17,10 @@ const DAILY_LIMIT = 100;
 const IS_VERCEL = !!process.env.VERCEL;
 const CRON_SECRET = process.env.CRON_SECRET || 'mf-cron-default-change-me';
 
-if (!process.env.SESSION_SECRET) {
-  console.error('FATAL: SESSION_SECRET missing!');
-  process.exit(1);
-}
+if (!process.env.SESSION_SECRET) { console.error('FATAL: SESSION_SECRET missing!'); process.exit(1); }
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const geminiModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 app.set('trust proxy', 1);
 app.use(cors({ origin: true, credentials: true }));
@@ -60,15 +61,14 @@ const SCOPES = [
   'https://www.googleapis.com/auth/drive.file'
 ];
 
-// ========== HELPERS ==========
 function authRequired(req, res, next) {
-  if (!req.session || !req.session.user) return res.status(401).json({ ok: false, error: 'Session expired. Please login again.' });
+  if (!req.session || !req.session.user) return res.status(401).json({ ok: false, error: 'Session expired.' });
   next();
 }
 function adminRequired(req, res, next) {
   if (!req.session || !req.session.user) return res.status(401).json({ ok: false, error: 'Session expired.' });
   if (req.session.user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase())
-    return res.status(403).json({ ok: false, error: 'Admin access required' });
+    return res.status(403).json({ ok: false, error: 'Admin required' });
   next();
 }
 async function getUserData(uid) {
@@ -99,28 +99,12 @@ function getCurrentHourKey() {
   const now = new Date();
   return now.toISOString().split('T')[0] + '-' + now.getHours();
 }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-// ========== SPAM CONTENT CHECKER ==========
-const SPAM_WORDS = ['free', 'guarantee', 'act now', 'click here', 'limited time', 'buy now', 'cash', 'prize', 'winner', 'urgent', 'risk-free', 'no obligation', 'earn money', 'work from home', 'make money', 'weight loss', 'viagra', 'casino', 'lottery', 'credit card', 'lowest price', 'special promotion', 'order now', 'apply now', 'sign up free', 'trial', 'sample', 'no cost', 'no fees', 'no purchase'];
-function checkSpamContent(subject, body) {
-  const text = ((subject || '') + ' ' + (body || '')).toLowerCase();
-  const found = [];
-  for (const w of SPAM_WORDS) {
-    if (text.includes(w)) found.push(w);
-  }
-  const hasTooManyLinks = (body.match(/https?:\/\//g) || []).length > 3;
-  const hasExclamation = ((subject.match(/!/g) || []).length) > 1;
-  const isAllCaps = subject === subject.toUpperCase() && subject.length > 5;
-  const score = found.length * 15 + (hasTooManyLinks ? 25 : 0) + (hasExclamation ? 15 : 0) + (isAllCaps ? 20 : 0);
-  return { found, hasTooManyLinks, hasExclamation, isAllCaps, score: Math.min(100, score), safe: score === 0 };
-}
-
-// ========== HEALTH ==========
 app.get('/api/health', (req, res) => {
-  res.json({ ok: true, vercel: IS_VERCEL, firebase: !!serviceAccount.project_id });
+  res.json({ ok: true, vercel: IS_VERCEL, firebase: !!serviceAccount.project_id, ai: !!process.env.GEMINI_API_KEY });
 });
 
-// ========== AUTH ==========
 app.get('/auth/google', (req, res) => {
   const url = oauth2Client.generateAuthUrl({ access_type: 'offline', scope: SCOPES, prompt: 'consent' });
   res.redirect(url);
@@ -150,14 +134,12 @@ app.get('/auth/google/callback', async (req, res) => {
       data.appAccountId = generateAppAccountId();
       data.lastAutoSendRun = null;
       data.totalAutoSent = 0;
-      data.warmupStartDate = new Date();
       data.lastSendTime = null;
     } else {
       const ex = existing.data();
       if (!ex.appAccountId) data.appAccountId = generateAppAccountId();
       if (ex.autoSendBatchSize === undefined) data.autoSendBatchSize = 5;
       if (ex.totalAutoSent === undefined) data.totalAutoSent = 0;
-      if (!ex.warmupStartDate) data.warmupStartDate = new Date();
     }
     await db.collection('users').doc(uid).set(data, { merge: true });
     const fresh = await db.collection('users').doc(uid).get();
@@ -185,7 +167,6 @@ app.get('/api/me', async (req, res) => {
 
 app.post('/api/logout', (req, res) => { req.session = null; res.json({ ok: true }); });
 
-// ========== QUIET STATUS ==========
 app.get('/api/quiet-status', authRequired, async (req, res) => {
   try {
     const d = await getUserData(req.session.user.id);
@@ -194,7 +175,6 @@ app.get('/api/quiet-status', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ========== QUOTA ==========
 app.get('/api/quota', authRequired, async (req, res) => {
   try {
     const userDoc = await getUserData(req.session.user.id);
@@ -211,104 +191,212 @@ app.get('/api/quota', authRequired, async (req, res) => {
       const sd = await db.collection('users').doc(req.session.user.id).collection('stats').doc(today).get();
       sentToday = sd.exists ? (sd.data().sent || 0) : 0;
     }
-    res.json({ ok: true, sentToday, limit: DAILY_LIMIT, remaining: Math.max(0, DAILY_LIMIT - sentToday) });
+    res.json({ ok: true, sentToday, limit: DAILY_LIMIT, remaining: Math.max(0, DAILY_LIMIT - sentToday), updatedAt: new Date().toISOString() });
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ========== WARM-UP STATUS ==========
-app.get('/api/warmup/status', authRequired, async (req, res) => {
+// AI: Live Analysis
+app.post('/api/ai/analyze-live', authRequired, async (req, res) => {
   try {
+    const { subject, body } = req.body;
+    if (!subject && !body) return res.json({ ok: true, score: 0, prediction: 'EMPTY', inboxProbability: 0, issues: [], suggestions: [] });
+    if (!process.env.GEMINI_API_KEY) return res.json({ ok: true, ...localAnalysis(subject, body) });
     const userDoc = await getUserData(req.session.user.id);
-    if (!userDoc) return res.json({ ok: false, error: 'User not found' });
-    const start = userDoc.warmupStartDate ? new Date(userDoc.warmupStartDate._seconds ? userDoc.warmupStartDate._seconds * 1000 : userDoc.warmupStartDate) : new Date();
-    const days = Math.floor((Date.now() - start.getTime()) / (1000 * 60 * 60 * 24));
-    let rate = 5, stage = 'Very Early', left = 3, week = 1;
-    if (days >= 30) { rate = 50; stage = 'Fully Warmed'; left = 0; week = 5; }
-    else if (days >= 21) { rate = 40; stage = 'Advanced'; left = 30 - days; week = 4; }
-    else if (days >= 14) { rate = 25; stage = 'Late Warm-up'; left = 21 - days; week = 3; }
-    else if (days >= 7) { rate = 15; stage = 'Mid Warm-up'; left = 14 - days; week = 2; }
-    else if (days >= 3) { rate = 10; stage = 'Early Warm-up'; left = 7 - days; week = 1; }
-    res.json({
-      ok: true,
-      daysSinceStart: days,
-      recommendedRate: rate,
-      stage,
-      daysLeft: left,
-      week,
-      totalAutoSent: userDoc.totalAutoSent || 0,
-      schedule: [
-        { week: 1, days: '1-3', rate: 5, note: 'Send to friends only. Ask for replies.' },
-        { week: 2, days: '4-7', rate: 10, note: 'Expand to colleagues. Encourage replies.' },
-        { week: 3, days: '8-14', rate: 15, note: 'Gradually increase volume.' },
-        { week: 4, days: '15-21', rate: 25, note: 'Stable sending. Monitor bounce rate.' },
-        { week: 5, days: '22-30', rate: 40, note: 'Nearly warmed. Keep engagement high.' },
-        { week: 6, days: '31+', rate: 50, note: 'Fully warmed. You can now scale.' }
-      ]
-    });
+    const hasLogo = !!(userDoc && userDoc.logoUrl);
+    const cleanBody = (body || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 1500);
+    const linkCount = (body.match(/https?:\/\//g) || []).length;
+    const wordCount = cleanBody.split(/\s+/).filter(w => w).length;
+    const prompt = `You are an elite email deliverability expert. Analyze this DRAFT. Return ONLY valid JSON.
+DRAFT:
+- Subject: "${(subject || '').substring(0, 200)}"
+- Body: "${cleanBody}"
+- Words: ${wordCount}, Links: ${linkCount}, Logo: ${hasLogo ? 'yes' : 'no'}
+Return JSON:
+{"score":0-100,"prediction":"EXCELLENT"|"GOOD"|"RISKY"|"SPAM","inboxProbability":0-100,"tone":"string","issues":[{"type":"string","severity":"low"|"medium"|"high","message":"string"}],"suggestions":["string"],"emotionalTone":"string","readability":0-100}
+Rules: score <= 15 EXCELLENT, 16-40 GOOD, 41-70 RISKY, 71+ SPAM. Return ONLY JSON.`;
+    const result = await geminiModel.generateContent(prompt);
+    const text = result.response.text().trim();
+    const match = text.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(match ? match[0] : text);
+    res.json({ ok: true, ...parsed, aiPowered: true });
+  } catch (err) {
+    console.error('Live AI error:', err.message);
+    try { res.json({ ok: true, ...localAnalysis(req.body.subject, req.body.body), aiPowered: false }); }
+    catch (e2) { res.json({ ok: false, error: err.message }); }
+  }
+});
+
+function localAnalysis(subject, body) {
+  const SPAM_WORDS = ['free','guarantee','act now','click here','limited time','buy now','cash','prize','urgent','risk-free','earn money','work from home','make money','no cost','no fees'];
+  const text = ((subject||'') + ' ' + (body||'')).toLowerCase();
+  const found = SPAM_WORDS.filter(w => text.includes(w));
+  const linkCount = (body.match(/https?:\/\//g) || []).length;
+  const hasExclamation = ((subject.match(/!/g) || []).length) > 1;
+  const isAllCaps = subject === subject.toUpperCase() && subject.length > 5;
+  const cleanBody = (body || '').replace(/<[^>]+>/g, ' ').trim();
+  const wordCount = cleanBody.split(/\s+/).filter(w => w).length;
+  const issues = [];
+  if (found.length) issues.push({ type: 'spam_words', severity: 'high', message: 'Contains: ' + found.slice(0,3).join(', ') });
+  if (linkCount > 2) issues.push({ type: 'links', severity: 'medium', message: linkCount + ' links found' });
+  if (hasExclamation) issues.push({ type: 'caps', severity: 'low', message: 'Multiple exclamation marks' });
+  if (isAllCaps) issues.push({ type: 'caps', severity: 'high', message: 'Subject in ALL CAPS' });
+  if (wordCount < 20) issues.push({ type: 'short', severity: 'medium', message: 'Body too short' });
+  const score = Math.min(100, found.length * 20 + (linkCount > 2 ? 15 : 0) + (hasExclamation ? 10 : 0) + (isAllCaps ? 25 : 0) + (wordCount < 20 ? 15 : 0));
+  const inboxProbability = 100 - score;
+  const prediction = score <= 15 ? 'EXCELLENT' : score <= 40 ? 'GOOD' : score <= 70 ? 'RISKY' : 'SPAM';
+  const suggestions = [];
+  if (found.length) suggestions.push('Remove trigger words: ' + found.slice(0,2).join(', '));
+  if (linkCount > 2) suggestions.push('Reduce links to 2 max');
+  if (isAllCaps) suggestions.push('Write subject in normal case');
+  if (wordCount < 20) suggestions.push('Add more context (20+ words recommended)');
+  if (suggestions.length === 0) suggestions.push('Content looks good!');
+  return { score, prediction, inboxProbability, issues, suggestions, tone: 'professional', readability: 75, emotionalTone: 'neutral' };
+}
+
+// AI: Email Writer
+app.post('/api/ai/write-email', authRequired, async (req, res) => {
+  try {
+    const { context, recipientName, recipientCompany, tone, length } = req.body;
+    if (!context) return res.json({ ok: false, error: 'Please provide context' });
+    if (!process.env.GEMINI_API_KEY) return res.json({ ok: false, error: 'AI not configured' });
+    const toneMap = { formal: 'professional and formal', friendly: 'warm and friendly', casual: 'casual and conversational', persuasive: 'persuasive and confident' };
+    const lengthMap = { short: 'under 80 words', medium: 'between 100-150 words', long: 'between 200-250 words' };
+    const prompt = `You are an elite email copywriter. Write a professional email. Return ONLY valid JSON.
+CONTEXT: ${context}
+RECIPIENT: ${recipientName || 'unknown'}
+COMPANY: ${recipientCompany || 'unknown'}
+TONE: ${toneMap[tone] || toneMap.formal}
+LENGTH: ${lengthMap[length] || lengthMap.medium}
+Requirements: natural human-like, no spam words, personalized, clear purpose, strong closing. Plain text with \\n\\n line breaks.
+Return JSON: {"subject":"under 60 chars","body":"with \\n\\n breaks","tone":"string","wordCount":number,"keyPoints":["point"]}`;
+    const result = await geminiModel.generateContent(prompt);
+    const text = result.response.text().trim();
+    const match = text.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(match ? match[0] : text);
+    res.json({ ok: true, ...parsed });
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ========== SPAM CHECK API ==========
-app.get('/api/spam-check', authRequired, (req, res) => {
-  const { subject, body } = req.query;
-  const result = checkSpamContent(subject || '', body || '');
-  res.json({ ok: true, ...result });
+// AI: Subject Generator
+app.post('/api/ai/generate-subjects', authRequired, async (req, res) => {
+  try {
+    const { context } = req.body;
+    if (!process.env.GEMINI_API_KEY) return res.json({ ok: false, error: 'AI not configured' });
+    const prompt = `Generate 5 professional email subject lines. Return ONLY JSON.
+CONTEXT: ${context || 'professional outreach'}
+Rules: max 60 chars, no ALL CAPS, no spam words, vary styles.
+Return: {"subjects":["s1","s2","s3","s4","s5"]}`;
+    const result = await geminiModel.generateContent(prompt);
+    const text = result.response.text().trim();
+    const match = text.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(match ? match[0] : text);
+    res.json({ ok: true, subjects: parsed.subjects || [] });
+  } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ========== TEST CENTER ==========
-app.post('/api/test/send', authRequired, async (req, res) => {
+// AI: Improve Email
+app.post('/api/ai/improve-email', authRequired, async (req, res) => {
   try {
-    const { testEmail, subject, body, useTemplate } = req.body;
-    if (!testEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testEmail)) return res.json({ ok: false, error: 'Invalid email' });
+    const { subject, body } = req.body;
+    if (!process.env.GEMINI_API_KEY) return res.json({ ok: false, error: 'AI not configured' });
+    const prompt = `Improve this email for better inbox placement. Return ONLY JSON.
+SUBJECT: "${subject || ''}"
+BODY: "${(body||'').substring(0, 1000)}"
+Return JSON: {"improvedSubject":"...","improvedBody":"...","changes":["c1"],"beforeScore":0-100,"afterScore":0-100}`;
+    const result = await geminiModel.generateContent(prompt);
+    const text = result.response.text().trim();
+    const match = text.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(match ? match[0] : text);
+    res.json({ ok: true, ...parsed });
+  } catch (err) { res.json({ ok: false, error: err.message }); }
+});
+
+// AI: Best Time
+app.get('/api/ai/best-time', authRequired, async (req, res) => {
+  try {
+    if (!process.env.GEMINI_API_KEY) return res.json({ ok: true, bestHours: [9, 11, 14], reasoning: 'Default business hours' });
     const userId = req.session.user.id;
-    const userDoc = await getUserData(userId);
-    let finalSubject = subject || 'Quick Test';
-    let finalBody = body || 'This is a test.';
-    if (useTemplate) {
-      const tS = await db.collection('users').doc(userId).collection('templates').limit(1).get();
-      if (!tS.empty) { const tpl = tS.docs[0].data(); finalSubject = tpl.subject; finalBody = tpl.body; }
-    }
-    const sig = userDoc.signature || '';
-    const bodyHtml = finalBody.replace(/\n/g, '<br>');
-    const sigH = sig ? '<div style="margin-top:18px;padding-top:14px;border-top:1px solid #e5e7eb;">' + sig + '</div>' : '';
-    const full = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;">' + bodyHtml + sigH + '</div>';
-    
-    const client = setUserOAuth(userDoc.tokens);
-    const gmail = google.gmail({ version: 'v1', auth: client });
-    const raw = buildMime(userDoc.name || 'MailFlow User', req.session.user.email, testEmail, finalSubject, full, []);
-    await gmail.users.messages.send({ userId: 'me', requestBody: { raw } });
-    
-    const doc = await db.collection('users').doc(userId).collection('testLog').add({
-      testEmail, subject: finalSubject, sentAt: new Date(), placement: 'PENDING'
+    const snap = await db.collection('users').doc(userId).collection('emailLog').orderBy('sentAt', 'desc').limit(100).get();
+    const hourStats = {};
+    snap.forEach(d => {
+      const data = d.data();
+      const sentMs = data.sentAt?._seconds ? data.sentAt._seconds * 1000 : new Date(data.sentAt).getTime();
+      const hour = new Date(sentMs).getHours();
+      if (!hourStats[hour]) hourStats[hour] = { sent: 0, opened: 0 };
+      hourStats[hour].sent++;
     });
-    res.json({ ok: true, testId: doc.id, subject: finalSubject });
-  } catch (err) { res.json({ ok: false, error: err.message }); }
+    const rSnap = await db.collection('users').doc(userId).collection('recipients').where('status', '==', 'Opened').get();
+    rSnap.forEach(d => {
+      const data = d.data();
+      if (data.openedAt) {
+        const ms = data.openedAt._seconds ? data.openedAt._seconds * 1000 : new Date(data.openedAt).getTime();
+        const hour = new Date(ms).getHours();
+        if (!hourStats[hour]) hourStats[hour] = { sent: 0, opened: 0 };
+        hourStats[hour].opened = (hourStats[hour].opened || 0) + 1;
+      }
+    });
+    const history = Object.entries(hourStats).map(([h, s]) => `Hour ${h}: sent=${s.sent}, opened=${s.opened || 0}`).join('\n');
+    const prompt = `Recommend 3 best sending hours (0-23) for highest open rate. Return ONLY JSON.
+HISTORY:
+${history || 'No data yet'}
+Return: {"bestHours":[h1,h2,h3],"reasoning":"short"}`;
+    const result = await geminiModel.generateContent(prompt);
+    const text = result.response.text().trim();
+    const match = text.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(match ? match[0] : text);
+    res.json({ ok: true, ...parsed });
+  } catch (err) { res.json({ ok: true, bestHours: [9, 11, 14], reasoning: 'Default hours' }); }
 });
 
-app.get('/api/test/history', authRequired, async (req, res) => {
+// AI: Reply Analyzer
+app.post('/api/ai/analyze-replies', authRequired, async (req, res) => {
   try {
-    const snap = await db.collection('users').doc(req.session.user.id).collection('testLog').orderBy('sentAt', 'desc').limit(100).get();
-    const list = []; snap.forEach(d => list.push({ id: d.id, ...d.data() }));
-    res.json({ ok: true, tests: list });
+    const userId = req.session.user.id;
+    const user = await getUserData(userId);
+    if (!user.tokens) return res.json({ ok: false, error: 'Session expired' });
+    if (!process.env.GEMINI_API_KEY) return res.json({ ok: false, error: 'AI not configured' });
+    const client = setUserOAuth(user.tokens);
+    const gmail = google.gmail({ version: 'v1', auth: client });
+    const since = Math.floor((Date.now() - 30 * 24 * 60 * 60 * 1000) / 1000);
+    const list = await gmail.users.messages.list({ userId: 'me', q: `in:inbox after:${since}`, maxResults: 15 });
+    if (!list.data.messages || !list.data.messages.length) return res.json({ ok: true, replies: [] });
+    const replies = [];
+    for (const msg of list.data.messages.slice(0, 10)) {
+      try {
+        const full = await gmail.users.messages.get({ userId: 'me', id: msg.id, format: 'full' });
+        const headers = full.data.payload.headers;
+        const from = headers.find(h => h.name === 'From')?.value || '';
+        const subject = headers.find(h => h.name === 'Subject')?.value || '';
+        let bodyText = '';
+        const extract = (parts) => {
+          for (const p of parts || []) {
+            if (p.mimeType === 'text/plain' && p.body?.data) bodyText += Buffer.from(p.body.data, 'base64').toString();
+            else if (p.parts) extract(p.parts);
+          }
+        };
+        if (full.data.payload.body?.data) bodyText = Buffer.from(full.data.payload.body.data, 'base64').toString();
+        else extract(full.data.payload.parts);
+        bodyText = bodyText.substring(0, 600);
+        replies.push({ id: msg.id, from, subject, bodyPreview: bodyText });
+      } catch (e) {}
+    }
+    if (!replies.length) return res.json({ ok: true, replies: [] });
+    const prompt = `Categorize these email replies. Return ONLY JSON.
+${replies.map((r, i) => `[${i}] From: ${r.from}\nSubject: ${r.subject}\nBody: ${r.bodyPreview}`).join('\n\n')}
+Return JSON: {"categories":[{"index":0,"type":"INTERESTED"|"NOT_INTERESTED"|"AUTO_REPLY"|"QUESTION"|"SPAM"|"MEETING_REQUEST"|"OTHER","sentiment":"POSITIVE"|"NEUTRAL"|"NEGATIVE","summary":"line","actionSuggestion":"string"}]}`;
+    const result = await geminiModel.generateContent(prompt);
+    const text = result.response.text().trim();
+    const match = text.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(match ? match[0] : text);
+    const enriched = replies.map((r, i) => {
+      const cat = (parsed.categories || []).find(c => c.index === i) || {};
+      return { ...r, category: cat.type || 'OTHER', sentiment: cat.sentiment || 'NEUTRAL', summary: cat.summary || '', actionSuggestion: cat.actionSuggestion || '' };
+    });
+    res.json({ ok: true, replies: enriched });
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-app.post('/api/test/mark/:id', authRequired, async (req, res) => {
-  try {
-    const { placement } = req.body;
-    await db.collection('users').doc(req.session.user.id).collection('testLog').doc(req.params.id).update({ placement, markedAt: new Date() });
-    res.json({ ok: true });
-  } catch (err) { res.json({ ok: false, error: err.message }); }
-});
-
-app.delete('/api/test/:id', authRequired, async (req, res) => {
-  try {
-    await db.collection('users').doc(req.session.user.id).collection('testLog').doc(req.params.id).delete();
-    res.json({ ok: true });
-  } catch (err) { res.json({ ok: false, error: err.message }); }
-});
-
-// ========== LOGO UPLOAD ==========
+// Logo upload
 app.post('/api/upload-logo', authRequired, async (req, res) => {
   try {
     const { base64, mimeType, filename } = req.body;
@@ -324,7 +412,8 @@ app.post('/api/upload-logo', authRequired, async (req, res) => {
     if (userDoc.logoFileId) { try { await drive.files.delete({ fileId: userDoc.logoFileId }); } catch (e) {} }
     const uploaded = await drive.files.create({
       requestBody: { name: filename || 'logo', mimeType },
-      media: { mimeType, body: Readable.from(buf) }, fields: 'id'
+      media: { mimeType, body: Readable.from(buf) },
+      fields: 'id'
     });
     const fileId = uploaded.data.id;
     try { await drive.permissions.create({ fileId, requestBody: { role: 'reader', type: 'anyone' } }); } catch (e) {}
@@ -335,12 +424,22 @@ app.post('/api/upload-logo', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
+app.post('/api/remove-logo', authRequired, async (req, res) => {
+  try {
+    const userDoc = await getUserData(req.session.user.id);
+    if (userDoc.logoFileId && userDoc.tokens) {
+      try { const client = setUserOAuth(userDoc.tokens); await google.drive({ version: 'v3', auth: client }).files.delete({ fileId: userDoc.logoFileId }); } catch (e) {}
+    }
+    await db.collection('users').doc(req.session.user.id).update({ logoFileId: null, logoUrl: '', logoUrlAlt: '' });
+    res.json({ ok: true });
+  } catch (err) { res.json({ ok: false, error: err.message }); }
+});
+
 app.get('/api/logo', authRequired, async (req, res) => {
   try { const d = await getUserData(req.session.user.id); res.json({ ok: true, url: d.logoUrl || '', urlAlt: d.logoUrlAlt || '' }); }
   catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ========== FILE UPLOAD ==========
 app.post('/api/upload-file', authRequired, async (req, res) => {
   try {
     const { base64, mimeType, filename } = req.body;
@@ -381,7 +480,6 @@ app.delete('/api/files/:id', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ========== TEMPLATES ==========
 app.get('/api/templates', authRequired, async (req, res) => {
   try {
     const s = await db.collection('users').doc(req.session.user.id).collection('templates').get();
@@ -405,7 +503,6 @@ app.delete('/api/templates/:id', authRequired, async (req, res) => {
   catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ========== RECIPIENTS ==========
 app.get('/api/recipients', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -445,7 +542,8 @@ app.post('/api/recipients', authRequired, async (req, res) => {
       batch.set(doc, {
         company: (r.company || '').trim(),
         email: r.email.toLowerCase(),
-        templateId: templateId || '', status: 'Pending',
+        templateId: templateId || '',
+        status: 'Pending',
         sentAt: null, openedAt: null, createdAt: new Date()
       });
       added++;
@@ -472,7 +570,6 @@ app.post('/api/recipients/bulk-delete', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ========== EMAIL LOG ==========
 app.get('/api/my-emails', authRequired, async (req, res) => {
   try {
     const { range, search } = req.query;
@@ -493,45 +590,35 @@ app.get('/api/my-emails', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ========== MIME BUILDER (Optimized for Inbox) ==========
 function encSubject(s) {
   return /^[\x00-\x7F]*$/.test(s) ? s : '=?UTF-8?B?' + Buffer.from(s, 'utf8').toString('base64') + '?=';
 }
 function htmlToPlain(html) {
-  return html
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+  return html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/p>/gi, '\n\n')
     .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/\n\s*\n\s*\n/g, '\n\n')
-    .trim();
+    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
+    .replace(/\n\s*\n\s*\n/g, '\n\n').trim();
 }
 function buildMime(fromName, fromEmail, to, subject, html, attachments) {
   const mB = 'mixed_' + crypto.randomBytes(8).toString('hex');
   const aB = 'alt_' + crypto.randomBytes(8).toString('hex');
   const domain = fromEmail.split('@')[1] || 'gmail.com';
   const msgId = '<' + crypto.randomBytes(16).toString('hex') + '.' + Date.now() + '@' + domain + '>';
-  const dateStr = new Date().toUTCString();
   const plainText = htmlToPlain(html);
   const p = [
     'From: "' + fromName.replace(/"/g, '') + '" <' + fromEmail + '>',
     'To: ' + to,
     'Subject: ' + encSubject(subject),
-    'Date: ' + dateStr,
+    'Date: ' + new Date().toUTCString(),
     'Message-ID: ' + msgId,
     'MIME-Version: 1.0',
     'X-Mailer: MailFlow Pro',
     'List-Unsubscribe: <mailto:' + fromEmail + '?subject=unsubscribe>',
     'List-Unsubscribe-Post: List-Unsubscribe=One-Click',
-    'Precedence: bulk',
-    'X-Priority: 3',
-    'Importance: Normal'
+    'Precedence: bulk', 'X-Priority: 3', 'Importance: Normal'
   ];
   if (attachments && attachments.length) {
     p.push('Content-Type: multipart/mixed; boundary="' + mB + '"', '', '--' + mB);
@@ -540,9 +627,7 @@ function buildMime(fromName, fromEmail, to, subject, html, attachments) {
     p.push('--' + aB);
     p.push('Content-Type: text/html; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', Buffer.from(html, 'utf8').toString('base64'), '', '--' + aB + '--', '');
     for (const att of attachments) {
-      p.push('--' + mB, 'Content-Type: ' + att.mimeType + '; name="' + att.filename + '"',
-        'Content-Disposition: attachment; filename="' + att.filename + '"',
-        'Content-Transfer-Encoding: base64', '', att.data, '');
+      p.push('--' + mB, 'Content-Type: ' + att.mimeType + '; name="' + att.filename + '"', 'Content-Disposition: attachment; filename="' + att.filename + '"', 'Content-Transfer-Encoding: base64', '', att.data, '');
     }
     p.push('--' + mB + '--');
   } else {
@@ -554,7 +639,6 @@ function buildMime(fromName, fromEmail, to, subject, html, attachments) {
   return Buffer.from(p.join('\r\n')).toString('base64').replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 }
 
-// ========== SEND ONE ==========
 async function sendOne(userId, userEmail, recipientId, attachFiles, options) {
   options = options || {};
   const userDoc = await getUserData(userId);
@@ -566,14 +650,11 @@ async function sendOne(userId, userEmail, recipientId, attachFiles, options) {
     err.quietEnd = userDoc.quietEnd;
     throw err;
   }
-  // Human-like delay
   if (userDoc.lastSendTime && !options.skipDelay) {
     const last = userDoc.lastSendTime._seconds ? userDoc.lastSendTime._seconds * 1000 : new Date(userDoc.lastSendTime).getTime();
     const elapsed = Date.now() - last;
     const minGap = 8000 + Math.floor(Math.random() * 7000);
-    if (elapsed < minGap) {
-      await new Promise(resolve => setTimeout(resolve, minGap - elapsed));
-    }
+    if (elapsed < minGap) await sleep(minGap - elapsed);
   }
   const client = setUserOAuth(userDoc.tokens);
   const gmail = google.gmail({ version: 'v1', auth: client });
@@ -647,10 +728,10 @@ app.post('/api/resend', authRequired, async (req, res) => {
   }
 });
 
-// ========== TRACKING ==========
 app.get('/track/:id', async (req, res) => {
   try {
-    const uid = req.query.u; const token = req.query.t;
+    const uid = req.query.u;
+    const token = req.query.t;
     if (uid && token) {
       const rDoc = await db.collection('users').doc(uid).collection('recipients').doc(req.params.id).get();
       if (rDoc.exists && rDoc.data().trackToken === token) {
@@ -659,10 +740,10 @@ app.get('/track/:id', async (req, res) => {
     }
   } catch (e) {}
   const px = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
-  res.set('Content-Type', 'image/gif'); res.send(px);
+  res.set('Content-Type', 'image/gif');
+  res.send(px);
 });
 
-// ========== SIGNATURE & PREFS ==========
 app.get('/api/signature', authRequired, async (req, res) => {
   try { const d = await getUserData(req.session.user.id); res.json({ ok: true, signature: d.signature || '', fields: d.sigFields || {} }); }
   catch (err) { res.json({ ok: false, error: err.message }); }
@@ -698,14 +779,17 @@ app.post('/api/prefs', authRequired, async (req, res) => {
     if (isNaN(batchSize) || batchSize < 1) batchSize = 5;
     if (batchSize > 100) batchSize = 100;
     await db.collection('users').doc(req.session.user.id).update({
-      quietEnabled: !!quietEnabled, quietStart: Number(quietStart), quietEnd: Number(quietEnd),
-      autoSend: !!autoSend, autoSendBatchSize: batchSize, updatedAt: new Date()
+      quietEnabled: !!quietEnabled,
+      quietStart: Number(quietStart),
+      quietEnd: Number(quietEnd),
+      autoSend: !!autoSend,
+      autoSendBatchSize: batchSize,
+      updatedAt: new Date()
     });
     res.json({ ok: true });
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ========== STATS ==========
 app.get('/api/stats', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -715,14 +799,15 @@ app.get('/api/stats', authRequired, async (req, res) => {
     const pendingSnap = await db.collection('users').doc(uid).collection('recipients').where('status', '==', 'Pending').count().get();
     const totalSendsSnap = await db.collection('users').doc(uid).collection('emailLog').count().get();
     res.json({ ok: true, stats: {
-      total: totalSnap.data().count, sent: sentSnap.data().count,
-      opened: openedSnap.data().count, pending: pendingSnap.data().count,
+      total: totalSnap.data().count,
+      sent: sentSnap.data().count,
+      opened: openedSnap.data().count,
+      pending: pendingSnap.data().count,
       totalSends: totalSendsSnap.data().count
     }});
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ========== AUTO-SEND ==========
 async function runAutoSendForUser(userId, userEmail, userDoc) {
   if (isQuietHours(userDoc)) return { skipped: true, reason: 'quiet_hours' };
   const batchSize = Number(userDoc.autoSendBatchSize) || 5;
@@ -734,7 +819,7 @@ async function runAutoSendForUser(userId, userEmail, userDoc) {
     try {
       await sendOne(userId, userEmail, rDoc.id, true, { force: true });
       sent++;
-      await new Promise(resolve => setTimeout(resolve, 10000 + Math.floor(Math.random() * 10000)));
+      await sleep(10000 + Math.floor(Math.random() * 10000));
     } catch (e) {
       failed++;
       if (e.code === 'QUIET_HOURS') break;
@@ -762,7 +847,7 @@ app.get('/api/cron/auto-send', async (req, res) => {
         const result = await runAutoSendForUser(uD.id, u.email, u);
         if (result.skipped) skipped++;
         else if (result.sent > 0) { totalSent += result.sent; totalUsers++; }
-      } catch (e) { errors++; console.error('Auto-send error for', u.email, e.message); }
+      } catch (e) { errors++; console.error('Auto-send error:', u.email, e.message); }
     }
     res.json({ ok: true, totalSent, totalUsers, skipped, errors, timestamp: new Date().toISOString() });
   } catch (err) { res.json({ ok: false, error: err.message }); }
@@ -781,7 +866,6 @@ app.post('/api/auto-send-check', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ========== ADMIN ==========
 app.get('/api/admin/dashboard', adminRequired, async (req, res) => {
   try {
     const usersSnap = await db.collection('users').get();
@@ -794,16 +878,16 @@ app.get('/api/admin/dashboard', adminRequired, async (req, res) => {
       const openedSnap = await db.collection('users').doc(uD.id).collection('recipients').where('status', '==', 'Opened').count().get();
       const pendingSnap = await db.collection('users').doc(uD.id).collection('recipients').where('status', '==', 'Pending').count().get();
       const sendsSnap = await db.collection('users').doc(uD.id).collection('emailLog').count().get();
-      const t = totalSnap.data().count; const s = sentSnap.data().count;
-      const o = openedSnap.data().count; const p = pendingSnap.data().count;
-      const sends = sendsSnap.data().count;
+      const t = totalSnap.data().count, s = sentSnap.data().count, o = openedSnap.data().count, p = pendingSnap.data().count, sends = sendsSnap.data().count;
       tE += t; tS += s; tO += o; tP += p; tSends += sends;
       users.push({
         id: uD.id, email: u.email, name: u.name, picture: u.picture || '',
-        appAccountId: u.appAccountId || 'N/A', autoSend: !!u.autoSend,
-        autoSendBatchSize: u.autoSendBatchSize || 5, totalAutoSent: u.totalAutoSent || 0,
+        appAccountId: u.appAccountId || 'N/A',
+        autoSend: !!u.autoSend,
+        totalAutoSent: u.totalAutoSent || 0,
         createdAt: u.createdAt ? u.createdAt.toDate().toISOString() : '',
-        hasSignature: !!u.signature, hasLogo: !!u.logoUrl,
+        hasSignature: !!u.signature,
+        hasLogo: !!u.logoUrl,
         total: t, sent: s, opened: o, pending: p, totalSends: sends
       });
     }
@@ -830,9 +914,11 @@ app.get('/api/admin/all-emails', adminRequired, async (req, res) => {
       eS.forEach(d => {
         const dd = d.data();
         all.push({
-          id: d.id, userId: uD.id, userEmail: u.email, userAppId: u.appAccountId || 'N/A',
+          id: d.id, userId: uD.id, userEmail: u.email,
+          userAppId: u.appAccountId || 'N/A',
           recipientEmail: dd.recipientEmail, company: dd.company || '',
-          subject: dd.subject || '', sentAt: dd.sentAt, attachmentsCount: dd.attachmentsCount || 0
+          subject: dd.subject || '', sentAt: dd.sentAt,
+          attachmentsCount: dd.attachmentsCount || 0
         });
       });
     }
