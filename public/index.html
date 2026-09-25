@@ -180,8 +180,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .file-card .meta{font-size:11px;color:#64748b;margin-top:3px}
 .file-card button{padding:6px 12px;font-size:11px;border-radius:6px;border:none;cursor:pointer;background:#1e293b;color:#cbd5e1;font-weight:600}
 .file-card button.danger{background:rgba(127,29,29,.5);color:#fca5a5}
-.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
 .modal{background:linear-gradient(135deg,#0f172a,#0a0e1a);border:1px solid #1e293b;border-radius:20px;padding:24px;max-width:900px;width:100%;max-height:85vh;overflow-y:auto;position:relative;box-shadow:0 32px 100px rgba(0,0,0,.8)}
 .modal h3{font-size:17px;margin-bottom:18px;color:#e2e8f0;padding-right:40px;font-weight:700}
 .modal .close-btn{position:absolute;top:16px;right:20px;background:transparent;border:none;color:#94a3b8;font-size:24px;cursor:pointer;padding:0 8px}
@@ -228,9 +227,9 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .ai-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.2)}}
 .ai-score-section{display:flex;justify-content:center;margin-bottom:16px}
-.ai-score-circle{width:120px;height:120px;border-radius:50%;background:conic-gradient(#38bdf8 0%, #1e293b 0%);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;transition:.5s}
+.ai-score-circle{width:120px;height:120px;border-radius:50%;background:conic-gradient(#1e293b 0%, #1e293b 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;transition:.5s}
 .ai-score-circle::after{content:'';position:absolute;inset:8px;background:#0a0e1a;border-radius:50%;z-index:1}
-.ai-score-value{font-size:34px;font-weight:800;color:#e2e8f0;z-index:2;position:relative;line-height:1}
+.ai-score-value{font-size:34px;font-weight:800;color:#94a3b8;z-index:2;position:relative;line-height:1}
 .ai-score-label{font-size:10px;color:#94a3b8;z-index:2;position:relative;margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
 .ai-prob-bar{margin-bottom:14px}
 .ai-prob-track{height:8px;background:#1e293b;border-radius:8px;overflow:hidden}
@@ -265,8 +264,8 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
       <div class="feat"><span class="ico">⚡</span> 100% private & free</div>
     </div>
     <div style="margin-top:20px;padding:14px;background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.3);border-radius:12px;text-align:left">
-      <div style="font-size:12px;color:#c4b5fd;font-weight:700;margin-bottom:6px;text-transform:uppercase">✨ Powered by Gemini AI</div>
-      <div style="font-size:12px;color:#94a3b8;line-height:1.6">Real-time email analysis, auto-writing, spam prevention — all free.</div>
+      <div style="font-size:12px;color:#c4b5fd;font-weight:700;margin-bottom:6px;text-transform:uppercase">✨ Multi-AI Powered</div>
+      <div style="font-size:12px;color:#94a3b8;line-height:1.6">Groq + Gemini + Mistral — auto fallback for zero downtime.</div>
     </div>
     <div class="auth-foot">🔒 Your data is encrypted and secure</div>
   </div>
@@ -334,7 +333,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
         </div>
 
         <div class="panel">
-          <h2>✉️ AI Email Composer <span>Real-time analysis · Powered by Gemini</span></h2>
+          <h2>✉️ AI Email Composer <span>Real-time analysis · Multi-AI powered</span></h2>
           <div class="composer-layout">
             <div class="composer-main">
               <div class="field">
@@ -372,7 +371,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
                 <div class="ai-header">
                   <span class="ai-dot"></span>
                   <span>AI Analysis</span>
-                  <span id="aiLiveStatus" style="margin-left:auto;font-size:10px;color:#94a3b8;text-transform:none;letter-spacing:0">Live</span>
+                  <span id="aiLiveStatus" style="margin-left:auto;font-size:10px;color:#94a3b8;text-transform:none;letter-spacing:0">Waiting</span>
                 </div>
                 <div class="ai-score-section">
                   <div class="ai-score-circle" id="aiScoreCircle">
@@ -383,7 +382,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
                 <div class="ai-prob-bar">
                   <div style="display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;margin-bottom:6px">
                     <span>Inbox Probability</span>
-                    <span id="aiProbValue" style="color:#86efac;font-weight:700">—</span>
+                    <span id="aiProbValue" style="color:#94a3b8;font-weight:700">—</span>
                   </div>
                   <div class="ai-prob-track">
                     <div class="ai-prob-fill" id="aiProbFill" style="width:0%"></div>
@@ -565,7 +564,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
         </div>
 
         <div class="panel">
-          <h2>📧 Email History <span>All sent emails</span></h2>
+          <h2>📧 Email History <span>All sent emails with AI predictions</span></h2>
           <div class="filter-bar">
             <input type="text" class="search-bar" id="myEmailSearch" placeholder="Search history..." oninput="renderMyEmails()">
             <select id="myEmailTimeFilter" onchange="loadMyEmails()">
@@ -584,9 +583,9 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 
   <div class="container hidden" id="testView">
     <div class="panel" style="background:linear-gradient(135deg,rgba(168,85,247,.08),rgba(56,189,248,.08));border-color:rgba(168,85,247,.3)">
-      <h2>🤖 AI-Powered Insights <span>Powered by Google Gemini</span></h2>
+      <h2>🤖 AI-Powered Insights <span>Multi-AI: Groq + Gemini + Mistral</span></h2>
       <div style="font-size:13px;color:#94a3b8;line-height:1.7">
-        Advanced AI features to improve your email deliverability. Analyze your sent emails, categorize replies, and discover the best sending times.
+        Advanced AI features to improve your email deliverability. Automatic fallback ensures zero downtime — if one AI is busy, the next one takes over.
       </div>
     </div>
     <div class="panel">
@@ -720,36 +719,72 @@ function startHourlyAutoSend(){setTimeout(function(){runAutoCheck();},8000);if(H
 function runAutoCheck(){api('/api/auto-send-check','POST').then(function(r){if(r.ok&&r.sent>0){toast('🤖 Auto-send: '+r.sent+' emails sent');loadAll();loadQuota();loadMyEmails();}}).catch(function(){});}
 function loadQuota(){api('/api/quota').then(function(r){if(!r.ok)return;$('quotaSent').innerText=r.sentToday+' / '+r.limit;$('quotaRemaining').innerText=r.remaining;var pct=(r.sentToday/r.limit)*100;$('quotaFill').style.width=Math.min(100,pct)+'%';if(pct>80)$('quotaFill').classList.add('warn');else $('quotaFill').classList.remove('warn');var sub=$('quotaSub');if(sub)sub.innerText='🟢 Live · '+new Date().toLocaleTimeString();});}
 
-function scheduleAnalysis(){if(analysisTimer)clearTimeout(analysisTimer);$('aiLiveStatus').innerText='Typing...';analysisTimer=setTimeout(runLiveAnalysis,1200);}
+// ==================== AI COMPOSER ====================
+function scheduleAnalysis(){
+  if(analysisTimer) clearTimeout(analysisTimer);
+  $('aiLiveStatus').innerText='Typing...';
+  analysisTimer=setTimeout(runLiveAnalysis,1200);
+}
+
 function runLiveAnalysis(){
-  var subject=$('composerSubject').value, body=$('composerBody').value;
-  if(!subject&&!body){$('aiLiveStatus').innerText='Idle';return;}
+  var subject=$('composerSubject').value.trim();
+  var body=$('composerBody').value.trim();
+  if(!subject && !body){
+    resetAIAnalysisUI();
+    $('aiLiveStatus').innerText='Waiting';
+    return;
+  }
   var hash=subject+'|'+body;
   if(hash===lastAnalyzedHash){$('aiLiveStatus').innerText='Live';return;}
-  lastAnalyzedHash=hash;$('aiLiveStatus').innerText='Analyzing...';
+  lastAnalyzedHash=hash;
+  $('aiLiveStatus').innerText='Analyzing...';
   api('/api/ai/analyze-live','POST',{subject:subject,body:body}).then(function(r){
     if(!r.ok){$('aiLiveStatus').innerText='Error';return;}
-    $('aiLiveStatus').innerText='🟢 Live';renderAIAnalysis(r);
+    if(r.empty){resetAIAnalysisUI();$('aiLiveStatus').innerText='Waiting';return;}
+    $('aiLiveStatus').innerText='🟢 Live';
+    renderAIAnalysis(r);
   }).catch(function(){$('aiLiveStatus').innerText='Offline';});
 }
+
+function resetAIAnalysisUI(){
+  $('aiScoreValue').innerText='—';
+  $('aiScoreLabel').innerText='Waiting';
+  $('aiScoreCircle').style.background='conic-gradient(#1e293b 0%, #1e293b 100%)';
+  $('aiScoreValue').style.color='#94a3b8';
+  $('aiProbValue').innerText='—';
+  $('aiProbValue').style.color='#94a3b8';
+  $('aiProbFill').style.width='0%';
+  $('aiIssues').innerHTML='';
+  $('aiSuggestions').innerHTML='';
+}
+
 function renderAIAnalysis(r){
   var score=r.score||0,prob=r.inboxProbability||0;
   var deg=Math.min(360,(score/100)*360);
   var color=score<=15?'#22c55e':score<=40?'#38bdf8':score<=70?'#f59e0b':'#ef4444';
   $('aiScoreCircle').style.background='conic-gradient('+color+' '+deg+'deg, #1e293b '+deg+'deg)';
-  $('aiScoreValue').innerText=score;$('aiScoreLabel').innerText=(r.prediction||'Analyzing').replace('_',' ');
+  $('aiScoreValue').innerText=score;
+  $('aiScoreLabel').innerText=(r.prediction||'Analyzing').replace('_',' ');
   $('aiScoreValue').style.color=color;
   $('aiProbValue').innerText=prob+'%';
   $('aiProbValue').style.color=prob>=70?'#86efac':prob>=40?'#fcd34d':'#fca5a5';
   $('aiProbFill').style.width=prob+'%';
   $('aiProbFill').style.background=prob>=70?'linear-gradient(90deg,#22c55e,#38bdf8)':prob>=40?'linear-gradient(90deg,#f59e0b,#fcd34d)':'linear-gradient(90deg,#ef4444,#f97316)';
   var issuesHtml='';
-  if(r.issues&&r.issues.length){issuesHtml=r.issues.map(function(i){var cls=i.severity==='high'?'high':(i.severity==='low'?'low':'');return '<div class="ai-issue '+cls+'">⚠️ '+esc(i.message)+'</div>';}).join('');}
+  if(r.issues&&r.issues.length){
+    issuesHtml=r.issues.map(function(i){
+      var cls=i.severity==='high'?'high':(i.severity==='low'?'low':'');
+      return '<div class="ai-issue '+cls+'">⚠️ '+esc(i.message)+'</div>';
+    }).join('');
+  }
   $('aiIssues').innerHTML=issuesHtml;
   var sugHtml='';
-  if(r.suggestions&&r.suggestions.length){sugHtml=r.suggestions.map(function(s){return '<div class="ai-suggestion">💡 '+esc(s)+'</div>';}).join('');}
+  if(r.suggestions&&r.suggestions.length){
+    sugHtml=r.suggestions.map(function(s){return '<div class="ai-suggestion">💡 '+esc(s)+'</div>';}).join('');
+  }
   $('aiSuggestions').innerHTML=sugHtml;
 }
+
 function openAIWriter(){$('aiWriterModal').classList.remove('hidden');}
 function closeAIWriter(){$('aiWriterModal').classList.add('hidden');}
 function runAIWriter(){
@@ -787,19 +822,42 @@ function saveComposerTemplate(){
   api('/api/templates','POST',{name:name,subject:subject,body:body}).then(function(r){if(r.ok){toast('Template saved!');$('composerName').value='';loadTemplates();}else toast('Error: '+r.error,'err');});
 }
 function clearComposer(){
-  $('composerName').value='';$('composerSubject').value='';$('composerBody').value='';lastAnalyzedHash='';
-  $('aiScoreValue').innerText='—';$('aiScoreLabel').innerText='Waiting';$('aiScoreCircle').style.background='conic-gradient(#38bdf8 0%, #1e293b 0%)';
-  $('aiIssues').innerHTML='';$('aiSuggestions').innerHTML='';$('aiProbValue').innerText='—';$('aiProbFill').style.width='0%';
+  $('composerName').value='';$('composerSubject').value='';$('composerBody').value='';
+  lastAnalyzedHash='';
+  resetAIAnalysisUI();
+  $('aiLiveStatus').innerText='Waiting';
 }
 
+// ==================== AI ANALYSIS TAB ====================
 function loadAIPredictions(){
   api('/api/my-emails?range=all').then(function(r){
     if(!r.ok) return;
     var emails=r.emails||[];var w=$('aiPredictionsWrap');
     if(!emails.length){w.innerHTML='<div class="empty"><div class="ico">📭</div>No emails sent yet.</div>';return;}
-    var h='<table class="data-table"><thead><tr><th>Recipient</th><th>Subject</th><th>Sent At</th></tr></thead><tbody>';
-    emails.slice(0,50).forEach(function(e){h+='<tr><td style="word-break:break-all;font-size:12px">'+esc(e.recipientEmail)+'</td><td style="font-size:12px">'+esc(e.subject||'—')+'</td><td style="font-size:11px">'+fmtDate(e.sentAt)+'</td></tr>';});
-    h+='</tbody></table>';w.innerHTML=h;
+    var excellent=0,good=0,risky=0,spam=0;
+    emails.forEach(function(e){var p=e.aiPrediction||'GOOD';if(p==='EXCELLENT')excellent++;else if(p==='GOOD')good++;else if(p==='RISKY')risky++;else if(p==='SPAM')spam++;});
+    var summary='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">';
+    summary+='<div class="info-box" style="margin:0;text-align:center"><div style="font-size:11px;color:#94a3b8;text-transform:uppercase">✅ Excellent</div><div style="font-size:24px;color:#86efac;margin-top:6px;font-weight:800">'+excellent+'</div></div>';
+    summary+='<div class="info-box" style="margin:0;text-align:center"><div style="font-size:11px;color:#94a3b8;text-transform:uppercase">👍 Good</div><div style="font-size:24px;color:#7dd3fc;margin-top:6px;font-weight:800">'+good+'</div></div>';
+    summary+='<div class="info-box" style="margin:0;text-align:center"><div style="font-size:11px;color:#94a3b8;text-transform:uppercase">⚠️ Risky</div><div style="font-size:24px;color:#fcd34d;margin-top:6px;font-weight:800">'+risky+'</div></div>';
+    summary+='<div class="info-box" style="margin:0;text-align:center"><div style="font-size:11px;color:#94a3b8;text-transform:uppercase">❌ Spam</div><div style="font-size:24px;color:#fca5a5;margin-top:6px;font-weight:800">'+spam+'</div></div>';
+    summary+='</div>';
+    var h=summary+'<table class="data-table"><thead><tr><th>Recipient</th><th>Subject</th><th>Sent At</th><th>AI Prediction</th><th>Inbox %</th></tr></thead><tbody>';
+    emails.slice(0,100).forEach(function(e){
+      var pred=e.aiPrediction||'GOOD';
+      var prob=(typeof e.aiInboxProb==='number')?e.aiInboxProb:75;
+      var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';
+      var ic=pred==='EXCELLENT'?'✅':pred==='GOOD'?'👍':pred==='RISKY'?'⚠️':'❌';
+      h+='<tr>';
+      h+='<td style="word-break:break-all;font-size:12px;max-width:200px">'+esc(e.recipientEmail)+'</td>';
+      h+='<td style="font-size:12px;max-width:250px">'+esc(e.subject||'—')+'</td>';
+      h+='<td style="font-size:11px">'+fmtDate(e.sentAt)+'</td>';
+      h+='<td><span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:'+pc+'22;color:'+pc+';border:1px solid '+pc+'44">'+ic+' '+esc(pred)+'</span></td>';
+      h+='<td><span style="color:'+pc+';font-weight:800;font-size:14px">'+prob+'%</span></td>';
+      h+='</tr>';
+    });
+    h+='</tbody></table>';
+    w.innerHTML=h;
   });
 }
 function loadBestTime(){
@@ -832,6 +890,7 @@ function loadReplyAnalysis(){
   });
 }
 
+// ==================== SIGNATURE ====================
 function buildSigHtml(){
   var name=$('sbName').value.trim(),pos=$('sbPos').value.trim(),comp=$('sbCompany').value.trim();
   var phone=$('sbPhone').value.trim(),mail=$('sbEmail').value.trim(),li=$('sbLinkedin').value.trim();
@@ -861,6 +920,7 @@ function saveSig(){var h=buildSigHtml();if(!h)return toast('Please fill some fie
 async function resetSig(){var ok=await showConfirm({icon:'🗑',title:'Reset Signature?',message:'All fields cleared.',okText:'Reset',primary:false});if(!ok)return;['sbName','sbPos','sbCompany','sbPhone','sbEmail','sbLinkedin','sbExtra'].forEach(function(id){$(id).value='';});$('sbGreeting').value='';$('sigPreviewBox').style.display='none';}
 function loadSignature(){api('/api/signature').then(function(r){if(!r.ok)return;var f=r.fields||{};if(f.name)$('sbName').value=f.name;if(f.pos)$('sbPos').value=f.pos;if(f.company)$('sbCompany').value=f.company;if(f.phone)$('sbPhone').value=f.phone;if(f.email)$('sbEmail').value=f.email;if(f.linkedin)$('sbLinkedin').value=f.linkedin;if(f.greeting)$('sbGreeting').value=f.greeting;if(f.extra)$('sbExtra').value=f.extra;if(r.signature){$('sigPreviewContent').innerHTML=r.signature;$('sigPreviewBox').style.display='block';}});}
 
+// ==================== LOGO ====================
 function loadLogo(){api('/api/logo').then(function(r){if(r.ok && r.url){LOGO_URL=r.url;LOGO_URL_ALT=r.urlAlt||'';var img=$('logoImg');img.onerror=function(){if(LOGO_URL_ALT && this.src!==LOGO_URL_ALT){this.src=LOGO_URL_ALT;}else{this.style.display='none';$('logoPh').style.display='block';}};img.src=r.url;img.style.display='block';$('logoPh').style.display='none';$('logoTitle').innerText='Logo uploaded';$('logoSub').innerText='Click to change';$('logoActions').style.display='block';}});}
 document.getElementById('logoInput').addEventListener('change',function(e){
   var f=e.target.files[0];if(!f)return;
@@ -883,6 +943,7 @@ document.getElementById('logoInput').addEventListener('change',function(e){
 });
 async function removeLogo(){var ok=await showConfirm({icon:'🗑',title:'Remove logo?',message:'Logo will be removed.',okText:'Remove'});if(!ok)return;api('/api/remove-logo','POST',{}).then(function(r){if(r.ok){toast('Logo removed');LOGO_URL='';LOGO_URL_ALT='';$('logoImg').style.display='none';$('logoPh').style.display='block';$('logoTitle').innerText='Click to upload company logo';$('logoSub').innerText='PNG · JPG · GIF · SVG · WEBP — max 2MB (Optional)';$('logoActions').style.display='none';}});}
 
+// ==================== FILES ====================
 document.getElementById('fileInput').addEventListener('change',function(e){
   var files=e.target.files;if(!files.length)return;
   var upload=function(i){
@@ -898,13 +959,16 @@ document.getElementById('fileInput').addEventListener('change',function(e){
 function loadFiles(){api('/api/files').then(function(r){if(!r.ok)return;var w=$('filesList');if(!r.files.length){w.innerHTML='<div class="empty">No files uploaded</div>';return;}var h='';r.files.forEach(function(f){h+='<div class="file-card"><div class="info"><div class="name">📄 '+esc(f.name)+'</div><div class="meta">'+fmtSize(f.size)+' · '+esc(f.mimeType||'')+'</div></div><div class="btns"><button class="danger" onclick="delFile(\''+f.id+'\')">Delete</button></div></div>';});w.innerHTML=h;});}
 async function delFile(id){var ok=await showConfirm({icon:'🗑',title:'Delete file?',message:'This file will be removed.',okText:'Delete'});if(!ok)return;api('/api/files/'+id,'DELETE').then(function(r){if(r.ok){toast('Deleted');loadFiles();}});}
 
+// ==================== TEMPLATES ====================
 function loadTemplates(){api('/api/templates').then(function(r){TEMPLATES=r.templates||[];var w=$('tplList');w.innerHTML='';if(!TEMPLATES.length)w.innerHTML='<div class="empty">No templates yet</div>';else TEMPLATES.forEach(function(t){var d=document.createElement('div');d.className='tpl-card';d.innerHTML='<div class="info"><div class="name">'+esc(t.name)+'</div><div class="sub">'+esc(t.subject)+'</div></div><button onclick="loadTemplateToComposer(\''+t.id+'\')">Load</button><button class="danger" onclick="delTpl(\''+t.id+'\')">Delete</button>';w.appendChild(d);});var s=$('tplSelect');s.innerHTML='';if(!TEMPLATES.length)s.innerHTML='<option value="">(No templates)</option>';else TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;s.appendChild(o);});});}
 function loadTemplateToComposer(id){var t=TEMPLATES.filter(function(x){return x.id===id;})[0];if(!t)return;$('composerName').value=t.name;$('composerSubject').value=t.subject;$('composerBody').value=t.body;lastAnalyzedHash='';runLiveAnalysis();$('composerBody').scrollIntoView({behavior:'smooth',block:'center'});}
 async function delTpl(id){var ok=await showConfirm({icon:'🗑',title:'Delete template?',message:'',okText:'Delete'});if(!ok)return;api('/api/templates/'+id,'DELETE').then(function(r){if(r.ok){toast('Deleted');loadTemplates();}});}
 
+// ==================== RECIPIENTS ====================
 function addRow(){var w=$('recipients'),d=document.createElement('div');d.className='recip-row';d.innerHTML='<input type="text" placeholder="Company (optional)"><input type="email" placeholder="hr@company.com"><button class="del" onclick="this.parentNode.remove()">✕</button>';w.appendChild(d);}
 function submitRecipients(){var rows=$('recipients').querySelectorAll('.recip-row'),list=[];rows.forEach(function(r){var i=r.querySelectorAll('input');if(i[1].value.trim())list.push({company:i[0].value.trim(),email:i[1].value.trim()});});if(!list.length)return toast('No emails found','err');api('/api/recipients','POST',{list:list,templateId:$('tplSelect').value}).then(function(r){if(r.ok){toast(r.added+' recipients added');$('recipients').innerHTML='';addRow();loadAll();}else toast('Error: '+r.error,'err');});}
 function switchTab(t){if(t==='manual'){$('tabManual').classList.add('active');$('tabBulk').classList.remove('active');$('manualTab').classList.remove('hidden');$('bulkTab').classList.add('hidden');}else{$('tabBulk').classList.add('active');$('tabManual').classList.remove('active');$('bulkTab').classList.remove('hidden');$('manualTab').classList.add('hidden');updateBulk();}}
+
 function parseBulk(text){
   var valid=[],dup=0,err=0,seen={};
   var emailRx=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -927,12 +991,17 @@ function parseBulk(text){
     }
     else{if(emailRx.test(line)){email=line.toLowerCase();}else{err++;continue;}}
     if(!email){err++;continue;}
+    if(company){
+      if(company.indexOf('@')!==-1){company='';}
+      else if(/^[a-z0-9._-]+$/.test(company) && company.length>3 && email.indexOf(company)===0){company='';}
+    }
     if(seen[email]){dup++;continue;}
     seen[email]=true;
     valid.push({company:company,email:email});
   }
   return {valid:valid,dup:dup,err:err};
 }
+
 function updateBulk(){
   var text=$('bulkInput').value;
   var r=parseBulk(text);
@@ -958,6 +1027,7 @@ function submitBulk(){
 }
 document.addEventListener('DOMContentLoaded',function(){var ta=$('bulkInput');if(ta)ta.addEventListener('input',updateBulk);});
 
+// ==================== TRACKING ====================
 function loadAll(isManual){
   if(isManual)toast('Refreshing...');
   if(isManual){$('refreshBtn').innerText='⏳';$('refreshBtn').disabled=true;}
@@ -1020,16 +1090,33 @@ async function resendSelected(){
 }
 async function deleteSelected(){var ids=Object.keys(SELECTED);if(!ids.length)return toast('No recipients selected','err');var ok=await showConfirm({icon:'⚠️',title:'Delete Recipients?',message:ids.length+' will be deleted.',okText:'Delete All'});if(!ok)return;api('/api/recipients/bulk-delete','POST',{ids:ids}).then(function(r){if(r.ok){toast(r.deleted+' deleted');clearSelection();loadAll();}else toast('Error: '+r.error,'err');});}
 
+// ==================== EMAIL HISTORY ====================
 function loadMyEmails(){var tm=$('myEmailTimeFilter').value;api('/api/my-emails?range='+encodeURIComponent(tm)).then(function(r){if(!r.ok)return;MY_EMAILS=r.emails||[];renderMyEmails();});}
 function renderMyEmails(){
-  var w=$('myEmailsWrap');var q=($('myEmailSearch').value||'').toLowerCase();
+  var w=$('myEmailsWrap');
+  var q=($('myEmailSearch').value||'').toLowerCase();
   var filtered=MY_EMAILS.filter(function(e){return !q||(e.recipientEmail||'').toLowerCase().indexOf(q)!==-1||(e.subject||'').toLowerCase().indexOf(q)!==-1||(e.company||'').toLowerCase().indexOf(q)!==-1;});
-  if(!filtered.length){w.innerHTML='<div class="empty">No history yet</div>';return;}
-  var html='<table class="data-table"><thead><tr><th>Company</th><th>Recipient</th><th>Subject</th><th>Sent At</th><th>Attach</th></tr></thead><tbody>';
-  filtered.slice(0,300).forEach(function(e){html+='<tr><td>'+esc(e.company||'—')+'</td><td style="word-break:break-all;max-width:200px">'+esc(e.recipientEmail)+'</td><td style="max-width:250px;font-size:12px">'+esc(e.subject||'—')+'</td><td style="font-size:11px">'+fmtDate(e.sentAt)+'</td><td>'+(e.attachmentsCount||0)+'</td></tr>';});
-  html+='</tbody></table>';w.innerHTML=html;
+  if(!filtered.length){w.innerHTML='<div class="empty"><div class="ico">📧</div>No history yet</div>';return;}
+  var html='<table class="data-table"><thead><tr><th>Company</th><th>Recipient</th><th>Subject</th><th>Sent At</th><th>AI Prediction</th><th>Attach</th></tr></thead><tbody>';
+  filtered.slice(0,300).forEach(function(e){
+    var pred=e.aiPrediction||'GOOD';
+    var prob=(typeof e.aiInboxProb==='number')?e.aiInboxProb:75;
+    var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';
+    var ic=pred==='EXCELLENT'?'✅':pred==='GOOD'?'👍':pred==='RISKY'?'⚠️':'❌';
+    html+='<tr>';
+    html+='<td>'+esc(e.company||'—')+'</td>';
+    html+='<td style="word-break:break-all;max-width:180px">'+esc(e.recipientEmail)+'</td>';
+    html+='<td style="max-width:200px;font-size:12px">'+esc(e.subject||'—')+'</td>';
+    html+='<td style="font-size:11px">'+fmtDate(e.sentAt)+'</td>';
+    html+='<td><span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:'+pc+'22;color:'+pc+';border:1px solid '+pc+'44">'+ic+' '+esc(pred)+' · '+prob+'%</span></td>';
+    html+='<td>'+(e.attachmentsCount||0)+'</td>';
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  w.innerHTML=html;
 }
 
+// ==================== PREFS ====================
 function buildHourSelects(){var s=$('quietStartSel'),e=$('quietEndSel');s.innerHTML='';e.innerHTML='';for(var h=0;h<24;h++){var lbl=(h<12?(h||12):(h-12))+':00 '+(h<12?'AM':'PM');var o1=document.createElement('option');o1.value=h;o1.text=lbl;s.appendChild(o1);var o2=document.createElement('option');o2.value=h;o2.text=lbl;e.appendChild(o2);}}
 function loadPrefs(){api('/api/prefs').then(function(r){if(!r.ok)return;var p=r.prefs;$('autoSendToggle').checked=p.autoSend;$('quietToggle').checked=p.quietEnabled;$('quietStartSel').value=p.quietStart;$('quietEndSel').value=p.quietEnd;$('quietTimesBox').style.display=p.quietEnabled?'block':'none';$('batchSizeBox').classList.toggle('show',p.autoSend);var bs=p.autoSendBatchSize||5;$('batchSizeRange').value=bs;$('batchSizeDisplay').innerText=bs;$('totalAutoSent').innerText=p.totalAutoSent||0;});}
 document.getElementById('quietToggle').addEventListener('change',function(){$('quietTimesBox').style.display=this.checked?'block':'none';});
@@ -1037,6 +1124,7 @@ document.getElementById('autoSendToggle').addEventListener('change',function(){$
 function updateBatchSize(v){$('batchSizeDisplay').innerText=v;}
 function savePrefs(){api('/api/prefs','POST',{autoSend:$('autoSendToggle').checked,autoSendBatchSize:Number($('batchSizeRange').value),quietEnabled:$('quietToggle').checked,quietStart:Number($('quietStartSel').value),quietEnd:Number($('quietEndSel').value)}).then(function(r){if(r.ok)toast('✅ Settings saved');else toast('Error: '+r.error,'err');});}
 
+// ==================== ADMIN ====================
 function loadAdmin(){$('adminUsersList').innerHTML='<div class="empty">Loading...</div>';api('/api/admin/dashboard').then(function(r){if(!r.ok){$('adminUsersList').innerHTML='<div class="empty">Error: '+esc(r.error)+'</div>';return;}ADMIN_USERS=r.users||[];$('adTotalUsers').innerText=r.stats.totalUsers;$('adTotalEmails').innerText=r.stats.totalEmails;$('adTotalOpened').innerText=r.stats.totalOpened;$('adTotalPending').innerText=r.stats.totalPending;$('adTotalSends').innerText=r.stats.totalSends||0;renderAdminUsers();});api('/api/admin/all-emails').then(function(r){if(!r.ok)return;ADMIN_ALL_EMAILS=r.emails||[];renderAllEmails();});}
 function renderAdminUsers(){var q=($('adminSearch').value||'').toLowerCase();var filtered=ADMIN_USERS.filter(function(u){return !q||u.email.toLowerCase().indexOf(q)!==-1||(u.name||'').toLowerCase().indexOf(q)!==-1||(u.appAccountId||'').toLowerCase().indexOf(q)!==-1;});if(!filtered.length){$('adminUsersList').innerHTML='<div class="empty">No users</div>';return;}var h='';filtered.forEach(function(u){h+='<div class="tpl-card" style="flex-direction:column;align-items:stretch;cursor:pointer" onclick="openUserEmails(\''+u.id+'\',\''+esc(u.email)+'\')"><div class="info"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div class="name">'+esc(u.name||'(no name)')+'</div><span class="app-id-pill">'+esc(u.appAccountId||'N/A')+'</span></div><div class="sub" style="white-space:normal;word-break:break-all;margin-top:4px">'+esc(u.email)+'</div><div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap"><span class="badge sent">📨 '+u.total+'</span><span class="badge opened">✅ '+u.sent+'</span><span class="badge opened">👁 '+u.opened+'</span><span class="badge pending">⏳ '+u.pending+'</span><span class="badge count">📤 '+u.totalSends+'</span>'+(u.autoSend?'<span class="badge sent">🤖 Auto</span>':'')+'</div></div><div style="font-size:11px;color:#64748b;margin-top:8px">Click to view history →</div></div>';});$('adminUsersList').innerHTML=h;}
 function renderAllEmails(){var w=$('adminAllEmailsWrap');var q=($('adminEmailSearch').value||'').toLowerCase();var filtered=ADMIN_ALL_EMAILS.filter(function(e){return !q||(e.userEmail||'').toLowerCase().indexOf(q)!==-1||(e.recipientEmail||'').toLowerCase().indexOf(q)!==-1||(e.subject||'').toLowerCase().indexOf(q)!==-1;});if(!filtered.length){w.innerHTML='<div class="empty">No emails</div>';return;}var h='<table class="data-table"><thead><tr><th>User</th><th>App ID</th><th>Recipient</th><th>Subject</th><th>Sent</th></tr></thead><tbody>';filtered.slice(0,500).forEach(function(e){h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(e.userEmail)+'</td><td><span class="app-id-pill">'+esc(e.userAppId||'N/A')+'</span></td><td style="font-size:12px;word-break:break-all">'+esc(e.recipientEmail)+'</td><td style="font-size:11px">'+esc(e.subject||'—')+'</td><td style="font-size:11px">'+fmtDate(e.sentAt)+'</td></tr>';});h+='</tbody></table>';w.innerHTML=h;}
