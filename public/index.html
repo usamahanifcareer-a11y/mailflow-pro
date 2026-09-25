@@ -222,7 +222,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .composer-main{min-width:0}
 .composer-sidebar{position:sticky;top:80px;align-self:flex-start}
 .ai-analysis-panel{background:linear-gradient(135deg,rgba(15,23,42,.9),rgba(10,14,26,.95));border:1px solid #1e293b;border-radius:14px;padding:16px}
-.ai-header{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#7dd3fc;text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #1e293b}
+.ai-header{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#7dd3fc;text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #1e293b;flex-wrap:wrap}
 .ai-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.2)}}
 .ai-score-section{display:flex;justify-content:center;margin-bottom:16px}
@@ -241,6 +241,8 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .ai-suggestion{padding:8px 10px;background:rgba(34,197,94,.08);border-left:3px solid #22c55e;border-radius:6px;font-size:11px;color:#86efac;margin-bottom:6px;line-height:1.5}
 .ai-subject-item{padding:8px 10px;background:#0f172a;border:1px solid #1e293b;border-radius:6px;margin-bottom:6px;font-size:12px;color:#cbd5e1;cursor:pointer;line-height:1.4}
 .ai-subject-item:hover{border-color:#38bdf8;background:#1e293b;color:#7dd3fc}
+.deep-btn{background:linear-gradient(135deg,#a78bfa,#6366f1);border:none;color:white;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;text-transform:none;letter-spacing:0}
+.deep-btn:hover{box-shadow:0 4px 12px rgba(168,85,247,.4)}
 </style>
 </head>
 <body>
@@ -264,7 +266,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
     </div>
     <div style="margin-top:20px;padding:14px;background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.3);border-radius:12px;text-align:left">
       <div style="font-size:12px;color:#c4b5fd;font-weight:700;margin-bottom:6px;text-transform:uppercase">✨ 5-AI Powered</div>
-      <div style="font-size:12px;color:#94a3b8;line-height:1.6">Cerebras + Groq + Gemini + Mistral + OpenRouter — zero downtime.</div>
+      <div style="font-size:12px;color:#94a3b8;line-height:1.6">Groq + Cerebras + Mistral + Gemini + OpenRouter — zero downtime.</div>
     </div>
     <div class="auth-foot">🔒 Your data is encrypted and secure</div>
   </div>
@@ -370,7 +372,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
                 <div class="ai-header">
                   <span class="ai-dot"></span>
                   <span>AI Analysis</span>
-                  <button onclick="runDeepAIAnalysis()" style="background:linear-gradient(135deg,#a78bfa,#6366f1);border:none;color:white;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;margin-left:auto;text-transform:none;letter-spacing:0" title="Deep AI analysis (uses 1 API call)">🤖 Deep AI</button>
+                  <button class="deep-btn" onclick="runDeepAIAnalysis()" title="Deep AI analysis (uses 1 API call)">🤖 Deep AI</button>
                   <span id="aiLiveStatus" style="font-size:10px;color:#94a3b8;text-transform:none;letter-spacing:0">Waiting</span>
                 </div>
                 <div class="ai-score-section">
@@ -583,7 +585,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 
   <div class="container hidden" id="testView">
     <div class="panel" style="background:linear-gradient(135deg,rgba(168,85,247,.08),rgba(56,189,248,.08));border-color:rgba(168,85,247,.3)">
-      <h2>🤖 AI-Powered Insights <span>5-AI: Cerebras + Groq + Gemini + Mistral + OpenRouter</span></h2>
+      <h2>🤖 AI-Powered Insights <span>5-AI: Groq + Cerebras + Mistral + Gemini + OpenRouter</span></h2>
       <div style="font-size:13px;color:#94a3b8;line-height:1.7">
         Advanced AI features to improve your email deliverability. Automatic fallback ensures zero downtime — if one AI is busy, the next one takes over.
       </div>
@@ -748,9 +750,9 @@ function runDeepAIAnalysis(){
   api('/api/ai/deep-analyze','POST',{subject:subject,body:body}).then(function(r){
     if(!r.ok){$('aiLiveStatus').innerText='Error';return;}
     if(r.empty){resetAIAnalysisUI();$('aiLiveStatus').innerText='Waiting';return;}
-    $('aiLiveStatus').innerText='🤖 AI Powered';
+    $('aiLiveStatus').innerText= r.aiPowered ? '🤖 AI Powered' : '⚠️ Local Mode';
     renderAIAnalysis(r);
-    toast('✅ Deep AI analysis complete');
+    toast(r.aiPowered ? '✅ Deep AI analysis complete' : '⚠️ AI busy — showing local analysis');
   }).catch(function(){$('aiLiveStatus').innerText='Offline';});
 }
 function resetAIAnalysisUI(){
@@ -787,7 +789,7 @@ function runAIWriter(){
   if(!ctx)return toast('Please describe the email context','err');
   toast('🤖 AI is writing...');
   api('/api/ai/write-email','POST',{context:ctx,recipientName:$('aiRecipientName').value.trim(),recipientCompany:$('aiRecipientCompany').value.trim(),tone:$('aiTone').value,length:$('aiLength').value}).then(function(r){
-    if(r.ok){$('composerSubject').value=r.subject||'';$('composerBody').value=r.body||'';closeAIWriter();toast('✅ AI wrote your email!');lastAnalyzedHash='';runLiveAnalysis();}
+    if(r.ok){$('composerSubject').value=r.subject||'';$('composerBody').value=r.body||'';closeAIWriter();toast(r.aiPowered ? '✅ AI wrote your email!' : '✅ Local email generated');lastAnalyzedHash='';runLiveAnalysis();}
     else toast('Error: '+r.error,'err');
   });
 }
@@ -805,7 +807,7 @@ function aiImproveEmail(){
   if(!subject&&!body)return toast('Write something first','err');
   toast('✨ AI improving...');
   api('/api/ai/improve-email','POST',{subject:subject,body:body}).then(function(r){
-    if(r.ok){$('composerSubject').value=r.improvedSubject||subject;$('composerBody').value=r.improvedBody||body;toast('✅ Improved! Score: '+(r.beforeScore||'?')+' → '+(r.afterScore||'?'));lastAnalyzedHash='';runLiveAnalysis();}
+    if(r.ok){$('composerSubject').value=r.improvedSubject||subject;$('composerBody').value=r.improvedBody||body;toast('✅ Improved!');lastAnalyzedHash='';runLiveAnalysis();}
     else toast('Error: '+r.error,'err');
   });
 }
