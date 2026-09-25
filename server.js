@@ -19,10 +19,28 @@ const CRON_SECRET = process.env.CRON_SECRET || 'mf-cron-default-change-me';
 
 if (!process.env.SESSION_SECRET) { console.error('FATAL: SESSION_SECRET missing!'); process.exit(1); }
 
-// ==================== MULTI-AI SETUP ====================
+// ==================== 5 AI PROVIDERS + CACHE ====================
 const GEMINI_KEY = process.env.GEMINI_API_KEY || '';
 const GROQ_KEY = process.env.GROQ_API_KEY || '';
 const MISTRAL_KEY = process.env.MISTRAL_API_KEY || '';
+const CEREBRAS_KEY = process.env.CEREBRAS_API_KEY || '';
+const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY || '';
+
+const aiCache = new Map();
+const AI_CACHE_TTL = 10 * 60 * 1000;
+
+function getCacheKey(prompt) { return crypto.createHash('md5').update(prompt).digest('hex'); }
+function getCachedResponse(prompt) {
+  const key = getCacheKey(prompt);
+  const entry = aiCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.time > AI_CACHE_TTL) { aiCache.delete(key); return null; }
+  return entry.text;
+}
+function setCachedResponse(prompt, text) {
+  if (aiCache.size > 500) { const firstKey = aiCache.keys().next().value; aiCache.delete(firstKey); }
+  aiCache.set(getCacheKey(prompt), { text, time: Date.now() });
+}
 
 function safeParseJSON(text) {
   if (!text) return null;
@@ -32,34 +50,55 @@ function safeParseJSON(text) {
   const lastBrace = cleaned.lastIndexOf('}');
   if (firstBrace === -1 || lastBrace === -1) return null;
   try { return JSON.parse(cleaned.substring(firstBrace, lastBrace + 1)); }
-  catch (e) { console.error('JSON parse error:', e.message); return null; }
+  catch (e) { return null; }
+}
+
+async function fetchWithTimeout(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs || 9000);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timeout);
+    return res;
+  } catch (e) { clearTimeout(timeout); throw e; }
+}
+
+async function callCerebras(prompt) {
+  if (!CEREBRAS_KEY) throw new Error('No Cerebras key');
+  const res = await fetchWithTimeout('https://api.cerebras.ai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CEREBRAS_KEY },
+    body: JSON.stringify({
+      model: 'llama3.1-8b',
+      messages: [
+        { role: 'system', content: 'You always respond with valid JSON only. Never use markdown code fences.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.7, max_tokens: 1200
+    })
+  });
+  if (!res.ok) { const t = await res.text(); throw new Error('Cerebras ' + res.status + ': ' + t.substring(0, 100)); }
+  const data = await res.json();
+  return (data.choices?.[0]?.message?.content || '').trim();
 }
 
 async function callGroq(prompt) {
   if (!GROQ_KEY) throw new Error('No Groq key');
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
-  try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY },
-      signal: controller.signal,
-      body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
-        messages: [
-          { role: 'system', content: 'You always respond in valid JSON format only. Never use markdown code fences.' },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 1200,
-        response_format: { type: 'json_object' }
-      })
-    });
-    clearTimeout(timeout);
-    if (!res.ok) { const t = await res.text(); throw new Error('Groq ' + res.status + ': ' + t.substring(0, 150)); }
-    const data = await res.json();
-    return (data.choices?.[0]?.message?.content || '').trim();
-  } catch (e) { clearTimeout(timeout); throw e; }
+  const res = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY },
+    body: JSON.stringify({
+      model: 'llama-3.1-8b-instant',
+      messages: [
+        { role: 'system', content: 'You always respond with valid JSON only. Never use markdown code fences.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.7, max_tokens: 1200, response_format: { type: 'json_object' }
+    })
+  });
+  if (!res.ok) { const t = await res.text(); throw new Error('Groq ' + res.status + ': ' + t.substring(0, 100)); }
+  const data = await res.json();
+  return (data.choices?.[0]?.message?.content || '').trim();
 }
 
 async function callGemini(prompt) {
@@ -75,50 +114,69 @@ async function callGemini(prompt) {
 
 async function callMistral(prompt) {
   if (!MISTRAL_KEY) throw new Error('No Mistral key');
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
-  try {
-    const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + MISTRAL_KEY },
-      signal: controller.signal,
-      body: JSON.stringify({
-        model: 'mistral-small-latest',
-        messages: [
-          { role: 'system', content: 'You always respond in valid JSON format only. Never use markdown code fences.' },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 1200,
-        response_format: { type: 'json_object' }
-      })
-    });
-    clearTimeout(timeout);
-    if (!res.ok) { const t = await res.text(); throw new Error('Mistral ' + res.status + ': ' + t.substring(0, 150)); }
-    const data = await res.json();
-    return (data.choices?.[0]?.message?.content || '').trim();
-  } catch (e) { clearTimeout(timeout); throw e; }
+  const res = await fetchWithTimeout('https://api.mistral.ai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + MISTRAL_KEY },
+    body: JSON.stringify({
+      model: 'mistral-small-latest',
+      messages: [
+        { role: 'system', content: 'You always respond with valid JSON only. Never use markdown code fences.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.7, max_tokens: 1200, response_format: { type: 'json_object' }
+    })
+  });
+  if (!res.ok) { const t = await res.text(); throw new Error('Mistral ' + res.status + ': ' + t.substring(0, 100)); }
+  const data = await res.json();
+  return (data.choices?.[0]?.message?.content || '').trim();
+}
+
+async function callOpenRouter(prompt) {
+  if (!OPENROUTER_KEY) throw new Error('No OpenRouter key');
+  const res = await fetchWithTimeout('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + OPENROUTER_KEY,
+      'HTTP-Referer': process.env.BACKEND_URL || 'https://mailflow-pro-ten.vercel.app',
+      'X-Title': 'MailFlow Pro'
+    },
+    body: JSON.stringify({
+      model: 'meta-llama/llama-3.1-8b-instruct:free',
+      messages: [{ role: 'user', content: prompt + '\n\nRespond with valid JSON only, no markdown.' }],
+      temperature: 0.7, max_tokens: 1200
+    })
+  });
+  if (!res.ok) { const t = await res.text(); throw new Error('OpenRouter ' + res.status + ': ' + t.substring(0, 100)); }
+  const data = await res.json();
+  return (data.choices?.[0]?.message?.content || '').trim();
 }
 
 async function callAI(prompt) {
+  const cached = getCachedResponse(prompt);
+  if (cached) { console.log('✅ AI: CACHE'); return cached; }
+
   const providers = [
+    { name: 'Cerebras', fn: callCerebras },
     { name: 'Groq', fn: callGroq },
     { name: 'Gemini', fn: callGemini },
-    { name: 'Mistral', fn: callMistral }
+    { name: 'Mistral', fn: callMistral },
+    { name: 'OpenRouter', fn: callOpenRouter }
   ];
   const errors = [];
   for (const p of providers) {
     try {
       const text = await p.fn(prompt);
-      if (!text || text.length < 5) { errors.push(p.name + ': empty'); continue; }
+      if (!text || text.length < 5) { errors.push(p.name + ':empty'); continue; }
       console.log('✅ AI: ' + p.name);
+      setCachedResponse(prompt, text);
       return text;
     } catch (err) {
       console.error('❌ ' + p.name + ':', err.message);
-      errors.push(p.name + ': ' + err.message);
+      errors.push(p.name);
     }
   }
-  throw new Error('All AI failed. ' + errors.join(' | '));
+  throw new Error('All AI failed: ' + errors.join(','));
 }
 
 app.set('trust proxy', 1);
@@ -147,7 +205,7 @@ function isQuietHours(prefs) { if (!prefs || !prefs.quietEnabled) return false; 
 function getCurrentHourKey() { const now = new Date(); return now.toISOString().split('T')[0] + '-' + now.getHours(); }
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL, firebase: !!serviceAccount.project_id, ai: { groq: !!GROQ_KEY, gemini: !!GEMINI_KEY, mistral: !!MISTRAL_KEY } }));
+app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL, firebase: !!serviceAccount.project_id, ai: { cerebras: !!CEREBRAS_KEY, groq: !!GROQ_KEY, gemini: !!GEMINI_KEY, mistral: !!MISTRAL_KEY, openrouter: !!OPENROUTER_KEY } }));
 
 app.get('/auth/google', (req, res) => { const url = oauth2Client.generateAuthUrl({ access_type: 'offline', scope: SCOPES, prompt: 'consent' }); res.redirect(url); });
 
@@ -203,8 +261,20 @@ app.get('/api/quota', authRequired, async (req, res) => {
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
-// ==================== AI: LIVE ANALYSIS ====================
+// ==================== AI: LIVE ANALYSIS (LOCAL ONLY - NO AI COST) ====================
 app.post('/api/ai/analyze-live', authRequired, async (req, res) => {
+  try {
+    const { subject, body } = req.body;
+    const hasSubject = subject && subject.trim().length > 0;
+    const hasBody = body && body.trim().length > 0;
+    if (!hasSubject && !hasBody) return res.json({ ok: true, empty: true });
+    // LIVE analysis is ALWAYS local - instant, no AI limit
+    res.json({ ok: true, ...localAnalysis(subject, body), aiPowered: false, live: true });
+  } catch (err) { res.json({ ok: false, error: err.message }); }
+});
+
+// ==================== AI: DEEP ANALYSIS (uses AI) ====================
+app.post('/api/ai/deep-analyze', authRequired, async (req, res) => {
   try {
     const { subject, body } = req.body;
     const hasSubject = subject && subject.trim().length > 0;
@@ -225,9 +295,12 @@ Return JSON: {"score":0-100,"prediction":"EXCELLENT"|"GOOD"|"RISKY"|"SPAM","inbo
 Rules: score <= 15 EXCELLENT, 16-40 GOOD, 41-70 RISKY, 71+ SPAM.`;
       const text = await callAI(prompt);
       const parsed = safeParseJSON(text);
-      if (!parsed) throw new Error('Invalid AI response');
+      if (!parsed) throw new Error('Invalid JSON');
       res.json({ ok: true, ...parsed, aiPowered: true });
-    } catch (aiErr) { console.error('AI failed:', aiErr.message); res.json({ ok: true, ...localAnalysis(subject, body), aiPowered: false }); }
+    } catch (aiErr) {
+      console.error('Deep AI failed:', aiErr.message);
+      res.json({ ok: true, ...localAnalysis(subject, body), aiPowered: false });
+    }
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
@@ -276,7 +349,7 @@ Return JSON: {"subject":"under 60 chars","body":"with \\n\\n breaks","tone":"str
     const parsed = safeParseJSON(text);
     if (!parsed) throw new Error('Invalid AI response');
     res.json({ ok: true, ...parsed });
-  } catch (err) { res.json({ ok: false, error: 'AI limit reached. Try again.' }); }
+  } catch (err) { console.error('write-email error:', err.message); res.json({ ok: false, error: 'AI busy. Please try again in a moment.' }); }
 });
 
 app.post('/api/ai/generate-subjects', authRequired, async (req, res) => {
@@ -290,7 +363,7 @@ Return: {"subjects":["s1","s2","s3","s4","s5"]}`;
     const parsed = safeParseJSON(text);
     if (!parsed) throw new Error('Invalid AI response');
     res.json({ ok: true, subjects: parsed.subjects || [] });
-  } catch (err) { res.json({ ok: false, error: 'AI limit reached. Try later.' }); }
+  } catch (err) { console.error('subjects error:', err.message); res.json({ ok: false, error: 'AI busy. Please try again.' }); }
 });
 
 app.post('/api/ai/improve-email', authRequired, async (req, res) => {
@@ -304,7 +377,7 @@ Return JSON: {"improvedSubject":"...","improvedBody":"...","changes":["c1"],"bef
     const parsed = safeParseJSON(text);
     if (!parsed) throw new Error('Invalid AI response');
     res.json({ ok: true, ...parsed });
-  } catch (err) { res.json({ ok: false, error: 'AI limit reached. Try later.' }); }
+  } catch (err) { console.error('improve error:', err.message); res.json({ ok: false, error: 'AI busy. Please try again.' }); }
 });
 
 app.get('/api/ai/best-time', authRequired, async (req, res) => {
@@ -320,7 +393,7 @@ app.get('/api/ai/best-time', authRequired, async (req, res) => {
       const prompt = `Recommend 3 best sending hours (0-23) for highest open rate. Return ONLY JSON.\nHISTORY:\n${history || 'No data yet'}\nReturn: {"bestHours":[h1,h2,h3],"reasoning":"short"}`;
       const text = await callAI(prompt);
       const parsed = safeParseJSON(text);
-      if (!parsed) throw new Error('Invalid AI response');
+      if (!parsed) throw new Error('Invalid');
       res.json({ ok: true, ...parsed });
     } catch (aiErr) { res.json({ ok: true, bestHours: [9, 11, 14], reasoning: 'Default business hours' }); }
   } catch (err) { res.json({ ok: true, bestHours: [9, 11, 14], reasoning: 'Default' }); }
@@ -355,10 +428,10 @@ app.post('/api/ai/analyze-replies', authRequired, async (req, res) => {
       const prompt = `Categorize these email replies. Return ONLY JSON.\n${replies.map((r, i) => `[${i}] From: ${r.from}\nSubject: ${r.subject}\nBody: ${r.bodyPreview}`).join('\n\n')}\nReturn JSON: {"categories":[{"index":0,"type":"INTERESTED"|"NOT_INTERESTED"|"AUTO_REPLY"|"QUESTION"|"SPAM"|"MEETING_REQUEST"|"OTHER","sentiment":"POSITIVE"|"NEUTRAL"|"NEGATIVE","summary":"line","actionSuggestion":"string"}]}`;
       const text = await callAI(prompt);
       const parsed = safeParseJSON(text);
-      if (!parsed) throw new Error('Invalid AI response');
+      if (!parsed) throw new Error('Invalid');
       const enriched = replies.map((r, i) => { const cat = (parsed.categories || []).find(c => c.index === i) || {}; return { ...r, category: cat.type || 'OTHER', sentiment: cat.sentiment || 'NEUTRAL', summary: cat.summary || '', actionSuggestion: cat.actionSuggestion || '' }; });
       res.json({ ok: true, replies: enriched });
-    } catch (aiErr) { res.json({ ok: false, error: 'AI limit reached. Try later.' }); }
+    } catch (aiErr) { res.json({ ok: false, error: 'AI busy. Please try again.' }); }
   } catch (err) { res.json({ ok: false, error: err.message }); }
 });
 
@@ -577,13 +650,8 @@ async function sendOne(userId, userEmail, recipientId, attachFiles, options) {
   const sigH = sig ? '<div style="margin-top:18px;padding-top:14px;border-top:1px solid #e5e7eb;">' + sig + '</div>' : '';
   const full = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;">' + body + sigH + '</div>';
 
-  let aiPrediction = null;
-  try {
-    const cleanBody = full.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 800);
-    const prompt = `Rate this email for spam risk. Return ONLY JSON: {"score":0-100,"prediction":"EXCELLENT"|"GOOD"|"RISKY"|"SPAM","inboxProbability":0-100}\nSUBJECT: "${tpl.subject}"\nBODY: "${cleanBody}"`;
-    const text = await callAI(prompt);
-    aiPrediction = safeParseJSON(text) || { score: 20, prediction: 'GOOD', inboxProbability: 80 };
-  } catch (e) { aiPrediction = { score: 20, prediction: 'GOOD', inboxProbability: 80 }; }
+  const localPred = localAnalysis(tpl.subject, full);
+  const aiPrediction = { score: localPred.score, prediction: localPred.prediction, inboxProbability: localPred.inboxProbability };
 
   const trackToken = crypto.randomBytes(16).toString('hex');
   await db.collection('users').doc(userId).collection('recipients').doc(recipientId).update({ trackToken });
@@ -712,7 +780,7 @@ app.get('/api/admin/all-emails', adminRequired, async (req, res) => {
   try {
     const usersSnap = await db.collection('users').get();
     const all = [];
-    for (const uD of usersSnap.docs) { const u = uD.data(); const eS = await db.collection('users').doc(uD.id).collection('emailLog').orderBy('sentAt','desc').limit(500).get(); eS.forEach(d => { const dd = d.data(); all.push({ id: d.id, userId: uD.id, userEmail: u.email, userAppId: u.appAccountId || 'N/A', recipientEmail: dd.recipientEmail, company: dd.company || '', subject: dd.subject || '', sentAt: dd.sentAt, attachmentsCount: dd.attachmentsCount || 0, aiPrediction: dd.aiPrediction || '', aiScore: dd.aiScore || 0 }); }); }
+    for (const uD of usersSnap.docs) { const u = uD.data(); const eS = await db.collection('users').doc(uD.id).collection('emailLog').orderBy('sentAt','desc').limit(500).get(); eS.forEach(d => { const dd = d.data(); all.push({ id: d.id, userId: uD.id, userEmail: u.email, userAppId: u.appAccountId || 'N/A', recipientEmail: dd.recipientEmail, company: dd.company || '', subject: dd.subject || '', sentAt: dd.sentAt, attachmentsCount: dd.attachmentsCount || 0 }); }); }
     all.sort((a, b) => { const ta = a.sentAt?._seconds || 0; const tb = b.sentAt?._seconds || 0; return tb - ta; });
     res.json({ ok: true, emails: all.slice(0, 1000) });
   } catch (err) { res.json({ ok: false, error: err.message }); }

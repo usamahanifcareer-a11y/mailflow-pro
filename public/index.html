@@ -263,8 +263,8 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
       <div class="feat"><span class="ico">⚡</span> 100% private & free</div>
     </div>
     <div style="margin-top:20px;padding:14px;background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.3);border-radius:12px;text-align:left">
-      <div style="font-size:12px;color:#c4b5fd;font-weight:700;margin-bottom:6px;text-transform:uppercase">✨ Multi-AI Powered</div>
-      <div style="font-size:12px;color:#94a3b8;line-height:1.6">Groq + Gemini + Mistral — auto fallback for zero downtime.</div>
+      <div style="font-size:12px;color:#c4b5fd;font-weight:700;margin-bottom:6px;text-transform:uppercase">✨ 5-AI Powered</div>
+      <div style="font-size:12px;color:#94a3b8;line-height:1.6">Cerebras + Groq + Gemini + Mistral + OpenRouter — zero downtime.</div>
     </div>
     <div class="auth-foot">🔒 Your data is encrypted and secure</div>
   </div>
@@ -332,7 +332,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
         </div>
 
         <div class="panel">
-          <h2>✉️ AI Email Composer <span>Real-time analysis · Multi-AI powered</span></h2>
+          <h2>✉️ AI Email Composer <span>Instant local analysis · 5-AI powered</span></h2>
           <div class="composer-layout">
             <div class="composer-main">
               <div class="field">
@@ -370,7 +370,8 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
                 <div class="ai-header">
                   <span class="ai-dot"></span>
                   <span>AI Analysis</span>
-                  <span id="aiLiveStatus" style="margin-left:auto;font-size:10px;color:#94a3b8;text-transform:none;letter-spacing:0">Waiting</span>
+                  <button onclick="runDeepAIAnalysis()" style="background:linear-gradient(135deg,#a78bfa,#6366f1);border:none;color:white;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;margin-left:auto;text-transform:none;letter-spacing:0" title="Deep AI analysis (uses 1 API call)">🤖 Deep AI</button>
+                  <span id="aiLiveStatus" style="font-size:10px;color:#94a3b8;text-transform:none;letter-spacing:0">Waiting</span>
                 </div>
                 <div class="ai-score-section">
                   <div class="ai-score-circle" id="aiScoreCircle">
@@ -582,7 +583,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 
   <div class="container hidden" id="testView">
     <div class="panel" style="background:linear-gradient(135deg,rgba(168,85,247,.08),rgba(56,189,248,.08));border-color:rgba(168,85,247,.3)">
-      <h2>🤖 AI-Powered Insights <span>Multi-AI: Groq + Gemini + Mistral</span></h2>
+      <h2>🤖 AI-Powered Insights <span>5-AI: Cerebras + Groq + Gemini + Mistral + OpenRouter</span></h2>
       <div style="font-size:13px;color:#94a3b8;line-height:1.7">
         Advanced AI features to improve your email deliverability. Automatic fallback ensures zero downtime — if one AI is busy, the next one takes over.
       </div>
@@ -729,14 +730,27 @@ function runLiveAnalysis(){
   var body=$('composerBody').value.trim();
   if(!subject && !body){ resetAIAnalysisUI(); $('aiLiveStatus').innerText='Waiting'; return; }
   var hash=subject+'|'+body;
-  if(hash===lastAnalyzedHash){$('aiLiveStatus').innerText='Live';return;}
+  if(hash===lastAnalyzedHash){ return; }
   lastAnalyzedHash=hash;
   $('aiLiveStatus').innerText='Analyzing...';
   api('/api/ai/analyze-live','POST',{subject:subject,body:body}).then(function(r){
     if(!r.ok){$('aiLiveStatus').innerText='Error';return;}
     if(r.empty){resetAIAnalysisUI();$('aiLiveStatus').innerText='Waiting';return;}
-    $('aiLiveStatus').innerText='🟢 Live';
+    $('aiLiveStatus').innerText='⚡ Live';
     renderAIAnalysis(r);
+  }).catch(function(){$('aiLiveStatus').innerText='Offline';});
+}
+function runDeepAIAnalysis(){
+  var subject=$('composerSubject').value.trim();
+  var body=$('composerBody').value.trim();
+  if(!subject && !body){ toast('Write something first','err'); return; }
+  $('aiLiveStatus').innerText='🤖 AI Analyzing...';
+  api('/api/ai/deep-analyze','POST',{subject:subject,body:body}).then(function(r){
+    if(!r.ok){$('aiLiveStatus').innerText='Error';return;}
+    if(r.empty){resetAIAnalysisUI();$('aiLiveStatus').innerText='Waiting';return;}
+    $('aiLiveStatus').innerText='🤖 AI Powered';
+    renderAIAnalysis(r);
+    toast('✅ Deep AI analysis complete');
   }).catch(function(){$('aiLiveStatus').innerText='Offline';});
 }
 function resetAIAnalysisUI(){
@@ -782,6 +796,7 @@ function aiGenerateSubjects(){
   toast('✨ Generating...');
   api('/api/ai/generate-subjects','POST',{context:ctx}).then(function(r){
     if(r.ok&&r.subjects){ var html=r.subjects.map(function(s){return '<div class="ai-subject-item" onclick="pickSubject(\''+esc(s).replace(/'/g,"\\'")+'\')">'+esc(s)+'</div>';}).join(''); $('aiSubjectList').innerHTML=html;$('aiSubjectSuggestions').style.display='block'; }
+    else if(r.error) toast(r.error,'err');
   });
 }
 function pickSubject(s){$('composerSubject').value=s;$('aiSubjectSuggestions').style.display='none';lastAnalyzedHash='';scheduleAnalysis();}
