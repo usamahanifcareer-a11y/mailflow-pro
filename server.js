@@ -28,16 +28,8 @@ const aiCache = new Map();
 const AI_CACHE_TTL = 10 * 60 * 1000;
 
 function getCacheKey(p) { return crypto.createHash('md5').update(p).digest('hex'); }
-function getCachedResponse(p) {
-  const k = getCacheKey(p); const e = aiCache.get(k);
-  if (!e) return null;
-  if (Date.now() - e.time > AI_CACHE_TTL) { aiCache.delete(k); return null; }
-  return e.text;
-}
-function setCachedResponse(p, t) {
-  if (aiCache.size > 500) { const k = aiCache.keys().next().value; aiCache.delete(k); }
-  aiCache.set(getCacheKey(p), { text: t, time: Date.now() });
-}
+function getCachedResponse(p) { const k = getCacheKey(p); const e = aiCache.get(k); if (!e) return null; if (Date.now() - e.time > AI_CACHE_TTL) { aiCache.delete(k); return null; } return e.text; }
+function setCachedResponse(p, t) { if (aiCache.size > 500) { const k = aiCache.keys().next().value; aiCache.delete(k); } aiCache.set(getCacheKey(p), { text: t, time: Date.now() }); }
 
 function safeParseJSON(text) {
   if (!text) return null;
@@ -54,20 +46,16 @@ async function fetchWithTimeout(url, opts, ms) {
   catch (e) { clearTimeout(t); throw e; }
 }
 
-// Strip signatures from AI output
 function stripSignature(text) {
   if (!text) return text;
   let t = text;
-  // Remove common signature patterns (multi-line blocks at end)
   t = t.replace(/\n{1,}(Best regards|Regards|Sincerely|Thanks|Thank you|Warm regards|Kind regards|Yours truly|Cheers|Warmly|Yours|Respectfully|Looking forward)[^\n]*[\s\S]*$/i, '');
   t = t.replace(/\n{1,}[-—=_]{2,}[\s\S]*$/i, '');
   t = t.replace(/\n{1,}(Sent from|Sent via)[^\n]*[\s\S]*$/i, '');
-  // Remove trailing placeholder signature blocks
   t = t.replace(/\n{1,}\[?(Your Name|Full Name|Your Title|Your Position|Your Company|Your Email|Your Phone|Your LinkedIn|Name|Title|Company|Phone|Email|LinkedIn)\]?[\s\S]*$/i, '');
   return t.trim();
 }
 
-// ============ FREE AI PROVIDERS ============
 async function callGroq(prompt) {
   if (!GROQ_KEY) throw new Error('No key');
   const r = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
@@ -111,11 +99,7 @@ async function callMistral(prompt) {
   let lastErr;
   for (let attempt = 0; attempt < 3; attempt++) {
     try { return await doFetch(); }
-    catch (e) {
-      lastErr = e;
-      if (e.retryAfter !== undefined || e.message.includes('429')) await sleep((e.retryAfter || Math.pow(2, attempt) * 1000));
-      else throw e;
-    }
+    catch (e) { lastErr = e; if (e.retryAfter !== undefined || e.message.includes('429')) await sleep((e.retryAfter || Math.pow(2, attempt) * 1000)); else throw e; }
   }
   throw lastErr;
 }
@@ -227,29 +211,42 @@ app.get('/api/me', async (req, res) => {
 app.post('/api/logout', (req, res) => { req.session = null; res.json({ ok: true }); });
 app.get('/api/quiet-status', authRequired, async (req, res) => { try { const d = await getUserData(req.session.user.id); const q = isQuietHours(d); res.json({ ok: true, inQuiet: q, quietEnd: d.quietEnd }); } catch (e) { res.json({ ok: false, error: e.message }); } });
 
+// ============ LIVE QUOTA (Instant for all users) ============
 app.get('/api/quota', authRequired, async (req, res) => {
   try {
-    const u = await getUserData(req.session.user.id);
+    const userId = req.session.user.id;
+    const u = await getUserData(userId);
     if (!u || !u.tokens) return res.json({ ok: false, error: 'Session expired' });
-    const client = setUserOAuth(u.tokens);
-    const gmail = google.gmail({ version: 'v1', auth: client });
-    const oneDayAgo = Math.floor((Date.now() - 24 * 60 * 60 * 1000) / 1000);
-    let sent = 0;
-    let source = 'gmail';
+
+    const now = new Date();
+    const cutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const today = now.toISOString().split('T')[0];
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    let logCount = 0;
     try {
-      const r = await gmail.users.messages.list({ userId: 'me', q: `in:sent after:${oneDayAgo}`, maxResults: 500 });
-      sent = r.data.resultSizeEstimate || (r.data.messages ? r.data.messages.length : 0);
-    } catch (e) {
-      source = 'local';
-      const t = new Date().toISOString().split('T')[0];
-      const sd = await db.collection('users').doc(req.session.user.id).collection('stats').doc(t).get();
-      sent = sd.exists ? (sd.data().sent || 0) : 0;
-    }
+      const logsSnap = await db.collection('users').doc(userId).collection('emailLog').where('sentAt', '>=', cutoff).get();
+      logCount = logsSnap.size;
+    } catch (e) { logCount = 0; }
+
+    let statCount = 0;
+    try {
+      const [td, yd] = await Promise.all([
+        db.collection('users').doc(userId).collection('stats').doc(today).get(),
+        db.collection('users').doc(userId).collection('stats').doc(yesterday).get()
+      ]);
+      if (td.exists) statCount += (td.data().sent || 0);
+      if (yd.exists) statCount += (yd.data().sent || 0);
+    } catch (e) { statCount = 0; }
+
+    const sent = Math.max(logCount, statCount);
     const userLimit = u.dailyLimit || DEFAULT_DAILY_LIMIT;
+    const googleHardLimit = 500;
+
     res.json({
-      ok: true, sentToday: sent, limit: userLimit, googleLimit: 500,
-      remaining: Math.max(0, userLimit - sent), googleRemaining: Math.max(0, 500 - sent),
-      source, timestamp: new Date().toISOString()
+      ok: true, sentToday: sent, limit: userLimit, googleLimit: googleHardLimit,
+      remaining: Math.max(0, userLimit - sent), googleRemaining: Math.max(0, googleHardLimit - sent),
+      source: 'live', timestamp: new Date().toISOString()
     });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
@@ -305,7 +302,6 @@ function localAnalysis(subject, body) {
   return { score, prediction, inboxProbability, issues, suggestions, tone: 'professional', readability: 75, emotionalTone: 'neutral' };
 }
 
-// ============ AI WRITE — NO SIGNATURE ============
 app.post('/api/ai/write-email', authRequired, async (req, res) => {
   try {
     const { context, recipientName, recipientCompany, tone, length } = req.body;
@@ -704,7 +700,6 @@ async function sendOne(userId, userEmail, recipientId, attachFiles, options) {
   if (!r.exists) throw new Error('Not found');
   const rec = r.data();
 
-  // Daily limit
   const userLimit = u.dailyLimit || DEFAULT_DAILY_LIMIT;
   const todayKey = new Date().toISOString().split('T')[0];
   const statDoc = await db.collection('users').doc(userId).collection('stats').doc(todayKey).get();
@@ -717,7 +712,6 @@ async function sendOne(userId, userEmail, recipientId, attachFiles, options) {
     throw e;
   }
 
-  // 20-40 sec gap
   if (u.lastSendTime && !options.skipDelay) {
     const l = u.lastSendTime._seconds ? u.lastSendTime._seconds * 1000 : new Date(u.lastSendTime).getTime();
     const el = Date.now() - l;
@@ -749,7 +743,6 @@ async function sendOne(userId, userEmail, recipientId, attachFiles, options) {
     body = body.split(k).join(v);
   }
 
-  // Signature — only user's saved signature
   let sigHtml = '';
   if (u.signature && options.includeSignature !== false) {
     let sig = u.signature;
@@ -783,7 +776,6 @@ async function sendOne(userId, userEmail, recipientId, attachFiles, options) {
     aiPrediction: lp.prediction, aiScore: lp.score, aiInboxProb: lp.inboxProbability
   });
 
-  // If already opened, keep Opened status but update lastSentAt. Otherwise mark Sent.
   const currentStatus = rec.status || 'Pending';
   const newStatus = (currentStatus === 'Opened') ? 'Opened' : 'Sent';
   const updateData = { status: newStatus, lastSentAt: new Date() };
