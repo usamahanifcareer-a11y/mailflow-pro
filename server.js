@@ -85,43 +85,25 @@ function stripSignature(text) {
   return t.trim();
 }
 
-// ============ FAST LOCAL CATEGORIZATION (No AI) ============
 function localCategorize(fromEmail, subject, bodyText) {
   const f = (fromEmail || '').toLowerCase();
   const s = (subject || '').toLowerCase();
   const b = (bodyText || '').toLowerCase();
-  
-  // Auto reply / noreply
   if (f.includes('noreply') || f.includes('no-reply') || f.includes('donotreply') || f.includes('do-not-reply')) {
     if (s.includes('welcome') || s.includes('verify') || s.includes('confirm') || s.includes('activate')) return 'NEWSLETTER';
     return 'AUTO_REPLY';
   }
-  
-  // Newsletter patterns
-  if (s.includes('newsletter') || s.includes('unsubscribe') || b.includes('unsubscribe') || f.includes('newsletter') || f.includes('mailer') || f.includes('notifications@') || f.includes('updates@')) return 'NEWSLETTER';
-  
-  // Spam
-  if (s.includes('winner') || s.includes('prize') || s.includes('claim') || s.includes('lottery') || s.includes('congratulations you')) return 'SPAM';
-  
-  // Meeting request
+  if (s.includes('newsletter') || b.includes('unsubscribe') || f.includes('newsletter') || f.includes('mailer') || f.includes('notifications@') || f.includes('updates@')) return 'NEWSLETTER';
+  if (s.includes('winner') || s.includes('prize') || s.includes('claim') || s.includes('lottery')) return 'SPAM';
   if (s.includes('meeting') || s.includes('invite') || s.includes('calendar') || s.includes('schedule a call')) return 'MEETING_REQUEST';
-  
-  // Question
-  if (s.includes('?') || s.includes('question') || s.includes('how do') || s.includes('can you')) return 'QUESTION';
-  
-  // Follow up
-  if (s.includes('following up') || s.includes('re:') || s.includes('follow up')) return 'FOLLOW_UP';
-  
-  // Interested
-  if (b.includes('interested') || b.includes('let\'s discuss') || b.includes('would like to') || b.includes('looking forward')) return 'INTERESTED';
-  
-  // Not interested
-  if (b.includes('not interested') || b.includes('no thank') || b.includes('unfortunately')) return 'NOT_INTERESTED';
-  
+  if (s.includes('?')) return 'QUESTION';
+  if (s.includes('following up') || s.includes('follow up')) return 'FOLLOW_UP';
+  if (b.includes('interested') || b.includes("let's discuss") || b.includes('would like to')) return 'INTERESTED';
+  if (b.includes('not interested') || b.includes('no thank')) return 'NOT_INTERESTED';
   return 'OTHER';
 }
 
-// ============ AI PROVIDERS ============
+// ============ AI ============
 async function callGroq(prompt) {
   if (!GROQ_KEY) throw new Error('No key');
   const r = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
@@ -169,9 +151,7 @@ async function callMistral(prompt) {
 async function callAI(prompt) {
   const cached = getCachedResponse(prompt);
   if (cached) return cached;
-  const providers = [
-    { fn: callGroq }, { fn: callGemini }, { fn: callOpenRouter }, { fn: callMistral }
-  ];
+  const providers = [{ fn: callGroq }, { fn: callGemini }, { fn: callOpenRouter }, { fn: callMistral }];
   for (const p of providers) {
     try { const text = await p.fn(prompt); if (!text || text.length < 5) continue; setCachedResponse(prompt, text); return text; } catch (err) {}
   }
@@ -222,16 +202,112 @@ function isQuietHours(p) { if (!p || !p.quietEnabled) return false; const n = ne
 function getCurrentHourKey() { const n = new Date(); return n.toISOString().split('T')[0] + '-' + n.getHours(); }
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-// ============ EMAIL DATE PARSER (Clean timezone) ============
 function parseEmailDate(dateStr) {
   if (!dateStr) return null;
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return null;
-    return d.toISOString();
-  } catch (e) { return null; }
+  try { const d = new Date(dateStr); if (isNaN(d.getTime())) return null; return d.toISOString(); } catch (e) { return null; }
 }
 
+// ============ ANTI-SPAM EMAIL BUILDER ============
+function sanitizeSubject(subject) {
+  if (!subject) return '';
+  // Remove excessive punctuation
+  let s = subject.replace(/!{2,}/g, '!').replace(/\?{2,}/g, '?').trim();
+  // Limit length
+  if (s.length > 78) s = s.substring(0, 75) + '...';
+  return s;
+}
+
+function buildMime(fromName, fromEmail, to, subject, htmlBody, attachments, options) {
+  options = options || {};
+  const isBulk = options.isBulk === true;
+  const mB = 'mixed_' + crypto.randomBytes(8).toString('hex');
+  const aB = 'alt_' + crypto.randomBytes(8).toString('hex');
+  const dom = fromEmail.split('@')[1] || 'gmail.com';
+  const msgId = '<' + crypto.randomBytes(16).toString('hex') + '.' + Date.now() + '.mailflow@' + dom + '>';
+  
+  const plainText = htmlToPlain(htmlBody);
+  const cleanSubject = sanitizeSubject(subject);
+  const encodedSubject = /^[\x00-\x7F]*$/.test(cleanSubject) ? cleanSubject : '=?UTF-8?B?' + Buffer.from(cleanSubject, 'utf8').toString('base64') + '?=';
+  
+  // ✅ Anti-spam headers (best inbox delivery)
+  const headers = [
+    'From: "' + fromName.replace(/"/g, '').replace(/[\r\n]/g, '') + '" <' + fromEmail + '>',
+    'To: ' + to,
+    'Reply-To: ' + fromEmail,
+    'Subject: ' + encodedSubject,
+    'Date: ' + new Date().toUTCString(),
+    'Message-ID: ' + msgId,
+    'MIME-Version: 1.0',
+    'X-Mailer: Gmail',
+    'Content-Language: en-US',
+    'List-Unsubscribe: <mailto:' + fromEmail + '?subject=unsubscribe>',
+    'List-Unsubscribe-Post: List-Unsubscribe=One-Click',
+    'X-Priority: 3',
+    'Importance: Normal',
+    'Auto-Submitted: auto-generated'
+  ];
+  
+  if (isBulk) {
+    headers.push('Precedence: bulk');
+  }
+  
+  const hasAtt = attachments && attachments.length > 0;
+  
+  if (hasAtt) {
+    headers.push('Content-Type: multipart/mixed; boundary="' + mB + '"');
+    headers.push('', '--' + mB);
+    headers.push('Content-Type: multipart/alternative; boundary="' + aB + '"');
+    headers.push('', '--' + aB);
+    headers.push('Content-Type: text/plain; charset=UTF-8');
+    headers.push('Content-Transfer-Encoding: base64');
+    headers.push('', Buffer.from(plainText, 'utf8').toString('base64'));
+    headers.push('', '--' + aB);
+    headers.push('Content-Type: text/html; charset=UTF-8');
+    headers.push('Content-Transfer-Encoding: base64');
+    headers.push('', Buffer.from(htmlBody, 'utf8').toString('base64'));
+    headers.push('', '--' + aB + '--', '');
+    for (const a of attachments) {
+      const safeName = a.filename.replace(/[\r\n"]/g, '');
+      headers.push('--' + mB);
+      headers.push('Content-Type: ' + a.mimeType + '; name="' + safeName + '"');
+      headers.push('Content-Transfer-Encoding: base64');
+      headers.push('Content-Disposition: attachment; filename="' + safeName + '"');
+      headers.push('', a.data, '');
+    }
+    headers.push('--' + mB + '--');
+  } else {
+    headers.push('Content-Type: multipart/alternative; boundary="' + aB + '"');
+    headers.push('', '--' + aB);
+    headers.push('Content-Type: text/plain; charset=UTF-8');
+    headers.push('Content-Transfer-Encoding: base64');
+    headers.push('', Buffer.from(plainText, 'utf8').toString('base64'));
+    headers.push('', '--' + aB);
+    headers.push('Content-Type: text/html; charset=UTF-8');
+    headers.push('Content-Transfer-Encoding: base64');
+    headers.push('', Buffer.from(htmlBody, 'utf8').toString('base64'));
+    headers.push('', '--' + aB + '--');
+  }
+  
+  return Buffer.from(headers.join('\r\n')).toString('base64').replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+
+function htmlToPlain(h) {
+  return h.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\n\s*\n\s*\n/g, '\n\n')
+    .trim();
+}
+
+// ============ BASE ROUTES ============
 app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL, firebase: !!serviceAccount.project_id, ai: { groq: !!GROQ_KEY, gemini: !!GEMINI_KEY, mistral: !!MISTRAL_KEY, openrouter: !!OPENROUTER_KEY } }));
 
 app.get('/auth/google', (req, res) => { const url = oauth2Client.generateAuthUrl({ access_type: 'offline', scope: SCOPES, prompt: 'consent' }); res.redirect(url); });
@@ -294,14 +370,13 @@ app.get('/api/quota', authRequired, async (req, res) => {
       const sd = await db.collection('users').doc(userId).collection('stats').doc(today).get();
       sent = sd.exists ? (sd.data().sent || 0) : 0;
     }
-    const totalLimit = 500;
-    const remaining = Math.max(0, totalLimit - sent);
-    const result = { ok: true, sent: sent, limit: totalLimit, remaining: remaining, timestamp: new Date().toISOString() };
+    const result = { ok: true, sent, limit: 500, remaining: Math.max(0, 500 - sent), timestamp: new Date().toISOString() };
     quotaCache.set(userId, { data: result, time: Date.now() });
     res.json(result);
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+// ============ AI ANALYSIS ============
 app.post('/api/ai/analyze-live', authRequired, async (req, res) => {
   try {
     const { subject, body } = req.body;
@@ -312,12 +387,11 @@ app.post('/api/ai/analyze-live', authRequired, async (req, res) => {
       const u = await getUserData(req.session.user.id);
       const hasLogo = !!(u && u.logoUrl);
       const cleanBody = (body || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 1200);
-      const prompt = `Analyze this email. Return ONLY JSON.
+      const prompt = `Analyze this email for spam score. Return ONLY JSON.
 Subject: "${(subject || '').substring(0, 200)}"
 Body: "${cleanBody}"
 Logo: ${hasLogo ? 'yes' : 'no'}
-Return: {"score":0-100,"prediction":"EXCELLENT"|"GOOD"|"RISKY"|"SPAM","inboxProbability":0-100,"issues":[{"severity":"low"|"medium"|"high","message":"string"}],"suggestions":["string"],"tone":"string"}
-Rules: <= 15 EXCELLENT, 16-40 GOOD, 41-70 RISKY, 71+ SPAM.`;
+Return: {"score":0-100,"prediction":"EXCELLENT"|"GOOD"|"RISKY"|"SPAM","inboxProbability":0-100,"issues":[{"severity":"low"|"medium"|"high","message":"string"}],"suggestions":["string"],"tone":"string"}`;
       const text = await callAI(prompt);
       const parsed = safeParseJSON(text);
       if (parsed && typeof parsed.score === 'number') return res.json({ ok: true, ...parsed, aiPowered: true });
@@ -359,28 +433,70 @@ app.post('/api/ai/write-email', authRequired, async (req, res) => {
     if (!context) return res.json({ ok: false, error: 'Context required' });
     const TM = { formal: 'professional', friendly: 'warm', casual: 'casual', persuasive: 'confident' };
     const LM = { short: 'under 80 words', medium: '100-150 words', long: '200-250 words' };
-    const prompt = `Write a professional email MESSAGE BODY ONLY (no signature, no sign-off block, no contact info). Return ONLY JSON.
+    const prompt = `Write a professional email MESSAGE BODY ONLY (no signature, no sign-off). Return ONLY JSON.
 Context: ${context}
 Recipient: ${recipientName || 'unknown'}
 Company: ${recipientCompany || 'unknown'}
 Tone: ${TM[tone] || TM.formal}
 Length: ${LM[length] || LM.medium}
-STRICT RULES:
-- Return ONLY the message content — nothing else.
-- Do NOT add any signature, sign-off, name, title, phone, email, or contact block.
-- Do NOT write "Best regards", "Regards", "Sincerely", "Thanks", or any closing with a name.
+STRICT: No signature, no name, no contact info at end.
 Return: {"subject":"under 60 chars","body":"with \\n\\n breaks"}`;
     try {
       const text = await callAI(prompt);
       const parsed = safeParseJSON(text);
-      if (parsed && parsed.subject && parsed.body) {
-        return res.json({ ok: true, subject: parsed.subject, body: stripSignature(parsed.body), aiPowered: true });
-      }
+      if (parsed && parsed.subject && parsed.body) return res.json({ ok: true, subject: parsed.subject, body: stripSignature(parsed.body), aiPowered: true });
     } catch (e) {}
     const r = recipientName || (recipientCompany ? recipientCompany + ' Team' : 'Hiring Team');
     const s = context.length > 55 ? context.substring(0, 52) + '...' : context;
-    const b = `Dear ${r},\n\nI hope this message finds you well. I'm reaching out regarding ${context}.\n\nI believe this could be a great fit, and I would welcome the chance to discuss further.`;
+    const b = `Dear ${r},\n\nI hope this message finds you well. I'm reaching out regarding ${context}.\n\nI believe this could be a great fit.`;
     res.json({ ok: true, subject: s, body: b, aiPowered: false });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+// ============ AI SMART REPLY (Full context) ============
+app.post('/api/ai/smart-reply', authRequired, async (req, res) => {
+  try {
+    const { originalSubject, originalBody, originalFrom, instruction } = req.body;
+    if (!originalBody) return res.json({ ok: false, error: 'No original body' });
+    const u = await getUserData(req.session.user.id);
+    const userName = u.name || u.email.split('@')[0];
+    
+    const prompt = `You are an expert email assistant. Write a SMART, PROFESSIONAL reply to this email.
+
+ORIGINAL EMAIL:
+From: ${originalFrom || 'Unknown'}
+Subject: ${originalSubject || '(no subject)'}
+Body:
+${(originalBody || '').substring(0, 3000)}
+
+${instruction ? 'USER INSTRUCTION: ' + instruction : 'Write an appropriate reply based on the context.'}
+
+YOUR NAME: ${userName}
+
+STRICT RULES:
+- Write ONLY the reply message body — no signature, no sign-off name
+- Match the tone and formality of the original email
+- Address the specific points/questions in the original email
+- Be concise and professional
+- Do NOT write "Best regards", "Regards", "Thanks", or any closing
+- Do NOT add your name or contact at the end
+- If it's a job/application email, be polite and professional
+- If it's a question, answer it directly
+- If it's a follow-up, acknowledge and respond
+
+Return ONLY JSON:
+{"subject":"Re: ...","body":"the reply message"}`;
+    
+    try {
+      const text = await callAI(prompt);
+      const parsed = safeParseJSON(text);
+      if (parsed && parsed.body) {
+        return res.json({ ok: true, subject: parsed.subject || ('Re: ' + originalSubject), body: stripSignature(parsed.body), aiPowered: true });
+      }
+    } catch (e) { console.error('Smart reply:', e.message); }
+    
+    // Fallback
+    res.json({ ok: true, subject: 'Re: ' + (originalSubject || ''), body: 'Thank you for your email. I will review it and respond shortly.', aiPowered: false });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -394,20 +510,18 @@ app.post('/api/ai/generate-subjects', authRequired, async (req, res) => {
       if (parsed && parsed.subjects && parsed.subjects.length >= 3) return res.json({ ok: true, subjects: parsed.subjects, aiPowered: true });
     } catch (e) {}
     const c = (context || 'Professional Outreach').substring(0, 50);
-    res.json({ ok: true, subjects: [c, 'Quick question about ' + c, 'Following up on ' + c, 'Regarding ' + c, c + ' — Intro'], aiPowered: false });
+    res.json({ ok: true, subjects: [c, 'Quick question about ' + c, 'Following up on ' + c], aiPowered: false });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
 app.post('/api/ai/improve-email', authRequired, async (req, res) => {
   try {
     const { subject, body } = req.body;
-    const prompt = `Improve this email body for inbox placement. Return ONLY JSON.\nSubject: "${subject || ''}"\nBody: "${(body||'').substring(0, 800)}"\nSTRICT: Do not add any signature, sign-off, name, or contact block.\nReturn: {"improvedSubject":"...","improvedBody":"...","beforeScore":50,"afterScore":85}`;
+    const prompt = `Improve this email body for inbox placement. Return ONLY JSON.\nSubject: "${subject || ''}"\nBody: "${(body||'').substring(0, 800)}"\nSTRICT: Do not add any signature, sign-off, name.\nReturn: {"improvedSubject":"...","improvedBody":"...","beforeScore":50,"afterScore":85}`;
     try {
       const text = await callAI(prompt);
       const parsed = safeParseJSON(text);
-      if (parsed && parsed.improvedSubject) {
-        return res.json({ ok: true, improvedSubject: parsed.improvedSubject, improvedBody: stripSignature(parsed.improvedBody || ''), beforeScore: parsed.beforeScore || 50, afterScore: parsed.afterScore || 85, aiPowered: true });
-      }
+      if (parsed && parsed.improvedSubject) return res.json({ ok: true, improvedSubject: parsed.improvedSubject, improvedBody: stripSignature(parsed.improvedBody || ''), beforeScore: parsed.beforeScore || 50, afterScore: parsed.afterScore || 85, aiPowered: true });
     } catch (e) {}
     res.json({ ok: true, improvedSubject: subject, improvedBody: body, beforeScore: 50, afterScore: 75, aiPowered: false });
   } catch (e) { res.json({ ok: false, error: e.message }); }
@@ -463,7 +577,7 @@ app.get('/api/ai/best-time', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: true, bestHours: [9, 11, 14], reasoning: 'Default', aiPowered: false }); }
 });
 
-// ============ FAST INBOX — No AI, Real-time ============
+// ============ FAST INBOX ============
 app.post('/api/inbox/list', authRequired, async (req, res) => {
   const startTime = Date.now();
   try {
@@ -493,11 +607,9 @@ app.post('/api/inbox/list', authRequired, async (req, res) => {
         const sliced = list.data.messages.slice(startIdx, startIdx + pageSize);
         if (list.data.messages.length > startIdx + pageSize) hasMore = true;
 
-        // Fetch all in parallel (much faster)
-        const fetchPromises = sliced.map(msg => 
+        const fetchPromises = sliced.map(msg =>
           gmail.users.messages.get({ userId: 'me', id: msg.id, format: 'metadata', metadataHeaders: ['From', 'To', 'Subject', 'Date'] })
-            .then(r => ({ msg, full: r }))
-            .catch(() => null)
+            .then(r => ({ msg, full: r })).catch(() => null)
         );
         const fetched = await Promise.all(fetchPromises);
 
@@ -519,7 +631,6 @@ app.post('/api/inbox/list', authRequired, async (req, res) => {
           else if (from.includes('@')) { fromEmail = from; fromName = from.split('@')[0]; }
           fromName = fromName.replace(/^[-,\s]+|[-,\s]+$/g, '').replace(/['"]/g, '').trim();
           if (!fromName || fromName.includes('@')) fromName = fromEmail.split('@')[0];
-          // Capitalize first letters
           fromName = fromName.split(/[\.\-_]/).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
 
           let toEmail = to;
@@ -527,19 +638,14 @@ app.post('/api/inbox/list', authRequired, async (req, res) => {
           if (tm) toEmail = tm[1];
 
           const category = localCategorize(fromEmail, subject, snippet);
+          const hasAtt = (full.data.payload.parts || []).some(p => p.filename);
 
           allEmails.push({
-            id: msg.id,
-            threadId: full.data.threadId,
-            folder: query.label,
+            id: msg.id, threadId: full.data.threadId, folder: query.label,
             from, fromName, fromEmail, to, toEmail,
-            subject: subject || '(no subject)',
-            dateRaw, dateISO,
-            snippet,
-            bodyPreview: snippet.substring(0, 200),
-            category,
-            isRead: !(full.data.labelIds || []).includes('UNREAD'),
-            hasAttachments: false
+            subject: subject || '(no subject)', dateRaw, dateISO, snippet,
+            bodyPreview: snippet.substring(0, 200), category, hasAttachments: hasAtt,
+            isRead: !(full.data.labelIds || []).includes('UNREAD')
           });
         }
       } catch (e) { console.error('Folder fetch:', e.message); }
@@ -549,7 +655,6 @@ app.post('/api/inbox/list', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ============ GET FULL EMAIL (on demand) ============
 app.get('/api/inbox/email/:id', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -576,11 +681,9 @@ app.get('/api/inbox/email/:id', authRequired, async (req, res) => {
             size: p.body.size || 0
           });
         }
-        if (p.mimeType === 'text/html' && p.body?.data && !htmlBody) {
-          htmlBody = Buffer.from(p.body.data, 'base64').toString('utf8');
-        } else if (p.mimeType === 'text/plain' && p.body?.data && !textBody) {
-          textBody = Buffer.from(p.body.data, 'base64').toString('utf8');
-        } else if (p.parts && p.parts.length) walkParts(p.parts);
+        if (p.mimeType === 'text/html' && p.body?.data && !htmlBody) htmlBody = Buffer.from(p.body.data, 'base64').toString('utf8');
+        else if (p.mimeType === 'text/plain' && p.body?.data && !textBody) textBody = Buffer.from(p.body.data, 'base64').toString('utf8');
+        else if (p.parts && p.parts.length) walkParts(p.parts);
       }
     };
 
@@ -591,7 +694,7 @@ app.get('/api/inbox/email/:id', authRequired, async (req, res) => {
       else if (payload.mimeType === 'text/plain') textBody = Buffer.from(payload.body.data, 'base64').toString('utf8');
     }
 
-    if (!textBody && htmlBody) textBody = htmlBody.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '').replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/\s+/g, ' ').trim();
+    if (!textBody && htmlBody) textBody = htmlToPlain(htmlBody);
     if (!htmlBody && textBody) htmlBody = '<pre style="white-space:pre-wrap;font-family:inherit;font-size:14px;line-height:1.6;color:#222;">' + textBody.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</pre>';
     if (!htmlBody && !textBody) { htmlBody = '<p>' + (full.data.snippet || '') + '</p>'; textBody = full.data.snippet || ''; }
 
@@ -612,12 +715,10 @@ app.get('/api/inbox/email/:id', authRequired, async (req, res) => {
     res.json({
       ok: true,
       email: {
-        id: req.params.id,
-        threadId: full.data.threadId,
+        id: req.params.id, threadId: full.data.threadId,
         from, fromName, fromEmail, to, toEmail,
         subject: getHeader('Subject') || '(no subject)',
-        dateRaw: getHeader('Date'),
-        dateISO: parseEmailDate(getHeader('Date')),
+        dateRaw: getHeader('Date'), dateISO: parseEmailDate(getHeader('Date')),
         bodyHtml: htmlBody.substring(0, 200000),
         bodyText: textBody.substring(0, 50000),
         attachments
@@ -633,9 +734,7 @@ app.get('/api/inbox/attachment/:messageId/:attachmentId', authRequired, async (r
     if (!u.tokens) return res.status(401).json({ ok: false });
     const client = setUserOAuth(u.tokens);
     const gmail = google.gmail({ version: 'v1', auth: client });
-    const att = await gmail.users.messages.attachments.get({
-      userId: 'me', messageId: req.params.messageId, id: req.params.attachmentId
-    });
+    const att = await gmail.users.messages.attachments.get({ userId: 'me', messageId: req.params.messageId, id: req.params.attachmentId });
     const data = Buffer.from(att.data.data, 'base64url');
     res.set('Content-Type', req.query.mime || 'application/octet-stream');
     res.set('Content-Disposition', 'attachment; filename="' + (req.query.filename || 'attachment') + '"');
@@ -660,14 +759,17 @@ app.post('/api/reply/send', authRequired, async (req, res) => {
     const bodyHtml = body.replace(/\n/g, '<br>');
     const sigHtml = sig ? '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>' : '';
     const full = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">' + bodyHtml + sigHtml + '</div>';
-    const aB = 'a_' + crypto.randomBytes(8).toString('hex');
+    const aB = 'alt_' + crypto.randomBytes(8).toString('hex');
     const dom = userEmail.split('@')[1] || 'gmail.com';
     const newMid = '<' + crypto.randomBytes(16).toString('hex') + '.' + Date.now() + '@' + dom + '>';
-    const pt = full.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').trim();
+    const pt = htmlToPlain(full);
+    const encodedSubject = /^[\x00-\x7F]*$/.test(replySubject) ? replySubject : '=?UTF-8?B?' + Buffer.from(replySubject, 'utf8').toString('base64') + '?=';
+    
     const headers = [
       'From: "' + userName.replace(/"/g, '') + '" <' + userEmail + '>',
       'To: ' + to,
-      'Subject: ' + (/^[\x00-\x7F]*$/.test(replySubject) ? replySubject : '=?UTF-8?B?' + Buffer.from(replySubject, 'utf8').toString('base64') + '?='),
+      'Reply-To: ' + userEmail,
+      'Subject: ' + encodedSubject,
       'Date: ' + new Date().toUTCString(),
       'Message-ID: ' + newMid,
       'In-Reply-To: ' + (messageId || ''),
@@ -675,19 +777,29 @@ app.post('/api/reply/send', authRequired, async (req, res) => {
       'MIME-Version: 1.0',
       'X-Mailer: Gmail',
       'Content-Type: multipart/alternative; boundary="' + aB + '"',
-      '', '--' + aB,
-      'Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '',
-      Buffer.from(pt, 'utf8').toString('base64'), '', '--' + aB,
-      'Content-Type: text/html; charset=UTF-8', 'Content-Transfer-Encoding: base64', '',
-      Buffer.from(full, 'utf8').toString('base64'), '', '--' + aB + '--'
+      '',
+      '--' + aB,
+      'Content-Type: text/plain; charset=UTF-8',
+      'Content-Transfer-Encoding: base64',
+      '',
+      Buffer.from(pt, 'utf8').toString('base64'),
+      '',
+      '--' + aB,
+      'Content-Type: text/html; charset=UTF-8',
+      'Content-Transfer-Encoding: base64',
+      '',
+      Buffer.from(full, 'utf8').toString('base64'),
+      '',
+      '--' + aB + '--'
     ];
+    
     const raw = Buffer.from(headers.join('\r\n')).toString('base64').replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
     const sendResult = await gmail.users.messages.send({ userId: 'me', requestBody: { raw, threadId: threadId || undefined } });
     res.json({ ok: true, messageId: sendResult.data.id });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ============ TEST LAB ============
+// ============ TEST LAB (full featured) ============
 app.get('/api/test/stats', adminRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -720,26 +832,46 @@ app.post('/api/test/recipients', adminRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.delete('/api/test/recipients/:id', adminRequired, async (req, res) => { try { await db.collection('users').doc(req.session.user.id).collection('testRecipients').doc(req.params.id).delete(); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); } });
+
 app.post('/api/test/clear', adminRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
-    const [r, l] = await Promise.all([
-      db.collection('users').doc(uid).collection('testRecipients').get(),
-      db.collection('users').doc(uid).collection('testLog').get()
-    ]);
-    const b = db.batch();
-    r.forEach(d => b.delete(d.ref));
-    l.forEach(d => b.delete(d.ref));
-    await b.commit();
-    res.json({ ok: true });
+    let totalDeleted = 0;
+    // Delete in chunks (Firestore batch limit 500)
+    let hasMore = true;
+    while (hasMore) {
+      const r = await db.collection('users').doc(uid).collection('testRecipients').limit(400).get();
+      if (r.empty) { hasMore = false; break; }
+      const b = db.batch();
+      r.forEach(d => b.delete(d.ref));
+      await b.commit();
+      totalDeleted += r.size;
+      if (r.size < 400) hasMore = false;
+    }
+    hasMore = true;
+    while (hasMore) {
+      const l = await db.collection('users').doc(uid).collection('testLog').limit(400).get();
+      if (l.empty) { hasMore = false; break; }
+      const b = db.batch();
+      l.forEach(d => b.delete(d.ref));
+      await b.commit();
+      if (l.size < 400) hasMore = false;
+    }
+    res.json({ ok: true, deleted: totalDeleted });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
+
 app.post('/api/test/send', adminRequired, async (req, res) => {
   try {
-    const { recipientId, subject, body, to, includeSignature, includeLogo } = req.body;
+    const { recipientId, subject, body, to, includeSignature, includeLogo, selectedFileIds, sendDelay } = req.body;
     const uid = req.session.user.id;
     const u = await getUserData(uid);
     if (!u.tokens) return res.json({ ok: false, error: 'Session expired' });
+    
+    // Delay before send
+    const delaySec = Math.max(0, Math.min(Number(sendDelay) || 0, 120));
+    if (delaySec > 0) await sleep(delaySec * 1000);
+    
     const client = setUserOAuth(u.tokens);
     const gmail = google.gmail({ version: 'v1', auth: client });
     let targetEmail = to;
@@ -748,6 +880,7 @@ app.post('/api/test/send', adminRequired, async (req, res) => {
       if (r.exists) targetEmail = r.data().email;
     }
     if (!targetEmail || !subject || !body) return res.json({ ok: false, error: 'Missing fields' });
+    
     let sigHtml = '';
     if (u.signature && includeSignature !== false) {
       let sig = u.signature;
@@ -756,37 +889,33 @@ app.post('/api/test/send', adminRequired, async (req, res) => {
     }
     const bodyHtml = body.replace(/\n/g, '<br>');
     const full = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">' + bodyHtml + sigHtml + '</div>';
-    const pt = full.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').trim();
-    const aB = 'a_' + crypto.randomBytes(8).toString('hex');
-    const dom = u.email.split('@')[1] || 'gmail.com';
-    const mid = '<' + crypto.randomBytes(16).toString('hex') + '.' + Date.now() + '@' + dom + '>';
-    const headers = [
-      'From: "' + (u.name || 'User').replace(/"/g, '') + '" <' + u.email + '>',
-      'To: ' + targetEmail,
-      'Subject: ' + (/^[\x00-\x7F]*$/.test(subject) ? subject : '=?UTF-8?B?' + Buffer.from(subject, 'utf8').toString('base64') + '?='),
-      'Date: ' + new Date().toUTCString(),
-      'Message-ID: ' + mid,
-      'MIME-Version: 1.0',
-      'X-Mailer: Gmail',
-      'Content-Type: multipart/alternative; boundary="' + aB + '"',
-      '', '--' + aB,
-      'Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '',
-      Buffer.from(pt, 'utf8').toString('base64'), '', '--' + aB,
-      'Content-Type: text/html; charset=UTF-8', 'Content-Transfer-Encoding: base64', '',
-      Buffer.from(full, 'utf8').toString('base64'), '', '--' + aB + '--'
-    ];
-    const raw = Buffer.from(headers.join('\r\n')).toString('base64').replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    
+    // Attachments
+    const atts = [];
+    if (selectedFileIds && selectedFileIds.length > 0) {
+      const fs = await db.collection('users').doc(uid).collection('files').get();
+      const dr = google.drive({ version: 'v3', auth: client });
+      for (const fd of fs.docs) {
+        if (selectedFileIds.indexOf(fd.id) === -1) continue;
+        const f = fd.data();
+        try { const r2 = await dr.files.get({ fileId: f.driveId, alt: 'media' }, { responseType: 'arraybuffer' }); atts.push({ filename: f.name, mimeType: f.mimeType || 'application/octet-stream', data: Buffer.from(r2.data).toString('base64') }); } catch (e) {}
+      }
+    }
+    
+    const raw = buildMime(u.name || 'User', u.email, targetEmail, subject, full, atts, { isBulk: false });
     await gmail.users.messages.send({ userId: 'me', requestBody: { raw } });
-    await db.collection('users').doc(uid).collection('testLog').add({ recipientEmail: targetEmail, subject, body, sentAt: new Date(), recipientId: recipientId || '' });
+    
+    await db.collection('users').doc(uid).collection('testLog').add({ recipientEmail: targetEmail, subject, body, sentAt: new Date(), recipientId: recipientId || '', attachmentsCount: atts.length });
     if (recipientId) await db.collection('users').doc(uid).collection('testRecipients').doc(recipientId).update({ status: 'Sent', sentAt: new Date() });
     res.json({ ok: true, email: targetEmail });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
+
 app.get('/api/test/log', adminRequired, async (req, res) => {
   try { const s = await db.collection('users').doc(req.session.user.id).collection('testLog').orderBy('sentAt','desc').limit(200).get(); const l = []; s.forEach(d => l.push({ id: d.id, ...d.data() })); res.json({ ok: true, logs: l }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ============ FILES / TEMPLATES / RECIPIENTS ============
+// ============ FILES / LOGO / TEMPLATES / RECIPIENTS ============
 app.post('/api/upload-logo', authRequired, async (req, res) => {
   try {
     const { base64, mimeType, filename } = req.body;
@@ -935,33 +1064,6 @@ app.get('/api/my-emails', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-function encS(s) { return /^[\x00-\x7F]*$/.test(s) ? s : '=?UTF-8?B?' + Buffer.from(s, 'utf8').toString('base64') + '?='; }
-function htmlToPlain(h) { return h.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '').replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '').replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/\n\s*\n\s*\n/g, '\n\n').trim(); }
-
-function buildMime(fn, fe, to, sub, h, atts) {
-  const mB = 'm_' + crypto.randomBytes(8).toString('hex');
-  const aB = 'a_' + crypto.randomBytes(8).toString('hex');
-  const dom = fe.split('@')[1] || 'gmail.com';
-  const mid = '<' + crypto.randomBytes(16).toString('hex') + '.' + Date.now() + '@' + dom + '>';
-  const pt = htmlToPlain(h);
-  const p = ['From: "' + fn.replace(/"/g, '') + '" <' + fe + '>', 'Reply-To: ' + fe, 'Return-Path: <' + fe + '>', 'To: ' + to, 'Subject: ' + encS(sub), 'Date: ' + new Date().toUTCString(), 'Message-ID: ' + mid, 'MIME-Version: 1.0', 'X-Mailer: Gmail', 'List-Unsubscribe: <mailto:' + fe + '?subject=unsubscribe>', 'List-Unsubscribe-Post: List-Unsubscribe=One-Click', 'Precedence: bulk', 'X-Priority: 3', 'Importance: Normal'];
-  if (atts && atts.length) {
-    p.push('Content-Type: multipart/mixed; boundary="' + mB + '"', '', '--' + mB);
-    p.push('Content-Type: multipart/alternative; boundary="' + aB + '"', '', '--' + aB);
-    p.push('Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', Buffer.from(pt, 'utf8').toString('base64'), '');
-    p.push('--' + aB);
-    p.push('Content-Type: text/html; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', Buffer.from(h, 'utf8').toString('base64'), '', '--' + aB + '--', '');
-    for (const a of atts) { p.push('--' + mB, 'Content-Type: ' + a.mimeType + '; name="' + a.filename + '"', 'Content-Disposition: attachment; filename="' + a.filename + '"', 'Content-Transfer-Encoding: base64', '', a.data, ''); }
-    p.push('--' + mB + '--');
-  } else {
-    p.push('Content-Type: multipart/alternative; boundary="' + aB + '"', '', '--' + aB);
-    p.push('Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', Buffer.from(pt, 'utf8').toString('base64'), '');
-    p.push('--' + aB);
-    p.push('Content-Type: text/html; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', Buffer.from(h, 'utf8').toString('base64'), '', '--' + aB + '--');
-  }
-  return Buffer.from(p.join('\r\n')).toString('base64').replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-}
-
 async function sendOne(userId, userEmail, recipientId, attachFiles, options) {
   options = options || {};
   const u = await getUserData(userId);
@@ -971,7 +1073,6 @@ async function sendOne(userId, userEmail, recipientId, attachFiles, options) {
   if (!r.exists) throw new Error('Not found');
   const rec = r.data();
   
-  // User-configurable delay (default 3 seconds)
   if (u.lastSendTime && !options.skipDelay) {
     const l = u.lastSendTime._seconds ? u.lastSendTime._seconds * 1000 : new Date(u.lastSendTime).getTime();
     const delaySec = u.sendDelay !== undefined ? Number(u.sendDelay) : DEFAULT_SEND_DELAY;
@@ -1019,7 +1120,7 @@ async function sendOne(userId, userEmail, recipientId, attachFiles, options) {
       try { const r2 = await dr.files.get({ fileId: f.driveId, alt: 'media' }, { responseType: 'arraybuffer' }); atts.push({ filename: f.name, mimeType: f.mimeType || 'application/octet-stream', data: Buffer.from(r2.data).toString('base64') }); } catch (e) {}
     }
   }
-  const raw = buildMime(u.name || 'MailFlow User', userEmail, rec.email, subject, full + pix, atts);
+  const raw = buildMime(u.name || 'MailFlow User', userEmail, rec.email, subject, full + pix, atts, { isBulk: true });
   await g.users.messages.send({ userId: 'me', requestBody: { raw } });
   await db.collection('users').doc(userId).collection('emailLog').add({ recipientId, recipientEmail: rec.email, company: rec.company || '', subject: subject, sentAt: new Date(), attachmentsCount: atts.length, aiPrediction: lp.prediction, aiScore: lp.score, aiInboxProb: lp.inboxProbability });
   const currentStatus = rec.status || 'Pending';

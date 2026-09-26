@@ -14,10 +14,11 @@
   --grad:linear-gradient(135deg,#38bdf8,#6366f1,#a78bfa);
 }
 html,body{min-height:100vh;overflow-x:hidden}
-body{font-family:-apple-system,'Segoe UI',Roboto,'Inter',Arial,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;font-feature-settings:'cv02','cv03','cv04','cv11'}
 body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at top left,rgba(56,189,248,.07),transparent 50%),radial-gradient(ellipse at bottom right,rgba(168,85,247,.07),transparent 50%);pointer-events:none;z-index:0}
 .hidden{display:none!important}
 button,input,textarea,select{font-family:inherit;font-size:16px}
+input,textarea,select{font-variant-numeric:tabular-nums}
 ::selection{background:rgba(56,189,248,.3)}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
 @keyframes float{0%,100%{transform:translate(0,0)}50%{transform:translate(-5%,5%)}}
@@ -26,6 +27,7 @@ button,input,textarea,select{font-family:inherit;font-size:16px}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes pulse-opened{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.4)}50%{box-shadow:0 0 0 4px rgba(34,197,94,0)}}
 
+/* ============ AUTH ============ */
 .auth-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;position:relative;overflow:hidden;z-index:1}
 .auth-wrap::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 20%,rgba(56,189,248,.15) 0%,transparent 40%),radial-gradient(circle at 70% 80%,rgba(168,85,247,.15) 0%,transparent 40%);animation:float 20s infinite ease-in-out}
 .auth-card{background:rgba(15,23,42,.75);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);padding:48px 36px;border-radius:24px;width:100%;max-width:440px;box-shadow:0 32px 100px rgba(0,0,0,.8),0 0 0 1px rgba(56,189,248,.15);border:1px solid rgba(51,65,85,.6);text-align:center;position:relative;z-index:1}
@@ -40,6 +42,7 @@ button,input,textarea,select{font-family:inherit;font-size:16px}
 .auth-features .feat{display:flex;align-items:center;gap:12px;padding:9px 0;font-size:13px;color:#cbd5e1}
 .auth-features .feat .ico{font-size:16px;width:32px;height:32px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 
+/* ============ TOPBAR ============ */
 .topbar{background:rgba(10,14,26,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;gap:10px;flex-wrap:wrap}
 @media(max-width:640px){.topbar{padding:10px 14px}}
 .logo-top{font-size:17px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.3px;white-space:nowrap}
@@ -51,12 +54,14 @@ button,input,textarea,select{font-family:inherit;font-size:16px}
 .app-id-pill{background:var(--grad);color:white;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:700;font-family:'Courier New',monospace;letter-spacing:.5px}
 @media(max-width:480px){.app-id-pill{display:none}}
 
+/* ============ TABS ============ */
 .maintabs{display:flex;gap:4px;padding:6px 14px;background:rgba(10,14,26,.85);border-bottom:1px solid var(--border);overflow-x:auto;position:sticky;top:55px;z-index:99;backdrop-filter:blur(20px);-webkit-overflow-scrolling:touch}
 .maintabs::-webkit-scrollbar{display:none}
 .maintab{padding:10px 16px;font-size:12px;color:var(--text2);cursor:pointer;font-weight:600;white-space:nowrap;border-radius:8px;transition:.2s;flex-shrink:0}
 .maintab.active{color:var(--cyan);background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2)}
 .maintab:hover:not(.active){color:#cbd5e1;background:rgba(30,41,59,.5)}
 
+/* ============ LAYOUT ============ */
 .container{max-width:1400px;margin:0 auto;padding:20px;position:relative;z-index:1}
 @media(max-width:640px){.container{padding:14px}}
 .page-layout{display:flex;gap:20px;align-items:flex-start}
@@ -64,38 +69,44 @@ button,input,textarea,select{font-family:inherit;font-size:16px}
 .main-area{flex:1;min-width:0}
 @media(max-width:1000px){.page-layout{flex-direction:column}.sidebar{width:100%;position:static;order:2}.main-area{order:1}}
 
+/* ============ STATS ============ */
 .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px}
 @media(min-width:700px){.stats{grid-template-columns:repeat(5,1fr)}}
 .stat{background:linear-gradient(135deg,rgba(30,41,59,.8),rgba(15,23,42,.8));border:1px solid var(--border);border-radius:14px;padding:16px;position:relative;overflow:hidden;transition:.3s}
 .stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--grad);opacity:.6}
 .stat:hover{border-color:var(--border2);transform:translateY(-3px);box-shadow:0 16px 40px rgba(0,0,0,.4)}
 .stat .label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;font-weight:700}
-.stat .value{font-size:24px;font-weight:800;margin-top:6px;letter-spacing:-.5px}
+.stat .value{font-size:24px;font-weight:800;margin-top:6px;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
 .stat.s1 .value{color:var(--cyan)}.stat.s2 .value{color:var(--green)}.stat.s3 .value{color:var(--purple)}.stat.s4 .value{color:var(--amber)}.stat.s5 .value{color:var(--pink)}
 
+/* ============ PANEL ============ */
 .panel{background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:18px;transition:.25s;position:relative}
 @media(max-width:640px){.panel{padding:14px;border-radius:14px}}
 .panel:hover{border-color:var(--border2)}
 .panel h2{font-size:15px;margin-bottom:16px;color:var(--text);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-weight:700;letter-spacing:-.2px}
 .panel h2 span{color:var(--text3);font-weight:500;font-size:11px}
 
+/* ============ FIELDS ============ */
 .field{margin-bottom:12px}
 .field label{display:block;font-size:10px;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.6px;font-weight:700}
-.field input,.field textarea,.field select{width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:11px 13px;font-size:15px;transition:.2s;outline:none;-webkit-appearance:none;appearance:none}
+.field input,.field textarea,.field select{width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:11px 13px;font-size:15px;transition:.2s;outline:none;-webkit-appearance:none;appearance:none;font-variant-numeric:tabular-nums}
 .field select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
 .field input:focus,.field textarea:focus,.field select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.15);background:#0c1220}
 .field input::placeholder,.field textarea::placeholder{color:#475569}
 
+/* ============ BUTTONS ============ */
 .btn{background:var(--grad);color:white;border:none;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;justify-content:center;transition:.25s;box-shadow:0 4px 12px rgba(56,189,248,.2);white-space:nowrap}
 .btn:hover{box-shadow:0 8px 24px rgba(56,189,248,.4);transform:translateY(-1px)}
 .btn.ghost{background:transparent;border:1px solid var(--border2);color:#cbd5e1;box-shadow:none}
 .btn.ghost:hover{background:#1e293b;border-color:#475569}
 .btn.danger{background:linear-gradient(135deg,#ef4444,#dc2626)}
+.btn.success{background:linear-gradient(135deg,#22c55e,#16a34a)}
 .btn.small{padding:7px 12px;font-size:12px;border-radius:8px}
 .btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
 .btn.save-btn{width:100%;padding:14px;font-size:14px;font-weight:700;background:linear-gradient(135deg,#22c55e,#16a34a);box-shadow:0 8px 24px rgba(34,197,94,.35);margin-top:16px}
 .btn .spin{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
 
+/* ============ TOGGLE ============ */
 .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;gap:12px;border-bottom:1px solid var(--border)}
 .toggle-row:last-child{border-bottom:none}
 .toggle-row .lbl{font-size:14px;color:var(--text);font-weight:600}
@@ -107,23 +118,28 @@ button,input,textarea,select{font-family:inherit;font-size:16px}
 input:checked+.slider{background:linear-gradient(135deg,#22c55e,#16a34a);border-color:#16a34a}
 input:checked+.slider:before{transform:translateX(20px);background:#fff}
 
+/* ============ TABS INNER ============ */
 .tabs{display:flex;gap:6px;margin-bottom:14px;background:var(--bg2);padding:5px;border-radius:12px;border:1px solid var(--border)}
 .tab{flex:1;padding:10px 8px;text-align:center;font-size:12px;color:var(--text2);cursor:pointer;border-radius:8px;font-weight:600;transition:.2s}
 .tab.active{background:var(--grad);color:white}
 
+/* ============ SEARCH / FILTER ============ */
 .filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
 .filter-bar select{background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px 34px 10px 12px;font-size:13px;font-weight:500;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
 .search-bar{width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:11px 14px 11px 40px;font-size:14px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:12px center;outline:none}
 .search-bar:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.1)}
 .filter-bar .search-bar{flex:1;min-width:200px;margin:0}
 
+/* ============ TABLE ============ */
 .tbl-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--border);-webkit-overflow-scrolling:touch}
 table.data-table{width:100%;border-collapse:collapse;font-size:13px;min-width:600px}
 table.data-table th{text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:12px 10px;border-bottom:1px solid var(--border);font-weight:700;background:rgba(10,14,26,.7);letter-spacing:.5px;white-space:nowrap}
-table.data-table td{padding:12px 10px;border-bottom:1px solid rgba(26,35,56,.5);color:#cbd5e1;vertical-align:middle}
+table.data-table td{padding:12px 10px;border-bottom:1px solid rgba(26,35,56,.5);color:#cbd5e1;vertical-align:middle;font-variant-numeric:tabular-nums}
 table.data-table tbody tr:hover td{background:rgba(56,189,248,.04)}
 table.data-table tr.selected td{background:rgba(56,189,248,.08)}
+table.data-table tbody tr:last-child td{border-bottom:none}
 
+/* ============ BADGES ============ */
 .badge{display:inline-flex;align-items:center;gap:3px;padding:4px 9px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap;letter-spacing:.3px}
 .badge.pending{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3)}
 .badge.sent{background:rgba(56,189,248,.15);color:#7dd3fc;border:1px solid rgba(56,189,248,.3)}
@@ -140,13 +156,16 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .badge.other{background:rgba(100,116,139,.15);color:#94a3b8;border:1px solid rgba(100,116,139,.3)}
 .badge.attach{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3)}
 
-.cbox{appearance:none;-webkit-appearance:none;width:18px;height:18px;border:2px solid #475569;border-radius:5px;cursor:pointer;position:relative;background:var(--bg2);vertical-align:middle;transition:.15s}
+/* ============ CHECKBOX ============ */
+.cbox{appearance:none;-webkit-appearance:none;width:18px;height:18px;border:2px solid #475569;border-radius:5px;cursor:pointer;position:relative;background:var(--bg2);vertical-align:middle;transition:.15s;flex-shrink:0}
 .cbox:checked{background:var(--cyan);border-color:var(--cyan)}
 .cbox:checked::after{content:'✓';position:absolute;color:white;font-size:13px;font-weight:700;top:50%;left:50%;transform:translate(-50%,-50%)}
 
+/* ============ EMPTY ============ */
 .empty{text-align:center;padding:40px 20px;color:var(--text3);font-size:13px}
 .empty .ico{font-size:44px;margin-bottom:12px;opacity:.5;display:block}
 
+/* ============ CARDS ============ */
 .tpl-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;transition:.2s}
 .tpl-card:hover{border-color:var(--border2);background:#0c1220}
 .tpl-card .info{flex:1;min-width:0}
@@ -156,10 +175,11 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .tpl-card button:hover{background:#334155;color:#fff}
 .tpl-card button.danger{background:rgba(127,29,29,.5);color:#fca5a5}
 
+/* ============ BULK ============ */
 .bulk-help{background:linear-gradient(135deg,rgba(56,189,248,.08),rgba(99,102,241,.08));border:1px solid rgba(56,189,248,.25);border-radius:12px;padding:12px 14px;margin-bottom:12px}
 .bulk-help .title{font-size:12px;color:#7dd3fc;font-weight:700;margin-bottom:6px}
 .bulk-help .desc{font-size:11px;color:var(--text2);line-height:1.6}
-.bulk-area{width:100%;min-height:200px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:14px;font-family:'Courier New',monospace;font-size:13px;resize:vertical;outline:none;line-height:1.7}
+.bulk-area{width:100%;min-height:180px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:14px;font-family:'Courier New',monospace;font-size:13px;resize:vertical;outline:none;line-height:1.7}
 .bulk-area:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.1)}
 .bulk-preview-wrap{margin-top:12px;border:1px solid var(--border);border-radius:12px;overflow:hidden;display:none}
 .bulk-preview-wrap.show{display:block}
@@ -169,11 +189,13 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .bulk-preview-head .stat-pill.ok{background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.3)}
 .bulk-preview-head .stat-pill.dup{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3)}
 
+/* ============ INFO BOX ============ */
 .info-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-top:12px}
-.info-box .row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;gap:10px;align-items:center}
+.info-box .row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;gap:10px;align-items:center;font-variant-numeric:tabular-nums}
 .info-box .row .k{color:var(--text2)}
 .info-box .row .v{color:var(--text);font-weight:700;text-align:right}
 
+/* ============ QUOTA ============ */
 .quota-bar{width:100%;height:8px;background:#1e293b;border-radius:8px;overflow:hidden;margin-top:10px}
 .quota-fill{height:100%;background:linear-gradient(90deg,#22c55e,#38bdf8);transition:.5s;width:0;border-radius:8px;box-shadow:0 0 12px rgba(56,189,248,.5)}
 .quota-fill.warn{background:linear-gradient(90deg,#f59e0b,#ef4444)}
@@ -181,11 +203,13 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .quota-live{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--green);font-weight:600}
 .quota-live .dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 1.5s infinite}
 
+/* ============ TOAST ============ */
 .toast{position:fixed;bottom:20px;right:20px;left:20px;background:rgba(15,23,42,.97);backdrop-filter:blur(20px);border:1px solid var(--border);color:var(--text);padding:14px 18px;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.6);font-size:13px;z-index:5000;opacity:0;transform:translateY(20px);transition:.3s;max-width:400px;margin:0 auto;font-weight:500;pointer-events:none}
 .toast.show{opacity:1;transform:translateY(0)}
 .toast.ok{border-left:4px solid var(--green)}
 .toast.err{border-left:4px solid var(--red)}
 
+/* ============ UPLOAD ============ */
 .upload-area{display:flex;align-items:center;gap:12px;padding:14px;border:2px dashed var(--border2);border-radius:12px;margin-bottom:12px;cursor:pointer;background:var(--bg2);transition:.2s}
 .upload-area:hover{border-color:var(--cyan);background:rgba(56,189,248,.03)}
 .upload-area input[type=file]{display:none}
@@ -197,11 +221,13 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .upload-info .t{font-size:13px;color:var(--text);font-weight:600;margin-bottom:3px}
 .upload-info .s{font-size:11px;color:var(--text3);word-break:break-all}
 
+/* ============ SIGNATURE ============ */
 .sig-fields{display:grid;grid-template-columns:1fr;gap:10px}
 @media(min-width:600px){.sig-fields{grid-template-columns:1fr 1fr}}
 .sig-preview-outer{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:14px;display:none}
 .sig-preview-canvas{background:#fff!important;border-radius:10px;padding:20px;overflow-x:auto;font-family:Arial,Helvetica,sans-serif}
 
+/* ============ FILE CARD ============ */
 .file-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;transition:.2s;cursor:pointer}
 .file-card.selected{border-color:var(--cyan);background:rgba(56,189,248,.05)}
 .file-card .info{flex:1;min-width:0;display:flex;align-items:center;gap:10px}
@@ -210,13 +236,15 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .file-card button{padding:6px 10px;font-size:11px;border-radius:6px;border:none;cursor:pointer;background:#1e293b;color:#cbd5e1;font-weight:600}
 .file-card button.danger{background:rgba(127,29,29,.5);color:#fca5a5}
 
+/* ============ MODAL ============ */
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);z-index:2000;display:flex;align-items:center;justify-content:center;padding:14px;animation:fadeIn .2s;overflow-y:auto}
 .modal{background:linear-gradient(135deg,#0f172a,#0a0e1a);border:1px solid var(--border2);border-radius:18px;padding:22px;max-width:900px;width:100%;max-height:92vh;overflow-y:auto;position:relative;box-shadow:0 32px 100px rgba(0,0,0,.8);animation:slideUp .25s;margin:auto}
 @media(max-width:640px){.modal{padding:16px;border-radius:14px}}
 .modal h3{font-size:16px;margin-bottom:16px;color:var(--text);padding-right:36px;font-weight:700}
-.modal .close-btn{position:absolute;top:14px;right:16px;background:transparent;border:none;color:var(--text2);font-size:22px;cursor:pointer;padding:0 6px}
+.modal .close-btn{position:absolute;top:14px;right:16px;background:transparent;border:none;color:var(--text2);font-size:22px;cursor:pointer;padding:0 6px;line-height:1}
 .modal .close-btn:hover{color:#fff}
 
+/* ============ CONFIRM ============ */
 .confirm-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px}
 .confirm-box{background:linear-gradient(135deg,#0f172a,#0a0e1a);border:1px solid var(--border2);border-radius:18px;padding:24px;max-width:420px;width:100%;text-align:center}
 .confirm-box .icon{font-size:48px;margin-bottom:12px}
@@ -228,6 +256,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .confirm-box .confirm-btn{background:linear-gradient(135deg,#ef4444,#dc2626);color:white}
 .confirm-box .confirm-btn.primary{background:var(--grad)}
 
+/* ============ TIPS ============ */
 .tips-panel{background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(239,68,68,.05));border-color:rgba(245,158,11,.3)}
 .tips-panel h2{color:#fcd34d}
 .tips-list{display:flex;flex-direction:column;gap:8px}
@@ -247,22 +276,24 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .quiet-banner .info .ttl{font-weight:700;color:#fcd34d;font-size:13px}
 .quiet-banner .info .dsc{font-size:11px;color:var(--text2);margin-top:2px}
 
+/* ============ BATCH BOX ============ */
 .batch-box{margin-top:12px;padding:16px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;display:none}
 .batch-box.show{display:block}
 .batch-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap}
 .batch-header .label-txt{font-size:14px;color:var(--text);font-weight:700}
 .batch-header .sub-txt{font-size:11px;color:var(--text2);margin-top:2px}
-.batch-value{background:var(--grad);color:white;padding:8px 20px;border-radius:12px;font-weight:800;font-size:22px;min-width:80px;text-align:center;box-shadow:0 4px 16px rgba(56,189,248,.4);letter-spacing:-.5px}
+.batch-value{background:var(--grad);color:white;padding:8px 20px;border-radius:12px;font-weight:800;font-size:22px;min-width:80px;text-align:center;box-shadow:0 4px 16px rgba(56,189,248,.4);letter-spacing:-.5px;font-variant-numeric:tabular-nums}
 .batch-slider{width:100%;height:8px;background:#1e293b;border-radius:8px;outline:none;-webkit-appearance:none;appearance:none;margin:8px 0;cursor:pointer}
 .batch-slider::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--grad);cursor:pointer;box-shadow:0 4px 12px rgba(56,189,248,.6);border:3px solid #0a0e1a}
 .batch-slider::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:#6366f1;cursor:pointer;border:3px solid #0a0e1a}
 .batch-marks{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:2px}
 .batch-number-row{display:flex;gap:8px;align-items:center;margin-top:12px}
-.batch-number-row input{flex:1;background:#0c1220;border:1px solid var(--border2);border-radius:10px;padding:10px 14px;font-size:16px;font-weight:700;color:var(--cyan);text-align:center;outline:none}
+.batch-number-row input{flex:1;background:#0c1220;border:1px solid var(--border2);border-radius:10px;padding:10px 14px;font-size:16px;font-weight:700;color:var(--cyan);text-align:center;outline:none;font-variant-numeric:tabular-nums}
 .batch-number-row input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.15)}
 .batch-hint{font-size:11px;color:var(--text3);margin-top:8px;padding:8px 10px;background:rgba(56,189,248,.05);border-radius:8px;border-left:3px solid var(--cyan);line-height:1.5}
 .batch-hint.err{color:#fca5a5;background:rgba(239,68,68,.05);border-left-color:var(--red)}
 
+/* ============ COMPOSER ============ */
 .composer-layout{display:grid;grid-template-columns:1fr 340px;gap:18px}
 @media(max-width:1000px){.composer-layout{grid-template-columns:1fr}.composer-sidebar{position:static!important}}
 .composer-main{min-width:0}
@@ -273,7 +304,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .ai-score-section{display:flex;justify-content:center;margin-bottom:14px}
 .ai-score-circle{width:110px;height:110px;border-radius:50%;background:conic-gradient(#1e293b 0%,#1e293b 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;transition:.5s}
 .ai-score-circle::after{content:'';position:absolute;inset:8px;background:var(--bg2);border-radius:50%;z-index:1}
-.ai-score-value{font-size:32px;font-weight:800;color:var(--text2);z-index:2;position:relative;line-height:1}
+.ai-score-value{font-size:32px;font-weight:800;color:var(--text2);z-index:2;position:relative;line-height:1;font-variant-numeric:tabular-nums}
 .ai-score-label{font-size:9px;color:var(--text2);z-index:2;position:relative;margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
 .ai-prob-bar{margin-bottom:12px}
 .ai-prob-track{height:8px;background:#1e293b;border-radius:8px;overflow:hidden}
@@ -284,7 +315,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .ai-suggestion{padding:8px 10px;background:rgba(34,197,94,.08);border-left:3px solid var(--green);border-radius:6px;font-size:11px;color:#86efac;margin-bottom:6px;line-height:1.4}
 .ai-subject-item{padding:9px 11px;background:#0f172a;border:1px solid var(--border);border-radius:6px;margin-bottom:6px;font-size:12px;color:#cbd5e1;cursor:pointer;line-height:1.4;transition:.2s}
 .ai-subject-item:hover{border-color:var(--cyan);background:#1e293b;color:#7dd3fc}
-.deep-btn{background:linear-gradient(135deg,#a78bfa,#6366f1);border:none;color:white;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;text-transform:none}
+.deep-btn{background:linear-gradient(135deg,#a78bfa,#6366f1);border:none;color:white;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;text-transform:none;letter-spacing:0}
 
 .send-options-row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
 .send-options-row label{display:flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--border);padding:9px 12px;border-radius:8px;font-size:12px;color:#cbd5e1;cursor:pointer;transition:.2s;font-weight:500}
@@ -300,7 +331,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 
 .bulk-action-bar{display:none;gap:8px;padding:12px;background:linear-gradient(135deg,rgba(56,189,248,.1),rgba(99,102,241,.1));border:1px solid rgba(56,189,248,.3);border-radius:12px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
 
-/* INBOX */
+/* ============ INBOX ============ */
 .inbox-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:12px}
 .inbox-toolbar select{background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:8px 30px 8px 12px;font-size:12px;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;font-weight:500}
 .inbox-toolbar button{padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none}
@@ -316,11 +347,10 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .inbox-item.unread .from-name{color:var(--cyan);font-weight:800}
 .inbox-item .from{font-size:13px;font-weight:700;color:var(--text);display:flex;justify-content:space-between;gap:8px;align-items:center}
 .inbox-item .from-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
-.inbox-item .date{font-size:10px;color:var(--text3);white-space:nowrap}
+.inbox-item .date{font-size:10px;color:var(--text3);white-space:nowrap;font-weight:500}
 .inbox-item .subj{font-size:12px;color:#cbd5e1;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
 .inbox-item .prev{font-size:11px;color:var(--text3);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4}
 .inbox-item .badges{margin-top:8px;display:flex;gap:4px;flex-wrap:wrap}
-.inbox-item .attach-icon{color:var(--amber);font-size:11px;font-weight:700}
 
 .inbox-viewer{display:flex;flex-direction:column;background:var(--bg);min-height:700px;position:relative}
 .email-head{padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.6)}
@@ -329,34 +359,37 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .email-meta .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start}
 .email-meta .row b{color:var(--text);font-weight:700;min-width:70px;flex-shrink:0}
 .email-meta .row span{color:#cbd5e1;word-break:break-word;flex:1}
-.email-body{padding:0;overflow-y:auto;flex:1;background:#fff;max-height:550px;min-height:300px;display:flex;align-items:center;justify-content:center}
+.email-body{padding:0;overflow-y:auto;flex:1;background:#fff;max-height:600px;min-height:300px;display:flex;align-items:flex-start;justify-content:center}
 .email-body iframe{width:100%;border:none;background:#fff;display:block;min-height:300px}
 .email-body .plain-body{padding:24px;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;font-size:14px;line-height:1.7;color:#222;white-space:pre-wrap;word-break:break-word;background:#fff;min-height:200px;width:100%}
-.email-body .loading{color:var(--text2);font-size:13px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.email-body .loading{color:var(--text2);font-size:13px;display:flex;flex-direction:column;align-items:center;gap:12px;padding:40px}
 .email-body .loading .spin{width:24px;height:24px;border:3px solid rgba(56,189,248,.3);border-top-color:var(--cyan);border-radius:50%;animation:spin .8s linear infinite}
 .email-attachments{padding:14px 20px;border-top:1px solid var(--border);background:rgba(10,14,26,.6)}
 .email-attachments .title{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:10px}
-.attachment-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;text-decoration:none;color:var(--text);transition:.2s;cursor:pointer}
-.attachment-item:hover{border-color:var(--cyan);background:rgba(56,189,248,.05)}
-.attachment-item .icon{font-size:20px;flex-shrink:0}
+.attachment-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;text-decoration:none;color:var(--text);transition:.2s;cursor:pointer}
+.attachment-item:hover{border-color:var(--cyan);background:rgba(56,189,248,.05);transform:translateX(3px)}
+.attachment-item .icon{font-size:24px;flex-shrink:0;width:44px;height:44px;background:rgba(56,189,248,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(56,189,248,.2)}
 .attachment-item .info{flex:1;min-width:0}
-.attachment-item .fname{font-size:12px;font-weight:600;word-break:break-all;color:var(--text)}
-.attachment-item .fmeta{font-size:10px;color:var(--text3);margin-top:2px}
-.attachment-item .dl{font-size:11px;color:var(--cyan);font-weight:700;flex-shrink:0}
+.attachment-item .fname{font-size:13px;font-weight:600;word-break:break-all;color:var(--text)}
+.attachment-item .fmeta{font-size:11px;color:var(--text3);margin-top:3px}
+.attachment-item .dl{font-size:12px;color:var(--cyan);font-weight:700;flex-shrink:0;padding:6px 12px;background:rgba(56,189,248,.1);border-radius:8px;border:1px solid rgba(56,189,248,.2)}
+.attachment-item:hover .dl{background:var(--cyan);color:#fff}
 .email-actions{padding:14px 20px;border-top:1px solid var(--border);background:rgba(10,14,26,.8);display:flex;gap:10px;flex-wrap:wrap}
 
 .inbox-pagination{display:flex;justify-content:center;align-items:center;gap:12px;padding:16px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-top:14px;flex-wrap:wrap}
-.inbox-pagination .page-info{font-size:13px;color:var(--text2);font-weight:600;padding:8px 16px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)}
+.inbox-pagination .page-info{font-size:13px;color:var(--text2);font-weight:600;padding:8px 16px;background:var(--bg3);border-radius:10px;border:1px solid var(--border);font-variant-numeric:tabular-nums}
 .inbox-pagination button{padding:10px 20px;font-size:13px;font-weight:600;border-radius:10px;border:1px solid var(--border2);background:var(--bg2);color:#cbd5e1;cursor:pointer;transition:.2s}
 .inbox-pagination button:hover:not(:disabled){background:#1e293b;border-color:var(--cyan);color:#7dd3fc;transform:translateY(-1px)}
 .inbox-pagination button:disabled{opacity:.4;cursor:not-allowed;transform:none}
 
 .tag{display:inline-block;background:rgba(56,189,248,.1);color:#7dd3fc;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;border:1px solid rgba(56,189,248,.2)}
 
+/* ============ TEST LAB ============ */
 .test-banner{background:linear-gradient(135deg,rgba(236,72,153,.15),rgba(168,85,247,.15));border:1px solid rgba(236,72,153,.4);border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px}
 .test-banner .ico{font-size:22px}
 .test-banner .txt{font-size:12px;color:#f9a8d4;font-weight:600;line-height:1.5}
 
+/* ============ MOBILE NAV ============ */
 @media(max-width:768px){
   .maintabs{position:fixed;bottom:0;top:auto;left:0;right:0;padding:6px 8px;z-index:200;border-top:1px solid var(--border);border-bottom:none;justify-content:space-around;box-shadow:0 -10px 30px rgba(0,0,0,.3)}
   .maintab{flex:1;text-align:center;font-size:10px;padding:8px 4px}
@@ -727,7 +760,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
           <option value="50">50 per page</option>
         </select>
         <button class="btn small" onclick="loadInbox()">🔄 Refresh</button>
-        <span style="margin-left:auto;font-size:11px;color:var(--text2)">⚡ Super fast (no AI delay)</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--text2)">⚡ Super fast</span>
       </div>
       <div class="inbox-layout">
         <div class="inbox-list" id="inboxList">
@@ -746,7 +779,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
               </div>
             </div>
             <div class="email-body" id="viewBody">
-              <div class="loading"><div class="spin"></div><span>Select an email...</span></div>
+              <div class="loading"><div class="spin"></div><span>Loading email...</span></div>
             </div>
             <div class="email-attachments hidden" id="viewAttachments">
               <div class="title">📎 Attachments</div>
@@ -754,6 +787,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
             </div>
             <div class="email-actions">
               <button class="btn" onclick="openReplyCompose()">↩️ Reply</button>
+              <button class="btn ghost" onclick="openReplyCompose(true)">🤖 AI Smart Reply</button>
             </div>
           </div>
         </div>
@@ -787,8 +821,9 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
   <div class="container hidden" id="testDashView">
     <div class="test-banner">
       <div class="ico">🧪</div>
-      <div class="txt">TEST LAB — Ye emails normal dashboard/stats mein count nahi honge. Sirf testing ke liye.</div>
+      <div class="txt">TEST LAB — Ye emails normal dashboard/stats mein count nahi honge. Sab features test karo safely.</div>
     </div>
+
     <div class="stats">
       <div class="stat s1"><div class="label">Test Recipients</div><div class="value" id="tstTotal">0</div></div>
       <div class="stat s2"><div class="label">Test Sent</div><div class="value" id="tstSent">0</div></div>
@@ -796,31 +831,53 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
       <div class="stat s4"><div class="label">Test Pending</div><div class="value" id="tstPending">0</div></div>
       <div class="stat s5"><div class="label">Test Log</div><div class="value" id="tstLog">0</div></div>
     </div>
+
     <div class="panel">
       <h2>➕ Add Test Recipients</h2>
-      <textarea class="bulk-area" id="testBulkInput" placeholder="Paste test emails..."></textarea>
+      <div class="bulk-help">
+        <div class="title">📋 Paste Test Emails</div>
+        <div class="desc">Company name optional. Ye sirf test recipients hain — normal dashboard pe nahi dikhenge.</div>
+      </div>
+      <textarea class="bulk-area" id="testBulkInput" placeholder="Paste test emails here...&#10;Example:&#10;test1@gmail.com&#10;Test Company, test2@gmail.com"></textarea>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
-        <button class="btn" onclick="addTestRecipients()">➕ Add</button>
-        <button class="btn danger" onclick="clearTestData()">🗑 Clear All</button>
+        <button class="btn" onclick="addTestRecipients()">➕ Add Test Recipients</button>
+        <button class="btn danger" onclick="clearTestData()">🗑 Clear All Test Data</button>
       </div>
     </div>
+
     <div class="panel">
-      <h2>📤 Send Test Email</h2>
-      <div class="field"><label>To</label><input type="text" id="testTo" placeholder="test@example.com" autocomplete="off"></div>
+      <h2>📤 Send Test Email <span>Full features</span></h2>
+      <div class="field"><label>To (Email)</label><input type="text" id="testTo" placeholder="test@example.com" autocomplete="off"></div>
       <div class="field"><label>Subject</label><input type="text" id="testSubject" placeholder="Test subject" autocomplete="off"></div>
       <div class="field"><label>Body</label><textarea id="testBody" class="bulk-area" placeholder="Test body..." style="min-height:150px;font-family:inherit"></textarea></div>
+      
       <div class="send-options-row">
-        <label><input type="checkbox" id="testIncludeSig" checked> ✍️ Signature</label>
-        <label><input type="checkbox" id="testIncludeLogo" checked> 🖼️ Logo</label>
+        <label><input type="checkbox" id="testIncludeSig" checked> ✍️ Include Signature</label>
+        <label><input type="checkbox" id="testIncludeLogo" checked> 🖼️ Include Logo</label>
       </div>
-      <button class="btn" onclick="sendTestEmail()">🚀 Send Test</button>
+      
+      <div class="field" style="margin-top:12px">
+        <label>⏱️ Send Delay (seconds)</label>
+        <input type="number" id="testDelay" min="0" max="60" value="0" placeholder="0">
+        <div style="font-size:10px;color:var(--text3);margin-top:4px">Delay before sending (to test timing)</div>
+      </div>
+      
+      <div class="field">
+        <label>📎 Select Files to Attach</label>
+        <div id="testFilesList" style="max-height:200px;overflow-y:auto;padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:10px"></div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px">Click to select/deselect. Files upload kiye hone chahiye Dashboard mein.</div>
+      </div>
+      
+      <button class="btn" onclick="sendTestEmail()" style="width:100%;margin-top:8px">🚀 Send Test Email</button>
     </div>
+
     <div class="panel">
       <h2>📋 Test Recipients</h2>
       <div id="testRecipientsWrap" class="tbl-wrap"></div>
     </div>
+
     <div class="panel">
-      <h2>📜 Test Log</h2>
+      <h2>📜 Test Send Log</h2>
       <div id="testLogWrap" class="tbl-wrap"></div>
     </div>
   </div>
@@ -847,6 +904,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
   </div>
 </div>
 
+<!-- MODALS -->
 <div id="aiWriterModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeAIWriter()">
   <div class="modal" style="max-width:560px">
     <button class="close-btn" onclick="closeAIWriter()">✕</button>
@@ -880,12 +938,16 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 </div>
 
 <div id="replyComposeBackdrop" class="modal-backdrop hidden" onclick="if(event.target===this)closeReplyCompose()">
-  <div class="modal" style="max-width:600px">
+  <div class="modal" style="max-width:640px">
     <button class="close-btn" onclick="closeReplyCompose()">✕</button>
-    <h3>↩️ Reply</h3>
+    <h3 id="replyModalTitle">↩️ Reply</h3>
+    <div id="replyAIHint" style="display:none;font-size:11px;color:#7dd3fc;margin-bottom:10px;padding:8px 10px;background:rgba(56,189,248,.08);border-radius:8px;border:1px solid rgba(56,189,248,.2)">🤖 AI Smart Reply — Will analyze full original email and generate a professional reply</div>
     <div class="field"><label>To</label><input type="text" id="replyTo" autocomplete="off"></div>
     <div class="field"><label>Subject</label><input type="text" id="replySubject" autocomplete="off"></div>
     <div class="field"><label>Message</label><textarea id="replyBody" class="bulk-area" placeholder="Write your reply..." style="min-height:200px;font-family:inherit"></textarea></div>
+    <div id="replyAIActions" style="display:none;margin-bottom:12px">
+      <button class="btn ghost small" onclick="regenerateAIReply()" style="width:100%">🔄 Regenerate AI Reply</button>
+    </div>
     <button class="btn" onclick="sendReply()" style="width:100%">📤 Send Reply</button>
   </div>
 </div>
@@ -924,7 +986,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 <div id="toast" class="toast"></div>
 
 <script>
-var USER=null, TEMPLATES=[], SELECTED={}, CURRENT_ROWS=[], ALL_ROWS=[], FILES=[], SELECTED_FILES={};
+var USER=null, TEMPLATES=[], SELECTED={}, CURRENT_ROWS=[], ALL_ROWS=[], FILES=[], SELECTED_FILES={}, TEST_SELECTED_FILES={};
 var LOGO_URL='', LOGO_URL_ALT='', ADMIN_USERS=[], ADMIN_ALL_EMAILS=[], MY_EMAILS=[];
 var INBOX_EMAILS=[], ACTIVE_EMAIL=null, MY_QUOTA={sent:0,limit:500,remaining:500};
 var POLL_TIMER=null, HOURLY_TIMER=null, analysisTimer=null, lastAnalyzedHash='';
@@ -939,20 +1001,16 @@ function api(p,m,b){return fetch(p,{method:m||'GET',credentials:'include',header
 function fmtSize(b){if(!b)return '—';if(b<1024)return b+' B';if(b<1048576)return (b/1024).toFixed(1)+' KB';return (b/1048576).toFixed(2)+' MB';}
 function fmtDate(d){if(!d)return '—';try{var t=d._seconds?d._seconds*1000:(d.seconds?d.seconds*1000:new Date(d).getTime());var dt=new Date(t);return dt.toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'})+' · '+dt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}catch(e){return '—';}}
 
-// Clean date with user timezone (no +0000)
+// Professional email-style date
 function fmtEmailDate(dateISO){
   if(!dateISO)return '—';
   try{
     var d=new Date(dateISO);
     if(isNaN(d.getTime()))return '—';
     var now=new Date();
-    var diff=now-d;
-    var min=Math.floor(diff/60000);
-    var timeStr=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    var timeStr=d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
     var dateStr=d.toLocaleDateString('en-US',{day:'numeric',month:'short'});
-    // If today - just show time
     if(d.toDateString()===now.toDateString())return timeStr;
-    // If this year - show date + time
     if(d.getFullYear()===now.getFullYear())return dateStr+' · '+timeStr;
     return d.toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'})+' · '+timeStr;
   }catch(e){return '—';}
@@ -1171,6 +1229,7 @@ function loadBestTime(){
   });
 }
 
+// ============ SIGNATURE ============
 function buildSigHtml(){
   var name=$('sbName').value.trim(),pos=$('sbPos').value.trim(),comp=$('sbCompany').value.trim();
   var phone=$('sbPhone').value.trim(),mail=$('sbEmail').value.trim(),li=$('sbLinkedin').value.trim();
@@ -1200,18 +1259,52 @@ function saveSig(){var h=buildSigHtml();if(!h)return toast('Fill some fields','e
 async function resetSig(){var ok=await showConfirm({icon:'🗑',title:'Reset Signature?',message:'All fields cleared.',okText:'Reset',primary:false});if(!ok)return;['sbName','sbPos','sbCompany','sbPhone','sbEmail','sbLinkedin','sbGreeting','sbExtra'].forEach(function(id){$(id).value='';});$('sigPreviewBox').style.display='none';}
 function loadSignature(){api('/api/signature').then(function(r){if(!r.ok)return;var f=r.fields||{};['name','pos','company','phone','email','linkedin','greeting','extra'].forEach(function(k){var id='sb'+k.charAt(0).toUpperCase()+k.slice(1);if(f[k]&&$(id))$(id).value=f[k];});if(r.signature){$('sigPreviewContent').innerHTML=r.signature;$('sigPreviewBox').style.display='block';}});}
 
-function loadLogo(){api('/api/logo').then(function(r){if(r.ok&&r.url){LOGO_URL=r.url;LOGO_URL_ALT=r.urlAlt||'';var img=$('logoImg');img.onerror=function(){if(LOGO_URL_ALT&&this.src!==LOGO_URL_ALT)this.src=LOGO_URL_ALT;else{this.style.display='none';$('logoPh').style.display='block';}};img.src=r.url;img.style.display='block';$('logoPh').style.display='none';$('logoTitle').innerText='Logo uploaded';$('logoSub').innerText='Click to change';$('logoActions').style.display='block';}});}
+// ============ LOGO (with fallback) ============
+function loadLogo(){
+  api('/api/logo').then(function(r){
+    if(r.ok&&r.url){
+      LOGO_URL=r.url;LOGO_URL_ALT=r.urlAlt||'';
+      var img=$('logoImg');
+      var triedAlt=false;
+      img.onerror=function(){
+        if(!triedAlt && LOGO_URL_ALT && this.src!==LOGO_URL_ALT){triedAlt=true;this.src=LOGO_URL_ALT;}
+        else{this.style.display='none';$('logoPh').style.display='block';}
+      };
+      img.onload=function(){this.style.display='block';$('logoPh').style.display='none';};
+      img.src=r.url;
+      $('logoTitle').innerText='Logo uploaded';
+      $('logoSub').innerText='Click to change';
+      $('logoActions').style.display='block';
+    }
+  });
+}
 document.getElementById('logoInput').addEventListener('change',function(e){
   var f=e.target.files[0];if(!f)return;
   var ok=['image/png','image/jpeg','image/jpg','image/gif','image/svg+xml','image/webp'];
   if(ok.indexOf(f.type)===-1)return toast('Only PNG/JPG/GIF/SVG/WEBP','err');
   if(f.size>2*1024*1024)return toast('Max 2MB','err');
   var rd=new FileReader();
-  rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading...');api('/api/upload-logo','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){if(!r.ok)return toast('Error: '+r.error,'err');LOGO_URL=r.url;LOGO_URL_ALT=r.urlAlt||'';var img=$('logoImg');img.onerror=function(){if(LOGO_URL_ALT&&this.src!==LOGO_URL_ALT)this.src=LOGO_URL_ALT;else{this.style.display='none';$('logoPh').style.display='block';}};img.src=r.url;img.style.display='block';$('logoPh').style.display='none';$('logoTitle').innerText='Logo uploaded';$('logoSub').innerText=f.name;$('logoActions').style.display='block';toast('✅ Uploaded');});};
+  rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading...');api('/api/upload-logo','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){
+    if(!r.ok)return toast('Error: '+r.error,'err');
+    LOGO_URL=r.url;LOGO_URL_ALT=r.urlAlt||'';
+    var img=$('logoImg');
+    var triedAlt=false;
+    img.onerror=function(){
+      if(!triedAlt && LOGO_URL_ALT && this.src!==LOGO_URL_ALT){triedAlt=true;this.src=LOGO_URL_ALT;}
+      else{this.style.display='none';$('logoPh').style.display='block';}
+    };
+    img.onload=function(){this.style.display='block';$('logoPh').style.display='none';};
+    img.src=r.url;
+    $('logoTitle').innerText='Logo uploaded';
+    $('logoSub').innerText=f.name;
+    $('logoActions').style.display='block';
+    toast('✅ Uploaded');
+  });};
   rd.readAsDataURL(f);
 });
 async function removeLogo(){var ok=await showConfirm({icon:'🗑',title:'Remove logo?',message:'',okText:'Remove'});if(!ok)return;api('/api/remove-logo','POST',{}).then(function(r){if(r.ok){toast('Removed');LOGO_URL='';LOGO_URL_ALT='';$('logoImg').style.display='none';$('logoPh').style.display='block';$('logoTitle').innerText='Click to upload logo';$('logoSub').innerText='PNG · JPG · GIF · SVG · WEBP — max 2MB';$('logoActions').style.display='none';}});}
 
+// ============ FILES ============
 document.getElementById('fileInput').addEventListener('change',function(e){
   var files=e.target.files;if(!files.length)return;
   var up=function(i){if(i>=files.length){loadFiles();toast('✅ All uploaded');return;}var f=files[i];if(f.size>MAX_UPLOAD_SIZE){toast(f.name+' too large','err');up(i+1);return;}var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading '+(i+1)+'/'+files.length);api('/api/upload-file','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){if(!r.ok)toast('Error: '+f.name,'err');up(i+1);}).catch(function(){up(i+1);});};rd.readAsDataURL(f);};
@@ -1222,11 +1315,13 @@ function loadFiles(){
     if(!r.ok)return;
     FILES=r.files||[];
     var w=$('filesList');
-    if(!FILES.length){w.innerHTML='<div class="empty">No files</div>';return;}
-    w.innerHTML=FILES.map(function(f){
+    if(!FILES.length){w.innerHTML='<div class="empty">No files uploaded</div>';}
+    else{w.innerHTML=FILES.map(function(f){
       var sel=SELECTED_FILES[f.id]?' selected':'';
       return '<div class="file-card'+sel+'" onclick="toggleFile(\''+f.id+'\')"><div class="info"><input type="checkbox" class="cbox" '+(SELECTED_FILES[f.id]?'checked':'')+' onclick="event.stopPropagation();toggleFile(\''+f.id+'\')"><div><div class="name">📄 '+esc(f.name)+'</div><div class="meta">'+fmtSize(f.size)+'</div></div></div><button class="danger" onclick="event.stopPropagation();delFile(\''+f.id+'\')">Delete</button></div>';
-    }).join('');
+    }).join('');}
+    // Also refresh test files list
+    renderTestFiles();
   });
 }
 function toggleFile(id){if(SELECTED_FILES[id])delete SELECTED_FILES[id];else SELECTED_FILES[id]=true;loadFiles();}
@@ -1234,6 +1329,17 @@ function selectAllFiles(){FILES.forEach(function(f){SELECTED_FILES[f.id]=true;})
 function unselectAllFiles(){SELECTED_FILES={};loadFiles();}
 async function delFile(id){var ok=await showConfirm({icon:'🗑',title:'Delete file?',message:'',okText:'Delete'});if(!ok)return;api('/api/files/'+id,'DELETE').then(function(r){if(r.ok){toast('Deleted');delete SELECTED_FILES[id];loadFiles();}});}
 
+function renderTestFiles(){
+  var w=$('testFilesList');if(!w)return;
+  if(!FILES.length){w.innerHTML='<div style="color:var(--text3);font-size:11px;text-align:center;padding:8px">No files uploaded. Upload in Dashboard → Attachments.</div>';return;}
+  w.innerHTML=FILES.map(function(f){
+    var sel=TEST_SELECTED_FILES[f.id]?' selected':'';
+    return '<div class="file-card'+sel+'" onclick="toggleTestFile(\''+f.id+'\')" style="margin-bottom:6px"><div class="info"><input type="checkbox" class="cbox" '+(TEST_SELECTED_FILES[f.id]?'checked':'')+' onclick="event.stopPropagation();toggleTestFile(\''+f.id+'\')"><div><div class="name">📄 '+esc(f.name)+'</div><div class="meta">'+fmtSize(f.size)+'</div></div></div></div>';
+  }).join('');
+}
+function toggleTestFile(id){if(TEST_SELECTED_FILES[id])delete TEST_SELECTED_FILES[id];else TEST_SELECTED_FILES[id]=true;renderTestFiles();}
+
+// ============ TEMPLATES ============
 function loadTemplates(){
   api('/api/templates').then(function(r){
     TEMPLATES=r.templates||[];
@@ -1251,6 +1357,7 @@ function closeTplPreview(){$('tplPreviewBackdrop').classList.add('hidden');}
 function loadTemplateToComposer(id){var t=TEMPLATES.filter(function(x){return x.id===id;})[0];if(!t)return;$('composerName').value=t.name;$('composerSubject').value=t.subject;$('composerBody').value=t.body;lastAnalyzedHash='';runLiveAnalysis();$('composerBody').scrollIntoView({behavior:'smooth',block:'center'});}
 async function delTpl(id){var ok=await showConfirm({icon:'🗑',title:'Delete template?',message:'',okText:'Delete'});if(!ok)return;api('/api/templates/'+id,'DELETE').then(function(r){if(r.ok){toast('Deleted');loadTemplates();}});}
 
+// ============ RECIPIENTS ============
 function addRow(){var w=$('recipients'),d=document.createElement('div');d.className='recip-row';d.innerHTML='<input type="text" placeholder="Company (optional)" autocomplete="off"><input type="email" placeholder="email@example.com" autocomplete="off"><button class="del" onclick="this.parentNode.remove()">✕</button>';w.appendChild(d);}
 function submitRecipients(){var rows=$('recipients').querySelectorAll('.recip-row'),list=[];rows.forEach(function(r){var i=r.querySelectorAll('input');if(i[1].value.trim())list.push({company:i[0].value.trim(),email:i[1].value.trim()});});if(!list.length)return toast('No emails','err');api('/api/recipients','POST',{list:list,templateId:$('tplSelect').value}).then(function(r){if(r.ok){toast('✅ '+r.added+' added');$('recipients').innerHTML='';addRow();loadAll();}else toast('Error: '+r.error,'err');});}
 function switchTab(t){if(t==='manual'){$('tabManual').classList.add('active');$('tabBulk').classList.remove('active');$('manualTab').classList.remove('hidden');$('bulkTab').classList.add('hidden');}else{$('tabBulk').classList.add('active');$('tabManual').classList.remove('active');$('bulkTab').classList.remove('hidden');$('manualTab').classList.add('hidden');updateBulk();}}
@@ -1321,6 +1428,7 @@ document.addEventListener('DOMContentLoaded',function(){
   }
 });
 
+// ============ LOAD ALL ============
 function loadAll(isManual){
   if(isManual)toast('Refreshing...');
   api('/api/stats').then(function(r){if(!r.ok)return;$('stTotal').innerText=r.stats.total;$('stSent').innerText=r.stats.sent;$('stOpened').innerText=r.stats.opened;$('stPending').innerText=r.stats.pending;$('stTotalSends').innerText=r.stats.totalSends||0;});
@@ -1416,6 +1524,7 @@ function renderMyEmails(){
   h+='</tbody></table>';w.innerHTML=h;
 }
 
+// ============ PREFS ============
 function buildHourSelects(){var s=$('quietStartSel'),e=$('quietEndSel');s.innerHTML='';e.innerHTML='';for(var h=0;h<24;h++){var lbl=(h<12?(h||12):(h-12))+':00 '+(h<12?'AM':'PM');var o1=document.createElement('option');o1.value=h;o1.text=lbl;s.appendChild(o1);var o2=document.createElement('option');o2.value=h;o2.text=lbl;e.appendChild(o2);}}
 function loadPrefs(){
   api('/api/prefs').then(function(r){
@@ -1447,10 +1556,9 @@ function savePrefs(){
   api('/api/prefs','POST',payload).then(function(r){if(r.ok)toast('✅ Saved');else toast('Error: '+r.error,'err');});
 }
 
-// ============ INBOX (FAST, no AI) ============
+// ============ INBOX ============
 function loadInbox(){
   var folder=$('inboxFolder').value;var limit=parseInt($('inboxLimit').value)||20;
-  var startTime = Date.now();
   $('inboxList').innerHTML='<div class="empty"><div class="ico">⏳</div>Loading page '+inboxPage+'...</div>';
   $('inboxEmpty').classList.remove('hidden');
   $('inboxViewerContent').classList.add('hidden');
@@ -1462,22 +1570,22 @@ function loadInbox(){
   api('/api/inbox/list','POST',{folder:folder,page:inboxPage,pageSize:limit}).then(function(r){
     if(!r.ok){$('inboxList').innerHTML='<div class="empty"><div class="ico">❌</div>'+esc(r.error)+'</div>';return;}
     INBOX_EMAILS=r.emails||[];
-    var elapsed = Date.now() - startTime;
     if(!INBOX_EMAILS.length){$('inboxList').innerHTML='<div class="empty"><div class="ico">📭</div>No emails on this page</div>';return;}
     $('inboxNextBtn').disabled=!r.hasMore;
     var h='';
     INBOX_EMAILS.forEach(function(e,i){
       var catClass=(e.category||'other').toLowerCase().replace('_','-');
+      var attachIcon=e.hasAttachments?'<span class="badge attach">📎</span>':'';
       h+='<div class="inbox-item'+(e.isRead?'':' unread')+'" onclick="openInboxEmail('+i+')" data-idx="'+i+'">';
       h+='<div class="from"><span class="from-name">'+esc(e.fromName||e.fromEmail)+'</span><span class="date">'+esc(fmtTimeAgo(e.dateISO))+'</span></div>';
       h+='<div class="subj">'+esc(e.subject)+'</div>';
       h+='<div class="prev">'+esc(e.snippet||'')+'</div>';
       h+='<div class="badges"><span class="tag">'+esc(e.folder)+'</span>';
       if(e.category && e.category !== 'OTHER')h+='<span class="badge '+catClass+'">'+esc(e.category.replace('_',' '))+'</span>';
+      if(attachIcon)h+=attachIcon;
       h+='</div></div>';
     });
     $('inboxList').innerHTML=h;
-    console.log('Inbox loaded in', elapsed, 'ms');
   }).catch(function(e){
     $('inboxList').innerHTML='<div class="empty"><div class="ico">❌</div>Network error</div>';
   });
@@ -1500,16 +1608,14 @@ function openInboxEmail(i){
     $('viewCategory').innerHTML='<span class="badge '+catClass+'">'+esc(e.category.replace('_',' '))+'</span>';
   } else $('viewCategoryRow').style.display='none';
 
-  // Show loading
   var bodyContainer=$('viewBody');
   bodyContainer.innerHTML='<div class="loading"><div class="spin"></div><span>Loading email...</span></div>';
 
-  // Fetch full email body
   api('/api/inbox/email/'+encodeURIComponent(e.id)).then(function(r){
     if(!r.ok){bodyContainer.innerHTML='<div class="plain-body">Failed to load: '+esc(r.error||'Unknown error')+'</div>';return;}
     var email=r.email;
     
-    // Update attachments
+    // Attachments
     var attWrap=$('viewAttachments');
     var attList=$('viewAttachmentsList');
     if(email.attachments && email.attachments.length > 0){
@@ -1522,13 +1628,13 @@ function openInboxEmail(i){
         else if(a.mimeType.includes('zip')||a.mimeType.includes('rar'))icon='🗜️';
         else if(a.mimeType.includes('word')||a.mimeType.includes('document'))icon='📝';
         else if(a.mimeType.includes('sheet')||a.mimeType.includes('excel'))icon='📊';
-        return '<a class="attachment-item" href="'+url+'" download="'+esc(a.filename)+'"><div class="icon">'+icon+'</div><div class="info"><div class="fname">'+esc(a.filename)+'</div><div class="fmeta">'+fmtSize(a.size)+' · '+esc(a.mimeType.split('/')[1]||a.mimeType)+'</div></div><div class="dl">⬇️</div></a>';
+        return '<a class="attachment-item" href="'+url+'" download="'+esc(a.filename)+'"><div class="icon">'+icon+'</div><div class="info"><div class="fname">'+esc(a.filename)+'</div><div class="fmeta">'+fmtSize(a.size)+' · '+esc((a.mimeType||'').split('/')[1]||a.mimeType)+'</div></div><div class="dl">⬇️ Download</div></a>';
       }).join('');
     } else {
       attWrap.classList.add('hidden');
     }
     
-    // Render body in iframe
+    // Body
     bodyContainer.innerHTML='';
     if(email.bodyHtml && email.bodyHtml.trim().length > 0){
       var iframe=document.createElement('iframe');
@@ -1550,18 +1656,64 @@ function openInboxEmail(i){
       bodyContainer.innerHTML='<div class="plain-body">'+esc(email.bodyText||email.snippet||'(no content)')+'</div>';
     }
   }).catch(function(err){
-    bodyContainer.innerHTML='<div class="plain-body">Error loading email: '+esc(err.message||'Network error')+'</div>';
+    bodyContainer.innerHTML='<div class="plain-body">Error: '+esc(err.message||'Network error')+'</div>';
   });
 }
-function openReplyCompose(){
+
+function openReplyCompose(useAI){
   if(!ACTIVE_EMAIL)return;
   $('replyTo').value=ACTIVE_EMAIL.fromEmail;
   $('replySubject').value=/^re:/i.test(ACTIVE_EMAIL.subject)?ACTIVE_EMAIL.subject:('Re: '+ACTIVE_EMAIL.subject);
   $('replyBody').value='';
+  $('replyModalTitle').innerText=useAI?'🤖 AI Smart Reply':'↩️ Reply';
+  $('replyAIHint').style.display=useAI?'block':'none';
+  $('replyAIActions').style.display=useAI?'block':'none';
   $('replyComposeBackdrop').classList.remove('hidden');
   $('replyComposeBackdrop').setAttribute('data-thread',ACTIVE_EMAIL.threadId||'');
   $('replyComposeBackdrop').setAttribute('data-msgid',ACTIVE_EMAIL.id||'');
+  $('replyComposeBackdrop').setAttribute('data-useai',useAI?'1':'0');
+  
+  if(useAI){
+    toast('🤖 AI analyzing email...');
+    generateAIReply(ACTIVE_EMAIL);
+  }
 }
+
+async function generateAIReply(email){
+  try{
+    // Fetch full body if needed
+    var bodyText = email.snippet || '';
+    if(!bodyText || bodyText.length < 50){
+      try{
+        var r = await api('/api/inbox/email/'+encodeURIComponent(email.id));
+        if(r.ok && r.email) bodyText = r.email.bodyText || r.email.snippet;
+      }catch(e){}
+    }
+    if(email.bodyText && email.bodyText.length > bodyText.length) bodyText = email.bodyText;
+    
+    var res = await api('/api/ai/smart-reply','POST',{
+      originalSubject: email.subject,
+      originalBody: bodyText.substring(0, 3000),
+      originalFrom: email.fromName + ' <' + email.fromEmail + '>'
+    });
+    
+    if(res.ok && res.body){
+      $('replyBody').value = res.body;
+      if(res.subject) $('replySubject').value = res.subject;
+      toast(res.aiPowered?'✅ AI reply generated':'⚠️ Basic reply (AI busy)');
+    } else {
+      toast('Failed to generate AI reply','err');
+    }
+  }catch(e){toast('AI error: '+e.message,'err');}
+}
+
+function regenerateAIReply(){
+  if(ACTIVE_EMAIL){
+    toast('🔄 Regenerating...');
+    generateAIReply(ACTIVE_EMAIL);
+  }
+}
+
 function closeReplyCompose(){$('replyComposeBackdrop').classList.add('hidden');}
 function sendReply(){
   var to=$('replyTo').value.trim();
@@ -1590,10 +1742,11 @@ function loadTestDashboard(){
   api('/api/test/log').then(function(r){
     if(!r.ok)return;var w=$('testLogWrap');var arr=r.logs||[];
     if(!arr.length){w.innerHTML='<div class="empty">No test log</div>';return;}
-    var h='<table class="data-table"><thead><tr><th>To</th><th>Subject</th><th>Sent</th></tr></thead><tbody>';
-    arr.slice(0,100).forEach(function(x){h+='<tr><td style="font-size:11px">'+esc(x.recipientEmail)+'</td><td style="font-size:11px">'+esc(x.subject)+'</td><td style="font-size:10px">'+fmtDate(x.sentAt)+'</td></tr>';});
+    var h='<table class="data-table"><thead><tr><th>To</th><th>Subject</th><th>Sent</th><th>Attach</th></tr></thead><tbody>';
+    arr.slice(0,100).forEach(function(x){h+='<tr><td style="font-size:11px">'+esc(x.recipientEmail)+'</td><td style="font-size:11px">'+esc(x.subject)+'</td><td style="font-size:10px">'+fmtDate(x.sentAt)+'</td><td>'+(x.attachmentsCount||0)+'</td></tr>';});
     h+='</tbody></table>';w.innerHTML=h;
   });
+  renderTestFiles();
 }
 function addTestRecipients(){
   var text=$('testBulkInput').value.trim();if(!text)return toast('Paste emails','err');
@@ -1606,13 +1759,20 @@ function addTestRecipients(){
 async function clearTestData(){
   var ok=await showConfirm({icon:'⚠️',title:'Clear Test Data?',message:'All test recipients and logs will be deleted.',okText:'Clear All'});
   if(!ok)return;
-  api('/api/test/clear','POST',{}).then(function(r){if(r.ok){toast('✅ Cleared');loadTestDashboard();}});
+  toast('Clearing...');
+  api('/api/test/clear','POST',{}).then(function(r){
+    if(r.ok){toast('✅ Cleared '+r.deleted+' items');setTimeout(loadTestDashboard,500);}
+    else toast('Error: '+r.error,'err');
+  });
 }
 function sendTestEmail(){
   var to=$('testTo').value.trim(),subject=$('testSubject').value.trim(),body=$('testBody').value.trim();
   if(!to||!subject||!body)return toast('Fill all fields','err');
-  toast('Sending test...');
-  api('/api/test/send','POST',{to:to,subject:subject,body:body,includeSignature:$('testIncludeSig').checked,includeLogo:$('testIncludeLogo').checked}).then(function(r){
+  var delay=parseInt($('testDelay').value)||0;
+  var selectedFiles=Object.keys(TEST_SELECTED_FILES);
+  var payload={to:to,subject:subject,body:body,includeSignature:$('testIncludeSig').checked,includeLogo:$('testIncludeLogo').checked,selectedFileIds:selectedFiles,sendDelay:delay};
+  toast(delay>0?('Delaying '+delay+'s before send...'):'Sending test...');
+  api('/api/test/send','POST',payload).then(function(r){
     if(r.ok){toast('✅ Test sent to '+r.email);loadTestDashboard();}
     else toast('Error: '+r.error,'err');
   });
