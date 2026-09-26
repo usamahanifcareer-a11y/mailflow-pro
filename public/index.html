@@ -402,22 +402,17 @@ table.data-table tbody tr:last-child td{border-bottom:none}
 
 <div id="loginView" class="auth-wrap">
   <div class="auth-card">
-    <div class="brand-logo">
-      <svg viewBox="0 0 24 24" fill="none"><path d="M13 2L4.5 13.5H11L10 22L19 10H12.5L13 2Z" fill="white" stroke="white" stroke-width="0.5" stroke-linejoin="round"/></svg>
-    </div>
+    <div class="brand-logo"><svg viewBox="0 0 24 24" fill="none"><path d="M13 2L4.5 13.5H11L10 22L19 10H12.5L13 2Z" fill="white" stroke="white" stroke-width="0.5" stroke-linejoin="round"/></svg></div>
     <h1>MailFlow Pro</h1>
     <p class="sub">AI-powered email automation.<br>Send smart. Land in inbox.</p>
-    <a href="/auth/google" class="google-btn">
-      <img src="https://www.google.com/favicon.ico" alt="Google">
-      Continue with Google
-    </a>
+    <a href="/auth/google" class="google-btn"><img src="https://www.google.com/favicon.ico" alt="Google">Continue with Google</a>
     <div class="auth-features">
       <div class="feat"><span class="ico">🤖</span> AI writes & improves emails</div>
+      <div class="feat"><span class="ico">📄</span> AI CV Analyzer for job applications</div>
       <div class="feat"><span class="ico">🛡️</span> Real-time spam detection</div>
       <div class="feat"><span class="ico">📤</span> Bulk personalized campaigns</div>
       <div class="feat"><span class="ico">👁️</span> Open tracking & analytics</div>
       <div class="feat"><span class="ico">📥</span> Fast inbox with categorization</div>
-      <div class="feat"><span class="ico">🔒</span> End-to-end encrypted tokens</div>
     </div>
   </div>
 </div>
@@ -460,13 +455,7 @@ table.data-table tbody tr:last-child td{border-bottom:none}
         </div>
       </aside>
       <main class="main-area">
-        <div class="quiet-banner" id="quietBanner">
-          <span class="icn">🌙</span>
-          <div class="info">
-            <div class="ttl">Quiet Hours Active</div>
-            <div class="dsc">Auto-send paused. Manual sends need confirmation. <span id="quietMsg"></span></div>
-          </div>
-        </div>
+        <div class="quiet-banner" id="quietBanner"><span class="icn">🌙</span><div class="info"><div class="ttl">Quiet Hours Active</div><div class="dsc">Auto-send paused. <span id="quietMsg"></span></div></div></div>
 
         <div class="stats">
           <div class="stat s1"><div class="label">Recipients</div><div class="value" id="stTotal">0</div></div>
@@ -490,10 +479,7 @@ table.data-table tbody tr:last-child td{border-bottom:none}
           <h2>✉️ AI Email Composer <span>Multi-provider AI</span></h2>
           <div class="composer-layout">
             <div class="composer-main">
-              <div class="field">
-                <label>Template Name</label>
-                <input type="text" id="composerName" placeholder="Enter template name" autocomplete="off">
-              </div>
+              <div class="field"><label>Template Name</label><input type="text" id="composerName" placeholder="Enter template name" autocomplete="off"></div>
               <div class="field">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px;flex-wrap:wrap">
                   <label style="margin:0">Subject</label>
@@ -510,6 +496,7 @@ table.data-table tbody tr:last-child td{border-bottom:none}
                   <label style="margin:0">Body</label>
                   <div style="display:flex;gap:6px;flex-wrap:wrap">
                     <button class="btn ghost small" onclick="openAIWriter()" style="font-size:11px;padding:4px 10px">🤖 AI Write</button>
+                    <button class="btn ghost small" onclick="openCVAnalyzer()" style="font-size:11px;padding:4px 10px;border-color:var(--purple);color:#c4b5fd">📄 Analyze CV</button>
                     <button class="btn ghost small" onclick="aiImproveEmail()" style="font-size:11px;padding:4px 10px">✨ Improve</button>
                   </div>
                 </div>
@@ -536,10 +523,7 @@ table.data-table tbody tr:last-child td{border-bottom:none}
                   </div>
                 </div>
                 <div class="ai-prob-bar">
-                  <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:6px">
-                    <span>Inbox Probability</span>
-                    <span id="aiProbValue" style="color:var(--text2);font-weight:700">—</span>
-                  </div>
+                  <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:6px"><span>Inbox Probability</span><span id="aiProbValue" style="color:var(--text2);font-weight:700">—</span></div>
                   <div class="ai-prob-track"><div class="ai-prob-fill" id="aiProbFill" style="width:0%"></div></div>
                 </div>
                 <div id="aiIssues"></div>
@@ -562,17 +546,12 @@ table.data-table tbody tr:last-child td{border-bottom:none}
           </div>
           <div class="batch-box" id="batchSizeBox">
             <div class="batch-header">
-              <div>
-                <div class="label-txt">📊 Emails Per Hour</div>
-                <div class="sub-txt">Auto-send rate — recommended 5-50</div>
-              </div>
+              <div><div class="label-txt">📊 Emails Per Hour</div><div class="sub-txt">Auto-send rate — recommended 5-50</div></div>
               <div class="batch-value" id="batchValue">5</div>
             </div>
             <input type="range" id="batchSlider" class="batch-slider" min="1" max="500" value="5" oninput="onSliderChange(this.value)">
             <div class="batch-marks"><span>1</span><span>125</span><span>250</span><span>375</span><span>500</span></div>
-            <div class="batch-number-row">
-              <input type="number" id="batchNumber" min="1" max="500" value="5" placeholder="Enter exact number" oninput="onNumberChange(this.value)" onblur="onNumberBlur()">
-            </div>
+            <div class="batch-number-row"><input type="number" id="batchNumber" min="1" max="500" value="5" oninput="onNumberChange(this.value)" onblur="onNumberBlur()"></div>
             <div class="batch-hint" id="batchHint">Max allowed: <b>500</b> · Scheduled: <b>5/hour</b></div>
             <div class="info-box" style="margin-top:12px">
               <div class="row"><span class="k">Total auto-sent:</span><span class="v" id="totalAutoSent">0</span></div>
@@ -592,7 +571,7 @@ table.data-table tbody tr:last-child td{border-bottom:none}
           </div>
           <div class="field" style="margin-top:16px;max-width:280px">
             <label>⏱️ Send Delay (seconds between emails)</label>
-            <input type="number" id="sendDelayInput" min="0" max="120" value="3" placeholder="3">
+            <input type="number" id="sendDelayInput" min="0" max="120" value="3">
             <div id="sendDelayWarning" class="warning-banner" style="display:none"><div class="icn">⚠️</div><div id="sendDelayWarningText"></div></div>
           </div>
           <button class="btn save-btn" onclick="savePrefs()">💾 Save Settings</button>
@@ -603,22 +582,19 @@ table.data-table tbody tr:last-child td{border-bottom:none}
           <div class="logo-warning"><div class="warn-ic">⚠️</div><div class="warn-text"><b>Warning:</b> Adding a logo <b>increases spam risk</b>. Skip for better inbox placement.</div></div>
           <div class="upload-area">
             <input type="file" id="logoInput" accept="image/*">
-            <label for="logoInput">
-              <div class="preview-box"><div class="ph" id="logoPh">📷</div><img id="logoImg" src="" style="display:none" alt=""></div>
-              <div class="upload-info"><div class="t" id="logoTitle">Click to upload logo</div><div class="s" id="logoSub">PNG · JPG · GIF · SVG · WEBP — max 2MB</div></div>
-            </label>
+            <label for="logoInput"><div class="preview-box"><div class="ph" id="logoPh">📷</div><img id="logoImg" src="" style="display:none" alt=""></div><div class="upload-info"><div class="t" id="logoTitle">Click to upload logo</div><div class="s" id="logoSub">PNG · JPG · GIF · SVG · WEBP — max 2MB</div></div></label>
           </div>
           <div id="logoActions" style="display:none;margin-bottom:12px"><button class="btn danger small" onclick="removeLogo()">🗑 Remove Logo</button></div>
           <div class="sig-fields">
-            <div class="field" style="margin:0"><label>Name</label><input type="text" id="sbName" placeholder="Your name" autocomplete="off"></div>
-            <div class="field" style="margin:0"><label>Designation</label><input type="text" id="sbPos" placeholder="Your designation" autocomplete="off"></div>
-            <div class="field" style="margin:0"><label>Company</label><input type="text" id="sbCompany" placeholder="Company name" autocomplete="off"></div>
-            <div class="field" style="margin:0"><label>📞 Phone</label><input type="text" id="sbPhone" placeholder="Phone number" autocomplete="off"></div>
-            <div class="field" style="margin:0"><label>✉️ Email</label><input type="text" id="sbEmail" placeholder="Email address" autocomplete="off"></div>
-            <div class="field" style="margin:0"><label>🔗 LinkedIn / Website</label><input type="text" id="sbLinkedin" placeholder="URL" autocomplete="off"></div>
+            <div class="field" style="margin:0"><label>Name</label><input type="text" id="sbName" placeholder="Your name" oninput="updateTestSigPreview()" autocomplete="off"></div>
+            <div class="field" style="margin:0"><label>Designation</label><input type="text" id="sbPos" placeholder="Your designation" oninput="updateTestSigPreview()" autocomplete="off"></div>
+            <div class="field" style="margin:0"><label>Company</label><input type="text" id="sbCompany" placeholder="Company name" oninput="updateTestSigPreview()" autocomplete="off"></div>
+            <div class="field" style="margin:0"><label>📞 Phone</label><input type="text" id="sbPhone" placeholder="Phone number" oninput="updateTestSigPreview()" autocomplete="off"></div>
+            <div class="field" style="margin:0"><label>✉️ Email</label><input type="text" id="sbEmail" placeholder="Email address" oninput="updateTestSigPreview()" autocomplete="off"></div>
+            <div class="field" style="margin:0"><label>🔗 LinkedIn / Website</label><input type="text" id="sbLinkedin" placeholder="URL" oninput="updateTestSigPreview()" autocomplete="off"></div>
           </div>
-          <div class="field" style="margin-top:12px"><label>Greeting Line</label><input type="text" id="sbGreeting" placeholder="Optional greeting" autocomplete="off"></div>
-          <div class="field"><label>Extra Line</label><input type="text" id="sbExtra" placeholder="Optional extra line" autocomplete="off"></div>
+          <div class="field" style="margin-top:12px"><label>Greeting Line</label><input type="text" id="sbGreeting" placeholder="Optional greeting" oninput="updateTestSigPreview()" autocomplete="off"></div>
+          <div class="field"><label>Extra Line</label><input type="text" id="sbExtra" placeholder="Optional extra line" oninput="updateTestSigPreview()" autocomplete="off"></div>
           <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
             <div style="font-size:13px;color:var(--text);font-weight:600;margin-bottom:10px">🤖 Auto-Send Options</div>
             <div class="send-options-row">
@@ -644,10 +620,7 @@ table.data-table tbody tr:last-child td{border-bottom:none}
           <h2>📎 Attachments <span>Select files to include</span></h2>
           <div class="upload-area">
             <input type="file" id="fileInput" multiple>
-            <label for="fileInput">
-              <div class="preview-box"><div class="ph">📎</div></div>
-              <div class="upload-info"><div class="t">Click to upload files</div><div class="s">PDF · DOC · DOCX · JPG · PNG — max 3MB each</div></div>
-            </label>
+            <label for="fileInput"><div class="preview-box"><div class="ph">📎</div></div><div class="upload-info"><div class="t">Click to upload files</div><div class="s">PDF · DOC · DOCX · JPG · PNG — max 3MB each</div></div></label>
           </div>
           <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
             <button class="btn ghost small" onclick="selectAllFiles()">☑️ Select All</button>
@@ -677,10 +650,7 @@ table.data-table tbody tr:last-child td{border-bottom:none}
             </div>
             <textarea class="bulk-area" id="bulkInput" placeholder="Paste emails here — comma, newline, or mixed..."></textarea>
             <div class="bulk-preview-wrap" id="bulkPreviewWrap">
-              <div class="bulk-preview-head">
-                <div class="lbl">🔍 Preview</div>
-                <div style="display:flex;gap:8px"><span class="stat-pill ok" id="bulkValidPill">✅ 0</span><span class="stat-pill dup" id="bulkDupPill">🔁 0</span></div>
-              </div>
+              <div class="bulk-preview-head"><div class="lbl">🔍 Preview</div><div style="display:flex;gap:8px"><span class="stat-pill ok" id="bulkValidPill">✅ 0</span><span class="stat-pill dup" id="bulkDupPill">🔁 0</span></div></div>
               <div class="bulk-preview-table" id="bulkPreviewTable" style="max-height:280px;overflow-y:auto"></div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
@@ -694,9 +664,7 @@ table.data-table tbody tr:last-child td{border-bottom:none}
           <h2>📊 Tracking <span id="trackCount"></span></h2>
           <div class="filter-bar">
             <input type="text" class="search-bar" id="recipSearch" placeholder="Search..." oninput="renderRecipients()">
-            <select id="statusFilter" onchange="renderRecipients()">
-              <option value="all">All Status</option><option value="Pending">Pending</option><option value="Sent">Sent</option><option value="Opened">Opened</option>
-            </select>
+            <select id="statusFilter" onchange="renderRecipients()"><option value="all">All Status</option><option value="Pending">Pending</option><option value="Sent">Sent</option></select>
           </div>
           <div class="bulk-action-bar" id="bulkActionBar">
             <span id="selectedCount" style="color:#7dd3fc;font-weight:700;font-size:12px;margin-right:auto">0 selected</span>
@@ -715,12 +683,7 @@ table.data-table tbody tr:last-child td{border-bottom:none}
           <h2>📧 Email History <span id="myEmailCount"></span></h2>
           <div class="filter-bar">
             <input type="text" class="search-bar" id="myEmailSearch" placeholder="Search by recipient or subject..." oninput="renderMyEmails()">
-            <select id="myEmailRange" onchange="loadMyEmails()">
-              <option value="all">All time</option>
-              <option value="today">Today</option>
-              <option value="7d">Last 7 days</option>
-              <option value="30d">Last 30 days</option>
-            </select>
+            <select id="myEmailRange" onchange="loadMyEmails()"><option value="all">All time</option><option value="today">Today</option><option value="7d">Last 7 days</option><option value="30d">Last 30 days</option></select>
           </div>
           <div id="myEmailsWrap" class="tbl-wrap"></div>
         </div>
@@ -784,10 +747,7 @@ table.data-table tbody tr:last-child td{border-bottom:none}
   </div>
 
   <div class="container hidden" id="testDashView">
-    <div class="test-banner">
-      <div class="ico">🧪</div>
-      <div class="txt">TEST LAB — Full features. Ye emails normal dashboard/stats mein count nahi honge.</div>
-    </div>
+    <div class="test-banner"><div class="ico">🧪</div><div class="txt">TEST LAB — Full features. Ye emails normal dashboard/stats mein count nahi honge.</div></div>
 
     <div class="stats">
       <div class="stat s1"><div class="label">Test Recipients</div><div class="value" id="tstTotal">0</div></div>
@@ -828,10 +788,7 @@ table.data-table tbody tr:last-child td{border-bottom:none}
 
     <div class="panel">
       <h2>📤 Send Test Email <span>Full features</span></h2>
-      <div class="field">
-        <label>📝 Use Template (Optional)</label>
-        <select id="testTemplateSelect" onchange="onTestTemplateChange()"><option value="">-- Manual entry --</option></select>
-      </div>
+      <div class="field"><label>📝 Use Template (Optional)</label><select id="testTemplateSelect" onchange="onTestTemplateChange()"><option value="">-- Manual entry --</option></select></div>
       <div class="field"><label>To (Email)</label><input type="text" id="testTo" placeholder="test@example.com" autocomplete="off"></div>
       <div class="field"><label>Subject</label><input type="text" id="testSubject" placeholder="Test subject" autocomplete="off"></div>
       <div class="field">
@@ -856,18 +813,18 @@ table.data-table tbody tr:last-child td{border-bottom:none}
         </div>
         <div id="testSigFields" class="hidden" style="padding:12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px">
           <div class="sig-fields">
-            <div class="field" style="margin:0"><label>Name</label><input type="text" id="testSbName" placeholder="Test name" autocomplete="off"></div>
-            <div class="field" style="margin:0"><label>Designation</label><input type="text" id="testSbPos" placeholder="Designation" autocomplete="off"></div>
-            <div class="field" style="margin:0"><label>Company</label><input type="text" id="testSbCompany" placeholder="Company" autocomplete="off"></div>
-            <div class="field" style="margin:0"><label>📞 Phone</label><input type="text" id="testSbPhone" placeholder="Phone" autocomplete="off"></div>
-            <div class="field" style="margin:0"><label>✉️ Email</label><input type="text" id="testSbEmail" placeholder="Email" autocomplete="off"></div>
-            <div class="field" style="margin:0"><label>🔗 LinkedIn</label><input type="text" id="testSbLinkedin" placeholder="URL" autocomplete="off"></div>
+            <div class="field" style="margin:0"><label>Name</label><input type="text" id="testSbName" placeholder="Test name" oninput="updateTestSigPreview()" autocomplete="off"></div>
+            <div class="field" style="margin:0"><label>Designation</label><input type="text" id="testSbPos" placeholder="Designation" oninput="updateTestSigPreview()" autocomplete="off"></div>
+            <div class="field" style="margin:0"><label>Company</label><input type="text" id="testSbCompany" placeholder="Company" oninput="updateTestSigPreview()" autocomplete="off"></div>
+            <div class="field" style="margin:0"><label>📞 Phone</label><input type="text" id="testSbPhone" placeholder="Phone" oninput="updateTestSigPreview()" autocomplete="off"></div>
+            <div class="field" style="margin:0"><label>✉️ Email</label><input type="text" id="testSbEmail" placeholder="Email" oninput="updateTestSigPreview()" autocomplete="off"></div>
+            <div class="field" style="margin:0"><label>🔗 LinkedIn</label><input type="text" id="testSbLinkedin" placeholder="URL" oninput="updateTestSigPreview()" autocomplete="off"></div>
           </div>
-          <div class="field" style="margin-top:10px"><label>Greeting</label><input type="text" id="testSbGreeting" placeholder="Optional" autocomplete="off"></div>
-          <div class="field"><label>Extra Line</label><input type="text" id="testSbExtra" placeholder="Optional" autocomplete="off"></div>
+          <div class="field" style="margin-top:10px"><label>Greeting</label><input type="text" id="testSbGreeting" placeholder="Optional" oninput="updateTestSigPreview()" autocomplete="off"></div>
+          <div class="field"><label>Extra Line</label><input type="text" id="testSbExtra" placeholder="Optional" oninput="updateTestSigPreview()" autocomplete="off"></div>
           <button class="btn small" onclick="saveTestSignature()">💾 Save Test Signature</button>
         </div>
-        <div id="testSigPreviewBox" class="sig-preview-outer">
+        <div id="testSigPreviewBox" class="sig-preview-outer show">
           <div class="preview-label"><span>📧 Signature Preview</span></div>
           <div class="sig-preview-canvas" id="testSigPreviewContent"></div>
         </div>
@@ -887,10 +844,10 @@ table.data-table tbody tr:last-child td{border-bottom:none}
 
     <div class="panel">
       <h2>🤖 Automation Testing <span>Manual trigger</span></h2>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Auto-send manually trigger karo. Normal automation affect nahi hoga.</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Auto-send manually trigger karo.</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-        <div class="field" style="margin:0"><label>Batch Size</label><input type="number" id="testAutoBatchSize" min="1" max="50" value="5" placeholder="5"></div>
-        <div class="field" style="margin:0"><label>Delay (seconds)</label><input type="number" id="testAutoDelay" min="0" max="60" value="3" placeholder="3"></div>
+        <div class="field" style="margin:0"><label>Batch Size</label><input type="number" id="testAutoBatchSize" min="1" max="50" value="5"></div>
+        <div class="field" style="margin:0"><label>Delay (seconds)</label><input type="number" id="testAutoDelay" min="0" max="60" value="3"></div>
       </div>
       <div class="info-box" style="margin-bottom:12px">
         <div class="row"><span class="k">Test auto-sent total:</span><span class="v" id="testTotalAutoSent">0</span></div>
@@ -963,17 +920,34 @@ table.data-table tbody tr:last-child td{border-bottom:none}
   </div>
 </div>
 
+<div id="cvAnalyzerModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeCVAnalyzer()">
+  <div class="modal" style="max-width:640px">
+    <button class="close-btn" onclick="closeCVAnalyzer()">✕</button>
+    <h3>📄 AI CV Analyzer</h3>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px;padding:10px;background:var(--bg2);border-radius:10px;line-height:1.6">CV content paste karo. AI skills analyze karke professional email banayega.</div>
+    <div class="field">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <label style="margin:0">CV Content</label>
+        <input type="file" id="cvFileInput" accept=".txt,.pdf,.doc,.docx" style="display:none">
+        <button class="btn ghost small" onclick="document.getElementById('cvFileInput').click()" style="font-size:11px">📁 Upload File</button>
+      </div>
+      <textarea id="cvText" class="bulk-area" placeholder="Paste your CV here..." style="min-height:180px;font-family:inherit;font-size:13px"></textarea>
+    </div>
+    <div class="field"><label>🎯 Target Role / Job Title</label><input type="text" id="cvTargetRole" placeholder="e.g., Customer Returns Manager" autocomplete="off"></div>
+    <div class="field"><label>📋 Job Description (Optional)</label><textarea id="cvJobDesc" class="bulk-area" placeholder="Paste job description for better matching..." style="min-height:80px;font-family:inherit;font-size:13px"></textarea></div>
+    <div id="cvAnalysisResult" style="display:none;margin-top:14px;padding:12px;background:var(--bg2);border:1px solid var(--cyan);border-radius:10px;font-size:12px;line-height:1.6"></div>
+    <button class="btn" onclick="runCVAnalysis()" style="width:100%;margin-top:12px" id="cvAnalyzeBtn">🤖 Analyze & Generate Email</button>
+  </div>
+</div>
+
 <div id="saveTplModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeSaveTplModal()">
   <div class="modal" style="max-width:480px">
     <button class="close-btn" onclick="closeSaveTplModal()">✕</button>
     <h3>💾 Save as Template</h3>
-    <div class="field"><label>Template Name</label><input type="text" id="saveTplName" placeholder="e.g., Job Application Template" autocomplete="off"></div>
+    <div class="field"><label>Template Name</label><input type="text" id="saveTplName" placeholder="Template name" autocomplete="off"></div>
     <div class="field"><label>Subject</label><input type="text" id="saveTplSubject" placeholder="Subject" autocomplete="off"></div>
-    <div class="field"><label>Body Preview</label><textarea id="saveTplBodyPreview" readonly style="background:var(--bg3);color:var(--text2);cursor:not-allowed;font-family:'Inter',monospace;font-size:12px;min-height:80px"></textarea></div>
-    <div style="display:flex;gap:8px;margin-top:14px">
-      <button class="btn" onclick="confirmSaveTpl()" style="flex:1">💾 Save Template</button>
-      <button class="btn ghost" onclick="closeSaveTplModal()">Cancel</button>
-    </div>
+    <div class="field"><label>Body Preview</label><textarea id="saveTplBodyPreview" readonly style="background:var(--bg3);color:var(--text2);cursor:not-allowed;font-family:inherit;font-size:12px;min-height:80px"></textarea></div>
+    <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" onclick="confirmSaveTpl()" style="flex:1">💾 Save Template</button><button class="btn ghost" onclick="closeSaveTplModal()">Cancel</button></div>
   </div>
 </div>
 
@@ -987,10 +961,7 @@ table.data-table tbody tr:last-child td{border-bottom:none}
       <label><input type="checkbox" id="optLogo" checked> 🖼️ Logo</label>
       <label><input type="checkbox" id="optAttachments" checked> 📎 Attachments</label>
     </div>
-    <div style="display:flex;gap:8px;margin-top:12px">
-      <button class="btn" id="sendOptionsConfirm" style="flex:1">📤 Send</button>
-      <button class="btn ghost" onclick="closeSendOptions()">Cancel</button>
-    </div>
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="btn" id="sendOptionsConfirm" style="flex:1">📤 Send</button><button class="btn ghost" onclick="closeSendOptions()">Cancel</button></div>
   </div>
 </div>
 
@@ -998,9 +969,7 @@ table.data-table tbody tr:last-child td{border-bottom:none}
   <div class="modal" style="max-width:640px">
     <button class="close-btn" onclick="closeReplyCompose()">✕</button>
     <h3 id="replyModalTitle">↩️ Reply</h3>
-    <div id="replyAIHint" style="display:none;font-size:11px;color:#7dd3fc;margin-bottom:10px;padding:8px 10px;background:rgba(56,189,248,.08);border-radius:8px;border:1px solid rgba(56,189,248,.2)">
-      <span id="replyAIStatus">🤖 AI Smart Reply — analyzing full email...</span>
-    </div>
+    <div id="replyAIHint" style="display:none;font-size:11px;color:#7dd3fc;margin-bottom:10px;padding:8px 10px;background:rgba(56,189,248,.08);border-radius:8px;border:1px solid rgba(56,189,248,.2)"><span id="replyAIStatus">🤖 AI analyzing...</span></div>
     <div class="field"><label>To</label><input type="text" id="replyTo" autocomplete="off"></div>
     <div class="field"><label>Subject</label><input type="text" id="replySubject" autocomplete="off"></div>
     <div class="field"><label>Message</label><textarea id="replyBody" class="bulk-area" placeholder="Write your reply..." style="min-height:260px;font-family:inherit;font-size:14px;line-height:1.6"></textarea></div>
@@ -1033,10 +1002,7 @@ table.data-table tbody tr:last-child td{border-bottom:none}
     <div class="icon" id="confirmIcon">⚠️</div>
     <div class="title" id="confirmTitle">Are you sure?</div>
     <div class="message" id="confirmMessage"></div>
-    <div class="buttons">
-      <button class="cancel-btn" id="confirmCancel">Cancel</button>
-      <button class="confirm-btn" id="confirmOk">Confirm</button>
-    </div>
+    <div class="buttons"><button class="cancel-btn" id="confirmCancel">Cancel</button><button class="confirm-btn" id="confirmOk">Confirm</button></div>
   </div>
 </div>
 
@@ -1054,11 +1020,7 @@ var inboxPage=1;
 function $(id){return document.getElementById(id);}
 function toast(m,t){var el=$('toast');el.innerText=m;el.className='toast show '+(t||'ok');clearTimeout(el._t);el._t=setTimeout(function(){el.className='toast'},4000);}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-function api(p,m,b){
-  return fetch(p,{method:m||'GET',credentials:'include',headers:{'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined})
-    .then(function(r){return r.text().then(function(t){try{return JSON.parse(t);}catch(e){return {ok:false,error:'Server error '+r.status};}});})
-    .catch(function(e){return {ok:false,error:'Network: '+e.message};});
-}
+function api(p,m,b){return fetch(p,{method:m||'GET',credentials:'include',headers:{'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined}).then(function(r){return r.text().then(function(t){try{return JSON.parse(t);}catch(e){return {ok:false,error:'Server error '+r.status};}});}).catch(function(e){return {ok:false,error:'Network: '+e.message};});}
 function fmtSize(b){if(!b)return '—';if(b<1024)return b+' B';if(b<1048576)return (b/1024).toFixed(1)+' KB';return (b/1048576).toFixed(2)+' MB';}
 function fmtDate(d){if(!d)return '—';try{var t=d._seconds?d._seconds*1000:(d.seconds?d.seconds*1000:new Date(d).getTime());var dt=new Date(t);return dt.toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'})+' · '+dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});}catch(e){return '—';}}
 function fmtEmailDate(dateISO){if(!dateISO)return '—';try{var d=new Date(dateISO);if(isNaN(d.getTime()))return '—';var now=new Date();var timeStr=d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});var dateStr=d.toLocaleDateString('en-US',{day:'numeric',month:'short'});if(d.toDateString()===now.toDateString())return timeStr;if(d.getFullYear()===now.getFullYear())return dateStr+' · '+timeStr;return d.toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'})+' · '+timeStr;}catch(e){return '—';}}
@@ -1066,20 +1028,7 @@ function fmtTimeAgo(dateISO){if(!dateISO)return '—';try{var d=new Date(dateISO
 function fileIcon(name,mime){mime=mime||'';name=(name||'').toLowerCase();if(mime.startsWith('image/')||/\.(jpg|jpeg|png|gif|webp|svg)$/i.test(name))return '🖼️';if(mime.includes('pdf')||name.endsWith('.pdf'))return '📄';if(mime.includes('zip')||mime.includes('rar')||/\.(zip|rar|7z)$/i.test(name))return '🗜️';if(mime.includes('word')||mime.includes('document')||/\.(doc|docx)$/i.test(name))return '📝';if(mime.includes('sheet')||mime.includes('excel')||/\.(xls|xlsx|csv)$/i.test(name))return '📊';return '📎';}
 function buildHourSelects(){var s=$('quietStartSel'),e=$('quietEndSel');if(!s||!e)return;s.innerHTML='';e.innerHTML='';for(var h=0;h<24;h++){var lbl=((h%12)||12)+':00 '+(h<12?'AM':'PM');var o1=document.createElement('option');o1.value=h;o1.text=lbl;s.appendChild(o1);var o2=document.createElement('option');o2.value=h;o2.text=lbl;e.appendChild(o2);}}
 
-function showConfirm(opts){
-  return new Promise(function(resolve){
-    $('confirmIcon').innerText=opts.icon||'⚠️';
-    $('confirmTitle').innerText=opts.title||'Are you sure?';
-    $('confirmMessage').innerText=opts.message||'';
-    var ok=$('confirmOk'),cancel=$('confirmCancel');
-    ok.innerText=opts.okText||'Confirm';
-    ok.className='confirm-btn'+(opts.primary?' primary':'');
-    $('confirmBackdrop').classList.remove('hidden');
-    var cleanup=function(){$('confirmBackdrop').classList.add('hidden');ok.onclick=null;cancel.onclick=null;};
-    ok.onclick=function(){cleanup();resolve(true);};
-    cancel.onclick=function(){cleanup();resolve(false);};
-  });
-}
+function showConfirm(opts){return new Promise(function(resolve){$('confirmIcon').innerText=opts.icon||'⚠️';$('confirmTitle').innerText=opts.title||'Are you sure?';$('confirmMessage').innerText=opts.message||'';var ok=$('confirmOk'),cancel=$('confirmCancel');ok.innerText=opts.okText||'Confirm';ok.className='confirm-btn'+(opts.primary?' primary':'');$('confirmBackdrop').classList.remove('hidden');var cleanup=function(){$('confirmBackdrop').classList.add('hidden');ok.onclick=null;cancel.onclick=null;};ok.onclick=function(){cleanup();resolve(true);};cancel.onclick=function(){cleanup();resolve(false);};});}
 
 fetch('/api/me',{credentials:'include'}).then(function(r){return r.json();}).then(function(d){if(d&&d.ok&&d.user){USER=d.user;enterApp();}else{$('loginView').classList.remove('hidden');}}).catch(function(){$('loginView').classList.remove('hidden');});
 
@@ -1112,523 +1061,161 @@ function checkQuietStatus(){api('/api/quiet-status').then(function(r){if(!r.ok)r
 function startHourlyAutoSend(){setTimeout(function(){runAutoCheck();},8000);if(HOURLY_TIMER)clearInterval(HOURLY_TIMER);HOURLY_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;runAutoCheck();},60*60*1000);}
 function runAutoCheck(){api('/api/auto-send-check','POST').then(function(r){if(r.ok&&r.sent>0){toast('🤖 Auto-send: '+r.sent+' sent');loadAll();loadQuota();loadMyEmails();}}).catch(function(){});}
 
-function loadQuota(){
-  api('/api/quota').then(function(r){
-    if(!r.ok)return;
-    MY_QUOTA={sent:r.sent,limit:r.limit,remaining:r.remaining};
-    $('quotaSent').innerText=r.sent;$('quotaLimit').innerText=r.limit;$('quotaRemaining').innerText=r.remaining;
-    var pct=(r.sent/r.limit)*100;
-    $('quotaFill').style.width=Math.min(100,pct)+'%';
-    $('quotaFill').className='quota-fill'+(pct>90?' crit':(pct>70?' warn':''));
-    if($('autoRemaining'))$('autoRemaining').innerText=r.remaining;
-    var slider=$('batchSlider'),numInput=$('batchNumber');
-    if(slider)slider.max=Math.max(1,r.remaining);
-    if(numInput)numInput.max=Math.max(1,r.remaining);
-    validateBatchSize();
-  });
-}
+function loadQuota(){api('/api/quota').then(function(r){if(!r.ok)return;MY_QUOTA={sent:r.sent,limit:r.limit,remaining:r.remaining};$('quotaSent').innerText=r.sent;$('quotaLimit').innerText=r.limit;$('quotaRemaining').innerText=r.remaining;var pct=(r.sent/r.limit)*100;$('quotaFill').style.width=Math.min(100,pct)+'%';$('quotaFill').className='quota-fill'+(pct>90?' crit':(pct>70?' warn':''));if($('autoRemaining'))$('autoRemaining').innerText=r.remaining;var slider=$('batchSlider'),numInput=$('batchNumber');if(slider)slider.max=Math.max(1,r.remaining);if(numInput)numInput.max=Math.max(1,r.remaining);validateBatchSize();});}
 function onSliderChange(v){v=parseInt(v)||1;$('batchValue').innerText=v;$('batchNumber').value=v;validateBatchSize();}
 function onNumberChange(v){var n=parseInt(v)||1;$('batchValue').innerText=n;$('batchSlider').value=Math.min(n,parseInt($('batchSlider').max)||500);validateBatchSize();}
 function onNumberBlur(){var n=parseInt($('batchNumber').value)||1;var max=MY_QUOTA.remaining||500;if(n<1)n=1;if(n>max)n=max;$('batchNumber').value=n;$('batchValue').innerText=n;$('batchSlider').value=Math.min(n,parseInt($('batchSlider').max)||500);validateBatchSize();}
-function validateBatchSize(){var val=parseInt($('batchNumber').value)||1;var max=MY_QUOTA.remaining||500;var hint=$('batchHint');if(val>max){hint.innerHTML='❌ Cannot exceed remaining quota: <b>'+max+'</b>';hint.className='batch-hint err';}else{hint.innerHTML='Max allowed: <b>'+max+'</b> · Scheduled: <b>'+val+'/hour</b>';hint.className='batch-hint';if($('scheduledRate'))$('scheduledRate').innerText=val+' / hour';}}
-function checkSendDelayWarning(){var input=$('sendDelayInput');if(!input)return;var val=parseInt(input.value)||0;var warn=$('sendDelayWarning'),txt=$('sendDelayWarningText');if(!warn)return;if(val<2){warn.style.display='flex';warn.className='warning-banner danger';txt.innerHTML='<b>High spam risk!</b> Delay should be at least 3 seconds.';}else if(val<3){warn.style.display='flex';warn.className='warning-banner';txt.innerHTML='<b>Caution:</b> 3-5 seconds recommended.';}else{warn.style.display='none';}}
+function validateBatchSize(){var val=parseInt($('batchNumber').value)||1;var max=MY_QUOTA.remaining||500;var hint=$('batchHint');if(val>max){hint.innerHTML='❌ Cannot exceed quota: <b>'+max+'</b>';hint.className='batch-hint err';}else{hint.innerHTML='Max: <b>'+max+'</b> · Rate: <b>'+val+'/hour</b>';hint.className='batch-hint';if($('scheduledRate'))$('scheduledRate').innerText=val+' / hour';}}
+function checkSendDelayWarning(){var input=$('sendDelayInput');if(!input)return;var val=parseInt(input.value)||0;var warn=$('sendDelayWarning'),txt=$('sendDelayWarningText');if(!warn)return;if(val<2){warn.style.display='flex';warn.className='warning-banner danger';txt.innerHTML='<b>High spam risk!</b> Use 3+ seconds.';}else if(val<3){warn.style.display='flex';warn.className='warning-banner';txt.innerHTML='<b>Caution:</b> 3-5 seconds recommended.';}else{warn.style.display='none';}}
 
 function scheduleAnalysis(){if(analysisTimer)clearTimeout(analysisTimer);$('aiLiveStatus').innerText='Typing...';analysisTimer=setTimeout(runLiveAnalysis,1500);}
-function runLiveAnalysis(){
-  var subject=$('composerSubject').value.trim();var body=$('composerBody').value.trim();
-  if(!subject&&!body){resetAIAnalysisUI();$('aiLiveStatus').innerText='Waiting';return;}
-  var hash=subject+'|'+body;if(hash===lastAnalyzedHash)return;lastAnalyzedHash=hash;
-  $('aiLiveStatus').innerText='🤖 Analyzing...';
-  api('/api/ai/analyze-live','POST',{subject:subject,body:body}).then(function(r){
-    if(!r.ok){$('aiLiveStatus').innerText='Error';return;}
-    if(r.empty){resetAIAnalysisUI();$('aiLiveStatus').innerText='Waiting';return;}
-    $('aiLiveStatus').innerText=r.aiPowered?'🤖 AI':'⚡ Local';
-    renderAIAnalysis(r);
-  }).catch(function(){$('aiLiveStatus').innerText='Offline';});
-}
-function runDeepAIAnalysis(){
-  var subject=$('composerSubject').value.trim();var body=$('composerBody').value.trim();
-  if(!subject&&!body){toast('Write something first','err');return;}
-  $('aiLiveStatus').innerText='🤖 Deep...';
-  api('/api/ai/analyze-live','POST',{subject:subject,body:body}).then(function(r){
-    if(!r.ok){$('aiLiveStatus').innerText='Error';return;}
-    if(r.empty){resetAIAnalysisUI();return;}
-    $('aiLiveStatus').innerText=r.aiPowered?'🤖 AI':'⚠️ Local';
-    renderAIAnalysis(r);toast(r.aiPowered?'✅ Deep complete':'⚠️ AI busy');
-  }).catch(function(){$('aiLiveStatus').innerText='Offline';});
-}
-function resetAIAnalysisUI(){
-  $('aiScoreValue').innerText='—';$('aiScoreLabel').innerText='Waiting';
-  $('aiScoreCircle').style.background='conic-gradient(#1e293b 0%, #1e293b 100%)';
-  $('aiScoreValue').style.color='var(--text2)';
-  $('aiProbValue').innerText='—';$('aiProbValue').style.color='var(--text2)';
-  $('aiProbFill').style.width='0%';$('aiIssues').innerHTML='';$('aiSuggestions').innerHTML='';
-}
-function renderAIAnalysis(r){
-  var score=r.score||0,prob=r.inboxProbability||0;
-  var deg=Math.min(360,(score/100)*360);
-  var color=score<=15?'#22c55e':score<=40?'#38bdf8':score<=70?'#f59e0b':'#ef4444';
-  $('aiScoreCircle').style.background='conic-gradient('+color+' '+deg+'deg, #1e293b '+deg+'deg)';
-  $('aiScoreValue').innerText=score;
-  $('aiScoreLabel').innerText=(r.prediction||'Analyzing').replace('_',' ');
-  $('aiScoreValue').style.color=color;
-  $('aiProbValue').innerText=prob+'%';
-  $('aiProbValue').style.color=prob>=70?'#86efac':prob>=40?'#fcd34d':'#fca5a5';
-  $('aiProbFill').style.width=prob+'%';
-  $('aiProbFill').style.background=prob>=70?'linear-gradient(90deg,#22c55e,#38bdf8)':prob>=40?'linear-gradient(90deg,#f59e0b,#fcd34d)':'linear-gradient(90deg,#ef4444,#f97316)';
-  var ih='';if(r.issues&&r.issues.length)ih=r.issues.map(function(i){var cls=i.severity==='high'?'high':(i.severity==='low'?'low':'');return '<div class="ai-issue '+cls+'">⚠️ '+esc(i.message)+'</div>';}).join('');
-  $('aiIssues').innerHTML=ih;
-  var sh='';if(r.suggestions&&r.suggestions.length)sh=r.suggestions.map(function(s){return '<div class="ai-suggestion">💡 '+esc(s)+'</div>';}).join('');
-  $('aiSuggestions').innerHTML=sh;
-}
+function runLiveAnalysis(){var subject=$('composerSubject').value.trim();var body=$('composerBody').value.trim();if(!subject&&!body){resetAIAnalysisUI();$('aiLiveStatus').innerText='Waiting';return;}var hash=subject+'|'+body;if(hash===lastAnalyzedHash)return;lastAnalyzedHash=hash;$('aiLiveStatus').innerText='🤖 Analyzing...';api('/api/ai/analyze-live','POST',{subject:subject,body:body}).then(function(r){if(!r.ok){$('aiLiveStatus').innerText='Error';return;}if(r.empty){resetAIAnalysisUI();$('aiLiveStatus').innerText='Waiting';return;}$('aiLiveStatus').innerText=r.aiPowered?'🤖 AI':'⚡ Local';renderAIAnalysis(r);}).catch(function(){$('aiLiveStatus').innerText='Offline';});}
+function runDeepAIAnalysis(){var subject=$('composerSubject').value.trim();var body=$('composerBody').value.trim();if(!subject&&!body){toast('Write something first','err');return;}$('aiLiveStatus').innerText='🤖 Deep...';api('/api/ai/analyze-live','POST',{subject:subject,body:body}).then(function(r){if(!r.ok){$('aiLiveStatus').innerText='Error';return;}if(r.empty){resetAIAnalysisUI();return;}$('aiLiveStatus').innerText=r.aiPowered?'🤖 AI':'⚠️ Local';renderAIAnalysis(r);toast(r.aiPowered?'✅ Deep complete':'⚠️ AI busy');}).catch(function(){$('aiLiveStatus').innerText='Offline';});}
+function resetAIAnalysisUI(){$('aiScoreValue').innerText='—';$('aiScoreLabel').innerText='Waiting';$('aiScoreCircle').style.background='conic-gradient(#1e293b 0%, #1e293b 100%)';$('aiScoreValue').style.color='var(--text2)';$('aiProbValue').innerText='—';$('aiProbValue').style.color='var(--text2)';$('aiProbFill').style.width='0%';$('aiIssues').innerHTML='';$('aiSuggestions').innerHTML='';}
+function renderAIAnalysis(r){var score=r.score||0,prob=r.inboxProbability||0;var deg=Math.min(360,(score/100)*360);var color=score<=15?'#22c55e':score<=40?'#38bdf8':score<=70?'#f59e0b':'#ef4444';$('aiScoreCircle').style.background='conic-gradient('+color+' '+deg+'deg, #1e293b '+deg+'deg)';$('aiScoreValue').innerText=score;$('aiScoreLabel').innerText=(r.prediction||'Analyzing').replace('_',' ');$('aiScoreValue').style.color=color;$('aiProbValue').innerText=prob+'%';$('aiProbValue').style.color=prob>=70?'#86efac':prob>=40?'#fcd34d':'#fca5a5';$('aiProbFill').style.width=prob+'%';$('aiProbFill').style.background=prob>=70?'linear-gradient(90deg,#22c55e,#38bdf8)':prob>=40?'linear-gradient(90deg,#f59e0b,#fcd34d)':'linear-gradient(90deg,#ef4444,#f97316)';var ih='';if(r.issues&&r.issues.length)ih=r.issues.map(function(i){var cls=i.severity==='high'?'high':(i.severity==='low'?'low':'');return '<div class="ai-issue '+cls+'">⚠️ '+esc(i.message)+'</div>';}).join('');$('aiIssues').innerHTML=ih;var sh='';if(r.suggestions&&r.suggestions.length)sh=r.suggestions.map(function(s){return '<div class="ai-suggestion">💡 '+esc(s)+'</div>';}).join('');$('aiSuggestions').innerHTML=sh;}
 
 function openAIWriter(){$('aiWriterModal').classList.remove('hidden');}
 function closeAIWriter(){$('aiWriterModal').classList.add('hidden');}
-function runAIWriter(){
-  var ctx=$('aiContext').value.trim();if(!ctx)return toast('Describe the email','err');
-  toast('🤖 Writing...');
-  api('/api/ai/write-email','POST',{context:ctx,recipientName:$('aiRecipientName').value.trim(),recipientCompany:$('aiRecipientCompany').value.trim(),tone:$('aiTone').value,length:$('aiLength').value}).then(function(r){
-    if(r.ok){$('composerSubject').value=r.subject||'';$('composerBody').value=r.body||'';closeAIWriter();toast(r.aiPowered?'✅ AI wrote!':'✅ Generated');lastAnalyzedHash='';runLiveAnalysis();}
-    else toast('Error: '+r.error,'err');
-  });
-}
-function aiGenerateSubjects(){
-  var ctx=$('composerBody').value.trim().substring(0,200)||'professional outreach';
-  toast('✨ Generating...');
-  api('/api/ai/generate-subjects','POST',{context:ctx}).then(function(r){
-    if(r.ok&&r.subjects){
-      $('aiSubjectList').innerHTML=r.subjects.map(function(s){return '<div class="ai-subject-item" data-subject="'+esc(s)+'">'+esc(s)+'</div>';}).join('');
-      $('aiSubjectList').querySelectorAll('.ai-subject-item').forEach(function(el){el.onclick=function(){pickSubject(this.getAttribute('data-subject'));};});
-      $('aiSubjectSuggestions').style.display='block';
-    } else if(r.error)toast(r.error,'err');
-  });
-}
+function runAIWriter(){var ctx=$('aiContext').value.trim();if(!ctx)return toast('Describe the email','err');toast('🤖 Writing...');api('/api/ai/write-email','POST',{context:ctx,recipientName:$('aiRecipientName').value.trim(),recipientCompany:$('aiRecipientCompany').value.trim(),tone:$('aiTone').value,length:$('aiLength').value}).then(function(r){if(r.ok){$('composerSubject').value=r.subject||'';$('composerBody').value=r.body||'';closeAIWriter();toast(r.aiPowered?'✅ AI wrote!':'✅ Generated');lastAnalyzedHash='';runLiveAnalysis();}else toast('Error: '+r.error,'err');});}
+function aiGenerateSubjects(){var ctx=$('composerBody').value.trim().substring(0,200)||'professional outreach';toast('✨ Generating...');api('/api/ai/generate-subjects','POST',{context:ctx}).then(function(r){if(r.ok&&r.subjects){$('aiSubjectList').innerHTML=r.subjects.map(function(s){return '<div class="ai-subject-item" data-subject="'+esc(s)+'">'+esc(s)+'</div>';}).join('');$('aiSubjectList').querySelectorAll('.ai-subject-item').forEach(function(el){el.onclick=function(){pickSubject(this.getAttribute('data-subject'));};});$('aiSubjectSuggestions').style.display='block';}else if(r.error)toast(r.error,'err');});}
 function pickSubject(s){$('composerSubject').value=s;$('aiSubjectSuggestions').style.display='none';lastAnalyzedHash='';scheduleAnalysis();}
-function aiImproveEmail(){
-  var subject=$('composerSubject').value.trim(),body=$('composerBody').value.trim();
-  if(!subject&&!body)return toast('Write something first','err');
-  toast('✨ Improving...');
-  api('/api/ai/improve-email','POST',{subject:subject,body:body}).then(function(r){
-    if(r.ok){$('composerSubject').value=r.improvedSubject||subject;$('composerBody').value=r.improvedBody||body;toast('✅ Improved!');lastAnalyzedHash='';runLiveAnalysis();}
-    else toast('Error: '+r.error,'err');
-  });
-}
-function saveComposerTemplate(){
-  var name=$('composerName').value.trim(),subject=$('composerSubject').value.trim(),body=$('composerBody').value.trim();
-  if(!name||!subject||!body)return toast('Fill name, subject and body','err');
-  api('/api/templates','POST',{name:name,subject:subject,body:body}).then(function(r){
-    if(r.ok){if(r.renamed)toast('✅ Saved as "'+r.name+'"');else toast('✅ Saved!');$('composerName').value='';loadTemplates();}
-    else toast('Error: '+r.error,'err');
-  });
-}
+function aiImproveEmail(){var subject=$('composerSubject').value.trim(),body=$('composerBody').value.trim();if(!subject&&!body)return toast('Write something first','err');toast('✨ Improving...');api('/api/ai/improve-email','POST',{subject:subject,body:body}).then(function(r){if(r.ok){$('composerSubject').value=r.improvedSubject||subject;$('composerBody').value=r.improvedBody||body;toast('✅ Improved!');lastAnalyzedHash='';runLiveAnalysis();}else toast('Error: '+r.error,'err');});}
+function saveComposerTemplate(){var name=$('composerName').value.trim(),subject=$('composerSubject').value.trim(),body=$('composerBody').value.trim();if(!name||!subject||!body)return toast('Fill name, subject and body','err');api('/api/templates','POST',{name:name,subject:subject,body:body}).then(function(r){if(r.ok){if(r.renamed)toast('✅ Saved as "'+r.name+'"');else toast('✅ Saved!');$('composerName').value='';loadTemplates();}else toast('Error: '+r.error,'err');});}
 function clearComposer(){$('composerName').value='';$('composerSubject').value='';$('composerBody').value='';lastAnalyzedHash='';resetAIAnalysisUI();}
 
-function loadAIPredictions(){
-  api('/api/my-emails?range=all').then(function(r){
-    if(!r.ok)return;
-    var emails=r.emails||[];var w=$('aiPredictionsWrap');
-    if(!emails.length){w.innerHTML='<div class="empty"><div class="ico">📭</div>No emails</div>';return;}
-    var excellent=0,good=0,risky=0,spam=0;
-    emails.forEach(function(e){var p=e.aiPrediction||'GOOD';if(p==='EXCELLENT')excellent++;else if(p==='GOOD')good++;else if(p==='RISKY')risky++;else spam++;});
-    var s='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">';
-    s+='<div class="info-box" style="margin:0;text-align:center"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">✅ Excellent</div><div style="font-size:22px;color:#86efac;margin-top:4px;font-weight:800">'+excellent+'</div></div>';
-    s+='<div class="info-box" style="margin:0;text-align:center"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">👍 Good</div><div style="font-size:22px;color:#7dd3fc;margin-top:4px;font-weight:800">'+good+'</div></div>';
-    s+='<div class="info-box" style="margin:0;text-align:center"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">⚠️ Risky</div><div style="font-size:22px;color:#fcd34d;margin-top:4px;font-weight:800">'+risky+'</div></div>';
-    s+='<div class="info-box" style="margin:0;text-align:center"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">❌ Spam</div><div style="font-size:22px;color:#fca5a5;margin-top:4px;font-weight:800">'+spam+'</div></div></div>';
-    var h=s+'<table class="data-table"><thead><tr><th>Recipient</th><th>Subject</th><th>Sent</th><th>AI</th><th>%</th></tr></thead><tbody>';
-    emails.slice(0,100).forEach(function(e){
-      var pred=e.aiPrediction||'GOOD';var prob=e.aiInboxProb||75;
-      var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';
-      h+='<tr><td style="word-break:break-all;font-size:11px">'+esc(e.recipientEmail)+'</td><td style="font-size:11px">'+esc(e.subject||'—')+'</td><td style="font-size:10px">'+fmtDate(e.sentAt)+'</td><td><span style="padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:'+pc+'22;color:'+pc+';border:1px solid '+pc+'44">'+pred+'</span></td><td><span style="color:'+pc+';font-weight:800">'+prob+'%</span></td></tr>';
-    });
-    h+='</tbody></table>';w.innerHTML=h;
-  });
-}
-function loadBestTime(){
-  $('bestTimeContent').innerHTML='<div class="empty">Analyzing...</div>';
-  api('/api/ai/best-time').then(function(r){
-    if(!r.ok){$('bestTimeContent').innerHTML='<div class="empty">Error</div>';return;}
-    var hours=r.bestHours||[9,11,14];
-    var h='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">';
-    hours.forEach(function(hh){var lbl=((hh%12)||12)+':00 '+(hh<12?'AM':'PM');h+='<div class="info-box" style="text-align:center;margin:0"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">Best</div><div style="font-size:18px;font-weight:800;color:var(--cyan);margin-top:4px">'+lbl+'</div></div>';});
-    h+='</div>';if(r.reasoning)h+='<div style="font-size:11px;color:var(--text2);margin-top:12px">💡 '+esc(r.reasoning)+'</div>';
-    $('bestTimeContent').innerHTML=h;
-  });
+/* ============ CV ANALYZER ============ */
+function openCVAnalyzer(){$('cvAnalyzerModal').classList.remove('hidden');}
+function closeCVAnalyzer(){$('cvAnalyzerModal').classList.add('hidden');}
+document.getElementById('cvFileInput').addEventListener('change',function(e){
+  var f=e.target.files[0];if(!f)return;
+  if(f.size>2*1024*1024){toast('Max 2MB','err');return;}
+  var rd=new FileReader();
+  rd.onload=function(ev){$('cvText').value=ev.target.result;toast('✅ CV loaded');};
+  rd.readAsText(f);
+  e.target.value='';
+});
+async function runCVAnalysis(){
+  var cvText=$('cvText').value.trim();
+  if(cvText.length<30)return toast('CV content too short','err');
+  var btn=$('cvAnalyzeBtn');
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span> Analyzing CV...';
+  $('cvAnalysisResult').style.display='none';
+  try{
+    var r=await api('/api/ai/analyze-cv','POST',{cvText:cvText,targetRole:$('cvTargetRole').value.trim(),jobDescription:$('cvJobDesc').value.trim()});
+    if(r.ok){
+      $('composerSubject').value=r.subject||'';
+      $('composerBody').value=r.body||'';
+      var skills=(r.keySkills||[]).map(function(s){return '<span class="badge sent" style="margin:2px">'+esc(s)+'</span>';}).join('');
+      var scoreColor=(r.score||0)>=80?'#86efac':(r.score||0)>=60?'#7dd3fc':'#fcd34d';
+      $('cvAnalysisResult').innerHTML='<div style="font-weight:700;color:#7dd3fc;margin-bottom:8px">✅ Analysis Complete — Score: <span style="color:'+scoreColor+'">'+(r.score||0)+'/100</span></div><div style="margin-bottom:8px">'+esc(r.analysis||'')+'</div><div style="font-weight:600;font-size:11px;color:var(--text2);margin-bottom:4px">KEY SKILLS:</div><div>'+skills+'</div>';
+      $('cvAnalysisResult').style.display='block';
+      toast('✅ Email generated from CV!');
+      lastAnalyzedHash='';runLiveAnalysis();
+    } else toast('AI Error: '+r.error,'err');
+  } catch(e){toast('Error: '+e.message,'err');}
+  btn.disabled=false;btn.innerHTML='🤖 Analyze & Generate Email';
 }
 
-function buildSigHtmlFrom(f,logoUrl){
-  var phoneClean=(f.phone||'').replace(/[^0-9+]/g,'');
-  var liUrl=f.linkedin?(f.linkedin.indexOf('http')===0?f.linkedin:'https://'+f.linkedin):'';
-  var h='<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-family:Arial,sans-serif"><tr>';
-  if(logoUrl){h+='<td style="padding-right:18px;border-right:2px solid #d1d5db;vertical-align:middle;text-align:center;width:130px"><img src="'+logoUrl+'" width="100" alt="logo" style="display:block;max-width:100px;height:auto;margin:0 auto;border:0"></td>';}
-  h+='<td style="padding-left:'+(logoUrl?'18px':'0')+';vertical-align:top">';
-  if(f.greeting)h+='<div style="color:#666;margin-bottom:8px;font-size:13px">'+esc(f.greeting)+'</div>';
-  if(f.name)h+='<div style="font-weight:bold;font-size:15px;color:#111;margin-bottom:2px">'+esc(f.name)+'</div>';
-  if(f.pos)h+='<div style="color:#666;font-size:12px">'+esc(f.pos)+'</div>';
-  if(f.company)h+='<div style="color:#666;font-size:12px;margin-bottom:8px">'+esc(f.company)+'</div>';
-  var lines=[];
-  if(f.phone)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">📞 <b>Phone:</b> <a href="tel:'+phoneClean+'" style="color:#1a73e8;text-decoration:none">'+esc(f.phone)+'</a></div>');
-  if(f.email)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">✉️ <b>Email:</b> <a href="mailto:'+esc(f.email)+'" style="color:#1a73e8;text-decoration:none">'+esc(f.email)+'</a></div>');
-  if(liUrl)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">🔗 <b>LinkedIn:</b> <a href="'+liUrl+'" style="color:#1a73e8;text-decoration:none">'+esc(f.linkedin)+'</a></div>');
-  if(f.extra)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">'+esc(f.extra)+'</div>');
-  if(lines.length)h+=lines.join('');
-  h+='</td></tr></table>';
-  return h;
-}
+function loadAIPredictions(){api('/api/my-emails?range=all').then(function(r){if(!r.ok)return;var emails=r.emails||[];var w=$('aiPredictionsWrap');if(!emails.length){w.innerHTML='<div class="empty"><div class="ico">📭</div>No emails</div>';return;}var excellent=0,good=0,risky=0,spam=0;emails.forEach(function(e){var p=e.aiPrediction||'GOOD';if(p==='EXCELLENT')excellent++;else if(p==='GOOD')good++;else if(p==='RISKY')risky++;else spam++;});var s='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">';s+='<div class="info-box" style="margin:0;text-align:center"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">✅ Excellent</div><div style="font-size:22px;color:#86efac;margin-top:4px;font-weight:800">'+excellent+'</div></div>';s+='<div class="info-box" style="margin:0;text-align:center"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">👍 Good</div><div style="font-size:22px;color:#7dd3fc;margin-top:4px;font-weight:800">'+good+'</div></div>';s+='<div class="info-box" style="margin:0;text-align:center"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">⚠️ Risky</div><div style="font-size:22px;color:#fcd34d;margin-top:4px;font-weight:800">'+risky+'</div></div>';s+='<div class="info-box" style="margin:0;text-align:center"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">❌ Spam</div><div style="font-size:22px;color:#fca5a5;margin-top:4px;font-weight:800">'+spam+'</div></div></div>';var h=s+'<table class="data-table"><thead><tr><th>Recipient</th><th>Subject</th><th>Sent</th><th>AI</th><th>%</th></tr></thead><tbody>';emails.slice(0,100).forEach(function(e){var pred=e.aiPrediction||'GOOD';var prob=e.aiInboxProb||75;var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';h+='<tr><td style="word-break:break-all;font-size:11px">'+esc(e.recipientEmail)+'</td><td style="font-size:11px">'+esc(e.subject||'—')+'</td><td style="font-size:10px">'+fmtDate(e.sentAt)+'</td><td><span style="padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:'+pc+'22;color:'+pc+';border:1px solid '+pc+'44">'+pred+'</span></td><td><span style="color:'+pc+';font-weight:800">'+prob+'%</span></td></tr>';});h+='</tbody></table>';w.innerHTML=h;});}
+function loadBestTime(){$('bestTimeContent').innerHTML='<div class="empty">Analyzing...</div>';api('/api/ai/best-time').then(function(r){if(!r.ok){$('bestTimeContent').innerHTML='<div class="empty">Error</div>';return;}var hours=r.bestHours||[9,11,14];var h='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">';hours.forEach(function(hh){var lbl=((hh%12)||12)+':00 '+(hh<12?'AM':'PM');h+='<div class="info-box" style="text-align:center;margin:0"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">Best</div><div style="font-size:18px;font-weight:800;color:var(--cyan);margin-top:4px">'+lbl+'</div></div>';});h+='</div>';if(r.reasoning)h+='<div style="font-size:11px;color:var(--text2);margin-top:12px">💡 '+esc(r.reasoning)+'</div>';$('bestTimeContent').innerHTML=h;});}
+
+function buildSigHtmlFrom(f,logoUrl){var phoneClean=(f.phone||'').replace(/[^0-9+]/g,'');var liUrl=f.linkedin?(f.linkedin.indexOf('http')===0?f.linkedin:'https://'+f.linkedin):'';var h='<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-family:Arial,sans-serif"><tr>';if(logoUrl){h+='<td style="padding-right:18px;border-right:2px solid #d1d5db;vertical-align:middle;text-align:center;width:130px"><img src="'+logoUrl+'" width="100" alt="logo" style="display:block;max-width:100px;height:auto;margin:0 auto;border:0"></td>';}h+='<td style="padding-left:'+(logoUrl?'18px':'0')+';vertical-align:top">';if(f.greeting)h+='<div style="color:#666;margin-bottom:8px;font-size:13px">'+esc(f.greeting)+'</div>';if(f.name)h+='<div style="font-weight:bold;font-size:15px;color:#111;margin-bottom:2px">'+esc(f.name)+'</div>';if(f.pos)h+='<div style="color:#666;font-size:12px">'+esc(f.pos)+'</div>';if(f.company)h+='<div style="color:#666;font-size:12px;margin-bottom:8px">'+esc(f.company)+'</div>';var lines=[];if(f.phone)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">📞 <b>Phone:</b> <a href="tel:'+phoneClean+'" style="color:#1a73e8;text-decoration:none">'+esc(f.phone)+'</a></div>');if(f.email)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">✉️ <b>Email:</b> <a href="mailto:'+esc(f.email)+'" style="color:#1a73e8;text-decoration:none">'+esc(f.email)+'</a></div>');if(liUrl)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">🔗 <b>LinkedIn:</b> <a href="'+liUrl+'" style="color:#1a73e8;text-decoration:none">'+esc(f.linkedin)+'</a></div>');if(f.extra)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">'+esc(f.extra)+'</div>');if(lines.length)h+=lines.join('');h+='</td></tr></table>';return h;}
 function getSigFields(){return {name:$('sbName').value.trim(),pos:$('sbPos').value.trim(),company:$('sbCompany').value.trim(),phone:$('sbPhone').value.trim(),email:$('sbEmail').value.trim(),linkedin:$('sbLinkedin').value.trim(),greeting:$('sbGreeting').value.trim(),extra:$('sbExtra').value.trim()};}
-function previewSig(){
-  var includeLogo=$('previewIncludeLogo')?$('previewIncludeLogo').checked:true;
-  var h=buildSigHtmlFrom(getSigFields(),includeLogo?LOGO_URL:'');
-  if(!h||h.length<20)return toast('Fill some fields','err');
-  $('sigPreviewContent').innerHTML=h;
-  $('sigPreviewBox').classList.add('show');
-}
-function saveSig(){
-  var h=buildSigHtmlFrom(getSigFields(),LOGO_URL);
-  if(!h||h.length<20)return toast('Fill some fields','err');
-  api('/api/signature','POST',{signature:h,fields:getSigFields()}).then(function(r){
-    if(!r.ok)return toast('Error: '+r.error,'err');
-    toast('✅ Signature saved');previewSig();
-  });
-}
-async function resetSig(){
-  var ok=await showConfirm({icon:'🗑',title:'Reset Signature?',message:'All fields cleared.',okText:'Reset',primary:false});
-  if(!ok)return;
-  ['sbName','sbPos','sbCompany','sbPhone','sbEmail','sbLinkedin','sbGreeting','sbExtra'].forEach(function(id){$(id).value='';});
-  $('sigPreviewBox').classList.remove('show');
-}
-function loadSignature(){
-  api('/api/signature').then(function(r){
-    if(!r.ok)return;
-    var f=r.fields||{};
-    ['name','pos','company','phone','email','linkedin','greeting','extra'].forEach(function(k){var id='sb'+k.charAt(0).toUpperCase()+k.slice(1);if(f[k]&&$(id))$(id).value=f[k];});
-    if(r.signature){$('sigPreviewContent').innerHTML=r.signature;$('sigPreviewBox').classList.add('show');}
-  });
-}
+function previewSig(){var includeLogo=$('previewIncludeLogo')?$('previewIncludeLogo').checked:true;var h=buildSigHtmlFrom(getSigFields(),includeLogo?LOGO_URL:'');if(!h||h.length<20)return toast('Fill some fields','err');$('sigPreviewContent').innerHTML=h;$('sigPreviewBox').classList.add('show');}
+function saveSig(){var h=buildSigHtmlFrom(getSigFields(),LOGO_URL);if(!h||h.length<20)return toast('Fill some fields','err');api('/api/signature','POST',{signature:h,fields:getSigFields()}).then(function(r){if(!r.ok)return toast('Error: '+r.error,'err');toast('✅ Signature saved');previewSig();});}
+async function resetSig(){var ok=await showConfirm({icon:'🗑',title:'Reset Signature?',message:'All fields cleared.',okText:'Reset',primary:false});if(!ok)return;['sbName','sbPos','sbCompany','sbPhone','sbEmail','sbLinkedin','sbGreeting','sbExtra'].forEach(function(id){$(id).value='';});$('sigPreviewBox').classList.remove('show');}
+function loadSignature(){api('/api/signature').then(function(r){if(!r.ok)return;var f=r.fields||{};['name','pos','company','phone','email','linkedin','greeting','extra'].forEach(function(k){var id='sb'+k.charAt(0).toUpperCase()+k.slice(1);if(f[k]&&$(id))$(id).value=f[k];});if(r.signature){$('sigPreviewContent').innerHTML=r.signature;$('sigPreviewBox').classList.add('show');}});}
 function getTestSigFields(){return {name:$('testSbName').value.trim(),pos:$('testSbPos').value.trim(),company:$('testSbCompany').value.trim(),phone:$('testSbPhone').value.trim(),email:$('testSbEmail').value.trim(),linkedin:$('testSbLinkedin').value.trim(),greeting:$('testSbGreeting').value.trim(),extra:$('testSbExtra').value.trim()};}
 function updateTestSigPreview(){
   var useNormal=$('testUseNormalSig').checked;
   var useTest=$('testUseTestSig').checked;
   var includeLogo=$('testIncludeLogo').checked;
-  var normFields={name:$('sbName').value.trim(),pos:$('sbPos').value.trim(),company:$('sbCompany').value.trim(),phone:$('sbPhone').value.trim(),email:$('sbEmail').value.trim(),linkedin:$('sbLinkedin').value.trim(),greeting:$('sbGreeting').value.trim(),extra:$('sbExtra').value.trim()};
+  var normFields=getSigFields();
   var testFields=getTestSigFields();
-  var normHasData=normFields.name||normFields.phone||normFields.email||normFields.extra||(includeLogo&&LOGO_URL);
-  var testHasData=testFields.name||testFields.phone||testFields.email||testFields.extra;
   var selectedSig='';
-  if(useNormal&&normHasData){selectedSig=buildSigHtmlFrom(normFields,includeLogo?LOGO_URL:'');}
-  else if(useTest&&testHasData){selectedSig=buildSigHtmlFrom(testFields,includeLogo?LOGO_URL:'');}
+  if(useNormal && (normFields.name||normFields.phone||normFields.email||normFields.extra)){selectedSig=buildSigHtmlFrom(normFields,includeLogo?LOGO_URL:'');}
+  else if(useTest && (testFields.name||testFields.phone||testFields.email||testFields.extra)){selectedSig=buildSigHtmlFrom(testFields,includeLogo?LOGO_URL:'');}
+  else if(includeLogo && LOGO_URL){selectedSig=buildSigHtmlFrom({},LOGO_URL);}
   var box=$('testSigPreviewBox'),content=$('testSigPreviewContent');
-  if(selectedSig&&selectedSig.length>20){content.innerHTML=selectedSig;box.classList.add('show');}
-  else{content.innerHTML='';box.classList.remove('show');}
+  if(selectedSig && selectedSig.length>20){content.innerHTML=selectedSig;box.classList.add('show');}
+  else {content.innerHTML='<div style="padding:20px;text-align:center;color:#666;font-size:12px">Fill signature fields to see preview</div>';box.classList.add('show');}
 }
-function toggleTestSigPanel(){
-  var p=$('testSigFields');if(!p)return;
-  if(p.classList.contains('hidden')){p.classList.remove('hidden');$('testSigToggleBtn').innerText='✖ Close';}
-  else{p.classList.add('hidden');$('testSigToggleBtn').innerText='✏️ Edit';}
-}
-function saveTestSignature(){
-  var f=getTestSigFields();
-  if(!f.name&&!f.phone&&!f.email&&!f.extra)return toast('Fill some fields','err');
-  var h=buildSigHtmlFrom(f,LOGO_URL);
-  api('/api/test/signature','POST',{signature:h,fields:f}).then(function(r){
-    if(r.ok){toast('✅ Test signature saved');updateTestSigPreview();}
-    else toast('Error: '+r.error,'err');
-  });
-}
+function toggleTestSigPanel(){var p=$('testSigFields');if(!p)return;if(p.classList.contains('hidden')){p.classList.remove('hidden');$('testSigToggleBtn').innerText='✖ Close';}else{p.classList.add('hidden');$('testSigToggleBtn').innerText='✏️ Edit';}}
+function saveTestSignature(){var f=getTestSigFields();if(!f.name&&!f.phone&&!f.email&&!f.extra)return toast('Fill some fields','err');var h=buildSigHtmlFrom(f,LOGO_URL);api('/api/test/signature','POST',{signature:h,fields:f}).then(function(r){if(r.ok){toast('✅ Test signature saved');updateTestSigPreview();}else toast('Error: '+r.error,'err');});}
 
-function loadLogo(){
-  api('/api/logo').then(function(r){
-    if(r.ok&&r.url){
-      LOGO_URL=r.url;LOGO_URL_ALT=r.urlAlt||'';
-      var img=$('logoImg');var triedAlt=false;
-      img.onerror=function(){if(!triedAlt&&LOGO_URL_ALT&&this.src!==LOGO_URL_ALT){triedAlt=true;this.src=LOGO_URL_ALT;}else{this.style.display='none';$('logoPh').style.display='block';}};
-      img.onload=function(){this.style.display='block';$('logoPh').style.display='none';};
-      img.src=r.url;
-      $('logoTitle').innerText='Logo uploaded';$('logoSub').innerText='Click to change';$('logoActions').style.display='block';
-    }
-  });
-}
-document.getElementById('logoInput').addEventListener('change',function(e){
-  var f=e.target.files[0];if(!f)return;
-  var ok=['image/png','image/jpeg','image/jpg','image/gif','image/svg+xml','image/webp'];
-  if(ok.indexOf(f.type)===-1)return toast('Only PNG/JPG/GIF/SVG/WEBP','err');
-  if(f.size>2*1024*1024)return toast('Max 2MB','err');
-  var rd=new FileReader();
-  rd.onload=function(ev){
-    var b=ev.target.result.split(',')[1];toast('Uploading...');
-    api('/api/upload-logo','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){
-      if(!r.ok)return toast('Error: '+r.error,'err');
-      LOGO_URL=r.url;LOGO_URL_ALT=r.urlAlt||'';
-      var img=$('logoImg');var triedAlt=false;
-      img.onerror=function(){if(!triedAlt&&LOGO_URL_ALT&&this.src!==LOGO_URL_ALT){triedAlt=true;this.src=LOGO_URL_ALT;}else{this.style.display='none';$('logoPh').style.display='block';}};
-      img.onload=function(){this.style.display='block';$('logoPh').style.display='none';};
-      img.src=r.url;
-      $('logoTitle').innerText='Logo uploaded';$('logoSub').innerText=f.name;$('logoActions').style.display='block';toast('✅ Uploaded');
-    });
-  };
-  rd.readAsDataURL(f);
-});
-async function removeLogo(){
-  var ok=await showConfirm({icon:'🗑',title:'Remove logo?',message:'',okText:'Remove'});
-  if(!ok)return;
-  api('/api/remove-logo','POST',{}).then(function(r){
-    if(r.ok){
-      toast('Removed');
-      LOGO_URL='';LOGO_URL_ALT='';
-      $('logoImg').style.display='none';$('logoPh').style.display='block';
-      $('logoTitle').innerText='Click to upload logo';$('logoSub').innerText='PNG · JPG · GIF · SVG · WEBP — max 2MB';
-      $('logoActions').style.display='none';
-    }
-  });
-}
+function loadLogo(){api('/api/logo').then(function(r){if(r.ok&&r.url){LOGO_URL=r.url;LOGO_URL_ALT=r.urlAlt||'';var img=$('logoImg');var triedAlt=false;img.onerror=function(){if(!triedAlt&&LOGO_URL_ALT&&this.src!==LOGO_URL_ALT){triedAlt=true;this.src=LOGO_URL_ALT;}else{this.style.display='none';$('logoPh').style.display='block';}};img.onload=function(){this.style.display='block';$('logoPh').style.display='none';};img.src=r.url;$('logoTitle').innerText='Logo uploaded';$('logoSub').innerText='Click to change';$('logoActions').style.display='block';}});}
+document.getElementById('logoInput').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;var ok=['image/png','image/jpeg','image/jpg','image/gif','image/svg+xml','image/webp'];if(ok.indexOf(f.type)===-1)return toast('Only PNG/JPG/GIF/SVG/WEBP','err');if(f.size>2*1024*1024)return toast('Max 2MB','err');var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading...');api('/api/upload-logo','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){if(!r.ok)return toast('Error: '+r.error,'err');LOGO_URL=r.url;LOGO_URL_ALT=r.urlAlt||'';var img=$('logoImg');var triedAlt=false;img.onerror=function(){if(!triedAlt&&LOGO_URL_ALT&&this.src!==LOGO_URL_ALT){triedAlt=true;this.src=LOGO_URL_ALT;}else{this.style.display='none';$('logoPh').style.display='block';}};img.onload=function(){this.style.display='block';$('logoPh').style.display='none';};img.src=r.url;$('logoTitle').innerText='Logo uploaded';$('logoSub').innerText=f.name;$('logoActions').style.display='block';toast('✅ Uploaded');});};rd.readAsDataURL(f);});
+async function removeLogo(){var ok=await showConfirm({icon:'🗑',title:'Remove logo?',message:'',okText:'Remove'});if(!ok)return;api('/api/remove-logo','POST',{}).then(function(r){if(r.ok){toast('Removed');LOGO_URL='';LOGO_URL_ALT='';$('logoImg').style.display='none';$('logoPh').style.display='block';$('logoTitle').innerText='Click to upload logo';$('logoSub').innerText='PNG · JPG · GIF · SVG · WEBP — max 2MB';$('logoActions').style.display='none';}});}
 
-document.getElementById('fileInput').addEventListener('change',function(e){
-  var files=e.target.files;if(!files.length)return;
-  var up=function(i){
-    if(i>=files.length){loadFiles();toast('✅ All uploaded');return;}
-    var f=files[i];
-    if(f.size>MAX_UPLOAD_SIZE){toast(f.name+' too large (max 3MB)','err');up(i+1);return;}
-    var rd=new FileReader();
-    rd.onload=function(ev){
-      var b=ev.target.result.split(',')[1];toast('Uploading '+(i+1)+'/'+files.length);
-      api('/api/upload-file','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){if(!r.ok)toast('Error: '+f.name,'err');up(i+1);}).catch(function(){up(i+1);});
-    };
-    rd.readAsDataURL(f);
-  };
-  up(0);e.target.value='';
-});
-document.getElementById('testFileUploadInput').addEventListener('change',function(e){
-  var files=e.target.files;if(!files.length)return;
-  var up=function(i){
-    if(i>=files.length){loadFiles();toast('✅ Uploaded');return;}
-    var f=files[i];
-    if(f.size>MAX_UPLOAD_SIZE){toast(f.name+' too large (max 3MB)','err');up(i+1);return;}
-    var rd=new FileReader();
-    rd.onload=function(ev){
-      var b=ev.target.result.split(',')[1];toast('Uploading '+(i+1)+'/'+files.length);
-      api('/api/upload-file','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){if(!r.ok)toast('Error: '+f.name,'err');up(i+1);}).catch(function(){up(i+1);});
-    };
-    rd.readAsDataURL(f);
-  };
-  up(0);e.target.value='';
-});
+document.getElementById('fileInput').addEventListener('change',function(e){var files=e.target.files;if(!files.length)return;var up=function(i){if(i>=files.length){loadFiles();toast('✅ All uploaded');return;}var f=files[i];if(f.size>MAX_UPLOAD_SIZE){toast(f.name+' too large (max 3MB)','err');up(i+1);return;}var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading '+(i+1)+'/'+files.length);api('/api/upload-file','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){if(!r.ok)toast('Error: '+f.name,'err');up(i+1);}).catch(function(){up(i+1);});};rd.readAsDataURL(f);};up(0);e.target.value='';});
+document.getElementById('testFileUploadInput').addEventListener('change',function(e){var files=e.target.files;if(!files.length)return;var up=function(i){if(i>=files.length){loadFiles();toast('✅ Uploaded');return;}var f=files[i];if(f.size>MAX_UPLOAD_SIZE){toast(f.name+' too large (max 3MB)','err');up(i+1);return;}var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading '+(i+1)+'/'+files.length);api('/api/upload-file','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){if(!r.ok)toast('Error: '+f.name,'err');up(i+1);}).catch(function(){up(i+1);});};rd.readAsDataURL(f);};up(0);e.target.value='';});
 function loadFiles(){api('/api/files').then(function(r){if(!r.ok)return;FILES=r.files||[];renderFilesList();renderTestFiles();});}
-function renderFilesList(){
-  var w=$('filesList');if(!w)return;
-  if(!FILES.length){w.innerHTML='<div class="empty">No files uploaded</div>';updateFileSelectInfo();return;}
-  w.innerHTML=FILES.map(function(f){
-    var sel=SELECTED_FILES[f.id]?' selected':'';
-    var icon=fileIcon(f.name,f.mimeType);
-    return '<div class="file-item'+sel+'" onclick="toggleFile(\''+f.id+'\')"><input type="checkbox" class="cbox" '+(SELECTED_FILES[f.id]?'checked':'')+' onclick="event.stopPropagation();toggleFile(\''+f.id+'\')"><div class="icon">'+icon+'</div><div class="info"><div class="fname">'+esc(f.name)+'</div><div class="fmeta">'+fmtSize(f.size)+'</div></div><div class="actions"><button onclick="event.stopPropagation();delFile(\''+f.id+'\')">Delete</button></div></div>';
-  }).join('');
-  updateFileSelectInfo();
-}
+function renderFilesList(){var w=$('filesList');if(!w)return;if(!FILES.length){w.innerHTML='<div class="empty">No files uploaded</div>';updateFileSelectInfo();return;}w.innerHTML=FILES.map(function(f){var sel=SELECTED_FILES[f.id]?' selected':'';var icon=fileIcon(f.name,f.mimeType);return '<div class="file-item'+sel+'" onclick="toggleFile(\''+f.id+'\')"><input type="checkbox" class="cbox" '+(SELECTED_FILES[f.id]?'checked':'')+' onclick="event.stopPropagation();toggleFile(\''+f.id+'\')"><div class="icon">'+icon+'</div><div class="info"><div class="fname">'+esc(f.name)+'</div><div class="fmeta">'+fmtSize(f.size)+'</div></div><div class="actions"><button onclick="event.stopPropagation();delFile(\''+f.id+'\')">Delete</button></div></div>';}).join('');updateFileSelectInfo();}
 function updateFileSelectInfo(){var el=$('fileSelectInfo');if(!el)return;var count=Object.keys(SELECTED_FILES).length;el.innerText=count>0?(count+' selected'):'';}
 function toggleFile(id){if(SELECTED_FILES[id])delete SELECTED_FILES[id];else SELECTED_FILES[id]=true;renderFilesList();}
 function selectAllFiles(){FILES.forEach(function(f){SELECTED_FILES[f.id]=true;});renderFilesList();}
 function unselectAllFiles(){SELECTED_FILES={};renderFilesList();}
-async function delFile(id){
-  var ok=await showConfirm({icon:'🗑',title:'Delete file?',message:'',okText:'Delete'});
-  if(!ok)return;
-  api('/api/files/'+id,'DELETE').then(function(r){if(r.ok){toast('Deleted');delete SELECTED_FILES[id];loadFiles();}});
-}
-function renderTestFiles(){
-  var w=$('testFilesList');if(!w)return;
-  if(!FILES.length){w.innerHTML='<div style="color:var(--text3);font-size:11px;text-align:center;padding:8px">No files uploaded. Upload karo upar se.</div>';return;}
-  w.innerHTML=FILES.map(function(f){
-    var sel=TEST_SELECTED_FILES[f.id]?' selected':'';
-    var icon=fileIcon(f.name,f.mimeType);
-    return '<div class="file-item'+sel+'" onclick="toggleTestFile(\''+f.id+'\')"><input type="checkbox" class="cbox" '+(TEST_SELECTED_FILES[f.id]?'checked':'')+' onclick="event.stopPropagation();toggleTestFile(\''+f.id+'\')"><div class="icon">'+icon+'</div><div class="info"><div class="fname">'+esc(f.name)+'</div><div class="fmeta">'+fmtSize(f.size)+'</div></div></div>';
-  }).join('');
-}
+async function delFile(id){var ok=await showConfirm({icon:'🗑',title:'Delete file?',message:'',okText:'Delete'});if(!ok)return;api('/api/files/'+id,'DELETE').then(function(r){if(r.ok){toast('Deleted');delete SELECTED_FILES[id];loadFiles();}});}
+function renderTestFiles(){var w=$('testFilesList');if(!w)return;if(!FILES.length){w.innerHTML='<div style="color:var(--text3);font-size:11px;text-align:center;padding:8px">No files uploaded. Upload karo upar se.</div>';return;}w.innerHTML=FILES.map(function(f){var sel=TEST_SELECTED_FILES[f.id]?' selected':'';var icon=fileIcon(f.name,f.mimeType);return '<div class="file-item'+sel+'" onclick="toggleTestFile(\''+f.id+'\')"><input type="checkbox" class="cbox" '+(TEST_SELECTED_FILES[f.id]?'checked':'')+' onclick="event.stopPropagation();toggleTestFile(\''+f.id+'\')"><div class="icon">'+icon+'</div><div class="info"><div class="fname">'+esc(f.name)+'</div><div class="fmeta">'+fmtSize(f.size)+'</div></div></div>';}).join('');}
 function toggleTestFile(id){if(TEST_SELECTED_FILES[id])delete TEST_SELECTED_FILES[id];else TEST_SELECTED_FILES[id]=true;renderTestFiles();}
 function toggleTestAllFiles(){FILES.forEach(function(f){TEST_SELECTED_FILES[f.id]=true;});renderTestFiles();}
 function clearTestFileSelection(){TEST_SELECTED_FILES={};renderTestFiles();}
 
-function loadTemplates(){
-  api('/api/templates').then(function(r){
-    TEMPLATES=r.templates||[];
-    var w=$('tplList');w.innerHTML='';
-    $('tplCount').innerText=TEMPLATES.length+' saved';
-    if(!TEMPLATES.length)w.innerHTML='<div class="empty"><div class="ico">📝</div>No templates</div>';
-    else TEMPLATES.forEach(function(t){
-      var d=document.createElement('div');d.className='tpl-card';
-      d.innerHTML='<div class="info"><div class="name">📄 '+esc(t.name)+'</div><div class="sub">'+esc(t.subject)+'</div></div><button onclick="previewTemplate(\''+t.id+'\')">👁</button><button onclick="loadTemplateToComposer(\''+t.id+'\')">Load</button><button class="danger" onclick="delTpl(\''+t.id+'\')">✕</button>';
-      w.appendChild(d);
-    });
-    var s=$('tplSelect');s.innerHTML='';
-    if(!TEMPLATES.length)s.innerHTML='<option value="">(No templates)</option>';
-    else TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;s.appendChild(o);});
-    var ts=$('testTemplateSelect');
-    if(ts){var cur=ts.value;ts.innerHTML='<option value="">-- Manual entry --</option>';TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;ts.appendChild(o);});ts.value=cur;}
-  });
-}
+function loadTemplates(){api('/api/templates').then(function(r){TEMPLATES=r.templates||[];var w=$('tplList');w.innerHTML='';$('tplCount').innerText=TEMPLATES.length+' saved';if(!TEMPLATES.length)w.innerHTML='<div class="empty"><div class="ico">📝</div>No templates</div>';else TEMPLATES.forEach(function(t){var d=document.createElement('div');d.className='tpl-card';d.innerHTML='<div class="info"><div class="name">📄 '+esc(t.name)+'</div><div class="sub">'+esc(t.subject)+'</div></div><button onclick="previewTemplate(\''+t.id+'\')">👁</button><button onclick="loadTemplateToComposer(\''+t.id+'\')">Load</button><button class="danger" onclick="delTpl(\''+t.id+'\')">✕</button>';w.appendChild(d);});var s=$('tplSelect');s.innerHTML='';if(!TEMPLATES.length)s.innerHTML='<option value="">(No templates)</option>';else TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;s.appendChild(o);});var ts=$('testTemplateSelect');if(ts){var cur=ts.value;ts.innerHTML='<option value="">-- Manual entry --</option>';TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;ts.appendChild(o);});ts.value=cur;}});}
 function previewTemplate(id){var t=TEMPLATES.filter(function(x){return x.id===id;})[0];if(!t)return;$('tplPreviewTitle').innerText='📄 '+t.name;$('tplPreviewSubject').innerText=t.subject;$('tplPreviewBody').innerText=t.body;$('tplPreviewBackdrop').classList.remove('hidden');}
 function closeTplPreview(){$('tplPreviewBackdrop').classList.add('hidden');}
 function loadTemplateToComposer(id){var t=TEMPLATES.filter(function(x){return x.id===id;})[0];if(!t)return;$('composerName').value=t.name;$('composerSubject').value=t.subject;$('composerBody').value=t.body;lastAnalyzedHash='';runLiveAnalysis();$('composerBody').scrollIntoView({behavior:'smooth',block:'center'});}
 async function delTpl(id){var ok=await showConfirm({icon:'🗑',title:'Delete template?',message:'',okText:'Delete'});if(!ok)return;api('/api/templates/'+id,'DELETE').then(function(r){if(r.ok){toast('Deleted');loadTemplates();}});}
 function onTestTemplateChange(){var id=$('testTemplateSelect').value;if(!id)return;var t=TEMPLATES.filter(function(x){return x.id===id;})[0];if(!t)return;$('testSubject').value=t.subject||'';$('testBody').value=t.body||'';toast('✅ Template loaded');}
-function openTestSaveTplModal(){
-  var subject=$('testSubject').value.trim();
-  var body=$('testBody').value.trim();
-  if(!subject&&!body)return toast('Fill Subject or Body first','err');
-  $('saveTplName').value=subject.substring(0,40)||'Untitled';
-  $('saveTplSubject').value=subject;
-  $('saveTplBodyPreview').value=body.substring(0,200)+(body.length>200?'...':'');
-  $('saveTplModal').classList.remove('hidden');
-}
+function openTestSaveTplModal(){var subject=$('testSubject').value.trim();var body=$('testBody').value.trim();if(!subject&&!body)return toast('Fill Subject or Body first','err');$('saveTplName').value=subject.substring(0,40)||'Untitled';$('saveTplSubject').value=subject;$('saveTplBodyPreview').value=body.substring(0,200)+(body.length>200?'...':'');$('saveTplModal').classList.remove('hidden');}
 function closeSaveTplModal(){$('saveTplModal').classList.add('hidden');}
-function confirmSaveTpl(){
-  var name=$('saveTplName').value.trim();
-  if(!name)return toast('Enter template name','err');
-  var subject=$('saveTplSubject').value.trim()||name;
-  var body=$('testBody').value.trim();
-  if(!body){var cbody=$('composerBody');if(cbody&&cbody.value.trim())body=cbody.value.trim();}
-  if(!body)return toast('Body is empty','err');
-  api('/api/templates','POST',{name:name,subject:subject,body:body}).then(function(r){
-    if(r.ok){toast('✅ Saved as "'+(r.name||name)+'"');closeSaveTplModal();loadTemplates();}
-    else toast('Error: '+r.error,'err');
-  });
-}
+function confirmSaveTpl(){var name=$('saveTplName').value.trim();if(!name)return toast('Enter template name','err');var subject=$('saveTplSubject').value.trim()||name;var body=$('testBody').value.trim();if(!body){var cbody=$('composerBody');if(cbody&&cbody.value.trim())body=cbody.value.trim();}if(!body)return toast('Body is empty','err');api('/api/templates','POST',{name:name,subject:subject,body:body}).then(function(r){if(r.ok){toast('✅ Saved as "'+(r.name||name)+'"');closeSaveTplModal();loadTemplates();}else toast('Error: '+r.error,'err');});}
 
 function addRow(){var w=$('recipients'),d=document.createElement('div');d.className='recip-row';d.innerHTML='<input type="text" placeholder="Company (optional)" autocomplete="off"><input type="email" placeholder="email@example.com" autocomplete="off"><button class="del" onclick="this.parentNode.remove()">✕</button>';w.appendChild(d);}
-function submitRecipients(){
-  var rows=$('recipients').querySelectorAll('.recip-row'),list=[];
-  rows.forEach(function(r){var i=r.querySelectorAll('input');if(i[1].value.trim())list.push({company:i[0].value.trim(),email:i[1].value.trim()});});
-  if(!list.length)return toast('No emails','err');
-  api('/api/recipients','POST',{list:list,templateId:$('tplSelect').value}).then(function(r){
-    if(r.ok){toast('✅ '+r.added+' added');$('recipients').innerHTML='';addRow();loadAll();}
-    else toast('Error: '+r.error,'err');
-  });
-}
-function switchTab(t){
-  if(t==='manual'){$('tabManual').classList.add('active');$('tabBulk').classList.remove('active');$('manualTab').classList.remove('hidden');$('bulkTab').classList.add('hidden');}
-  else{$('tabBulk').classList.add('active');$('tabManual').classList.remove('active');$('bulkTab').classList.remove('hidden');$('manualTab').classList.add('hidden');updateBulk();}
-}
-function parseBulk(text){
-  var emailRx=/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-  var lines=text.split(/\r?\n/);var found={};var seen=new Set();var dup=0;
-  for(var i=0;i<lines.length;i++){
-    var line=lines[i];if(!line.trim())continue;
-    var emails=line.match(emailRx)||[];if(!emails.length)continue;
-    var cleanLine=line;
-    for(var j=0;j<emails.length;j++)cleanLine=cleanLine.replace(emails[j],' ');
-    cleanLine=cleanLine.replace(/[,;|<>"'\(\)\[\]]/g,' ').replace(/\s+/g,' ').trim();
-    var company='';
-    if(cleanLine.length>=2&&cleanLine.length<=80){
-      var compacted=cleanLine.replace(/\s/g,'');
-      var looksLikeDomain=/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(compacted);
-      var isSingleWord=!cleanLine.includes(' ');
-      if(!looksLikeDomain&&!(isSingleWord&&/^[a-z0-9._-]+$/i.test(cleanLine)))company=cleanLine;
-    }
-    for(var k=0;k<emails.length;k++){var em=emails[k].toLowerCase();if(seen.has(em)){dup++;continue;}seen.add(em);found[em]=company;}
-  }
-  var valid=Object.keys(found).map(function(e){return{email:e,company:found[e]};});
-  return{valid:valid,dup:dup};
-}
-function updateBulk(){
-  var text=$('bulkInput').value;var r=parseBulk(text);var wrap=$('bulkPreviewWrap');var table=$('bulkPreviewTable');
-  $('bulkValidPill').innerText='✅ '+r.valid.length;$('bulkDupPill').innerText='🔁 '+r.dup;
-  if(!text.trim()||r.valid.length===0){wrap.classList.remove('show');return;}
-  wrap.classList.add('show');
-  var h='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3);position:sticky;top:0">#</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3)">Company</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3)">Email</th></tr></thead><tbody>';
-  r.valid.slice(0,50).forEach(function(row,idx){h+='<tr><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:var(--text3);font-size:11px">'+(idx+1)+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#cbd5e1">'+(row.company?esc(row.company):'—')+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#7dd3fc;font-family:Courier New,monospace;font-size:11px;word-break:break-all">'+esc(row.email)+'</td></tr>';});
-  if(r.valid.length>50)h+='<tr><td colspan="3" style="text-align:center;color:var(--text3);font-style:italic;padding:10px">... +'+(r.valid.length-50)+'</td></tr>';
-  h+='</tbody></table>';table.innerHTML=h;
-}
+function submitRecipients(){var rows=$('recipients').querySelectorAll('.recip-row'),list=[];rows.forEach(function(r){var i=r.querySelectorAll('input');if(i[1].value.trim())list.push({company:i[0].value.trim(),email:i[1].value.trim()});});if(!list.length)return toast('No emails','err');api('/api/recipients','POST',{list:list,templateId:$('tplSelect').value}).then(function(r){if(r.ok){toast('✅ '+r.added+' added');$('recipients').innerHTML='';addRow();loadAll();}else toast('Error: '+r.error,'err');});}
+function switchTab(t){if(t==='manual'){$('tabManual').classList.add('active');$('tabBulk').classList.remove('active');$('manualTab').classList.remove('hidden');$('bulkTab').classList.add('hidden');}else{$('tabBulk').classList.add('active');$('tabManual').classList.remove('active');$('bulkTab').classList.remove('hidden');$('manualTab').classList.add('hidden');updateBulk();}}
+function parseBulk(text){var emailRx=/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;var lines=text.split(/\r?\n/);var found={};var seen=new Set();var dup=0;for(var i=0;i<lines.length;i++){var line=lines[i];if(!line.trim())continue;var emails=line.match(emailRx)||[];if(!emails.length)continue;var cleanLine=line;for(var j=0;j<emails.length;j++)cleanLine=cleanLine.replace(emails[j],' ');cleanLine=cleanLine.replace(/[,;|<>"'\(\)\[\]]/g,' ').replace(/\s+/g,' ').trim();var company='';if(cleanLine.length>=2&&cleanLine.length<=80){var compacted=cleanLine.replace(/\s/g,'');var looksLikeDomain=/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(compacted);var isSingleWord=!cleanLine.includes(' ');if(!looksLikeDomain&&!(isSingleWord&&/^[a-z0-9._-]+$/i.test(cleanLine)))company=cleanLine;}for(var k=0;k<emails.length;k++){var em=emails[k].toLowerCase();if(seen.has(em)){dup++;continue;}seen.add(em);found[em]=company;}}var valid=Object.keys(found).map(function(e){return{email:e,company:found[e]};});return{valid:valid,dup:dup};}
+function updateBulk(){var text=$('bulkInput').value;var r=parseBulk(text);var wrap=$('bulkPreviewWrap');var table=$('bulkPreviewTable');$('bulkValidPill').innerText='✅ '+r.valid.length;$('bulkDupPill').innerText='🔁 '+r.dup;if(!text.trim()||r.valid.length===0){wrap.classList.remove('show');return;}wrap.classList.add('show');var h='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3);position:sticky;top:0">#</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3)">Company</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3)">Email</th></tr></thead><tbody>';r.valid.slice(0,50).forEach(function(row,idx){h+='<tr><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:var(--text3);font-size:11px">'+(idx+1)+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#cbd5e1">'+(row.company?esc(row.company):'—')+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#7dd3fc;font-family:Courier New,monospace;font-size:11px;word-break:break-all">'+esc(row.email)+'</td></tr>';});if(r.valid.length>50)h+='<tr><td colspan="3" style="text-align:center;color:var(--text3);font-style:italic;padding:10px">... +'+(r.valid.length-50)+'</td></tr>';h+='</tbody></table>';table.innerHTML=h;}
 function clearBulk(){$('bulkInput').value='';updateBulk();}
-function submitBulk(){
-  var r=parseBulk($('bulkInput').value);if(!r.valid.length)return toast('No emails','err');
-  var items=r.valid;var emptyCount=r.valid.filter(function(x){return !x.company;}).length;
-  if(emptyCount>0&&emptyCount<r.valid.length){
-    toast('🤖 AI extracting...');
-    api('/api/ai/parse-bulk','POST',{text:$('bulkInput').value}).then(function(aiRes){
-      if(aiRes.ok&&aiRes.items&&aiRes.items.length)items=aiRes.items.map(function(i){return{email:i.email,company:i.company||''};});
-      sendBulkRecipients(items);
-    }).catch(function(){sendBulkRecipients(items);});
-  }else sendBulkRecipients(items);
-}
-function sendBulkRecipients(items){
-  api('/api/recipients','POST',{list:items,templateId:$('tplSelect').value}).then(function(res){
-    if(res.ok){toast('✅ '+res.added+' added');$('bulkInput').value='';updateBulk();loadAll();switchTab('manual');}
-    else toast('Error: '+res.error,'err');
-  });
-}
-function readFileToText(file,callback){
-  var name=file.name.toLowerCase();var reader=new FileReader();
-  if(name.endsWith('.xlsx')||name.endsWith('.xls')){
-    if(typeof XLSX==='undefined'){toast('Excel reader not loaded','err');return;}
-    reader.onload=function(ev){
-      try{
-        var data=new Uint8Array(ev.target.result);
-        var wb=XLSX.read(data,{type:'array'});var text='';
-        wb.SheetNames.forEach(function(sn){var sheet=wb.Sheets[sn];var rows=XLSX.utils.sheet_to_json(sheet,{header:1});rows.forEach(function(row){var parts=row.filter(function(c){return c!==undefined&&c!=='';});if(parts.length)text+=parts.join(', ')+'\n';});});
-        callback(text);
-      }catch(err){toast('Error: '+err.message,'err');}
-    };
-    reader.readAsArrayBuffer(file);
-  }else{reader.onload=function(ev){callback(ev.target.result);};reader.readAsText(file);}
-}
+function submitBulk(){var r=parseBulk($('bulkInput').value);if(!r.valid.length)return toast('No emails','err');var items=r.valid;var emptyCount=r.valid.filter(function(x){return !x.company;}).length;if(emptyCount>0&&emptyCount<r.valid.length){toast('🤖 AI extracting...');api('/api/ai/parse-bulk','POST',{text:$('bulkInput').value}).then(function(aiRes){if(aiRes.ok&&aiRes.items&&aiRes.items.length)items=aiRes.items.map(function(i){return{email:i.email,company:i.company||''};});sendBulkRecipients(items);}).catch(function(){sendBulkRecipients(items);});}else sendBulkRecipients(items);}
+function sendBulkRecipients(items){api('/api/recipients','POST',{list:items,templateId:$('tplSelect').value}).then(function(res){if(res.ok){toast('✅ '+res.added+' added');$('bulkInput').value='';updateBulk();loadAll();switchTab('manual');}else toast('Error: '+res.error,'err');});}
+function readFileToText(file,callback){var name=file.name.toLowerCase();var reader=new FileReader();if(name.endsWith('.xlsx')||name.endsWith('.xls')){if(typeof XLSX==='undefined'){toast('Excel reader not loaded','err');return;}reader.onload=function(ev){try{var data=new Uint8Array(ev.target.result);var wb=XLSX.read(data,{type:'array'});var text='';wb.SheetNames.forEach(function(sn){var sheet=wb.Sheets[sn];var rows=XLSX.utils.sheet_to_json(sheet,{header:1});rows.forEach(function(row){var parts=row.filter(function(c){return c!==undefined&&c!=='';});if(parts.length)text+=parts.join(', ')+'\n';});});callback(text);}catch(err){toast('Error: '+err.message,'err');}};reader.readAsArrayBuffer(file);}else{reader.onload=function(ev){callback(ev.target.result);};reader.readAsText(file);}}
 
 document.addEventListener('DOMContentLoaded',function(){
   var ta=$('bulkInput');if(ta)ta.addEventListener('input',updateBulk);
-  var fi=$('bulkFileInput');
-  if(fi){fi.addEventListener('change',function(e){var file=e.target.files[0];if(!file)return;readFileToText(file,function(text){$('bulkInput').value=text;updateBulk();toast('✅ Loaded: '+file.name);});e.target.value='';});}
-  var tfi=$('testBulkFileInput');
-  if(tfi){tfi.addEventListener('change',function(e){var file=e.target.files[0];if(!file)return;readFileToText(file,function(text){$('testBulkInput').value=text;updateTestBulk();toast('✅ Loaded: '+file.name);});e.target.value='';});}
-  var tbi=$('testBulkInput');
-  if(tbi)tbi.addEventListener('input',updateTestBulk);
-  var sdi=$('sendDelayInput');
-  if(sdi){sdi.addEventListener('input',checkSendDelayWarning);sdi.addEventListener('change',checkSendDelayWarning);}
+  var fi=$('bulkFileInput');if(fi){fi.addEventListener('change',function(e){var file=e.target.files[0];if(!file)return;readFileToText(file,function(text){$('bulkInput').value=text;updateBulk();toast('✅ Loaded: '+file.name);});e.target.value='';});}
+  var tfi=$('testBulkFileInput');if(tfi){tfi.addEventListener('change',function(e){var file=e.target.files[0];if(!file)return;readFileToText(file,function(text){$('testBulkInput').value=text;updateTestBulk();toast('✅ Loaded: '+file.name);});e.target.value='';});}
+  var tbi=$('testBulkInput');if(tbi)tbi.addEventListener('input',updateTestBulk);
+  var sdi=$('sendDelayInput');if(sdi){sdi.addEventListener('input',checkSendDelayWarning);sdi.addEventListener('change',checkSendDelayWarning);}
 });
 
-function loadAll(isManual){
-  if(isManual)toast('Refreshing...');
-  api('/api/stats').then(function(r){if(!r.ok)return;$('stTotal').innerText=r.stats.total;$('stSent').innerText=r.stats.sent;$('stOpened').innerText=r.stats.opened;$('stPending').innerText=r.stats.pending;$('stTotalSends').innerText=r.stats.totalSends||0;});
-  api('/api/recipients').then(function(r){if(!r.ok)return;CURRENT_ROWS=r.recipients||[];ALL_ROWS=CURRENT_ROWS.slice();renderRecipients();});
-}
+function loadAll(isManual){if(isManual)toast('Refreshing...');api('/api/stats').then(function(r){if(!r.ok)return;$('stTotal').innerText=r.stats.total;$('stSent').innerText=r.stats.sent;$('stOpened').innerText=r.stats.opened;$('stPending').innerText=r.stats.pending;$('stTotalSends').innerText=r.stats.totalSends||0;});api('/api/recipients').then(function(r){if(!r.ok)return;CURRENT_ROWS=r.recipients||[];ALL_ROWS=CURRENT_ROWS.slice();renderRecipients();});}
 function renderRecipients(){
   var w=$('tableWrap');var q=($('recipSearch').value||'').toLowerCase();var stF=$('statusFilter').value;
   var filtered=CURRENT_ROWS.filter(function(x){if(stF!=='all'&&(x.status||'')!==stF)return false;return !q||(x.company||'').toLowerCase().indexOf(q)!==-1||(x.email||'').toLowerCase().indexOf(q)!==-1;});
   $('trackCount').innerText=filtered.length+' / '+CURRENT_ROWS.length;
   if(!CURRENT_ROWS.length){w.innerHTML='<div class="empty"><div class="ico">📭</div>No recipients</div>';updateBulkBar();return;}
   if(!filtered.length){w.innerHTML='<div class="empty"><div class="ico">🔍</div>No matches</div>';updateBulkBar();return;}
-  var h='<table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" class="cbox" onchange="toggleAll(this.checked)"></th><th>Company</th><th>Email</th><th>Status</th><th>Sends</th><th>Last</th><th>Action</th></tr></thead><tbody>';
+  var h='<table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" class="cbox" onchange="toggleAll(this.checked)"></th><th>Company</th><th>Email</th><th>Status</th><th>Last Sent</th><th>Action</th></tr></thead><tbody>';
   filtered.forEach(function(x){
-    var st=(x.status||'').toLowerCase(),cls='pending',lbl=x.status||'Pending',icon='⏳';
-    if(st.indexOf('opened')!==-1){cls='opened';icon='👁';}
-    else if(st==='sent'){cls='sent';icon='📤';}
+    var st=(x.status||'').toLowerCase();
+    var cls=st==='pending'?'pending':'sent';
+    var lbl=st==='pending'?'Pending':'Sent';
+    var icon=st==='pending'?'⏳':'📤';
     h+='<tr class="'+(SELECTED[x.id]?'selected':'')+'"><td><input type="checkbox" class="cbox" '+(SELECTED[x.id]?'checked':'')+' onchange="toggleOne(\''+x.id+'\',this.checked)"></td>';
     h+='<td>'+esc(x.company||'—')+'</td><td style="word-break:break-all">'+esc(x.email)+'</td><td><span class="badge '+cls+'">'+icon+' '+esc(lbl)+'</span></td>';
-    h+='<td><span class="badge count">'+(x.sendCount||0)+'×</span></td>';
-    h+='<td style="font-size:10px">'+fmtDate(x.lastSentAt)+'</td>';
+    h+='<td style="font-size:10px">'+fmtDate(x.lastSentAt||x.sentAt)+'</td>';
     h+='<td style="white-space:nowrap"><button class="btn ghost small" onclick="openSendOptions(\''+x.id+'\')">📤</button> <button class="btn danger small" onclick="delRec(\''+x.id+'\')">✕</button></td></tr>';
   });
   h+='</tbody></table>';w.innerHTML=h;updateBulkBar();
 }
 function toggleOne(id,c){if(c)SELECTED[id]=true;else delete SELECTED[id];renderRecipients();}
-function toggleAll(c){
-  var q=($('recipSearch').value||'').toLowerCase();var stF=$('statusFilter').value;
-  var filtered=CURRENT_ROWS.filter(function(x){if(stF!=='all'&&(x.status||'')!==stF)return false;return !q||(x.company||'').toLowerCase().indexOf(q)!==-1||(x.email||'').toLowerCase().indexOf(q)!==-1;});
-  if(c)filtered.forEach(function(r){SELECTED[r.id]=true;});else SELECTED={};
-  renderRecipients();
-}
+function toggleAll(c){var q=($('recipSearch').value||'').toLowerCase();var stF=$('statusFilter').value;var filtered=CURRENT_ROWS.filter(function(x){if(stF!=='all'&&(x.status||'')!==stF)return false;return !q||(x.company||'').toLowerCase().indexOf(q)!==-1||(x.email||'').toLowerCase().indexOf(q)!==-1;});if(c)filtered.forEach(function(r){SELECTED[r.id]=true;});else SELECTED={};renderRecipients();}
 function selectAll(){CURRENT_ROWS.forEach(function(r){SELECTED[r.id]=true;});renderRecipients();}
 function clearSelection(){SELECTED={};renderRecipients();}
 function updateBulkBar(){var ids=Object.keys(SELECTED);var b=$('bulkActionBar');if(ids.length>0){b.classList.add('show');$('selectedCount').innerText=ids.length+' selected';}else b.classList.remove('show');}
 
-function openSendOptions(id){
-  _currentSendId=id;
-  var rec=ALL_ROWS.filter(function(x){return x.id===id;})[0]||{};
-  var status=rec.status||'Pending';
-  var info='<div><b style="color:var(--text)">'+esc(rec.email||'')+'</b>'+(rec.company?' — '+esc(rec.company):'')+'</div>';
-  info+='<div style="margin-top:6px">Status: <b style="color:'+(status==='Opened'?'#86efac':status==='Sent'?'#7dd3fc':'#fcd34d')+'">'+status+'</b></div>';
-  var selCount=Object.keys(SELECTED_FILES).length;
-  if(selCount>0)info+='<div style="margin-top:6px;color:var(--cyan)">📎 '+selCount+' file(s) selected</div>';
-  $('sendOptionsInfo').innerHTML=info;
-  $('optSignature').checked=true;$('optLogo').checked=true;$('optAttachments').checked=true;
-  $('sendOptionsBackdrop').classList.remove('hidden');
-}
+function openSendOptions(id){_currentSendId=id;var rec=ALL_ROWS.filter(function(x){return x.id===id;})[0]||{};var status=rec.status||'Pending';var info='<div><b style="color:var(--text)">'+esc(rec.email||'')+'</b>'+(rec.company?' — '+esc(rec.company):'')+'</div>';info+='<div style="margin-top:6px">Status: <b style="color:'+(status==='Opened'?'#86efac':status==='Sent'?'#7dd3fc':'#fcd34d')+'">'+status+'</b></div>';var selCount=Object.keys(SELECTED_FILES).length;if(selCount>0)info+='<div style="margin-top:6px;color:var(--cyan)">📎 '+selCount+' file(s) selected</div>';$('sendOptionsInfo').innerHTML=info;$('optSignature').checked=true;$('optLogo').checked=true;$('optAttachments').checked=true;$('sendOptionsBackdrop').classList.remove('hidden');}
 function closeSendOptions(){$('sendOptionsBackdrop').classList.add('hidden');_currentSendId=null;}
 
 document.getElementById('sendOptionsConfirm').addEventListener('click',function(){
@@ -1639,49 +1226,18 @@ document.getElementById('sendOptionsConfirm').addEventListener('click',function(
   toast('Sending...');
   api('/api/send','POST',payload).then(function(r){
     btn.disabled=false;btn.innerText='📤 Send';
-    if(r.ok){
-      toast('✅ Sent to '+r.email);
-      var rr=CURRENT_ROWS.find(function(x){return x.id===id;});
-      if(rr){rr.status='Sent';rr.sendCount=(rr.sendCount||0)+1;rr.lastSentAt=new Date().toISOString();}
-      closeSendOptions();renderRecipients();loadMyEmails();loadQuota();
-    } else if(r.error==='QUIET_HOURS'){
-      closeSendOptions();
-      showConfirm({icon:'🌙',title:'Quiet Hours',message:'Until '+((r.quietEnd%12)||12)+':00 '+(r.quietEnd<12?'AM':'PM')+'. Send anyway?',okText:'Send',primary:true}).then(function(f){
-        if(!f)return;
-        api('/api/send','POST',Object.assign({force:true},payload)).then(function(r2){if(r2.ok){toast('✅ Sent');loadAll();loadQuota();loadMyEmails();}else toast('Error: '+r2.error,'err');});
-      });
-    } else if(r.error==='DAILY_LIMIT_REACHED'){
-      toast('❌ Daily limit reached ('+r.limit+'). Try tomorrow.','err');
-    } else toast('Error: '+r.error,'err');
+    if(r.ok){toast('✅ Sent to '+r.email);var rr=CURRENT_ROWS.find(function(x){return x.id===id;});if(rr){rr.status='Sent';rr.sendCount=(rr.sendCount||0)+1;rr.lastSentAt=new Date().toISOString();}closeSendOptions();renderRecipients();loadMyEmails();loadQuota();}
+    else if(r.error==='QUIET_HOURS'){closeSendOptions();showConfirm({icon:'🌙',title:'Quiet Hours',message:'Until '+((r.quietEnd%12)||12)+':00 '+(r.quietEnd<12?'AM':'PM')+'. Send anyway?',okText:'Send',primary:true}).then(function(f){if(!f)return;api('/api/send','POST',Object.assign({force:true},payload)).then(function(r2){if(r2.ok){toast('✅ Sent');loadAll();loadQuota();loadMyEmails();}else toast('Error: '+r2.error,'err');});});}
+    else if(r.error==='DAILY_LIMIT_REACHED'){toast('❌ Daily limit reached ('+r.limit+'). Try tomorrow.','err');}
+    else toast('Error: '+r.error,'err');
   }).catch(function(){btn.disabled=false;btn.innerText='📤 Send';});
 });
 
 async function delRec(id){var ok=await showConfirm({icon:'🗑',title:'Delete?',message:'',okText:'Delete'});if(!ok)return;api('/api/recipients/'+id,'DELETE').then(function(r){if(r.ok){toast('Deleted');delete SELECTED[id];loadAll();}});}
-async function resendSelected(){
-  var ids=Object.keys(SELECTED);if(!ids.length)return toast('Select recipients','err');
-  var ok=await showConfirm({icon:'🔁',title:'Resend?',message:'Send to '+ids.length+' again.',okText:'Resend',primary:true});
-  if(!ok)return;
-  var done=0,err=0;var selFiles=Object.keys(SELECTED_FILES);
-  toast('Starting...');
-  var next=function(i){
-    if(i>=ids.length){toast('✅ '+done+' sent, '+err+' err');clearSelection();loadAll();loadQuota();loadMyEmails();return;}
-    setTimeout(function(){
-      api('/api/resend','POST',{recipientId:ids[i],selectedFileIds:selFiles}).then(function(r){
-        if(r.ok)done++;
-        else if(r.error==='DAILY_LIMIT_REACHED'){toast('❌ Daily limit reached','err');clearSelection();loadAll();loadQuota();loadMyEmails();return;}
-        else err++;
-        next(i+1);
-      }).catch(function(){err++;next(i+1);});
-    },400);
-  };
-  next(0);
-}
+async function resendSelected(){var ids=Object.keys(SELECTED);if(!ids.length)return toast('Select recipients','err');var ok=await showConfirm({icon:'🔁',title:'Resend?',message:'Send to '+ids.length+' again.',okText:'Resend',primary:true});if(!ok)return;var done=0,err=0;var selFiles=Object.keys(SELECTED_FILES);toast('Starting...');var next=function(i){if(i>=ids.length){toast('✅ '+done+' sent, '+err+' err');clearSelection();loadAll();loadQuota();loadMyEmails();return;}setTimeout(function(){api('/api/resend','POST',{recipientId:ids[i],selectedFileIds:selFiles}).then(function(r){if(r.ok)done++;else if(r.error==='DAILY_LIMIT_REACHED'){toast('❌ Daily limit reached','err');clearSelection();loadAll();loadQuota();loadMyEmails();return;}else err++;next(i+1);}).catch(function(){err++;next(i+1);});},400);};next(0);}
 async function deleteSelected(){var ids=Object.keys(SELECTED);if(!ids.length)return toast('Select recipients','err');var ok=await showConfirm({icon:'⚠️',title:'Delete?',message:ids.length+' will be deleted.',okText:'Delete All'});if(!ok)return;api('/api/recipients/bulk-delete','POST',{ids:ids}).then(function(r){if(r.ok){toast('✅ '+r.deleted+' deleted');clearSelection();loadAll();}});}
 
-function loadMyEmails(){
-  var range=$('myEmailRange')?$('myEmailRange').value:'all';
-  api('/api/my-emails?range='+encodeURIComponent(range)).then(function(r){if(!r.ok)return;MY_EMAILS=r.emails||[];renderMyEmails();});
-}
+function loadMyEmails(){var range=$('myEmailRange')?$('myEmailRange').value:'all';api('/api/my-emails?range='+encodeURIComponent(range)).then(function(r){if(!r.ok)return;MY_EMAILS=r.emails||[];renderMyEmails();});}
 function renderMyEmails(){
   var w=$('myEmailsWrap');var q=($('myEmailSearch').value||'').toLowerCase();
   var filtered=MY_EMAILS.filter(function(e){return !q||(e.recipientEmail||'').toLowerCase().indexOf(q)!==-1||(e.subject||'').toLowerCase().indexOf(q)!==-1;});
@@ -1698,35 +1254,10 @@ function renderMyEmails(){
   h+='</tbody></table>';w.innerHTML=h;
 }
 
-function loadPrefs(){
-  api('/api/prefs').then(function(r){
-    if(!r.ok)return;var p=r.prefs;
-    $('autoSendToggle').checked=p.autoSend;
-    $('quietToggle').checked=p.quietEnabled;
-    $('quietStartSel').value=p.quietStart;
-    $('quietEndSel').value=p.quietEnd;
-    $('quietTimesBox').style.display=p.quietEnabled?'block':'none';
-    $('batchSizeBox').classList.toggle('show',p.autoSend);
-    var bs=p.autoSendBatchSize||5;
-    $('batchSlider').value=bs;$('batchNumber').value=bs;$('batchValue').innerText=bs;
-    $('totalAutoSent').innerText=p.totalAutoSent||0;
-    if($('optAutoSig'))$('optAutoSig').checked=p.autoSendIncludeSignature!==false;
-    if($('optAutoLogo'))$('optAutoLogo').checked=p.autoSendIncludeLogo!==false;
-    if($('sendDelayInput'))$('sendDelayInput').value=p.sendDelay!==undefined?p.sendDelay:3;
-    validateBatchSize();checkSendDelayWarning();
-  });
-}
+function loadPrefs(){api('/api/prefs').then(function(r){if(!r.ok)return;var p=r.prefs;$('autoSendToggle').checked=p.autoSend;$('quietToggle').checked=p.quietEnabled;$('quietStartSel').value=p.quietStart;$('quietEndSel').value=p.quietEnd;$('quietTimesBox').style.display=p.quietEnabled?'block':'none';$('batchSizeBox').classList.toggle('show',p.autoSend);var bs=p.autoSendBatchSize||5;$('batchSlider').value=bs;$('batchNumber').value=bs;$('batchValue').innerText=bs;$('totalAutoSent').innerText=p.totalAutoSent||0;if($('optAutoSig'))$('optAutoSig').checked=p.autoSendIncludeSignature!==false;if($('optAutoLogo'))$('optAutoLogo').checked=p.autoSendIncludeLogo!==false;if($('sendDelayInput'))$('sendDelayInput').value=p.sendDelay!==undefined?p.sendDelay:3;validateBatchSize();checkSendDelayWarning();});}
 document.getElementById('quietToggle').addEventListener('change',function(){$('quietTimesBox').style.display=this.checked?'block':'none';});
 document.getElementById('autoSendToggle').addEventListener('change',function(){$('batchSizeBox').classList.toggle('show',this.checked);});
-function savePrefs(){
-  var bs=parseInt($('batchNumber').value)||5;
-  var sd=parseInt($('sendDelayInput').value);if(isNaN(sd)||sd<0)sd=3;if(sd>120)sd=120;
-  if(bs>MY_QUOTA.remaining){toast('❌ Cannot exceed remaining quota ('+MY_QUOTA.remaining+')','err');return;}
-  var payload={autoSend:$('autoSendToggle').checked,autoSendBatchSize:bs,quietEnabled:$('quietToggle').checked,quietStart:Number($('quietStartSel').value),quietEnd:Number($('quietEndSel').value),sendDelay:sd};
-  if($('optAutoSig'))payload.autoSendIncludeSignature=$('optAutoSig').checked;
-  if($('optAutoLogo'))payload.autoSendIncludeLogo=$('optAutoLogo').checked;
-  api('/api/prefs','POST',payload).then(function(r){if(r.ok)toast('✅ Saved');else toast('Error: '+r.error,'err');});
-}
+function savePrefs(){var bs=parseInt($('batchNumber').value)||5;var sd=parseInt($('sendDelayInput').value);if(isNaN(sd)||sd<0)sd=3;if(sd>120)sd=120;if(bs>MY_QUOTA.remaining){toast('❌ Cannot exceed remaining quota ('+MY_QUOTA.remaining+')','err');return;}var payload={autoSend:$('autoSendToggle').checked,autoSendBatchSize:bs,quietEnabled:$('quietToggle').checked,quietStart:Number($('quietStartSel').value),quietEnd:Number($('quietEndSel').value),sendDelay:sd};if($('optAutoSig'))payload.autoSendIncludeSignature=$('optAutoSig').checked;if($('optAutoLogo'))payload.autoSendIncludeLogo=$('optAutoLogo').checked;api('/api/prefs','POST',payload).then(function(r){if(r.ok)toast('✅ Saved');else toast('Error: '+r.error,'err');});}
 
 function loadInbox(){
   var folder=$('inboxFolder').value;var limit=parseInt($('inboxLimit').value)||20;
@@ -1750,22 +1281,17 @@ function loadInbox(){
       h+='<div class="subj">'+esc(e.subject)+'</div>';
       h+='<div class="prev">'+esc(e.snippet||'')+'</div>';
       h+='<div class="badges"><span class="tag">'+esc(e.folder)+'</span>';
-      if(e.category&&e.category!=='OTHER')h+='<span class="badge '+catClass+'">'+esc(e.category.replace('_',' '))+'</span>';
+      if(e.category && e.category !== 'OTHER')h+='<span class="badge '+catClass+'">'+esc(e.category.replace('_',' '))+'</span>';
       if(e.hasAttachments)h+='<span class="badge attach">📎 '+(e.attachmentCount>1?e.attachmentCount:'')+'</span>';
       h+='</div></div>';
     });
     $('inboxList').innerHTML=h;
-  }).catch(function(){
-    $('inboxList').innerHTML='<div class="empty"><div class="ico">❌</div>Network error</div>';
-  });
+  }).catch(function(){$('inboxList').innerHTML='<div class="empty"><div class="ico">❌</div>Network error</div>';});
 }
 function openInboxEmail(i){
   var e=INBOX_EMAILS[i];if(!e)return;
   ACTIVE_EMAIL=e;
-  document.querySelectorAll('.inbox-item').forEach(function(el){
-    el.classList.remove('active');
-    if(parseInt(el.getAttribute('data-idx'))===i)el.classList.add('active');
-  });
+  document.querySelectorAll('.inbox-item').forEach(function(el){el.classList.remove('active');if(parseInt(el.getAttribute('data-idx'))===i)el.classList.add('active');});
   $('inboxEmpty').classList.add('hidden');
   $('inboxViewerContent').classList.remove('hidden');
   $('inboxViewerContent').style.display='flex';
@@ -1773,18 +1299,14 @@ function openInboxEmail(i){
   $('viewFrom').innerText=e.fromName+' <'+e.fromEmail+'>';
   $('viewTo').innerText=e.toEmail;
   $('viewDate').innerText=fmtEmailDate(e.dateISO);
-  if(e.category&&e.category!=='OTHER'){
-    $('viewCategoryRow').style.display='flex';
-    var catClass=(e.category||'other').toLowerCase().replace('_','-');
-    $('viewCategory').innerHTML='<span class="badge '+catClass+'">'+esc(e.category.replace('_',' '))+'</span>';
-  } else $('viewCategoryRow').style.display='none';
+  if(e.category && e.category !== 'OTHER'){$('viewCategoryRow').style.display='flex';var catClass=(e.category||'other').toLowerCase().replace('_','-');$('viewCategory').innerHTML='<span class="badge '+catClass+'">'+esc(e.category.replace('_',' '))+'</span>';}else $('viewCategoryRow').style.display='none';
   var bodyContainer=$('viewBody');
   bodyContainer.innerHTML='<div class="loading"><div class="spin"></div><span>Loading email...</span></div>';
   api('/api/inbox/email/'+encodeURIComponent(e.id)).then(function(r){
     if(!r.ok){bodyContainer.innerHTML='<div class="plain-body">Failed to load: '+esc(r.error||'Unknown error')+'</div>';return;}
     var email=r.email;
     var attWrap=$('viewAttachments');var attList=$('viewAttachmentsList');
-    if(email.attachments&&email.attachments.length>0){
+    if(email.attachments && email.attachments.length > 0){
       attWrap.classList.remove('hidden');
       attList.innerHTML=email.attachments.map(function(a){
         var url='/api/inbox/attachment/'+encodeURIComponent(e.id)+'/'+encodeURIComponent(a.attachmentId)+'?filename='+encodeURIComponent(a.filename)+'&mime='+encodeURIComponent(a.mimeType);
@@ -1793,24 +1315,20 @@ function openInboxEmail(i){
       }).join('');
     } else attWrap.classList.add('hidden');
     bodyContainer.innerHTML='';
-    if(email.bodyHtml&&email.bodyHtml.trim().length>0){
+    if(email.bodyHtml && email.bodyHtml.trim().length > 0){
       var iframe=document.createElement('iframe');
       iframe.style.cssText='width:100%;border:none;background:#fff;display:block;';
       iframe.setAttribute('sandbox','allow-same-origin allow-popups allow-popups-to-escape-sandbox');
       bodyContainer.appendChild(iframe);
       try{
-        var doc=iframe.contentDocument||iframe.contentWindow.document;
+        var doc=iframe.contentDocument || iframe.contentWindow.document;
         doc.open();
         doc.write('<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;color:#222;word-break:break-word;background:#fff}img{max-width:100%;height:auto}a{color:#1a73e8}table{max-width:100%}</style></head><body>'+email.bodyHtml+'</body></html>');
         doc.close();
         setTimeout(function(){try{var hh=doc.body.scrollHeight;iframe.style.height=Math.max(400,Math.min(hh+60,1500))+'px';}catch(err){iframe.style.height='500px';}},200);
-      }catch(err){
-        bodyContainer.innerHTML='<div class="plain-body">'+esc(email.bodyText||email.snippet||'(no content)')+'</div>';
-      }
+      }catch(err){bodyContainer.innerHTML='<div class="plain-body">'+esc(email.bodyText||email.snippet||'(no content)')+'</div>';}
     } else bodyContainer.innerHTML='<div class="plain-body">'+esc(email.bodyText||email.snippet||'(no content)')+'</div>';
-  }).catch(function(err){
-    bodyContainer.innerHTML='<div class="plain-body">Error: '+esc(err.message||'Network error')+'</div>';
-  });
+  }).catch(function(err){bodyContainer.innerHTML='<div class="plain-body">Error: '+esc(err.message||'Network error')+'</div>';});
 }
 function openReplyCompose(useAI){
   if(!ACTIVE_EMAIL)return;
@@ -1827,122 +1345,36 @@ function openReplyCompose(useAI){
 }
 async function generateAIReply(email){
   try{
-    var bodyText=email.snippet||'';
+    var bodyText = email.snippet || '';
     try{
-      var r=await api('/api/inbox/email/'+encodeURIComponent(email.id));
-      if(r.ok&&r.email){
-        var fullBody=r.email.bodyText||'';
-        if(!fullBody&&r.email.bodyHtml)fullBody=r.email.bodyHtml.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
-        if(fullBody)bodyText=fullBody;
+      var r = await api('/api/inbox/email/'+encodeURIComponent(email.id));
+      if(r.ok && r.email){
+        var fullBody = r.email.bodyText || '';
+        if(!fullBody && r.email.bodyHtml) fullBody = r.email.bodyHtml.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+        if(fullBody) bodyText = fullBody;
       }
     }catch(e){}
     $('replyAIStatus').innerText='🤖 Generating reply...';
-    var res=await api('/api/ai/smart-reply','POST',{originalSubject:email.subject,originalBody:bodyText.substring(0,4000),originalFrom:email.fromName+' <'+email.fromEmail+'>'});
-    if(res.ok&&res.body){
-      $('replyBody').value=res.body;
-      if(res.subject)$('replySubject').value=res.subject;
-      $('replyAIStatus').innerText=res.aiPowered?'✅ AI reply generated — edit if needed':'⚠️ Basic reply (AI busy)';
+    var res = await api('/api/ai/smart-reply','POST',{originalSubject: email.subject,originalBody: bodyText.substring(0, 4000),originalFrom: email.fromName + ' <' + email.fromEmail + '>'});
+    if(res.ok && res.body){
+      $('replyBody').value = res.body;
+      if(res.subject) $('replySubject').value = res.subject;
+      $('replyAIStatus').innerText = res.aiPowered ? '✅ AI reply generated — edit if needed' : '⚠️ Basic reply (AI busy)';
       toast(res.aiPowered?'✅ AI reply generated':'⚠️ Basic reply');
-    } else {
-      $('replyAIStatus').innerText='⚠️ Failed to generate';
-      toast('Failed to generate AI reply','err');
-    }
-  }catch(e){
-    $('replyAIStatus').innerText='⚠️ Error';
-    toast('AI error: '+e.message,'err');
-  }
+    } else {$('replyAIStatus').innerText='⚠️ Failed to generate';toast('Failed to generate AI reply','err');}
+  }catch(e){$('replyAIStatus').innerText='⚠️ Error';toast('AI error: '+e.message,'err');}
 }
-function regenerateAIReply(){
-  if(!ACTIVE_EMAIL)return;
-  $('replyBody').value='';
-  $('replyAIStatus').innerText='🤖 Regenerating...';
-  toast('🔄 Regenerating...');
-  generateAIReply(ACTIVE_EMAIL);
-}
+function regenerateAIReply(){if(!ACTIVE_EMAIL)return;$('replyBody').value='';$('replyAIStatus').innerText='🤖 Regenerating...';toast('🔄 Regenerating...');generateAIReply(ACTIVE_EMAIL);}
 function closeReplyCompose(){$('replyComposeBackdrop').classList.add('hidden');}
-function sendReply(){
-  var to=$('replyTo').value.trim();var subject=$('replySubject').value.trim();var body=$('replyBody').value.trim();
-  if(!to||!body)return toast('Fill to and body','err');
-  var threadId=$('replyComposeBackdrop').getAttribute('data-thread');
-  var messageId=$('replyComposeBackdrop').getAttribute('data-msgid');
-  toast('Sending reply...');
-  api('/api/reply/send','POST',{threadId:threadId,messageId:messageId,to:to,subject:subject,body:body}).then(function(r){
-    if(r.ok){toast('✅ Reply sent');closeReplyCompose();setTimeout(loadInbox,1500);}
-    else toast('Error: '+r.error,'err');
-  });
-}
+function sendReply(){var to=$('replyTo').value.trim();var subject=$('replySubject').value.trim();var body=$('replyBody').value.trim();if(!to||!body)return toast('Fill to and body','err');var threadId=$('replyComposeBackdrop').getAttribute('data-thread');var messageId=$('replyComposeBackdrop').getAttribute('data-msgid');toast('Sending reply...');api('/api/reply/send','POST',{threadId:threadId,messageId:messageId,to:to,subject:subject,body:body}).then(function(r){if(r.ok){toast('✅ Reply sent');closeReplyCompose();setTimeout(loadInbox,1500);}else toast('Error: '+r.error,'err');});}
 
-function switchTestTab(t){
-  if(t==='manual'){$('testTabManual').classList.add('active');$('testTabBulk').classList.remove('active');$('testManualTab').classList.remove('hidden');$('testBulkTab').classList.add('hidden');}
-  else{$('testTabBulk').classList.add('active');$('testTabManual').classList.remove('active');$('testBulkTab').classList.remove('hidden');$('testManualTab').classList.add('hidden');updateTestBulk();}
-}
-function addTestRow(){
-  var w=$('testRecipientsRows');if(!w)return;
-  var d=document.createElement('div');d.className='recip-row';
-  d.innerHTML='<input type="text" placeholder="Company (optional)" autocomplete="off"><input type="email" placeholder="test@example.com" autocomplete="off"><button class="del" onclick="this.parentNode.remove()">✕</button>';
-  w.appendChild(d);
-}
-function submitTestRecipientsManual(){
-  var rows=$('testRecipientsRows').querySelectorAll('.recip-row');var list=[];
-  rows.forEach(function(r){var i=r.querySelectorAll('input');if(i[1].value.trim())list.push({company:i[0].value.trim(),email:i[1].value.trim()});});
-  if(!list.length)return toast('No emails','err');
-  api('/api/test/recipients','POST',{list:list}).then(function(res){
-    if(res.ok){toast('✅ '+res.added+' added');$('testRecipientsRows').innerHTML='';addTestRow();loadTestDashboard();}
-    else toast('Error: '+res.error,'err');
-  });
-}
-function updateTestBulk(){
-  var text=$('testBulkInput').value;var r=parseBulk(text);var wrap=$('testBulkPreviewWrap');var table=$('testBulkPreviewTable');
-  if(!wrap||!table)return;
-  $('testBulkValidPill').innerText='✅ '+r.valid.length;$('testBulkDupPill').innerText='🔁 '+r.dup;
-  if(!text.trim()||r.valid.length===0){wrap.classList.remove('show');return;}
-  wrap.classList.add('show');
-  var h='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3);position:sticky;top:0">#</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3)">Company</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3)">Email</th></tr></thead><tbody>';
-  r.valid.slice(0,50).forEach(function(row,idx){h+='<tr><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:var(--text3);font-size:11px">'+(idx+1)+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#cbd5e1">'+(row.company?esc(row.company):'—')+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#7dd3fc;font-family:Courier New,monospace;font-size:11px;word-break:break-all">'+esc(row.email)+'</td></tr>';});
-  if(r.valid.length>50)h+='<tr><td colspan="3" style="text-align:center;color:var(--text3);font-style:italic;padding:10px">... +'+(r.valid.length-50)+'</td></tr>';
-  h+='</tbody></table>';table.innerHTML=h;
-}
+function switchTestTab(t){if(t==='manual'){$('testTabManual').classList.add('active');$('testTabBulk').classList.remove('active');$('testManualTab').classList.remove('hidden');$('testBulkTab').classList.add('hidden');}else{$('testTabBulk').classList.add('active');$('testTabManual').classList.remove('active');$('testBulkTab').classList.remove('hidden');$('testManualTab').classList.add('hidden');updateTestBulk();}}
+function addTestRow(){var w=$('testRecipientsRows');if(!w)return;var d=document.createElement('div');d.className='recip-row';d.innerHTML='<input type="text" placeholder="Company (optional)" autocomplete="off"><input type="email" placeholder="test@example.com" autocomplete="off"><button class="del" onclick="this.parentNode.remove()">✕</button>';w.appendChild(d);}
+function submitTestRecipientsManual(){var rows=$('testRecipientsRows').querySelectorAll('.recip-row');var list=[];rows.forEach(function(r){var i=r.querySelectorAll('input');if(i[1].value.trim())list.push({company:i[0].value.trim(),email:i[1].value.trim()});});if(!list.length)return toast('No emails','err');api('/api/test/recipients','POST',{list:list}).then(function(res){if(res.ok){toast('✅ '+res.added+' added');$('testRecipientsRows').innerHTML='';addTestRow();loadTestDashboard();}else toast('Error: '+res.error,'err');});}
+function updateTestBulk(){var text=$('testBulkInput').value;var r=parseBulk(text);var wrap=$('testBulkPreviewWrap');var table=$('testBulkPreviewTable');if(!wrap||!table)return;$('testBulkValidPill').innerText='✅ '+r.valid.length;$('testBulkDupPill').innerText='🔁 '+r.dup;if(!text.trim()||r.valid.length===0){wrap.classList.remove('show');return;}wrap.classList.add('show');var h='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3);position:sticky;top:0">#</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3)">Company</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3)">Email</th></tr></thead><tbody>';r.valid.slice(0,50).forEach(function(row,idx){h+='<tr><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:var(--text3);font-size:11px">'+(idx+1)+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#cbd5e1">'+(row.company?esc(row.company):'—')+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#7dd3fc;font-family:Courier New,monospace;font-size:11px;word-break:break-all">'+esc(row.email)+'</td></tr>';});if(r.valid.length>50)h+='<tr><td colspan="3" style="text-align:center;color:var(--text3);font-style:italic;padding:10px">... +'+(r.valid.length-50)+'</td></tr>';h+='</tbody></table>';table.innerHTML=h;}
 function clearTestBulk(){$('testBulkInput').value='';updateTestBulk();}
-function submitTestBulk(){
-  var r=parseBulk($('testBulkInput').value);if(!r.valid.length)return toast('No emails','err');
-  api('/api/test/recipients','POST',{list:r.valid}).then(function(res){
-    if(res.ok){toast('✅ '+res.added+' added');$('testBulkInput').value='';updateTestBulk();loadTestDashboard();switchTestTab('manual');}
-    else toast('Error: '+res.error,'err');
-  });
-}
-function loadTestDashboard(){
-  api('/api/test/stats').then(function(r){
-    if(!r.ok)return;
-    var s=r.stats;
-    $('tstTotal').innerText=s.total;$('tstSent').innerText=s.sent;$('tstOpened').innerText=s.opened;$('tstPending').innerText=s.pending;$('tstLog').innerText=s.totalSends;
-    if($('testPendingCount'))$('testPendingCount').innerText=s.pending;
-  });
-  api('/api/test/recipients').then(function(r){if(!r.ok)return;TEST_RECIPIENTS=r.recipients||[];renderTestRecipients();});
-  api('/api/test/log').then(function(r){
-    if(!r.ok)return;
-    var w=$('testLogWrap');var arr=r.logs||[];
-    if(!arr.length){w.innerHTML='<div class="empty">No test log</div>';return;}
-    var h='<table class="data-table"><thead><tr><th>To</th><th>Subject</th><th>Sent</th><th>📎</th></tr></thead><tbody>';
-    arr.slice(0,100).forEach(function(x){
-      h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(x.recipientEmail)+'</td><td style="font-size:11px">'+esc(x.subject||'—')+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(x.sentAt)+'</td><td style="text-align:center">'+((x.attachmentsCount||0)>0?'<span class="badge attach">📎 '+x.attachmentsCount+'</span>':'—')+'</td></tr>';
-    });
-    h+='</tbody></table>';w.innerHTML=h;
-  });
-  api('/api/test/prefs').then(function(r){
-    if(!r.ok)return;var p=r.prefs;
-    if($('testAutoBatchSize'))$('testAutoBatchSize').value=p.autoSendBatchSize||5;
-    if($('testAutoDelay'))$('testAutoDelay').value=p.sendDelay!==undefined?p.sendDelay:3;
-    if($('testTotalAutoSent'))$('testTotalAutoSent').innerText=p.totalAutoSent||0;
-    if($('testLastAutoRun'))$('testLastAutoRun').innerText=p.lastRun?fmtDate(p.lastRun):'Never';
-  });
-  api('/api/test/signature').then(function(r){
-    if(!r.ok)return;
-    var f=r.fields||{};
-    ['name','pos','company','phone','email','linkedin','greeting','extra'].forEach(function(k){var id='testSb'+k.charAt(0).toUpperCase()+k.slice(1);if(f[k]&&$(id))$(id).value=f[k];});
-    updateTestSigPreview();
-  });
-  renderTestFiles();
-}
+function submitTestBulk(){var r=parseBulk($('testBulkInput').value);if(!r.valid.length)return toast('No emails','err');api('/api/test/recipients','POST',{list:r.valid}).then(function(res){if(res.ok){toast('✅ '+res.added+' added');$('testBulkInput').value='';updateTestBulk();loadTestDashboard();switchTestTab('manual');}else toast('Error: '+res.error,'err');});}
+function loadTestDashboard(){api('/api/test/stats').then(function(r){if(!r.ok)return;var s=r.stats;$('tstTotal').innerText=s.total;$('tstSent').innerText=s.sent;$('tstOpened').innerText=s.opened;$('tstPending').innerText=s.pending;$('tstLog').innerText=s.totalSends;if($('testPendingCount'))$('testPendingCount').innerText=s.pending;});api('/api/test/recipients').then(function(r){if(!r.ok)return;TEST_RECIPIENTS=r.recipients||[];renderTestRecipients();});api('/api/test/log').then(function(r){if(!r.ok)return;var w=$('testLogWrap');var arr=r.logs||[];if(!arr.length){w.innerHTML='<div class="empty">No test log</div>';return;}var h='<table class="data-table"><thead><tr><th>To</th><th>Subject</th><th>Sent</th><th>📎</th></tr></thead><tbody>';arr.slice(0,100).forEach(function(x){h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(x.recipientEmail)+'</td><td style="font-size:11px">'+esc(x.subject||'—')+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(x.sentAt)+'</td><td style="text-align:center">'+((x.attachmentsCount||0)>0?'<span class="badge attach">📎 '+x.attachmentsCount+'</span>':'—')+'</td></tr>';});h+='</tbody></table>';w.innerHTML=h;});api('/api/test/prefs').then(function(r){if(!r.ok)return;var p=r.prefs;if($('testAutoBatchSize'))$('testAutoBatchSize').value=p.autoSendBatchSize||5;if($('testAutoDelay'))$('testAutoDelay').value=p.sendDelay!==undefined?p.sendDelay:3;if($('testTotalAutoSent'))$('testTotalAutoSent').innerText=p.totalAutoSent||0;if($('testLastAutoRun'))$('testLastAutoRun').innerText=p.lastRun?fmtDate(p.lastRun):'Never';});api('/api/test/signature').then(function(r){if(!r.ok)return;var f=r.fields||{};['name','pos','company','phone','email','linkedin','greeting','extra'].forEach(function(k){var id='testSb'+k.charAt(0).toUpperCase()+k.slice(1);if(f[k]&&$(id))$(id).value=f[k];});updateTestSigPreview();});renderTestFiles();}
 function renderTestRecipients(){
   var w=$('testRecipientsWrap');if(!w)return;
   var q=($('testRecipSearch').value||'').toLowerCase();
@@ -1963,71 +1395,19 @@ function renderTestRecipients(){
 }
 function useTestRecipient(email){$('testTo').value=email;toast('📋 Email set');}
 function testToggleOne(id,c){if(c)TEST_SELECTED[id]=true;else delete TEST_SELECTED[id];renderTestRecipients();}
-function testToggleAll(c){
-  var q=($('testRecipSearch').value||'').toLowerCase();var stF=$('testRecipStatusFilter').value;
-  var filtered=TEST_RECIPIENTS.filter(function(x){if(stF!=='all'&&(x.status||'')!==stF)return false;return !q||(x.email||'').toLowerCase().indexOf(q)!==-1||(x.company||'').toLowerCase().indexOf(q)!==-1;});
-  if(c)filtered.forEach(function(r){TEST_SELECTED[r.id]=true;});else TEST_SELECTED={};
-  renderTestRecipients();
-}
+function testToggleAll(c){var q=($('testRecipSearch').value||'').toLowerCase();var stF=$('testRecipStatusFilter').value;var filtered=TEST_RECIPIENTS.filter(function(x){if(stF!=='all'&&(x.status||'')!==stF)return false;return !q||(x.email||'').toLowerCase().indexOf(q)!==-1||(x.company||'').toLowerCase().indexOf(q)!==-1;});if(c)filtered.forEach(function(r){TEST_SELECTED[r.id]=true;});else TEST_SELECTED={};renderTestRecipients();}
 function testSelectAll(){TEST_RECIPIENTS.forEach(function(r){TEST_SELECTED[r.id]=true;});renderTestRecipients();}
 function testClearSelection(){TEST_SELECTED={};renderTestRecipients();}
 function updateTestBulkBar(){var ids=Object.keys(TEST_SELECTED);var b=$('testBulkActionBar');if(ids.length>0){b.classList.add('show');$('testSelectedCount').innerText=ids.length+' selected';}else b.classList.remove('show');}
-async function testDeleteSelected(){
-  var ids=Object.keys(TEST_SELECTED);if(!ids.length)return toast('Select recipients','err');
-  var ok=await showConfirm({icon:'🗑',title:'Delete Test Recipients?',message:ids.length+' will be deleted.',okText:'Delete'});
-  if(!ok)return;
-  api('/api/test/recipients/bulk-delete','POST',{ids:ids}).then(function(r){
-    if(r.ok){toast('✅ '+r.deleted+' deleted');testClearSelection();loadTestDashboard();}
-    else toast('Error: '+r.error,'err');
-  });
-}
+async function testDeleteSelected(){var ids=Object.keys(TEST_SELECTED);if(!ids.length)return toast('Select recipients','err');var ok=await showConfirm({icon:'🗑',title:'Delete Test Recipients?',message:ids.length+' will be deleted.',okText:'Delete'});if(!ok)return;api('/api/test/recipients/bulk-delete','POST',{ids:ids}).then(function(r){if(r.ok){toast('✅ '+r.deleted+' deleted');testClearSelection();loadTestDashboard();}else toast('Error: '+r.error,'err');});}
 async function delTestRec(id){var ok=await showConfirm({icon:'🗑',title:'Delete?',message:'',okText:'Delete'});if(!ok)return;api('/api/test/recipients/'+id,'DELETE').then(function(r){if(r.ok){toast('Deleted');delete TEST_SELECTED[id];loadTestDashboard();}});}
-async function clearTestData(){
-  var ok=await showConfirm({icon:'⚠️',title:'Clear ALL Test Data?',message:'All test recipients AND logs will be deleted permanently.',okText:'Clear All'});
-  if(!ok)return;
-  toast('Clearing...');
-  api('/api/test/clear','POST',{}).then(function(r){
-    if(r.ok){toast('✅ Cleared '+r.deleted+' items');TEST_SELECTED={};setTimeout(loadTestDashboard,500);}
-    else toast('Error: '+r.error,'err');
-  });
-}
-function sendTestEmail(){
-  var to=$('testTo').value.trim(),subject=$('testSubject').value.trim(),body=$('testBody').value.trim();
-  if(!to||!subject||!body)return toast('Fill To, Subject, Body','err');
-  var selectedFiles=Object.keys(TEST_SELECTED_FILES);
-  var useTestSig=$('testUseTestSig').checked;
-  var useNormalSig=$('testUseNormalSig').checked;
-  var includeSig=useTestSig||useNormalSig;
-  var payload={to:to,subject:subject,body:body,includeSignature:includeSig,includeLogo:$('testIncludeLogo').checked,selectedFileIds:selectedFiles,useTestSignature:useTestSig};
-  toast('Sending test...');
-  api('/api/test/send','POST',payload).then(function(r){
-    if(r.ok){toast('✅ Test sent to '+r.email);loadTestDashboard();}
-    else toast('Error: '+r.error,'err');
-  });
-}
-async function runTestAutomation(){
-  var bs=parseInt($('testAutoBatchSize').value)||5;
-  var delay=parseInt($('testAutoDelay').value)||3;
-  var ok=await showConfirm({icon:'▶️',title:'Run Test Auto-Send?',message:'Will send to '+bs+' pending test recipients with '+delay+'s delay.',okText:'Run Now',primary:true});
-  if(!ok)return;
-  toast('⏳ Running auto-send test...');
-  api('/api/test/automation/run','POST',{batchSize:bs,delay:delay}).then(function(r){
-    if(r.ok){
-      if(r.sent>0)toast('✅ Sent '+r.sent+' emails'+(r.failed?' ('+r.failed+' failed)':''));
-      else toast(r.message||'No pending test recipients','warn');
-      loadTestDashboard();
-    } else toast('Error: '+r.error,'err');
-  });
-}
+async function clearTestData(){var ok=await showConfirm({icon:'⚠️',title:'Clear ALL Test Data?',message:'All test recipients AND logs will be deleted permanently.',okText:'Clear All'});if(!ok)return;toast('Clearing...');api('/api/test/clear','POST',{}).then(function(r){if(r.ok){toast('✅ Cleared '+r.deleted+' items');TEST_SELECTED={};setTimeout(loadTestDashboard,500);}else toast('Error: '+r.error,'err');});}
+function sendTestEmail(){var to=$('testTo').value.trim(),subject=$('testSubject').value.trim(),body=$('testBody').value.trim();if(!to||!subject||!body)return toast('Fill To, Subject, Body','err');var selectedFiles=Object.keys(TEST_SELECTED_FILES);var useTestSig=$('testUseTestSig').checked;var useNormalSig=$('testUseNormalSig').checked;var includeSig=useTestSig||useNormalSig;var payload={to:to,subject:subject,body:body,includeSignature:includeSig,includeLogo:$('testIncludeLogo').checked,selectedFileIds:selectedFiles,useTestSignature:useTestSig};toast('Sending test...');api('/api/test/send','POST',payload).then(function(r){if(r.ok){toast('✅ Test sent to '+r.email);loadTestDashboard();}else toast('Error: '+r.error,'err');});}
+async function runTestAutomation(){var bs=parseInt($('testAutoBatchSize').value)||5;var delay=parseInt($('testAutoDelay').value)||3;var ok=await showConfirm({icon:'▶️',title:'Run Test Auto-Send?',message:'Will send to '+bs+' pending test recipients with '+delay+'s delay.',okText:'Run Now',primary:true});if(!ok)return;toast('⏳ Running auto-send test...');api('/api/test/automation/run','POST',{batchSize:bs,delay:delay}).then(function(r){if(r.ok){if(r.sent>0)toast('✅ Sent '+r.sent+' emails'+(r.failed?' ('+r.failed+' failed)':''));else toast(r.message||'No pending test recipients','warn');loadTestDashboard();}else toast('Error: '+r.error,'err');});}
 
 function loadAdmin(){
   $('adminUsersList').innerHTML='<div class="empty">Loading...</div>';
-  api('/api/admin/dashboard').then(function(r){
-    if(!r.ok){$('adminUsersList').innerHTML='<div class="empty">Error: '+esc(r.error)+'</div>';return;}
-    ADMIN_USERS=r.users||[];
-    $('adTotalUsers').innerText=r.stats.totalUsers;$('adTotalEmails').innerText=r.stats.totalEmails;$('adTotalOpened').innerText=r.stats.totalOpened;$('adTotalPending').innerText=r.stats.totalPending;$('adTotalSends').innerText=r.stats.totalSends||0;
-    renderAdminUsers();
-  });
+  api('/api/admin/dashboard').then(function(r){if(!r.ok){$('adminUsersList').innerHTML='<div class="empty">Error: '+esc(r.error)+'</div>';return;}ADMIN_USERS=r.users||[];$('adTotalUsers').innerText=r.stats.totalUsers;$('adTotalEmails').innerText=r.stats.totalEmails;$('adTotalOpened').innerText=r.stats.totalOpened;$('adTotalPending').innerText=r.stats.totalPending;$('adTotalSends').innerText=r.stats.totalSends||0;renderAdminUsers();});
   api('/api/admin/all-emails').then(function(r){if(!r.ok)return;ADMIN_ALL_EMAILS=r.emails||[];renderAllEmails();});
 }
 function renderAdminUsers(){
@@ -2043,20 +1423,14 @@ function renderAdminUsers(){
     h+='</div></div>';
   });
   $('adminUsersList').innerHTML=h;
-  $('adminUsersList').querySelectorAll('.tpl-card').forEach(function(el){
-    el.onclick=function(){openUserEmails(this.getAttribute('data-uid'),this.getAttribute('data-email'));};
-  });
+  $('adminUsersList').querySelectorAll('.tpl-card').forEach(function(el){el.onclick=function(){openUserEmails(this.getAttribute('data-uid'),this.getAttribute('data-email'));};});
 }
 function renderAllEmails(){
   var w=$('adminAllEmailsWrap');var q=($('adminEmailSearch').value||'').toLowerCase();
   var filtered=ADMIN_ALL_EMAILS.filter(function(e){return !q||(e.userEmail||'').toLowerCase().indexOf(q)!==-1||(e.recipientEmail||'').toLowerCase().indexOf(q)!==-1||(e.subject||'').toLowerCase().indexOf(q)!==-1;});
   if(!filtered.length){w.innerHTML='<div class="empty">No emails</div>';return;}
   var h='<table class="data-table"><thead><tr><th>User</th><th>Recipient</th><th>Subject</th><th>Sent</th><th>AI</th></tr></thead><tbody>';
-  filtered.slice(0,500).forEach(function(e){
-    var pred=e.aiPrediction||'GOOD';var prob=e.aiInboxProb||75;
-    var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';
-    h+='<tr><td style="font-size:10px;word-break:break-all">'+esc(e.userEmail)+'</td><td style="font-size:11px;word-break:break-all">'+esc(e.recipientEmail)+'</td><td style="font-size:10px">'+esc(e.subject||'—')+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(e.sentAt)+'</td><td><span style="padding:2px 8px;border-radius:12px;font-size:9px;font-weight:700;background:'+pc+'22;color:'+pc+'">'+prob+'%</span></td></tr>';
-  });
+  filtered.slice(0,500).forEach(function(e){var pred=e.aiPrediction||'GOOD';var prob=e.aiInboxProb||75;var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';h+='<tr><td style="font-size:10px;word-break:break-all">'+esc(e.userEmail)+'</td><td style="font-size:11px;word-break:break-all">'+esc(e.recipientEmail)+'</td><td style="font-size:10px">'+esc(e.subject||'—')+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(e.sentAt)+'</td><td><span style="padding:2px 8px;border-radius:12px;font-size:9px;font-weight:700;background:'+pc+'22;color:'+pc+'">'+prob+'%</span></td></tr>';});
   h+='</tbody></table>';w.innerHTML=h;
 }
 function openUserEmails(uid,email){
@@ -2068,19 +1442,9 @@ function openUserEmails(uid,email){
     if(!r.emails.length){$('modalContent').innerHTML='<div class="empty">No emails</div>';return;}
     var sent=0,opened=0,spam=0,good=0;
     r.emails.forEach(function(e){if(e.status==='Opened')opened++;if(e.status==='Sent')sent++;if(e.aiPrediction==='SPAM')spam++;else if(e.aiPrediction==='GOOD'||e.aiPrediction==='EXCELLENT')good++;});
-    var summary='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">'+
-      '<div class="info-box" style="margin:0;text-align:center;padding:10px"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">Total</div><div style="font-size:18px;color:var(--cyan);margin-top:3px;font-weight:800">'+r.emails.length+'</div></div>'+
-      '<div class="info-box" style="margin:0;text-align:center;padding:10px"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">Sent</div><div style="font-size:18px;color:#7dd3fc;margin-top:3px;font-weight:800">'+sent+'</div></div>'+
-      '<div class="info-box" style="margin:0;text-align:center;padding:10px"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">Opened</div><div style="font-size:18px;color:#86efac;margin-top:3px;font-weight:800">'+opened+'</div></div>'+
-      '<div class="info-box" style="margin:0;text-align:center;padding:10px"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">Spam</div><div style="font-size:18px;color:#fca5a5;margin-top:3px;font-weight:800">'+spam+'</div></div>'+
-    '</div>';
+    var summary='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px"><div class="info-box" style="margin:0;text-align:center;padding:10px"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">Total</div><div style="font-size:18px;color:var(--cyan);margin-top:3px;font-weight:800">'+r.emails.length+'</div></div><div class="info-box" style="margin:0;text-align:center;padding:10px"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">Sent</div><div style="font-size:18px;color:#7dd3fc;margin-top:3px;font-weight:800">'+sent+'</div></div><div class="info-box" style="margin:0;text-align:center;padding:10px"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">Opened</div><div style="font-size:18px;color:#86efac;margin-top:3px;font-weight:800">'+opened+'</div></div><div class="info-box" style="margin:0;text-align:center;padding:10px"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">Spam</div><div style="font-size:18px;color:#fca5a5;margin-top:3px;font-weight:800">'+spam+'</div></div></div>';
     var h=summary+'<table class="data-table"><thead><tr><th>Recipient</th><th>Company</th><th>Subject</th><th>Sent</th><th>Status</th><th>Opened</th><th>📎</th></tr></thead><tbody>';
-    r.emails.forEach(function(e){
-      var st=e.status||'Sent';
-      var stCls=st==='Opened'?'opened':st==='Sent'?'sent':'pending';
-      var stIcon=st==='Opened'?'👁':st==='Sent'?'📤':'⏳';
-      h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(e.recipientEmail||'—')+'</td><td style="font-size:11px">'+esc(e.company||'—')+'</td><td style="font-size:11px;max-width:200px">'+esc((e.subject||'—').substring(0,60))+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(e.sentAt)+'</td><td><span class="badge '+stCls+'">'+stIcon+' '+esc(st)+'</span></td><td style="font-size:10px;white-space:nowrap">'+(e.openedAt?fmtDate(e.openedAt):'—')+'</td><td style="text-align:center">'+((e.attachmentsCount||0)>0?'<span class="badge attach">📎 '+e.attachmentsCount+'</span>':'—')+'</td></tr>';
-    });
+    r.emails.forEach(function(e){var st=e.status||'Sent';var stCls=st==='Opened'?'opened':st==='Sent'?'sent':'pending';var stIcon=st==='Opened'?'👁':st==='Sent'?'📤':'⏳';h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(e.recipientEmail||'—')+'</td><td style="font-size:11px">'+esc(e.company||'—')+'</td><td style="font-size:11px;max-width:200px">'+esc((e.subject||'—').substring(0,60))+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(e.sentAt)+'</td><td><span class="badge '+stCls+'">'+stIcon+' '+esc(st)+'</span></td><td style="font-size:10px;white-space:nowrap">'+(e.openedAt?fmtDate(e.openedAt):'—')+'</td><td style="text-align:center">'+((e.attachmentsCount||0)>0?'<span class="badge attach">📎 '+e.attachmentsCount+'</span>':'—')+'</td></tr>';});
     h+='</tbody></table>';$('modalContent').innerHTML=h;
   });
 }

@@ -115,35 +115,93 @@ function localCategorize(fromEmail, subject, bodyText) {
   return 'OTHER';
 }
 
+/* ============ AI PROVIDERS WITH MULTI-MODEL FALLBACK ============ */
+
 async function callGroq(prompt) {
   if (!GROQ_KEY) throw new Error('No key');
-  const r = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY },
-    body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 1800 })
-  }, 20000);
-  if (!r.ok) throw new Error('Groq ' + r.status);
-  const d = await r.json();
-  return (d.choices?.[0]?.message?.content || '').trim();
+  const models = [
+    'openai/gpt-oss-120b',
+    'llama-3.3-70b-versatile',
+    'llama-3.1-8b-instant',
+    'llama3-70b-8192',
+    'mixtral-8x7b-32768',
+    'gemma2-9b-it'
+  ];
+  let lastErr = null;
+  for (const model of models) {
+    try {
+      const r = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY },
+        body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 1800 })
+      }, 20000);
+      if (!r.ok) {
+        const errText = await r.text().catch(() => '');
+        lastErr = new Error('Groq ' + model + ' HTTP ' + r.status + ' — ' + errText.substring(0, 150));
+        continue;
+      }
+      const d = await r.json();
+      const content = (d.choices?.[0]?.message?.content || '').trim();
+      if (content && content.length > 5) return content;
+      lastErr = new Error('Groq ' + model + ' empty response');
+    } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error('All Groq models failed');
 }
+
 async function callGemini(prompt) {
   if (!GEMINI_KEY) throw new Error('No key');
-  const client = new GoogleGenerativeAI(GEMINI_KEY);
-  const model = client.getGenerativeModel({ model: 'gemini-1.5-flash' });
-  const result = await model.generateContent(prompt);
-  return result.response.text().trim();
+  const models = ['gemini-2.0-flash-exp', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-pro'];
+  let lastErr = null;
+  for (const modelName of models) {
+    try {
+      const client = new GoogleGenerativeAI(GEMINI_KEY);
+      const model = client.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(prompt);
+      const text = result.response.text().trim();
+      if (text && text.length > 5) return text;
+      lastErr = new Error('Gemini ' + modelName + ' empty');
+    } catch (e) { lastErr = new Error('Gemini ' + modelName + ': ' + e.message); }
+  }
+  throw lastErr || new Error('All Gemini models failed');
 }
+
 async function callOpenRouter(prompt) {
   if (!OPENROUTER_KEY) throw new Error('No key');
-  const r = await fetchWithTimeout('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENROUTER_KEY, 'HTTP-Referer': process.env.BACKEND_URL || 'https://mailflow-pro-ten.vercel.app', 'X-Title': 'MailFlow Pro' },
-    body: JSON.stringify({ model: 'meta-llama/llama-3.1-8b-instruct:free', messages: [{ role: 'user', content: prompt + '\nReturn valid JSON only.' }], temperature: 0.7, max_tokens: 1800 })
-  }, 20000);
-  if (!r.ok) throw new Error('OpenRouter ' + r.status);
-  const d = await r.json();
-  return (d.choices?.[0]?.message?.content || '').trim();
+  const models = [
+    'meta-llama/llama-3.3-70b-instruct:free',
+    'meta-llama/llama-3.1-8b-instruct:free',
+    'google/gemini-flash-1.5-8b:free',
+    'mistralai/mistral-7b-instruct:free',
+    'qwen/qwen-2.5-7b-instruct:free'
+  ];
+  let lastErr = null;
+  for (const model of models) {
+    try {
+      const r = await fetchWithTimeout('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + OPENROUTER_KEY,
+          'HTTP-Referer': process.env.BACKEND_URL || 'https://mailflow-pro-ten.vercel.app',
+          'X-Title': 'MailFlow Pro'
+        },
+        body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt + '\nReturn valid JSON only.' }], temperature: 0.7, max_tokens: 1800 })
+      }, 20000);
+      if (!r.ok) {
+        const errText = await r.text().catch(() => '');
+        lastErr = new Error('OR ' + model + ' HTTP ' + r.status + ' — ' + errText.substring(0, 150));
+        continue;
+      }
+      const d = await r.json();
+      const content = (d.choices?.[0]?.message?.content || '').trim();
+      if (content && content.length > 5) return content;
+      lastErr = new Error('OR ' + model + ' empty');
+    } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error('All OpenRouter models failed');
 }
+
 async function callMistral(prompt) {
   if (!MISTRAL_KEY) throw new Error('No key');
   const doFetch = async () => {
@@ -164,23 +222,34 @@ async function callMistral(prompt) {
   }
   throw lastErr;
 }
+
 async function callAI(prompt) {
   const cached = getCachedResponse(prompt);
   if (cached) return cached;
-  const providers = [{ n: 'groq', f: callGroq }, { n: 'gemini', f: callGemini }, { n: 'or', f: callOpenRouter }, { n: 'mistral', f: callMistral }];
+  const providers = [
+    { n: 'groq', f: callGroq },
+    { n: 'gemini', f: callGemini },
+    { n: 'openrouter', f: callOpenRouter },
+    { n: 'mistral', f: callMistral }
+  ];
   const errs = [];
   for (const p of providers) {
     try {
       const text = await p.f(prompt);
       if (!text || text.length < 5) continue;
       setCachedResponse(prompt, text);
+      console.log('AI OK via ' + p.n);
       return text;
-    } catch (e) { errs.push(p.n + ':' + e.message); }
+    } catch (e) {
+      errs.push(p.n + ': ' + e.message);
+      console.error('AI provider ' + p.n + ' failed:', e.message);
+    }
   }
-  console.error('AI failed:', errs.join('|'));
-  throw new Error('All AI failed');
+  console.error('ALL AI FAILED:\n' + errs.join('\n'));
+  throw new Error('All AI failed: ' + errs.join(' | '));
 }
 
+/* ============ MIDDLEWARE ============ */
 app.set('trust proxy', 1);
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -355,6 +424,28 @@ function localAnalysis(subject, body) {
 
 app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL }));
 
+app.get('/api/ai/test', async (req, res) => {
+  const results = {};
+  const testPrompt = 'Reply with only this JSON: {"ok":true,"msg":"hello"}';
+  const providers = [
+    ['groq', callGroq, !!GROQ_KEY],
+    ['gemini', callGemini, !!GEMINI_KEY],
+    ['openrouter', callOpenRouter, !!OPENROUTER_KEY],
+    ['mistral', callMistral, !!MISTRAL_KEY]
+  ];
+  for (const [name, fn, hasKey] of providers) {
+    if (!hasKey) { results[name] = { status: 'NO_KEY' }; continue; }
+    const start = Date.now();
+    try {
+      const t = await fn(testPrompt);
+      results[name] = { status: 'OK', ms: Date.now() - start, sample: t.substring(0, 100) };
+    } catch (e) {
+      results[name] = { status: 'FAIL', ms: Date.now() - start, error: e.message };
+    }
+  }
+  res.json({ ok: true, results });
+});
+
 app.get('/auth/google', (req, res) => {
   const client = createOAuthClient();
   const url = client.generateAuthUrl({ access_type: 'offline', scope: SCOPES, prompt: 'consent' });
@@ -467,6 +558,41 @@ app.post('/api/ai/write-email', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+app.post('/api/ai/analyze-cv', authRequired, async (req, res) => {
+  try {
+    const { cvText, targetRole, jobDescription } = req.body;
+    if (!cvText || cvText.length < 30) return res.json({ ok: false, error: 'CV text too short' });
+    const prompt = `You are an expert career coach. Analyze this CV and write a professional job application email.
+
+CV Content:
+"""${cvText.substring(0, 3500)}"""
+
+Target Role: ${targetRole || 'Not specified'}
+Job Description: ${jobDescription ? jobDescription.substring(0, 600) : 'Not provided'}
+
+Tasks:
+1. Identify strongest skills, experiences, and achievements
+2. Match them to the target role
+3. Write a compelling professional email highlighting the best fit
+4. Score candidate fit 0-100
+
+Return ONLY JSON:
+{
+  "subject":"compelling subject under 65 chars",
+  "body":"professional email body with \\n\\n between paragraphs, NO signature/sign-off",
+  "keySkills":["skill1","skill2","skill3","skill4"],
+  "analysis":"2-3 sentence summary of candidate strength",
+  "score":0-100
+}`;
+    const text = await callAI(prompt);
+    const parsed = safeParseJSON(text);
+    if (parsed && parsed.subject && parsed.body) {
+      return res.json({ ok: true, subject: parsed.subject, body: stripSignature(parsed.body), keySkills: parsed.keySkills || [], analysis: parsed.analysis || '', score: parsed.score || 70, aiPowered: true });
+    }
+    res.json({ ok: false, error: 'AI could not parse CV' });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
 app.post('/api/ai/smart-reply', authRequired, async (req, res) => {
   try {
     const { originalSubject, originalBody, originalFrom, instruction } = req.body;
@@ -475,7 +601,38 @@ app.post('/api/ai/smart-reply', authRequired, async (req, res) => {
     const userName = u.name || u.email.split('@')[0];
     const userCompany = (u.sigFields && u.sigFields.company) || '';
     const userPos = (u.sigFields && u.sigFields.pos) || '';
-    const prompt = `You are an expert email assistant. Analyze the incoming email carefully, understand its intent, and write a thoughtful professional reply.\n\nINCOMING EMAIL:\nFrom: ${originalFrom || 'Unknown'}\nSubject: ${originalSubject || '(no subject)'}\nBody:\n"""${(originalBody || '').substring(0, 4000)}"""\n\n${instruction ? 'EXTRA INSTRUCTION FROM USER: ' + instruction : ''}\n\nYOUR IDENTITY:\nName: ${userName}\n${userPos ? 'Position: ' + userPos : ''}\n${userCompany ? 'Company: ' + userCompany : ''}\n\nTASKS:\n1. Identify the email's intent\n2. Address EVERY specific point, question, or request raised\n3. If question email → answer clearly\n4. If meeting request → confirm or propose a time\n5. If follow-up → acknowledge and give next step\n6. Match original email's tone\n7. Use proper greeting with sender's first name if identifiable\n\nRULES:\n- 2-4 paragraphs, concise but complete\n- NO sign-off like "Best regards", "Regards", "Sincerely", "Thanks", "Cheers"\n- NO name at the end\n- End with a final sentence of actual content\n- Do NOT invent facts\n\nReturn ONLY valid JSON: {"subject":"Re: ...","body":"complete reply with \\n\\n between paragraphs"}`;
+    const prompt = `You are an expert email assistant. Analyze the incoming email carefully, understand its intent, and write a thoughtful professional reply.
+
+INCOMING EMAIL:
+From: ${originalFrom || 'Unknown'}
+Subject: ${originalSubject || '(no subject)'}
+Body:
+"""${(originalBody || '').substring(0, 4000)}"""
+
+${instruction ? 'EXTRA INSTRUCTION FROM USER: ' + instruction : ''}
+
+YOUR IDENTITY:
+Name: ${userName}
+${userPos ? 'Position: ' + userPos : ''}
+${userCompany ? 'Company: ' + userCompany : ''}
+
+TASKS:
+1. Identify the email's intent (question, request, meeting, complaint, follow-up, newsletter, etc.)
+2. Address EVERY specific point, question, or request raised in the original email
+3. If it's a question email → answer clearly
+4. If it's a meeting request → confirm or propose a time
+5. If it's a follow-up → acknowledge and give a clear next step
+6. Match the original email's tone (formal ↔ casual)
+7. Use a proper greeting with the sender's first name if identifiable
+
+RULES:
+- 2-4 paragraphs, concise but complete
+- NO sign-off like "Best regards", "Regards", "Sincerely", "Thanks", "Cheers"
+- NO name at the end
+- End with a final sentence of actual content
+- Do NOT invent facts not present in the original email
+
+Return ONLY valid JSON: {"subject":"Re: ...","body":"complete reply with \\n\\n between paragraphs"}`;
     try {
       const text = await callAI(prompt);
       const parsed = safeParseJSON(text);
