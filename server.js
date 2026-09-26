@@ -353,6 +353,107 @@ function htmlToPlain(h) {
     .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\n\s*\n\s*\n/g, '\n\n').trim();
 }
 
+function looksLikeBinaryCv(text) {
+  if (!text) return true;
+  const t = String(text).trim();
+  if (t.startsWith('%PDF') || t.startsWith('PK\x03\x04') || t.indexOf('%PDF-') === 0) return true;
+  const sample = t.substring(0, 800);
+  let bad = 0;
+  for (let i = 0; i < sample.length; i++) {
+    const c = sample.charCodeAt(i);
+    if (c === 0 || (c < 9) || (c > 13 && c < 32)) bad++;
+  }
+  return bad > 12;
+}
+
+function decodePdfString(s) {
+  return s.replace(/\\n/g, '\n').replace(/\\r/g, '\n').replace(/\\t/g, '\t')
+    .replace(/\\\(/g, '(').replace(/\\\)/g, ')').replace(/\\\\/g, '\\')
+    .replace(/\\(\d{1,3})/g, function (_, oct) { return String.fromCharCode(parseInt(oct, 8)); });
+}
+
+function naivePdfExtract(buf) {
+  try {
+    const raw = Buffer.isBuffer(buf) ? buf.toString('latin1') : String(buf);
+    if (raw.indexOf('%PDF') === -1) return '';
+    const chunks = [];
+    const tj = raw.match(/\((?:\\.|[^\\)]){2,}\)(?:\s*Tj)?/g) || [];
+    for (const x of tj) {
+      const inner = x.replace(/\)\s*Tj\s*$/, '').replace(/^\(/, '').replace(/\)$/, '');
+      const d = decodePdfString(inner);
+      if (/[A-Za-z]{3,}/.test(d)) chunks.push(d);
+    }
+    const tjArr = raw.match(/\[(?:[^\]]{4,1200})\]\s*TJ/g) || [];
+    for (const x of tjArr) {
+      const parts = x.match(/\((?:\\.|[^\\)])+\)/g) || [];
+      const line = parts.map(p => decodePdfString(p.slice(1, -1))).join('');
+      if (/[A-Za-z]{3,}/.test(line)) chunks.push(line);
+    }
+    const text = chunks.join('\n').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').replace(/[^\S\n]+/g, ' ').trim();
+    return text.length > 40 ? text : '';
+  } catch (e) { return ''; }
+}
+
+async function extractPdfText(buf) {
+  try {
+    const pdfParse = require('pdf-parse');
+    const data = await pdfParse(buf);
+    const t = (data && data.text ? data.text : '').replace(/\u0000/g, '').trim();
+    if (t.replace(/\s/g, '').length > 30) return t;
+  } catch (e) { console.error('pdf-parse:', e.message); }
+  return naivePdfExtract(buf);
+}
+
+function extractDocxText(buf) {
+  try {
+    const zip = Buffer.isBuffer(buf) ? buf : Buffer.from(buf);
+    const name = 'word/document.xml';
+    let pos = zip.indexOf(Buffer.from(name));
+    if (pos < 0) return '';
+    let local = -1;
+    for (let i = Math.max(0, pos - 80); i < pos; i++) {
+      if (zip[i] === 0x50 && zip[i + 1] === 0x4b && zip[i + 2] === 0x03 && zip[i + 3] === 0x04) { local = i; break; }
+    }
+    if (local < 0) return '';
+    const compression = zip.readUInt16LE(local + 8);
+    const compSize = zip.readUInt32LE(local + 18);
+    const nameLen = zip.readUInt16LE(local + 26);
+    const extraLen = zip.readUInt16LE(local + 28);
+    const dataStart = local + 30 + nameLen + extraLen;
+    const data = zip.slice(dataStart, dataStart + compSize);
+    let xml = '';
+    if (compression === 0) xml = data.toString('utf8');
+    else {
+      const zlib = require('zlib');
+      xml = zlib.inflateRawSync(data).toString('utf8');
+    }
+    const text = xml.replace(/<w:p[^>]*>/g, '\n').replace(/<w:tab[^/]*\/>/g, '\t').replace(/<[^>]+>/g, ' ')
+      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
+      .replace(/&#(\d+);/g, function (_, n) { return String.fromCharCode(Number(n)); })
+      .replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').replace(/[ \t]{2,}/g, ' ').trim();
+    return text;
+  } catch (e) { console.error('docx extract:', e.message); return ''; }
+}
+
+async function extractCvFromBuffer(buf, filename, mimeType) {
+  const name = (filename || '').toLowerCase();
+  const mime = (mimeType || '').toLowerCase();
+  if (mime.includes('pdf') || name.endsWith('.pdf') || buf.slice(0, 5).toString() === '%PDF-') return extractPdfText(buf);
+  if (mime.includes('wordprocessingml') || name.endsWith('.docx') || (buf[0] === 0x50 && buf[1] === 0x4b && name.endsWith('.docx'))) return extractDocxText(buf);
+  if (mime.startsWith('text/') || name.endsWith('.txt') || name.endsWith('.md') || name.endsWith('.rtf')) {
+    let t = buf.toString('utf8');
+    if (t.charCodeAt(0) === 0xFEFF) t = t.slice(1);
+    return t.replace(/\u0000/g, '').trim();
+  }
+  const asText = buf.toString('utf8');
+  if (!looksLikeBinaryCv(asText)) return asText.trim();
+  const pdfTry = await extractPdfText(buf);
+  if (pdfTry) return pdfTry;
+  const docxTry = extractDocxText(buf);
+  if (docxTry) return docxTry;
+  return '';
+}
+
 function buildMime(fromName, fromEmail, to, subject, htmlBody, attachments, options) {
   options = options || {};
   const isBulk = options.isBulk === true;
@@ -558,14 +659,59 @@ app.post('/api/ai/write-email', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+app.post('/api/ai/extract-cv', authRequired, async (req, res) => {
+  try {
+    const { fileId, base64, mimeType, filename } = req.body || {};
+    let buf = null;
+    let fname = filename || 'cv';
+    let mime = mimeType || '';
+    if (fileId) {
+      const f = await db.collection('users').doc(req.session.user.id).collection('files').doc(fileId).get();
+      if (!f.exists) return res.json({ ok: false, error: 'File not found' });
+      const meta = f.data();
+      fname = meta.name || fname;
+      mime = meta.mimeType || mime;
+      const u = await getUserData(req.session.user.id);
+      if (!u.tokens) return res.json({ ok: false, error: 'Session expired' });
+      const client = setUserOAuth(u.tokens);
+      const dr = google.drive({ version: 'v3', auth: client });
+      const r2 = await dr.files.get({ fileId: meta.driveId, alt: 'media' }, { responseType: 'arraybuffer' });
+      buf = Buffer.from(r2.data);
+    } else if (base64) {
+      buf = Buffer.from(base64, 'base64');
+      if (buf.length > 4 * 1024 * 1024) return res.json({ ok: false, error: 'Max 4MB' });
+    } else {
+      return res.json({ ok: false, error: 'No file provided' });
+    }
+    const text = await extractCvFromBuffer(buf, fname, mime);
+    if (!text || text.replace(/\s/g, '').length < 30 || looksLikeBinaryCv(text)) {
+      return res.json({ ok: false, error: 'Could not read this file. Use PDF, DOCX, or TXT.' });
+    }
+    res.json({ ok: true, text: text.substring(0, 20000), filename: fname, chars: text.length });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
 app.post('/api/ai/analyze-cv', authRequired, async (req, res) => {
   try {
-    const { cvText, targetRole, jobDescription } = req.body;
-    if (!cvText || cvText.length < 30) return res.json({ ok: false, error: 'CV text too short' });
+    const { cvText, targetRole, jobDescription, fileId } = req.body;
+    let text = cvText || '';
+    if (fileId && (!text || looksLikeBinaryCv(text))) {
+      const f = await db.collection('users').doc(req.session.user.id).collection('files').doc(fileId).get();
+      if (f.exists) {
+        const meta = f.data();
+        const u = await getUserData(req.session.user.id);
+        const client = setUserOAuth(u.tokens);
+        const dr = google.drive({ version: 'v3', auth: client });
+        const r2 = await dr.files.get({ fileId: meta.driveId, alt: 'media' }, { responseType: 'arraybuffer' });
+        text = await extractCvFromBuffer(Buffer.from(r2.data), meta.name, meta.mimeType);
+      }
+    }
+    if (looksLikeBinaryCv(text)) return res.json({ ok: false, error: 'CV file is not readable text. Upload PDF/DOCX/TXT so we can extract content.' });
+    if (!text || text.replace(/\s/g, '').length < 30) return res.json({ ok: false, error: 'CV text too short' });
     const prompt = `You are an expert career coach. Analyze this CV and write a professional job application email.
 
 CV Content:
-"""${cvText.substring(0, 3500)}"""
+"""${text.substring(0, 3500)}"""
 
 Target Role: ${targetRole || 'Not specified'}
 Job Description: ${jobDescription ? jobDescription.substring(0, 600) : 'Not provided'}
@@ -584,8 +730,8 @@ Return ONLY JSON:
   "analysis":"2-3 sentence summary of candidate strength",
   "score":0-100
 }`;
-    const text = await callAI(prompt);
-    const parsed = safeParseJSON(text);
+    const aiText = await callAI(prompt);
+    const parsed = safeParseJSON(aiText);
     if (parsed && parsed.subject && parsed.body) {
       return res.json({ ok: true, subject: parsed.subject, body: stripSignature(parsed.body), keySkills: parsed.keySkills || [], analysis: parsed.analysis || '', score: parsed.score || 70, aiPowered: true });
     }
@@ -1122,7 +1268,7 @@ async function sendOne(userId, userEmail, recipientId, options) {
   let sigHtml = '';
   if (u.signature && options.includeSignature !== false) {
     let sig = u.signature;
-    if (options.includeLogo === false) sig = sig.replace(/<img[^>]*>/gi, '');
+    if (options.includeLogo === false) sig = sig.replace(/<td[^>]*>\s*<img[\s\S]*?<\/td>/gi, '').replace(/<img[^>]*>/gi, '');
     sigHtml = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>';
   }
   const bodyHtml = body.replace(/\n/g, '<br>');
@@ -1342,20 +1488,27 @@ app.post('/api/test/send', adminRequired, async (req, res) => {
     const client = setUserOAuth(u.tokens);
     const gmail = google.gmail({ version: 'v1', auth: client });
     let targetEmail = to;
-    if (recipientId) { const r = await db.collection('users').doc(uid).collection('testRecipients').doc(recipientId).get(); if (r.exists) targetEmail = r.data().email; }
+    let recId = recipientId || '';
+    if (recId) { const r = await db.collection('users').doc(uid).collection('testRecipients').doc(recId).get(); if (r.exists) targetEmail = r.data().email; }
+    if (!recId && targetEmail) {
+      const snap = await db.collection('users').doc(uid).collection('testRecipients').where('email', '==', String(targetEmail).toLowerCase()).limit(1).get();
+      if (!snap.empty) recId = snap.docs[0].id;
+    }
     if (!targetEmail || !subject || !body) return res.json({ ok: false, error: 'Missing fields' });
     let sigHtml = '';
     const sigToUse = useTestSignature ? (u.testSignature || u.signature) : (u.signature || u.testSignature);
     if (sigToUse && includeSignature !== false) {
       let sig = sigToUse;
-      if (includeLogo === false) sig = sig.replace(/<img[^>]*>/gi, '');
+      if (includeLogo === false) {
+        sig = sig.replace(/<td[^>]*>\s*<img[\s\S]*?<\/td>/gi, '').replace(/<img[^>]*>/gi, '');
+      }
       sigHtml = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>';
     }
     let pix = '';
-    if (recipientId) {
+    if (recId) {
       const trackTok = crypto.randomBytes(16).toString('hex');
-      await db.collection('users').doc(uid).collection('testRecipients').doc(recipientId).update({ trackToken: trackTok });
-      const tu = (process.env.BACKEND_URL || 'https://mailflow-pro-ten.vercel.app') + '/track/' + recipientId + '?u=' + uid + '&t=' + trackTok + '&type=test';
+      await db.collection('users').doc(uid).collection('testRecipients').doc(recId).update({ trackToken: trackTok });
+      const tu = (process.env.BACKEND_URL || 'https://mailflow-pro-ten.vercel.app') + '/track/' + recId + '?u=' + uid + '&t=' + trackTok + '&type=test';
       pix = '<img src="' + tu + '" width="1" height="1" alt="" style="border:0;display:block;width:1px;height:1px">';
     }
     const bodyHtml = body.replace(/\n/g, '<br>');
@@ -1372,14 +1525,41 @@ app.post('/api/test/send', adminRequired, async (req, res) => {
     }
     const raw = buildMime(u.name || 'User', u.email, targetEmail, subject, full, atts, { isBulk: false });
     await gmail.users.messages.send({ userId: 'me', requestBody: { raw } });
-    await db.collection('users').doc(uid).collection('testLog').add({ recipientEmail: targetEmail, subject, body, sentAt: new Date(), recipientId: recipientId || '', attachmentsCount: atts.length });
-    if (recipientId) await db.collection('users').doc(uid).collection('testRecipients').doc(recipientId).update({ status: 'Sent', sentAt: new Date() });
+    await db.collection('users').doc(uid).collection('testLog').add({ recipientEmail: targetEmail, subject, body, sentAt: new Date(), recipientId: recId || '', attachmentsCount: atts.length });
+    if (recId) {
+      const rec = await db.collection('users').doc(uid).collection('testRecipients').doc(recId).get();
+      const prev = rec.exists ? (rec.data().status || '') : '';
+      await db.collection('users').doc(uid).collection('testRecipients').doc(recId).update({
+        status: prev === 'Opened' ? 'Opened' : 'Sent',
+        lastSentAt: new Date(),
+        sentAt: prev === 'Opened' && rec.data().sentAt ? rec.data().sentAt : new Date()
+      });
+    }
     res.json({ ok: true, email: targetEmail });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.get('/api/test/log', adminRequired, async (req, res) => {
-  try { const s = await db.collection('users').doc(req.session.user.id).collection('testLog').orderBy('sentAt', 'desc').limit(200).get(); const l = []; s.forEach(d => l.push({ id: d.id, ...d.data() })); res.json({ ok: true, logs: l }); }
-  catch (e) { res.json({ ok: false, error: e.message }); }
+  try {
+    const uid = req.session.user.id;
+    const [s, recs] = await Promise.all([
+      db.collection('users').doc(uid).collection('testLog').orderBy('sentAt', 'desc').limit(300).get(),
+      db.collection('users').doc(uid).collection('testRecipients').get()
+    ]);
+    const recById = {};
+    const recByEmail = {};
+    recs.forEach(d => {
+      const da = d.data();
+      recById[d.id] = da;
+      if (da.email) recByEmail[String(da.email).toLowerCase()] = da;
+    });
+    const l = [];
+    s.forEach(d => {
+      const da = d.data();
+      const rec = recById[da.recipientId] || recByEmail[(da.recipientEmail || '').toLowerCase()] || {};
+      l.push({ id: d.id, ...da, openedAt: da.openedAt || rec.openedAt || null, recipientStatus: rec.status || (da.openedAt ? 'Opened' : 'Sent') });
+    });
+    res.json({ ok: true, logs: l });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
 async function runAutoSend(uid, ue, ud) {
