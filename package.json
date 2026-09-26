@@ -1,14 +1,14 @@
 {
   "name": "mailflow-pro",
-  "version": "1.0.0",
-  "description": "AI-powered email automation platform",
+  "version": "2.1.0",
+  "description": "AI-powered email automation platform with Gmail, CV analyzer, and multi-provider AI",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
@@ -20,7 +20,16 @@
     "googleapis": "^144.0.0",
     "pdf-parse": "^1.1.1"
   },
-  "keywords": ["email", "automation", "ai", "gmail"],
+  "keywords": [
+    "email",
+    "automation",
+    "ai",
+    "gmail",
+    "mailflow",
+    "cv-analyzer",
+    "gemini",
+    "groq"
+  ],
   "author": "Usama Hanif",
   "license": "MIT"
 }

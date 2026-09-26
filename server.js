@@ -353,6 +353,8 @@ function htmlToPlain(h) {
     .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\n\s*\n\s*\n/g, '\n\n').trim();
 }
 
+/* ============ CV EXTRACTION HELPERS ============ */
+
 function looksLikeBinaryCv(text) {
   if (!text) return true;
   const t = String(text).trim();
@@ -454,6 +456,7 @@ async function extractCvFromBuffer(buf, filename, mimeType) {
   return '';
 }
 
+/* ============ MIME BUILDER ============ */
 function buildMime(fromName, fromEmail, to, subject, htmlBody, attachments, options) {
   options = options || {};
   const isBulk = options.isBulk === true;
@@ -523,6 +526,7 @@ function localAnalysis(subject, body) {
   return { score, prediction, inboxProbability, issues, suggestions, tone: 'professional', readability: 75, emotionalTone: 'neutral' };
 }
 
+/* ============ BASIC ROUTES ============ */
 app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL }));
 
 app.get('/api/ai/test', async (req, res) => {
@@ -626,6 +630,7 @@ app.get('/api/quota', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+/* ============ AI ROUTES ============ */
 app.post('/api/ai/analyze-live', authRequired, async (req, res) => {
   try {
     const { subject, body } = req.body;
@@ -659,6 +664,7 @@ app.post('/api/ai/write-email', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+/* ============ CV EXTRACTION + ANALYSIS ============ */
 app.post('/api/ai/extract-cv', authRequired, async (req, res) => {
   try {
     const { fileId, base64, mimeType, filename } = req.body || {};
@@ -867,6 +873,7 @@ app.get('/api/ai/best-time', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: true, bestHours: [9, 11, 14], reasoning: 'Default', aiPowered: false }); }
 });
 
+/* ============ INBOX ============ */
 function walkPartsForAttachments(parts, out) {
   for (const p of (parts || [])) {
     if (p.filename && p.filename.length > 0) out.push(p.filename);
@@ -1022,6 +1029,7 @@ app.post('/api/reply/send', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+/* ============ TEMPLATES ============ */
 app.get('/api/templates', authRequired, async (req, res) => {
   try { const s = await db.collection('users').doc(req.session.user.id).collection('templates').get(); const l = []; s.forEach(d => l.push({ id: d.id, ...d.data() })); res.json({ ok: true, templates: l }); }
   catch (e) { res.json({ ok: false, error: e.message }); }
@@ -1047,6 +1055,7 @@ app.delete('/api/templates/:id', authRequired, async (req, res) => {
   catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+/* ============ RECIPIENTS ============ */
 app.get('/api/recipients', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -1095,6 +1104,7 @@ app.post('/api/recipients/bulk-delete', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+/* ============ LOGO ============ */
 app.post('/api/upload-logo', authRequired, async (req, res) => {
   try {
     const { base64, mimeType, filename } = req.body;
@@ -1130,12 +1140,13 @@ app.get('/api/logo', authRequired, async (req, res) => {
   catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+/* ============ FILES ============ */
 app.post('/api/upload-file', authRequired, async (req, res) => {
   try {
     const { base64, mimeType, filename } = req.body;
     if (!base64 || !filename) return res.json({ ok: false, error: 'Missing' });
     const buf = Buffer.from(base64, 'base64');
-    if (buf.length > 3 * 1024 * 1024) return res.json({ ok: false, error: 'Max 3MB per file' });
+    if (buf.length > 4 * 1024 * 1024) return res.json({ ok: false, error: 'Max 4MB per file' });
     const u = await getUserData(req.session.user.id);
     const client = setUserOAuth(u.tokens);
     const drive = google.drive({ version: 'v3', auth: client });
@@ -1161,6 +1172,7 @@ app.delete('/api/files/:id', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+/* ============ SIGNATURE / PREFS ============ */
 app.get('/api/signature', authRequired, async (req, res) => {
   try { const d = await getUserData(req.session.user.id); res.json({ ok: true, signature: d.signature || '', fields: d.sigFields || {} }); }
   catch (e) { res.json({ ok: false, error: e.message }); }
@@ -1189,6 +1201,7 @@ app.post('/api/prefs', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+/* ============ STATS ============ */
 app.get('/api/stats', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -1201,6 +1214,7 @@ app.get('/api/stats', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+/* ============ EMAIL HISTORY ============ */
 app.get('/api/my-emails', authRequired, async (req, res) => {
   try {
     const { range, search } = req.query;
@@ -1227,6 +1241,7 @@ app.get('/api/my-emails', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+/* ============ SEND ============ */
 async function sendOne(userId, userEmail, recipientId, options) {
   options = options || {};
   const u = await getUserData(userId);
@@ -1268,7 +1283,9 @@ async function sendOne(userId, userEmail, recipientId, options) {
   let sigHtml = '';
   if (u.signature && options.includeSignature !== false) {
     let sig = u.signature;
-    if (options.includeLogo === false) sig = sig.replace(/<td[^>]*>\s*<img[\s\S]*?<\/td>/gi, '').replace(/<img[^>]*>/gi, '');
+    if (options.includeLogo === false) {
+      sig = sig.replace(/<td[^>]*>\s*<img[\s\S]*?<\/td>/gi, '').replace(/<img[^>]*>/gi, '').replace(/<td[^>]*>\s*<\/td>/gi, '');
+    }
     sigHtml = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>';
   }
   const bodyHtml = body.replace(/\n/g, '<br>');
@@ -1326,6 +1343,7 @@ app.post('/api/resend', authRequired, async (req, res) => {
   }
 });
 
+/* ============ TRACKING PIXEL ============ */
 app.get('/track/:id', async (req, res) => {
   try {
     const u = req.query.u; const t = req.query.t; const type = req.query.type;
@@ -1354,6 +1372,7 @@ app.get('/track/:id', async (req, res) => {
   res.set('Content-Type', 'image/gif'); res.send(px);
 });
 
+/* ============ TEST LAB ============ */
 app.get('/api/test/stats', adminRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -1500,7 +1519,7 @@ app.post('/api/test/send', adminRequired, async (req, res) => {
     if (sigToUse && includeSignature !== false) {
       let sig = sigToUse;
       if (includeLogo === false) {
-        sig = sig.replace(/<td[^>]*>\s*<img[\s\S]*?<\/td>/gi, '').replace(/<img[^>]*>/gi, '');
+        sig = sig.replace(/<td[^>]*>\s*<img[\s\S]*?<\/td>/gi, '').replace(/<img[^>]*>/gi, '').replace(/<td[^>]*>\s*<\/td>/gi, '');
       }
       sigHtml = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>';
     }
@@ -1562,6 +1581,7 @@ app.get('/api/test/log', adminRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+/* ============ AUTO-SEND ============ */
 async function runAutoSend(uid, ue, ud) {
   if (isQuietHours(ud)) return { skipped: true };
   const bs = Number(ud.autoSendBatchSize) || 5;
@@ -1611,6 +1631,7 @@ app.post('/api/auto-send-check', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+/* ============ ADMIN ============ */
 app.get('/api/admin/dashboard', adminRequired, async (req, res) => {
   try {
     const us = await db.collection('users').get();
@@ -1668,6 +1689,7 @@ app.get('/api/admin/all-emails', adminRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+/* ============ ERROR + FALLBACK ============ */
 app.use((err, req, res, next) => {
   console.error('Unhandled:', err.message);
   if (res.headersSent) return next(err);
