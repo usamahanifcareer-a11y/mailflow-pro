@@ -77,7 +77,6 @@ async function fetchWithTimeout(url, opts, ms) {
   catch (e) { clearTimeout(t); throw e; }
 }
 
-// ✅ FIXED: Only strip if closer is at the very end (last 2 lines), not mid-email
 function stripSignature(text) {
   if (!text) return text;
   let t = text.trim();
@@ -401,14 +400,12 @@ Return: {"subject":"under 60 chars","body":"with \\n\\n breaks"}`;
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ✅ FIXED: Better smart reply, use light signature strip
 app.post('/api/ai/smart-reply', authRequired, async (req, res) => {
   try {
     const { originalSubject, originalBody, originalFrom, instruction } = req.body;
     if (!originalBody) return res.json({ ok: false, error: 'No original body' });
     const u = await getUserData(req.session.user.id);
     const userName = u.name || u.email.split('@')[0];
-
     const prompt = `You are an expert email assistant. Write a thoughtful, professional reply.
 
 ORIGINAL EMAIL:
@@ -430,7 +427,6 @@ RULES:
 6. Match the formality of the original
 
 Return ONLY JSON: {"subject":"Re: ...","body":"complete reply"}`;
-
     try {
       const text = await callAI(prompt);
       const parsed = safeParseJSON(text);
@@ -438,7 +434,6 @@ Return ONLY JSON: {"subject":"Re: ...","body":"complete reply"}`;
         return res.json({ ok: true, subject: parsed.subject || ('Re: ' + originalSubject), body: stripSignature(parsed.body), aiPowered: true });
       }
     } catch (e) { console.error('AI smart reply failed:', e.message); }
-
     const firstName = (originalFrom || '').match(/^([A-Za-z]+)/);
     const greetName = firstName ? firstName[1] : 'there';
     res.json({
@@ -675,7 +670,6 @@ app.post('/api/reply/send', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ✅ FIXED: Test Lab with tracking support
 app.get('/api/test/stats', adminRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -783,7 +777,6 @@ app.post('/api/test/automation/run', adminRequired, async (req, res) => {
         const sig = u.testSignature || u.signature || '';
         const bodyHtml = bodyText.replace(/\n/g, '<br>');
         const sigHtml = sig ? '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>' : '';
-        // Tracking pixel
         const tok = crypto.randomBytes(16).toString('hex');
         await db.collection('users').doc(uid).collection('testRecipients').doc(r.id).update({ trackToken: tok });
         const tu = (process.env.BACKEND_URL || 'https://mailflow-pro-ten.vercel.app') + '/track/' + r.id + '?u=' + uid + '&t=' + tok + '&type=test';
@@ -802,8 +795,6 @@ app.post('/api/test/automation/run', adminRequired, async (req, res) => {
     res.json({ ok: true, sent, failed });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-
-// ✅ FIXED: Test send with tracking pixel
 app.post('/api/test/send', adminRequired, async (req, res) => {
   try {
     const { recipientId, subject, body, to, includeSignature, includeLogo, selectedFileIds, sendDelay, useTestSignature } = req.body;
@@ -827,7 +818,6 @@ app.post('/api/test/send', adminRequired, async (req, res) => {
       if (includeLogo === false) sig = sig.replace(/<img[^>]*>/gi, '');
       sigHtml = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>';
     }
-    // Add tracking pixel
     let pix = '';
     let trackTok = null;
     if (recipientId) {
@@ -1094,7 +1084,6 @@ app.post('/api/resend', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ✅ FIXED: Track endpoint supports both regular and test recipients
 app.get('/track/:id', async (req, res) => {
   try {
     const u = req.query.u; const t = req.query.t; const type = req.query.type;
@@ -1204,7 +1193,36 @@ app.get('/api/admin/dashboard', adminRequired, async (req, res) => {
     res.json({ ok: true, users, stats: { totalUsers: users.length, totalEmails: tE, totalSent: tS, totalOpened: tO, totalPending: tP, totalSends: tSd } });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-app.get('/api/admin/user/:id/emails', adminRequired, async (req, res) => { try { const s = await db.collection('users').doc(req.params.id).collection('emailLog').orderBy('sentAt','desc').limit(500).get(); const l = []; s.forEach(d => l.push({ id: d.id, ...d.data() })); res.json({ ok: true, emails: l }); } catch (e) { res.json({ ok: false, error: e.message }); } });
+app.get('/api/admin/user/:id/emails', adminRequired, async (req, res) => {
+  try {
+    const uid = req.params.id;
+    const [emailSnap, recSnap] = await Promise.all([
+      db.collection('users').doc(uid).collection('emailLog').orderBy('sentAt','desc').limit(500).get(),
+      db.collection('users').doc(uid).collection('recipients').get()
+    ]);
+    const recMap = {};
+    recSnap.forEach(d => { recMap[d.id] = d.data(); });
+    const emails = [];
+    emailSnap.forEach(d => {
+      const dd = d.data();
+      const rec = recMap[dd.recipientId] || {};
+      emails.push({
+        id: d.id,
+        recipientEmail: dd.recipientEmail || '',
+        company: dd.company || '',
+        subject: dd.subject || '',
+        sentAt: dd.sentAt,
+        attachmentsCount: dd.attachmentsCount || 0,
+        aiPrediction: dd.aiPrediction || 'GOOD',
+        aiInboxProb: dd.aiInboxProb || 75,
+        status: rec.status || 'Sent',
+        openedAt: rec.openedAt || null,
+        recipientId: dd.recipientId || ''
+      });
+    });
+    res.json({ ok: true, emails });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
 app.get('/api/admin/all-emails', adminRequired, async (req, res) => {
   try {
     const us = await db.collection('users').get();

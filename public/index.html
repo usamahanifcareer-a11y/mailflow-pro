@@ -17,6 +17,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .hidden{display:none!important}
 button,input,textarea,select{font-family:inherit;font-size:16px}
 input,textarea,select{font-variant-numeric:tabular-nums}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 ::selection{background:rgba(56,189,248,.3)}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
 @keyframes float{0%,100%{transform:translate(0,0)}50%{transform:translate(-5%,5%)}}
@@ -25,12 +27,12 @@ input,textarea,select{font-variant-numeric:tabular-nums}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes pulse-opened{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.4)}50%{box-shadow:0 0 0 4px rgba(34,197,94,0)}}
 
-/* AUTH */
 .auth-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;position:relative;overflow:hidden;z-index:1}
 .auth-wrap::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 20%,rgba(56,189,248,.15) 0%,transparent 40%),radial-gradient(circle at 70% 80%,rgba(168,85,247,.15) 0%,transparent 40%);animation:float 20s infinite ease-in-out}
 .auth-card{background:rgba(15,23,42,.75);backdrop-filter:blur(30px);padding:48px 36px;border-radius:24px;width:100%;max-width:440px;box-shadow:0 32px 100px rgba(0,0,0,.8),0 0 0 1px rgba(56,189,248,.15);border:1px solid rgba(51,65,85,.6);text-align:center;position:relative;z-index:1}
 @media(max-width:480px){.auth-card{padding:36px 24px}}
-.brand-logo{width:72px;height:72px;margin:0 auto 22px;background:var(--grad);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:36px;box-shadow:0 20px 56px rgba(56,189,248,.45),inset 0 1px 0 rgba(255,255,255,.2)}
+.brand-logo{width:80px;height:80px;margin:0 auto 22px;border-radius:22px;display:flex;align-items:center;justify-content:center;background:var(--grad);box-shadow:0 20px 56px rgba(56,189,248,.45),inset 0 1px 0 rgba(255,255,255,.2);position:relative;overflow:hidden}
+.brand-logo svg{width:44px;height:44px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.3))}
 .auth-card h1{font-size:30px;margin-bottom:8px;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;letter-spacing:-.5px}
 .auth-card p.sub{color:var(--text2);margin-bottom:32px;font-size:14px;line-height:1.6}
 .google-btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;background:#fff;color:#1f2937;border:none;padding:15px;border-radius:14px;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;transition:.25s;box-shadow:0 8px 24px rgba(0,0,0,.2)}
@@ -40,10 +42,12 @@ input,textarea,select{font-variant-numeric:tabular-nums}
 .auth-features .feat{display:flex;align-items:center;gap:12px;padding:9px 0;font-size:13px;color:#cbd5e1}
 .auth-features .feat .ico{font-size:16px;width:32px;height:32px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 
-/* TOPBAR */
 .topbar{background:rgba(10,14,26,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;gap:10px;flex-wrap:wrap}
 @media(max-width:640px){.topbar{padding:10px 14px}}
-.logo-top{font-size:17px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.3px;white-space:nowrap}
+.logo-top{display:flex;align-items:center;gap:9px;font-size:17px;font-weight:800;letter-spacing:-.3px;white-space:nowrap}
+.logo-top .mini-logo{width:30px;height:30px;border-radius:8px;background:var(--grad);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(56,189,248,.4)}
+.logo-top .mini-logo svg{width:18px;height:18px}
+.logo-top .brand-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 .user-chip{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);flex-wrap:wrap}
 .user-avatar{width:30px;height:30px;border-radius:50%;border:2px solid var(--cyan);object-fit:cover;box-shadow:0 0 0 3px rgba(56,189,248,.15)}
 .user-chip button{background:#1e293b;border:1px solid #334155;color:#cbd5e1;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:600}
@@ -52,14 +56,12 @@ input,textarea,select{font-variant-numeric:tabular-nums}
 .app-id-pill{background:var(--grad);color:white;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:700;font-family:'Courier New',monospace;letter-spacing:.5px}
 @media(max-width:480px){.app-id-pill{display:none}}
 
-/* TABS */
 .maintabs{display:flex;gap:4px;padding:6px 14px;background:rgba(10,14,26,.85);border-bottom:1px solid var(--border);overflow-x:auto;position:sticky;top:55px;z-index:99;backdrop-filter:blur(20px);-webkit-overflow-scrolling:touch}
 .maintabs::-webkit-scrollbar{display:none}
 .maintab{padding:10px 16px;font-size:12px;color:var(--text2);cursor:pointer;font-weight:600;white-space:nowrap;border-radius:8px;transition:.2s;flex-shrink:0}
 .maintab.active{color:var(--cyan);background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2)}
 .maintab:hover:not(.active){color:#cbd5e1;background:rgba(30,41,59,.5)}
 
-/* LAYOUT */
 .container{max-width:1400px;margin:0 auto;padding:20px;position:relative;z-index:1}
 @media(max-width:640px){.container{padding:14px}}
 .page-layout{display:flex;gap:20px;align-items:flex-start}
@@ -67,7 +69,6 @@ input,textarea,select{font-variant-numeric:tabular-nums}
 .main-area{flex:1;min-width:0}
 @media(max-width:1000px){.page-layout{flex-direction:column}.sidebar{width:100%;position:static;order:2}.main-area{order:1}}
 
-/* STATS */
 .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px}
 @media(min-width:700px){.stats{grid-template-columns:repeat(5,1fr)}}
 .stat{background:linear-gradient(135deg,rgba(30,41,59,.8),rgba(15,23,42,.8));border:1px solid var(--border);border-radius:14px;padding:16px;position:relative;overflow:hidden;transition:.3s}
@@ -77,14 +78,12 @@ input,textarea,select{font-variant-numeric:tabular-nums}
 .stat .value{font-size:24px;font-weight:800;margin-top:6px;letter-spacing:-.5px}
 .stat.s1 .value{color:var(--cyan)}.stat.s2 .value{color:var(--green)}.stat.s3 .value{color:var(--purple)}.stat.s4 .value{color:var(--amber)}.stat.s5 .value{color:var(--pink)}
 
-/* PANEL */
 .panel{background:var(--panel);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:18px;transition:.25s}
 @media(max-width:640px){.panel{padding:14px;border-radius:14px}}
 .panel:hover{border-color:var(--border2)}
 .panel h2{font-size:15px;margin-bottom:16px;color:var(--text);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-weight:700;letter-spacing:-.2px}
 .panel h2 span{color:var(--text3);font-weight:500;font-size:11px}
 
-/* FIELDS */
 .field{margin-bottom:12px}
 .field label{display:block;font-size:10px;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.6px;font-weight:700}
 .field>input,.field>textarea,.field>select{width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:11px 13px;font-size:15px;transition:.2s;outline:none;-webkit-appearance:none;appearance:none}
@@ -92,7 +91,6 @@ input,textarea,select{font-variant-numeric:tabular-nums}
 .field>input:focus,.field>textarea:focus,.field>select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.15);background:#0c1220}
 .field>input::placeholder,.field>textarea::placeholder{color:#475569}
 
-/* BUTTONS */
 .btn{background:var(--grad);color:white;border:none;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;justify-content:center;transition:.25s;box-shadow:0 4px 12px rgba(56,189,248,.2);white-space:nowrap}
 .btn:hover{box-shadow:0 8px 24px rgba(56,189,248,.4);transform:translateY(-1px)}
 .btn.ghost{background:transparent;border:1px solid var(--border2);color:#cbd5e1;box-shadow:none}
@@ -106,7 +104,6 @@ input,textarea,select{font-variant-numeric:tabular-nums}
 .btn.save-btn{width:100%;padding:14px;font-size:14px;font-weight:700;background:linear-gradient(135deg,#22c55e,#16a34a);box-shadow:0 8px 24px rgba(34,197,94,.35);margin-top:16px}
 .btn .spin{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
 
-/* TOGGLE */
 .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;gap:12px;border-bottom:1px solid var(--border)}
 .toggle-row:last-child{border-bottom:none}
 .toggle-row .lbl{font-size:14px;color:var(--text);font-weight:600}
@@ -118,27 +115,24 @@ input,textarea,select{font-variant-numeric:tabular-nums}
 input:checked+.slider{background:linear-gradient(135deg,#22c55e,#16a34a);border-color:#16a34a}
 input:checked+.slider:before{transform:translateX(20px);background:#fff}
 
-/* TABS INNER */
 .tabs{display:flex;gap:6px;margin-bottom:14px;background:var(--bg2);padding:5px;border-radius:12px;border:1px solid var(--border)}
 .tab{flex:1;padding:10px 8px;text-align:center;font-size:12px;color:var(--text2);cursor:pointer;border-radius:8px;font-weight:600;transition:.2s}
 .tab.active{background:var(--grad);color:white}
 
-/* FILTER */
 .filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
 .filter-bar select{background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px 34px 10px 12px;font-size:13px;font-weight:500;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
 .search-bar{width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:11px 14px 11px 40px;font-size:14px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:12px center;outline:none}
 .search-bar:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.1)}
 .filter-bar .search-bar{flex:1;min-width:200px;margin:0}
 
-/* TABLE */
 .tbl-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--border);-webkit-overflow-scrolling:touch}
 table.data-table{width:100%;border-collapse:collapse;font-size:13px;min-width:600px}
 table.data-table th{text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:12px 10px;border-bottom:1px solid var(--border);font-weight:700;background:rgba(10,14,26,.7);letter-spacing:.5px;white-space:nowrap}
 table.data-table td{padding:12px 10px;border-bottom:1px solid rgba(26,35,56,.5);color:#cbd5e1;vertical-align:middle}
 table.data-table tbody tr:hover td{background:rgba(56,189,248,.04)}
 table.data-table tr.selected td{background:rgba(56,189,248,.08)}
+table.data-table tbody tr:last-child td{border-bottom:none}
 
-/* BADGES */
 .badge{display:inline-flex;align-items:center;gap:3px;padding:4px 9px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap;letter-spacing:.3px}
 .badge.pending{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3)}
 .badge.sent{background:rgba(56,189,248,.15);color:#7dd3fc;border:1px solid rgba(56,189,248,.3)}
@@ -155,16 +149,13 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .badge.other{background:rgba(100,116,139,.15);color:#94a3b8;border:1px solid rgba(100,116,139,.3)}
 .badge.attach{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3);font-weight:800}
 
-/* CHECKBOX — FIXED SIZE */
 .cbox{appearance:none;-webkit-appearance:none;width:18px!important;height:18px!important;min-width:18px!important;max-width:18px!important;border:2px solid #475569;border-radius:5px;cursor:pointer;position:relative;background:var(--bg2);vertical-align:middle;flex-shrink:0;padding:0!important;margin:0}
 .cbox:checked{background:var(--cyan);border-color:var(--cyan)}
 .cbox:checked::after{content:'✓';position:absolute;color:white;font-size:13px;font-weight:700;top:50%;left:50%;transform:translate(-50%,-50%);line-height:1}
 
-/* EMPTY */
 .empty{text-align:center;padding:40px 20px;color:var(--text3);font-size:13px}
 .empty .ico{font-size:44px;margin-bottom:12px;opacity:.5;display:block}
 
-/* CARDS */
 .tpl-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;transition:.2s}
 .tpl-card:hover{border-color:var(--border2);background:#0c1220}
 .tpl-card .info{flex:1;min-width:0}
@@ -174,7 +165,6 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .tpl-card button:hover{background:#334155;color:#fff}
 .tpl-card button.danger{background:rgba(127,29,29,.5);color:#fca5a5}
 
-/* BULK */
 .bulk-help{background:linear-gradient(135deg,rgba(56,189,248,.08),rgba(99,102,241,.08));border:1px solid rgba(56,189,248,.25);border-radius:12px;padding:12px 14px;margin-bottom:12px}
 .bulk-help .title{font-size:12px;color:#7dd3fc;font-weight:700;margin-bottom:6px}
 .bulk-help .desc{font-size:11px;color:var(--text2);line-height:1.6}
@@ -188,13 +178,11 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .bulk-preview-head .stat-pill.ok{background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.3)}
 .bulk-preview-head .stat-pill.dup{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3)}
 
-/* INFO BOX */
 .info-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-top:12px}
 .info-box .row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;gap:10px;align-items:center}
 .info-box .row .k{color:var(--text2)}
 .info-box .row .v{color:var(--text);font-weight:700;text-align:right}
 
-/* QUOTA */
 .quota-bar{width:100%;height:8px;background:#1e293b;border-radius:8px;overflow:hidden;margin-top:10px}
 .quota-fill{height:100%;background:linear-gradient(90deg,#22c55e,#38bdf8);transition:.5s;width:0;border-radius:8px;box-shadow:0 0 12px rgba(56,189,248,.5)}
 .quota-fill.warn{background:linear-gradient(90deg,#f59e0b,#ef4444)}
@@ -202,14 +190,12 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .quota-live{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--green);font-weight:600}
 .quota-live .dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 1.5s infinite}
 
-/* TOAST */
 .toast{position:fixed;bottom:20px;right:20px;left:20px;background:rgba(15,23,42,.97);backdrop-filter:blur(20px);border:1px solid var(--border);color:var(--text);padding:14px 18px;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.6);font-size:13px;z-index:5000;opacity:0;transform:translateY(20px);transition:.3s;max-width:400px;margin:0 auto;font-weight:500;pointer-events:none}
 .toast.show{opacity:1;transform:translateY(0)}
 .toast.ok{border-left:4px solid var(--green)}
 .toast.err{border-left:4px solid var(--red)}
 .toast.warn{border-left:4px solid var(--amber)}
 
-/* UPLOAD */
 .upload-area{display:flex;align-items:center;gap:12px;padding:14px;border:2px dashed var(--border2);border-radius:12px;margin-bottom:12px;cursor:pointer;background:var(--bg2);transition:.2s}
 .upload-area:hover{border-color:var(--cyan);background:rgba(56,189,248,.03)}
 .upload-area input[type=file]{display:none}
@@ -221,13 +207,12 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .upload-info .t{font-size:13px;color:var(--text);font-weight:600;margin-bottom:3px}
 .upload-info .s{font-size:11px;color:var(--text3);word-break:break-all}
 
-/* SIGNATURE */
 .sig-fields{display:grid;grid-template-columns:1fr;gap:10px}
 @media(min-width:600px){.sig-fields{grid-template-columns:1fr 1fr}}
-.sig-preview-outer{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:14px;display:none}
-.sig-preview-canvas{background:#fff!important;border-radius:10px;padding:20px;overflow-x:auto;font-family:Arial,Helvetica,sans-serif}
+.sig-preview-outer{background:rgba(10,14,26,.5);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:14px;display:none}
+.sig-preview-outer .preview-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px;font-weight:700}
+.sig-preview-canvas{background:#ffffff!important;color:#222;border-radius:10px;padding:20px;overflow-x:auto;font-family:Arial,Helvetica,sans-serif;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
 
-/* FILE ITEM — FIXED (no vertical text) */
 .file-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;transition:.2s;cursor:pointer;user-select:none;width:100%}
 .file-item:hover{border-color:var(--border2);background:#0c1220}
 .file-item.selected{border-color:var(--cyan);background:rgba(56,189,248,.08);box-shadow:0 0 0 1px rgba(56,189,248,.25)}
@@ -239,7 +224,6 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .file-item .actions button{padding:6px 10px;font-size:11px;border-radius:7px;border:none;cursor:pointer;background:rgba(127,29,29,.5);color:#fca5a5;font-weight:600}
 .file-item .actions button:hover{background:rgba(153,27,27,.7)}
 
-/* MODAL */
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);z-index:2000;display:flex;align-items:center;justify-content:center;padding:14px;animation:fadeIn .2s;overflow-y:auto}
 .modal{background:linear-gradient(135deg,#0f172a,#0a0e1a);border:1px solid var(--border2);border-radius:18px;padding:22px;max-width:900px;width:100%;max-height:92vh;overflow-y:auto;position:relative;box-shadow:0 32px 100px rgba(0,0,0,.8);animation:slideUp .25s;margin:auto}
 @media(max-width:640px){.modal{padding:16px;border-radius:14px}}
@@ -247,7 +231,6 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .modal .close-btn{position:absolute;top:14px;right:16px;background:transparent;border:none;color:var(--text2);font-size:22px;cursor:pointer;padding:0 6px;line-height:1}
 .modal .close-btn:hover{color:#fff}
 
-/* CONFIRM */
 .confirm-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px}
 .confirm-box{background:linear-gradient(135deg,#0f172a,#0a0e1a);border:1px solid var(--border2);border-radius:18px;padding:24px;max-width:420px;width:100%;text-align:center}
 .confirm-box .icon{font-size:48px;margin-bottom:12px}
@@ -259,7 +242,6 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .confirm-box .confirm-btn{background:linear-gradient(135deg,#ef4444,#dc2626);color:white}
 .confirm-box .confirm-btn.primary{background:var(--grad)}
 
-/* TIPS */
 .tips-panel{background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(239,68,68,.05));border-color:rgba(245,158,11,.3)}
 .tips-panel h2{color:#fcd34d}
 .tips-list{display:flex;flex-direction:column;gap:8px}
@@ -278,7 +260,6 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .quiet-banner .info .ttl{font-weight:700;color:#fcd34d;font-size:13px}
 .quiet-banner .info .dsc{font-size:11px;color:var(--text2);margin-top:2px}
 
-/* BATCH BOX */
 .batch-box{margin-top:12px;padding:16px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;display:none}
 .batch-box.show{display:block}
 .batch-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap}
@@ -295,7 +276,6 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .batch-hint{font-size:11px;color:var(--text3);margin-top:8px;padding:8px 10px;background:rgba(56,189,248,.05);border-radius:8px;border-left:3px solid var(--cyan);line-height:1.5}
 .batch-hint.err{color:#fca5a5;background:rgba(239,68,68,.05);border-left-color:var(--red)}
 
-/* COMPOSER */
 .composer-layout{display:grid;grid-template-columns:1fr 340px;gap:18px}
 @media(max-width:1000px){.composer-layout{grid-template-columns:1fr}.composer-sidebar{position:static!important}}
 .composer-main{min-width:0}
@@ -324,8 +304,6 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .send-options-row label:hover{border-color:var(--cyan)}
 .send-options-row input[type=checkbox]{accent-color:var(--cyan);width:15px;height:15px;cursor:pointer}
 
-.tpl-preview-body{background:#fff;color:#333;padding:16px;border-radius:10px;font-family:Arial,sans-serif;font-size:14px;line-height:1.6;max-height:400px;overflow-y:auto}
-
 .recip-row{display:flex;gap:8px;margin-bottom:8px;flex-direction:column}
 @media(min-width:600px){.recip-row{flex-direction:row}}
 .recip-row input{flex:1;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;outline:none}
@@ -334,7 +312,6 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .bulk-action-bar{display:none;gap:8px;padding:12px;background:linear-gradient(135deg,rgba(56,189,248,.1),rgba(99,102,241,.1));border:1px solid rgba(56,189,248,.3);border-radius:12px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
 .bulk-action-bar.show{display:flex}
 
-/* INBOX */
 .inbox-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:12px}
 .inbox-toolbar select{background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:8px 30px 8px 12px;font-size:12px;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;font-weight:500}
 .inbox-toolbar button{padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none}
@@ -406,17 +383,20 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
   .inbox-layout{min-height:auto}
 }
 
-::-webkit-scrollbar{width:8px;height:8px}
-::-webkit-scrollbar-track{background:var(--bg2)}
-::-webkit-scrollbar-thumb{background:#334155;border-radius:4px}
-::-webkit-scrollbar-thumb:hover{background:#475569}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:var(--bg2);border-radius:5px}
+::-webkit-scrollbar-thumb{background:#2a3550;border-radius:5px;border:2px solid var(--bg2)}
+::-webkit-scrollbar-thumb:hover{background:#3b4a68}
+*{scrollbar-color:#2a3550 var(--bg2);scrollbar-width:thin}
 </style>
 </head>
 <body>
 
 <div id="loginView" class="auth-wrap">
   <div class="auth-card">
-    <div class="brand-logo">⚡</div>
+    <div class="brand-logo">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M13 2L4.5 13.5H11L10 22L19 10H12.5L13 2Z" fill="white" stroke="white" stroke-width="0.5" stroke-linejoin="round"/></svg>
+    </div>
     <h1>MailFlow Pro</h1>
     <p class="sub">AI-powered email automation.<br>Send smart. Land in inbox.</p>
     <a href="/auth/google" class="google-btn">
@@ -436,7 +416,10 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 
 <div id="appView" class="hidden">
   <div class="topbar">
-    <div class="logo-top">⚡ MailFlow Pro</div>
+    <div class="logo-top">
+      <div class="mini-logo"><svg viewBox="0 0 24 24" fill="none"><path d="M13 2L4.5 13.5H11L10 22L19 10H12.5L13 2Z" fill="white" stroke="white" stroke-width="0.5" stroke-linejoin="round"/></svg></div>
+      <span class="brand-text">MailFlow Pro</span>
+    </div>
     <div class="user-chip">
       <img id="userAvatar" class="user-avatar" src="" style="display:none" alt="">
       <span id="topName"></span>
@@ -469,7 +452,6 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
           </div>
         </div>
       </aside>
-
       <main class="main-area">
         <div class="quiet-banner" id="quietBanner">
           <span class="icn">🌙</span>
@@ -573,17 +555,12 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
           </div>
           <div class="batch-box" id="batchSizeBox">
             <div class="batch-header">
-              <div>
-                <div class="label-txt">📊 Emails Per Hour</div>
-                <div class="sub-txt">Rate for auto-send</div>
-              </div>
+              <div><div class="label-txt">📊 Emails Per Hour</div><div class="sub-txt">Rate for auto-send</div></div>
               <div class="batch-value" id="batchValue">5</div>
             </div>
             <input type="range" id="batchSlider" class="batch-slider" min="1" max="500" value="5" oninput="onSliderChange(this.value)">
             <div class="batch-marks"><span>1</span><span>125</span><span>250</span><span>375</span><span>500</span></div>
-            <div class="batch-number-row">
-              <input type="number" id="batchNumber" min="1" max="500" value="5" placeholder="Enter exact number" oninput="onNumberChange(this.value)" onblur="onNumberBlur()">
-            </div>
+            <div class="batch-number-row"><input type="number" id="batchNumber" min="1" max="500" value="5" placeholder="Enter exact number" oninput="onNumberChange(this.value)" onblur="onNumberBlur()"></div>
             <div class="batch-hint" id="batchHint">Max allowed: <b>500</b> · Scheduled: <b>5/hour</b></div>
             <div class="info-box" style="margin-top:12px">
               <div class="row"><span class="k">Total auto-sent:</span><span class="v" id="totalAutoSent">0</span></div>
@@ -604,33 +581,22 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
           <div class="field" style="margin-top:16px">
             <label>⏱️ Send Delay (seconds between emails)</label>
             <input type="number" id="sendDelayInput" min="0" max="120" value="3" placeholder="3">
-            <div id="sendDelayWarning" class="warning-banner" style="display:none">
-              <div class="icn">⚠️</div>
-              <div id="sendDelayWarningText"></div>
-            </div>
+            <div id="sendDelayWarning" class="warning-banner" style="display:none"><div class="icn">⚠️</div><div id="sendDelayWarningText"></div></div>
           </div>
           <button class="btn save-btn" onclick="savePrefs()">💾 Save Settings</button>
         </div>
 
         <div class="panel">
           <h2>✍️ My Signature <span>Logo + details</span></h2>
-          <div class="logo-warning">
-            <div class="warn-ic">⚠️</div>
-            <div class="warn-text"><b>Warning:</b> Adding a logo <b>increases spam risk</b>. Skip for better inbox placement.</div>
-          </div>
+          <div class="logo-warning"><div class="warn-ic">⚠️</div><div class="warn-text"><b>Warning:</b> Adding a logo <b>increases spam risk</b>. Skip for better inbox placement.</div></div>
           <div class="upload-area">
             <input type="file" id="logoInput" accept="image/*">
             <label for="logoInput">
               <div class="preview-box"><div class="ph" id="logoPh">📷</div><img id="logoImg" src="" style="display:none" alt=""></div>
-              <div class="upload-info">
-                <div class="t" id="logoTitle">Click to upload logo</div>
-                <div class="s" id="logoSub">PNG · JPG · GIF · SVG · WEBP — max 2MB</div>
-              </div>
+              <div class="upload-info"><div class="t" id="logoTitle">Click to upload logo</div><div class="s" id="logoSub">PNG · JPG · GIF · SVG · WEBP — max 2MB</div></div>
             </label>
           </div>
-          <div id="logoActions" style="display:none;margin-bottom:12px">
-            <button class="btn danger small" onclick="removeLogo()">🗑 Remove Logo</button>
-          </div>
+          <div id="logoActions" style="display:none;margin-bottom:12px"><button class="btn danger small" onclick="removeLogo()">🗑 Remove Logo</button></div>
           <div class="sig-fields">
             <div class="field" style="margin:0"><label>Name</label><input type="text" id="sbName" placeholder="Your name" autocomplete="off"></div>
             <div class="field" style="margin:0"><label>Designation</label><input type="text" id="sbPos" placeholder="Your designation" autocomplete="off"></div>
@@ -641,7 +607,6 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
           </div>
           <div class="field" style="margin-top:12px"><label>Greeting Line</label><input type="text" id="sbGreeting" placeholder="Optional greeting" autocomplete="off"></div>
           <div class="field"><label>Extra Line</label><input type="text" id="sbExtra" placeholder="Optional extra line" autocomplete="off"></div>
-
           <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
             <div style="font-size:13px;color:var(--text);font-weight:600;margin-bottom:10px">🤖 Auto-Send Options</div>
             <div class="send-options-row">
@@ -649,14 +614,13 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
               <label><input type="checkbox" id="optAutoLogo" checked> 🖼️ Include Logo</label>
             </div>
           </div>
-
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
             <button class="btn ghost" onclick="previewSig()">👁 Preview</button>
             <button class="btn" onclick="saveSig()">💾 Save Signature</button>
             <button class="btn ghost" onclick="resetSig()">🗑 Reset</button>
           </div>
           <div class="sig-preview-outer" id="sigPreviewBox">
-            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;font-weight:700">📧 PREVIEW</div>
+            <div class="preview-label">📧 PREVIEW</div>
             <div class="sig-preview-canvas" id="sigPreviewContent"></div>
           </div>
         </div>
@@ -667,10 +631,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
             <input type="file" id="fileInput" multiple>
             <label for="fileInput">
               <div class="preview-box"><div class="ph">📎</div></div>
-              <div class="upload-info">
-                <div class="t">Click to upload files</div>
-                <div class="s">PDF · DOC · DOCX · JPG · PNG — max 4.5MB each</div>
-              </div>
+              <div class="upload-info"><div class="t">Click to upload files</div><div class="s">PDF · DOC · DOCX · JPG · PNG — max 4.5MB each</div></div>
             </label>
           </div>
           <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
@@ -694,10 +655,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
             <button class="btn" onclick="submitRecipients()" style="margin-left:6px;margin-top:10px">Save</button>
           </div>
           <div id="bulkTab" class="hidden">
-            <div class="bulk-help">
-              <div class="title">📋 Paste Emails — Any Format</div>
-              <div class="desc"><b style="color:#86efac">Company name optional!</b> Emails ko kisi bhi format se de sakte hain.</div>
-            </div>
+            <div class="bulk-help"><div class="title">📋 Paste Emails — Any Format</div><div class="desc"><b style="color:#86efac">Company name optional!</b> Emails ko kisi bhi format se de sakte hain.</div></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
               <input type="file" id="bulkFileInput" accept=".txt,.csv,.xlsx,.xls,.json" style="display:none">
               <button class="btn ghost" onclick="document.getElementById('bulkFileInput').click()" style="border:1px dashed var(--cyan);color:#7dd3fc">📁 Upload File</button>
@@ -706,10 +664,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
             <div class="bulk-preview-wrap" id="bulkPreviewWrap">
               <div class="bulk-preview-head">
                 <div class="lbl">🔍 Preview</div>
-                <div style="display:flex;gap:8px">
-                  <span class="stat-pill ok" id="bulkValidPill">✅ 0</span>
-                  <span class="stat-pill dup" id="bulkDupPill">🔁 0</span>
-                </div>
+                <div style="display:flex;gap:8px"><span class="stat-pill ok" id="bulkValidPill">✅ 0</span><span class="stat-pill dup" id="bulkDupPill">🔁 0</span></div>
               </div>
               <div class="bulk-preview-table" id="bulkPreviewTable" style="max-height:280px;overflow-y:auto"></div>
             </div>
@@ -725,10 +680,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
           <div class="filter-bar">
             <input type="text" class="search-bar" id="recipSearch" placeholder="Search..." oninput="renderRecipients()">
             <select id="statusFilter" onchange="renderRecipients()">
-              <option value="all">All Status</option>
-              <option value="Pending">Pending</option>
-              <option value="Sent">Sent</option>
-              <option value="Opened">Opened</option>
+              <option value="all">All Status</option><option value="Pending">Pending</option><option value="Sent">Sent</option><option value="Opened">Opened</option>
             </select>
           </div>
           <div class="bulk-action-bar" id="bulkActionBar">
@@ -746,9 +698,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 
         <div class="panel">
           <h2>📧 Email History</h2>
-          <div class="filter-bar">
-            <input type="text" class="search-bar" id="myEmailSearch" placeholder="Search history..." oninput="renderMyEmails()">
-          </div>
+          <div class="filter-bar"><input type="text" class="search-bar" id="myEmailSearch" placeholder="Search history..." oninput="renderMyEmails()"></div>
           <div id="myEmailsWrap" class="tbl-wrap"></div>
         </div>
       </main>
@@ -759,24 +709,13 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
   <div class="container hidden" id="inboxView">
     <div class="panel" style="padding:14px">
       <div class="inbox-toolbar">
-        <select id="inboxFolder" onchange="inboxPage=1;loadInbox()">
-          <option value="inbox">📥 Inbox</option>
-          <option value="sent">📤 Sent</option>
-          <option value="both">📬 Both</option>
-        </select>
-        <select id="inboxLimit" onchange="inboxPage=1;loadInbox()">
-          <option value="10">10 per page</option>
-          <option value="20" selected>20 per page</option>
-          <option value="30">30 per page</option>
-          <option value="50">50 per page</option>
-        </select>
+        <select id="inboxFolder" onchange="inboxPage=1;loadInbox()"><option value="inbox">📥 Inbox</option><option value="sent">📤 Sent</option><option value="both">📬 Both</option></select>
+        <select id="inboxLimit" onchange="inboxPage=1;loadInbox()"><option value="10">10 per page</option><option value="20" selected>20 per page</option><option value="30">30 per page</option><option value="50">50 per page</option></select>
         <button class="btn small" onclick="loadInbox()">🔄 Refresh</button>
         <span style="margin-left:auto;font-size:11px;color:var(--text2)">⚡ Fast sync</span>
       </div>
       <div class="inbox-layout">
-        <div class="inbox-list" id="inboxList">
-          <div class="empty"><div class="ico">⏳</div>Loading...</div>
-        </div>
+        <div class="inbox-list" id="inboxList"><div class="empty"><div class="ico">⏳</div>Loading...</div></div>
         <div class="inbox-viewer">
           <div class="empty" id="inboxEmpty"><div class="ico">📩</div>Select an email to view</div>
           <div id="inboxViewerContent" class="hidden" style="display:flex;flex-direction:column;height:100%">
@@ -789,13 +728,8 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
                 <div class="row" id="viewCategoryRow" style="display:none"><b>Category:</b><span id="viewCategory"></span></div>
               </div>
             </div>
-            <div class="email-body" id="viewBody">
-              <div class="loading"><div class="spin"></div><span>Loading email...</span></div>
-            </div>
-            <div class="email-attachments hidden" id="viewAttachments">
-              <div class="title">📎 Attachments</div>
-              <div id="viewAttachmentsList"></div>
-            </div>
+            <div class="email-body" id="viewBody"><div class="loading"><div class="spin"></div><span>Loading email...</span></div></div>
+            <div class="email-attachments hidden" id="viewAttachments"><div class="title">📎 Attachments</div><div id="viewAttachmentsList"></div></div>
             <div class="email-actions">
               <button class="btn" onclick="openReplyCompose(false)">↩️ Reply</button>
               <button class="btn ghost" onclick="openReplyCompose(true)">🤖 AI Smart Reply</button>
@@ -855,23 +789,14 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
         <button class="btn" onclick="submitTestRecipientsManual()" style="margin-left:6px;margin-top:10px">💾 Save</button>
       </div>
       <div id="testBulkTab" class="hidden">
-        <div class="bulk-help">
-          <div class="title">📋 Paste Emails or Upload File</div>
-          <div class="desc">CSV, Excel, TXT support hai. Company name optional.</div>
-        </div>
+        <div class="bulk-help"><div class="title">📋 Paste Emails or Upload File</div><div class="desc">CSV, Excel, TXT support hai. Company name optional.</div></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
           <input type="file" id="testBulkFileInput" accept=".txt,.csv,.xlsx,.xls,.json" style="display:none">
           <button class="btn ghost" onclick="document.getElementById('testBulkFileInput').click()" style="border:1px dashed var(--cyan);color:#7dd3fc">📁 Upload File (CSV/Excel/TXT)</button>
         </div>
         <textarea class="bulk-area" id="testBulkInput" placeholder="Paste test emails here..."></textarea>
         <div class="bulk-preview-wrap" id="testBulkPreviewWrap">
-          <div class="bulk-preview-head">
-            <div class="lbl">🔍 Preview</div>
-            <div style="display:flex;gap:8px">
-              <span class="stat-pill ok" id="testBulkValidPill">✅ 0</span>
-              <span class="stat-pill dup" id="testBulkDupPill">🔁 0</span>
-            </div>
-          </div>
+          <div class="bulk-preview-head"><div class="lbl">🔍 Preview</div><div style="display:flex;gap:8px"><span class="stat-pill ok" id="testBulkValidPill">✅ 0</span><span class="stat-pill dup" id="testBulkDupPill">🔁 0</span></div></div>
           <div class="bulk-preview-table" id="testBulkPreviewTable" style="max-height:280px;overflow-y:auto"></div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
@@ -887,9 +812,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
       <div class="field">
         <label>📝 Use Template (Optional)</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <select id="testTemplateSelect" onchange="onTestTemplateChange()" style="flex:1;min-width:200px">
-            <option value="">-- Manual entry --</option>
-          </select>
+          <select id="testTemplateSelect" onchange="onTestTemplateChange()" style="flex:1;min-width:200px"><option value="">-- Manual entry --</option></select>
           <button class="btn ghost small" onclick="saveTestAsTemplate()" style="white-space:nowrap">💾 Save as Template</button>
         </div>
       </div>
@@ -901,9 +824,9 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
       <div style="margin-bottom:12px">
         <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:8px">✍️ Signature & Logo</div>
         <div class="send-options-row">
-          <label><input type="checkbox" id="testUseNormalSig" checked> ✍️ Normal Signature</label>
-          <label><input type="checkbox" id="testUseTestSig"> ✍️ Test Signature</label>
-          <label><input type="checkbox" id="testIncludeLogo" checked> 🖼️ Logo</label>
+          <label><input type="checkbox" id="testUseNormalSig" checked onchange="updateTestSigPreview()"> ✍️ Normal Signature</label>
+          <label><input type="checkbox" id="testUseTestSig" onchange="updateTestSigPreview()"> ✍️ Test Signature</label>
+          <label><input type="checkbox" id="testIncludeLogo" checked onchange="updateTestSigPreview()"> 🖼️ Logo</label>
         </div>
       </div>
 
@@ -911,7 +834,6 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
           <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;font-weight:700">📝 Test Signature (Optional)</div>
           <div style="display:flex;gap:6px">
-            <button class="btn ghost tiny" onclick="previewTestSig()">👁 Preview</button>
             <button class="btn ghost tiny" onclick="toggleTestSigPanel()" id="testSigToggleBtn">✏️ Edit</button>
           </div>
         </div>
@@ -929,7 +851,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
           <button class="btn small" onclick="saveTestSignature()">💾 Save Test Signature</button>
         </div>
         <div id="testSigPreviewBox" class="sig-preview-outer">
-          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;font-weight:700">📧 TEST SIGNATURE PREVIEW</div>
+          <div class="preview-label">📧 SIGNATURE PREVIEW</div>
           <div class="sig-preview-canvas" id="testSigPreviewContent"></div>
         </div>
       </div>
@@ -945,24 +867,15 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
     <div class="panel">
       <h2>🤖 Automation Testing <span>Manual trigger</span></h2>
       <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Auto-send manually trigger karo. Normal automation affect nahi hoga.</div>
-      
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-        <div class="field" style="margin:0">
-          <label>Batch Size</label>
-          <input type="number" id="testAutoBatchSize" min="1" max="50" value="5" placeholder="5">
-        </div>
-        <div class="field" style="margin:0">
-          <label>Delay (seconds)</label>
-          <input type="number" id="testAutoDelay" min="0" max="60" value="3" placeholder="3">
-        </div>
+        <div class="field" style="margin:0"><label>Batch Size</label><input type="number" id="testAutoBatchSize" min="1" max="50" value="5" placeholder="5"></div>
+        <div class="field" style="margin:0"><label>Delay (seconds)</label><input type="number" id="testAutoDelay" min="0" max="60" value="3" placeholder="3"></div>
       </div>
-      
       <div class="info-box" style="margin-bottom:12px">
         <div class="row"><span class="k">Test auto-sent total:</span><span class="v" id="testTotalAutoSent">0</span></div>
         <div class="row"><span class="k">Last run:</span><span class="v" id="testLastAutoRun">Never</span></div>
         <div class="row"><span class="k">Pending test recipients:</span><span class="v" id="testPendingCount">0</span></div>
       </div>
-
       <button class="btn warn" onclick="runTestAutomation()" style="width:100%">▶️ Run Auto-Send Now (Test)</button>
     </div>
 
@@ -970,12 +883,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
       <h2>📋 Test Recipients <span id="testRecipCount"></span></h2>
       <div class="filter-bar">
         <input type="text" class="search-bar" id="testRecipSearch" placeholder="Search..." oninput="renderTestRecipients()">
-        <select id="testRecipStatusFilter" onchange="renderTestRecipients()">
-          <option value="all">All Status</option>
-          <option value="Pending">Pending</option>
-          <option value="Sent">Sent</option>
-          <option value="Opened">Opened</option>
-        </select>
+        <select id="testRecipStatusFilter" onchange="renderTestRecipients()"><option value="all">All Status</option><option value="Pending">Pending</option><option value="Sent">Sent</option><option value="Opened">Opened</option></select>
       </div>
       <div class="bulk-action-bar" id="testBulkActionBar">
         <span id="testSelectedCount" style="color:#7dd3fc;font-weight:700;font-size:12px;margin-right:auto">0 selected</span>
@@ -1036,6 +944,20 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
   </div>
 </div>
 
+<div id="saveTplModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeSaveTplModal()">
+  <div class="modal" style="max-width:480px">
+    <button class="close-btn" onclick="closeSaveTplModal()">✕</button>
+    <h3>💾 Save as Template</h3>
+    <div class="field"><label>Template Name</label><input type="text" id="saveTplName" placeholder="e.g., Job Application Template" autocomplete="off"></div>
+    <div class="field"><label>Subject</label><input type="text" id="saveTplSubject" placeholder="Subject" autocomplete="off"></div>
+    <div class="field"><label>Body Preview</label><textarea id="saveTplBodyPreview" readonly style="background:var(--bg3);color:var(--text2);cursor:not-allowed;font-family:'Inter',monospace;font-size:12px;min-height:80px"></textarea></div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn" onclick="confirmSaveTpl()" style="flex:1">💾 Save Template</button>
+      <button class="btn ghost" onclick="closeSaveTplModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <div id="sendOptionsBackdrop" class="modal-backdrop hidden" onclick="if(event.target===this)closeSendOptions()">
   <div class="modal" style="max-width:500px">
     <button class="close-btn" onclick="closeSendOptions()">✕</button>
@@ -1063,9 +985,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
     <div class="field"><label>To</label><input type="text" id="replyTo" autocomplete="off"></div>
     <div class="field"><label>Subject</label><input type="text" id="replySubject" autocomplete="off"></div>
     <div class="field"><label>Message</label><textarea id="replyBody" class="bulk-area" placeholder="Write your reply..." style="min-height:220px;font-family:inherit;font-size:14px;line-height:1.6"></textarea></div>
-    <div id="replyAIActions" style="display:none;margin-bottom:12px">
-      <button class="btn ghost small" onclick="regenerateAIReply()" style="width:100%">🔄 Regenerate AI Reply</button>
-    </div>
+    <div id="replyAIActions" style="display:none;margin-bottom:12px"><button class="btn ghost small" onclick="regenerateAIReply()" style="width:100%">🔄 Regenerate AI Reply</button></div>
     <button class="btn" onclick="sendReply()" style="width:100%">📤 Send Reply</button>
   </div>
 </div>
@@ -1077,7 +997,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
     <div style="font-size:10px;color:var(--text3);text-transform:uppercase;margin-bottom:6px;letter-spacing:.5px">Subject</div>
     <div id="tplPreviewSubject" style="background:var(--bg2);border:1px solid var(--border);padding:10px;border-radius:8px;font-size:14px;color:var(--text);margin-bottom:12px"></div>
     <div style="font-size:10px;color:var(--text3);text-transform:uppercase;margin-bottom:6px;letter-spacing:.5px">Body</div>
-    <div id="tplPreviewBody" class="tpl-preview-body"></div>
+    <div id="tplPreviewBody" class="sig-preview-canvas" style="white-space:pre-wrap;font-family:inherit"></div>
   </div>
 </div>
 
@@ -1118,39 +1038,9 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
 function api(p,m,b){return fetch(p,{method:m||'GET',credentials:'include',headers:{'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined}).then(function(r){return r.json();});}
 function fmtSize(b){if(!b)return '—';if(b<1024)return b+' B';if(b<1048576)return (b/1024).toFixed(1)+' KB';return (b/1048576).toFixed(2)+' MB';}
 function fmtDate(d){if(!d)return '—';try{var t=d._seconds?d._seconds*1000:(d.seconds?d.seconds*1000:new Date(d).getTime());var dt=new Date(t);return dt.toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'})+' · '+dt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}catch(e){return '—';}}
-function fmtEmailDate(dateISO){
-  if(!dateISO)return '—';
-  try{
-    var d=new Date(dateISO);if(isNaN(d.getTime()))return '—';
-    var now=new Date();
-    var timeStr=d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
-    var dateStr=d.toLocaleDateString('en-US',{day:'numeric',month:'short'});
-    if(d.toDateString()===now.toDateString())return timeStr;
-    if(d.getFullYear()===now.getFullYear())return dateStr+' · '+timeStr;
-    return d.toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'})+' · '+timeStr;
-  }catch(e){return '—';}
-}
-function fmtTimeAgo(dateISO){
-  if(!dateISO)return '—';
-  try{
-    var d=new Date(dateISO);var diff=Date.now()-d.getTime();
-    var min=Math.floor(diff/60000);
-    if(min<1)return 'Just now';
-    if(min<60)return min+'m ago';
-    var hr=Math.floor(min/60);if(hr<24)return hr+'h ago';
-    var day=Math.floor(hr/24);if(day<7)return day+'d ago';
-    return d.toLocaleDateString('en-US',{day:'numeric',month:'short'});
-  }catch(e){return '—';}
-}
-function fileIcon(name,mime){
-  mime=mime||'';name=(name||'').toLowerCase();
-  if(mime.startsWith('image/')||/\.(jpg|jpeg|png|gif|webp|svg)$/i.test(name))return '🖼️';
-  if(mime.includes('pdf')||name.endsWith('.pdf'))return '📄';
-  if(mime.includes('zip')||mime.includes('rar')||/\.(zip|rar|7z)$/i.test(name))return '🗜️';
-  if(mime.includes('word')||mime.includes('document')||/\.(doc|docx)$/i.test(name))return '📝';
-  if(mime.includes('sheet')||mime.includes('excel')||/\.(xls|xlsx|csv)$/i.test(name))return '📊';
-  return '📎';
-}
+function fmtEmailDate(dateISO){if(!dateISO)return '—';try{var d=new Date(dateISO);if(isNaN(d.getTime()))return '—';var now=new Date();var timeStr=d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});var dateStr=d.toLocaleDateString('en-US',{day:'numeric',month:'short'});if(d.toDateString()===now.toDateString())return timeStr;if(d.getFullYear()===now.getFullYear())return dateStr+' · '+timeStr;return d.toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'})+' · '+timeStr;}catch(e){return '—';}}
+function fmtTimeAgo(dateISO){if(!dateISO)return '—';try{var d=new Date(dateISO);var diff=Date.now()-d.getTime();var min=Math.floor(diff/60000);if(min<1)return 'Just now';if(min<60)return min+'m ago';var hr=Math.floor(min/60);if(hr<24)return hr+'h ago';var day=Math.floor(hr/24);if(day<7)return day+'d ago';return d.toLocaleDateString('en-US',{day:'numeric',month:'short'});}catch(e){return '—';}}
+function fileIcon(name,mime){mime=mime||'';name=(name||'').toLowerCase();if(mime.startsWith('image/')||/\.(jpg|jpeg|png|gif|webp|svg)$/i.test(name))return '🖼️';if(mime.includes('pdf')||name.endsWith('.pdf'))return '📄';if(mime.includes('zip')||mime.includes('rar')||/\.(zip|rar|7z)$/i.test(name))return '🗜️';if(mime.includes('word')||mime.includes('document')||/\.(doc|docx)$/i.test(name))return '📝';if(mime.includes('sheet')||mime.includes('excel')||/\.(xls|xlsx|csv)$/i.test(name))return '📊';return '📎';}
 
 function showConfirm(opts){
   return new Promise(function(resolve){
@@ -1167,9 +1057,7 @@ function showConfirm(opts){
   });
 }
 
-fetch('/api/me',{credentials:'include'}).then(function(r){return r.json();}).then(function(d){
-  if(d&&d.ok&&d.user){USER=d.user;enterApp();}else{$('loginView').classList.remove('hidden');}
-}).catch(function(){$('loginView').classList.remove('hidden');});
+fetch('/api/me',{credentials:'include'}).then(function(r){return r.json();}).then(function(d){if(d&&d.ok&&d.user){USER=d.user;enterApp();}else{$('loginView').classList.remove('hidden');}}).catch(function(){$('loginView').classList.remove('hidden');});
 
 function enterApp(){
   $('loginView').classList.add('hidden');
@@ -1317,7 +1205,7 @@ function aiImproveEmail(){
 }
 function saveComposerTemplate(){
   var name=$('composerName').value.trim(),subject=$('composerSubject').value.trim(),body=$('composerBody').value.trim();
-  if(!name||!subject||!body)return toast('Fill all fields','err');
+  if(!name||!subject||!body)return toast('Fill name, subject and body','err');
   api('/api/templates','POST',{name:name,subject:subject,body:body}).then(function(r){
     if(r.ok){if(r.renamed)toast('✅ Saved as "'+r.name+'"');else toast('✅ Saved!');$('composerName').value='';loadTemplates();}
     else toast('Error: '+r.error,'err');
@@ -1364,20 +1252,23 @@ function buildSigHtml(){
   var phone=$('sbPhone').value.trim(),mail=$('sbEmail').value.trim(),li=$('sbLinkedin').value.trim();
   var greet=$('sbGreeting').value.trim(),extra=$('sbExtra').value.trim();
   if(!name&&!phone&&!mail&&!LOGO_URL&&!extra)return '';
-  var phoneClean=phone.replace(/[^0-9+]/g,'');
-  var liUrl=li?(li.indexOf('http')===0?li:'https://'+li):'';
+  return buildSigHtmlFrom({name:name,pos:pos,company:comp,phone:phone,email:mail,linkedin:li,greeting:greet,extra:extra},LOGO_URL);
+}
+function buildSigHtmlFrom(f,logoUrl){
+  var phoneClean=(f.phone||'').replace(/[^0-9+]/g,'');
+  var liUrl=f.linkedin?(f.linkedin.indexOf('http')===0?f.linkedin:'https://'+f.linkedin):'';
   var h='<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-family:Arial,sans-serif"><tr>';
-  if(LOGO_URL){h+='<td style="padding-right:18px;border-right:2px solid #d1d5db;vertical-align:middle;text-align:center;width:130px"><img src="'+LOGO_URL+'" width="100" alt="logo" style="display:block;max-width:100px;height:auto;margin:0 auto;border:0"></td>';}
-  h+='<td style="padding-left:'+(LOGO_URL?'18px':'0')+';vertical-align:top">';
-  if(greet)h+='<div style="color:#666;margin-bottom:8px;font-size:13px">'+esc(greet)+'</div>';
-  if(name)h+='<div style="font-weight:bold;font-size:15px;color:#111;margin-bottom:2px">'+esc(name)+'</div>';
-  if(pos)h+='<div style="color:#666;font-size:12px">'+esc(pos)+'</div>';
-  if(comp)h+='<div style="color:#666;font-size:12px;margin-bottom:8px">'+esc(comp)+'</div>';
+  if(logoUrl){h+='<td style="padding-right:18px;border-right:2px solid #d1d5db;vertical-align:middle;text-align:center;width:130px"><img src="'+logoUrl+'" width="100" alt="logo" style="display:block;max-width:100px;height:auto;margin:0 auto;border:0"></td>';}
+  h+='<td style="padding-left:'+(logoUrl?'18px':'0')+';vertical-align:top">';
+  if(f.greeting)h+='<div style="color:#666;margin-bottom:8px;font-size:13px">'+esc(f.greeting)+'</div>';
+  if(f.name)h+='<div style="font-weight:bold;font-size:15px;color:#111;margin-bottom:2px">'+esc(f.name)+'</div>';
+  if(f.pos)h+='<div style="color:#666;font-size:12px">'+esc(f.pos)+'</div>';
+  if(f.company)h+='<div style="color:#666;font-size:12px;margin-bottom:8px">'+esc(f.company)+'</div>';
   var lines=[];
-  if(phone)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">📞 <b>Phone:</b> <a href="tel:'+phoneClean+'" style="color:#1a73e8;text-decoration:none">'+esc(phone)+'</a></div>');
-  if(mail)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">✉️ <b>Email:</b> <a href="mailto:'+esc(mail)+'" style="color:#1a73e8;text-decoration:none">'+esc(mail)+'</a></div>');
-  if(liUrl)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">🔗 <b>LinkedIn:</b> <a href="'+liUrl+'" style="color:#1a73e8;text-decoration:none">'+esc(li)+'</a></div>');
-  if(extra)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">'+esc(extra)+'</div>');
+  if(f.phone)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">📞 <b>Phone:</b> <a href="tel:'+phoneClean+'" style="color:#1a73e8;text-decoration:none">'+esc(f.phone)+'</a></div>');
+  if(f.email)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">✉️ <b>Email:</b> <a href="mailto:'+esc(f.email)+'" style="color:#1a73e8;text-decoration:none">'+esc(f.email)+'</a></div>');
+  if(liUrl)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">🔗 <b>LinkedIn:</b> <a href="'+liUrl+'" style="color:#1a73e8;text-decoration:none">'+esc(f.linkedin)+'</a></div>');
+  if(f.extra)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">'+esc(f.extra)+'</div>');
   if(lines.length)h+=lines.join('');
   h+='</td></tr></table>';
   return h;
@@ -1388,46 +1279,47 @@ function saveSig(){var h=buildSigHtml();if(!h)return toast('Fill some fields','e
 async function resetSig(){var ok=await showConfirm({icon:'🗑',title:'Reset Signature?',message:'All fields cleared.',okText:'Reset',primary:false});if(!ok)return;['sbName','sbPos','sbCompany','sbPhone','sbEmail','sbLinkedin','sbGreeting','sbExtra'].forEach(function(id){$(id).value='';});$('sigPreviewBox').style.display='none';}
 function loadSignature(){api('/api/signature').then(function(r){if(!r.ok)return;var f=r.fields||{};['name','pos','company','phone','email','linkedin','greeting','extra'].forEach(function(k){var id='sb'+k.charAt(0).toUpperCase()+k.slice(1);if(f[k]&&$(id))$(id).value=f[k];});if(r.signature){$('sigPreviewContent').innerHTML=r.signature;$('sigPreviewBox').style.display='block';}});}
 
-function buildTestSigHtml(){
-  var name=$('testSbName').value.trim(),pos=$('testSbPos').value.trim(),comp=$('testSbCompany').value.trim();
-  var phone=$('testSbPhone').value.trim(),mail=$('testSbEmail').value.trim(),li=$('testSbLinkedin').value.trim();
-  var greet=$('testSbGreeting').value.trim(),extra=$('testSbExtra').value.trim();
-  if(!name&&!phone&&!mail&&!extra)return '';
-  var phoneClean=phone.replace(/[^0-9+]/g,'');
-  var liUrl=li?(li.indexOf('http')===0?li:'https://'+li):'';
-  var h='<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-family:Arial,sans-serif"><tr><td style="vertical-align:top">';
-  if(greet)h+='<div style="color:#666;margin-bottom:8px;font-size:13px">'+esc(greet)+'</div>';
-  if(name)h+='<div style="font-weight:bold;font-size:15px;color:#111;margin-bottom:2px">'+esc(name)+'</div>';
-  if(pos)h+='<div style="color:#666;font-size:12px">'+esc(pos)+'</div>';
-  if(comp)h+='<div style="color:#666;font-size:12px;margin-bottom:8px">'+esc(comp)+'</div>';
-  var lines=[];
-  if(phone)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">📞 <b>Phone:</b> <a href="tel:'+phoneClean+'" style="color:#1a73e8;text-decoration:none">'+esc(phone)+'</a></div>');
-  if(mail)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">✉️ <b>Email:</b> <a href="mailto:'+esc(mail)+'" style="color:#1a73e8;text-decoration:none">'+esc(mail)+'</a></div>');
-  if(liUrl)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">🔗 <b>LinkedIn:</b> <a href="'+liUrl+'" style="color:#1a73e8;text-decoration:none">'+esc(li)+'</a></div>');
-  if(extra)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">'+esc(extra)+'</div>');
-  if(lines.length)h+=lines.join('');
-  h+='</td></tr></table>';
-  return h;
-}
-function previewTestSig(){
-  var h=buildTestSigHtml();
-  if(!h)return toast('Fill some fields first','err');
-  $('testSigPreviewContent').innerHTML=h;
-  $('testSigPreviewBox').style.display='block';
-}
-function saveTestSignature(){
-  var h=buildTestSigHtml();
-  if(!h)return toast('Fill some fields','err');
-  var f={name:$('testSbName').value.trim(),pos:$('testSbPos').value.trim(),company:$('testSbCompany').value.trim(),phone:$('testSbPhone').value.trim(),email:$('testSbEmail').value.trim(),linkedin:$('testSbLinkedin').value.trim(),greeting:$('testSbGreeting').value.trim(),extra:$('testSbExtra').value.trim()};
-  api('/api/test/signature','POST',{signature:h,fields:f}).then(function(r){
-    if(r.ok){toast('✅ Test signature saved');$('testSigPreviewContent').innerHTML=h;$('testSigPreviewBox').style.display='block';}
-    else toast('Error: '+r.error,'err');
-  });
+function getTestSigFields(){return {name:$('testSbName').value.trim(),pos:$('testSbPos').value.trim(),company:$('testSbCompany').value.trim(),phone:$('testSbPhone').value.trim(),email:$('testSbEmail').value.trim(),linkedin:$('testSbLinkedin').value.trim(),greeting:$('testSbGreeting').value.trim(),extra:$('testSbExtra').value.trim()};}
+function buildTestSigHtml(){var f=getTestSigFields();var hasData=f.name||f.phone||f.email||f.extra;if(!hasData)return '';return buildSigHtmlFrom(f,LOGO_URL);}
+
+// Dynamic preview based on checkbox state
+function updateTestSigPreview(){
+  var useNormal=$('testUseNormalSig').checked;
+  var useTest=$('testUseTestSig').checked;
+  var includeLogo=$('testIncludeLogo').checked;
+  
+  var normFields={name:$('sbName').value.trim(),pos:$('sbPos').value.trim(),company:$('sbCompany').value.trim(),phone:$('sbPhone').value.trim(),email:$('sbEmail').value.trim(),linkedin:$('sbLinkedin').value.trim(),greeting:$('sbGreeting').value.trim(),extra:$('sbExtra').value.trim()};
+  var testFields=getTestSigFields();
+  
+  var normHasData=normFields.name||normFields.phone||normFields.email||normFields.extra||LOGO_URL;
+  var testHasData=testFields.name||testFields.phone||testFields.email||testFields.extra;
+  
+  var selectedSig='';
+  if(useNormal && normHasData){selectedSig=buildSigHtmlFrom(normFields,includeLogo?LOGO_URL:'');}
+  else if(useTest && testHasData){selectedSig=buildSigHtmlFrom(testFields,includeLogo?LOGO_URL:'');}
+  
+  var box=$('testSigPreviewBox');
+  var content=$('testSigPreviewContent');
+  if(selectedSig){
+    content.innerHTML=selectedSig;
+    box.style.display='block';
+  } else {
+    box.style.display='none';
+  }
 }
 function toggleTestSigPanel(){
   var p=$('testSigFields');if(!p)return;
   if(p.classList.contains('hidden')){p.classList.remove('hidden');$('testSigToggleBtn').innerText='✖ Close';}
   else{p.classList.add('hidden');$('testSigToggleBtn').innerText='✏️ Edit';}
+}
+function saveTestSignature(){
+  var f=getTestSigFields();
+  if(!f.name&&!f.phone&&!f.email&&!f.extra)return toast('Fill some fields','err');
+  var h=buildSigHtmlFrom(f,LOGO_URL);
+  api('/api/test/signature','POST',{signature:h,fields:f}).then(function(r){
+    if(r.ok){toast('✅ Test signature saved');updateTestSigPreview();}
+    else toast('Error: '+r.error,'err');
+  });
 }
 
 // ============ LOGO ============
@@ -1480,11 +1372,7 @@ function renderFilesList(){
   }).join('');
   updateFileSelectInfo();
 }
-function updateFileSelectInfo(){
-  var el=$('fileSelectInfo');if(!el)return;
-  var count=Object.keys(SELECTED_FILES).length;
-  el.innerText=count>0?(count+' selected'):'';
-}
+function updateFileSelectInfo(){var el=$('fileSelectInfo');if(!el)return;var count=Object.keys(SELECTED_FILES).length;el.innerText=count>0?(count+' selected'):'';}
 function toggleFile(id){if(SELECTED_FILES[id])delete SELECTED_FILES[id];else SELECTED_FILES[id]=true;renderFilesList();}
 function selectAllFiles(){FILES.forEach(function(f){SELECTED_FILES[f.id]=true;});renderFilesList();}
 function unselectAllFiles(){SELECTED_FILES={};renderFilesList();}
@@ -1513,10 +1401,10 @@ function loadTemplates(){
     if(!TEMPLATES.length)s.innerHTML='<option value="">(No templates)</option>';
     else TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;s.appendChild(o);});
     var ts=$('testTemplateSelect');
-    if(ts){ts.innerHTML='<option value="">-- Manual entry --</option>';TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;ts.appendChild(o);});}
+    if(ts){var cur=ts.value;ts.innerHTML='<option value="">-- Manual entry --</option>';TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;ts.appendChild(o);});ts.value=cur;}
   });
 }
-function previewTemplate(id){var t=TEMPLATES.filter(function(x){return x.id===id;})[0];if(!t)return;$('tplPreviewTitle').innerText='📄 '+t.name;$('tplPreviewSubject').innerText=t.subject;$('tplPreviewBody').innerHTML=t.body.replace(/\n/g,'<br>');$('tplPreviewBackdrop').classList.remove('hidden');}
+function previewTemplate(id){var t=TEMPLATES.filter(function(x){return x.id===id;})[0];if(!t)return;$('tplPreviewTitle').innerText='📄 '+t.name;$('tplPreviewSubject').innerText=t.subject;$('tplPreviewBody').innerText=t.body;$('tplPreviewBackdrop').classList.remove('hidden');}
 function closeTplPreview(){$('tplPreviewBackdrop').classList.add('hidden');}
 function loadTemplateToComposer(id){var t=TEMPLATES.filter(function(x){return x.id===id;})[0];if(!t)return;$('composerName').value=t.name;$('composerSubject').value=t.subject;$('composerBody').value=t.body;lastAnalyzedHash='';runLiveAnalysis();$('composerBody').scrollIntoView({behavior:'smooth',block:'center'});}
 async function delTpl(id){var ok=await showConfirm({icon:'🗑',title:'Delete template?',message:'',okText:'Delete'});if(!ok)return;api('/api/templates/'+id,'DELETE').then(function(r){if(r.ok){toast('Deleted');loadTemplates();}});}
@@ -1533,10 +1421,19 @@ function saveTestAsTemplate(){
   var subject=$('testSubject').value.trim();
   var body=$('testBody').value.trim();
   if(!subject||!body)return toast('Fill Subject and Body first','err');
-  var name=prompt('Template name:',subject.substring(0,30));
-  if(!name)return;
+  $('saveTplName').value=subject.substring(0,40);
+  $('saveTplSubject').value=subject;
+  $('saveTplBodyPreview').value=body.substring(0,200)+(body.length>200?'...':'');
+  $('saveTplModal').classList.remove('hidden');
+}
+function closeSaveTplModal(){$('saveTplModal').classList.add('hidden');}
+function confirmSaveTpl(){
+  var name=$('saveTplName').value.trim();
+  if(!name)return toast('Enter template name','err');
+  var subject=$('saveTplSubject').value;
+  var body=$('testBody').value.trim();
   api('/api/templates','POST',{name:name,subject:subject,body:body}).then(function(r){
-    if(r.ok){toast('✅ Saved as "'+(r.name||name)+'"');loadTemplates();}
+    if(r.ok){toast('✅ Saved as "'+(r.name||name)+'"');closeSaveTplModal();loadTemplates();}
     else toast('Error: '+r.error,'err');
   });
 }
@@ -1956,7 +1853,7 @@ function loadTestDashboard(){
   api('/api/test/signature').then(function(r){
     if(!r.ok)return;var f=r.fields||{};
     ['name','pos','company','phone','email','linkedin','greeting','extra'].forEach(function(k){var id='testSb'+k.charAt(0).toUpperCase()+k.slice(1);if(f[k]&&$(id))$(id).value=f[k];});
-    if(r.signature){$('testSigPreviewContent').innerHTML=r.signature;$('testSigPreviewBox').style.display='block';}
+    updateTestSigPreview();
   });
   renderTestFiles();
 }
@@ -2079,8 +1976,21 @@ function openUserEmails(uid,email){
   api('/api/admin/user/'+uid+'/emails').then(function(r){
     if(!r.ok){$('modalContent').innerHTML='<div class="empty">Error</div>';return;}
     if(!r.emails.length){$('modalContent').innerHTML='<div class="empty">No emails</div>';return;}
-    var h='<table class="data-table"><thead><tr><th>Recipient</th><th>Subject</th><th>Sent</th></tr></thead><tbody>';
-    r.emails.forEach(function(e){h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(e.recipientEmail)+'</td><td style="font-size:11px">'+esc(e.subject||'—')+'</td><td style="font-size:10px">'+fmtDate(e.sentAt)+'</td></tr>';});
+    var sent=0,opened=0,spam=0,good=0;
+    r.emails.forEach(function(e){if(e.status==='Opened')opened++;if(e.status==='Sent')sent++;if(e.aiPrediction==='SPAM')spam++;else if(e.aiPrediction==='GOOD'||e.aiPrediction==='EXCELLENT')good++;});
+    var summary='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">'+
+      '<div class="info-box" style="margin:0;text-align:center;padding:10px"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">Total</div><div style="font-size:18px;color:var(--cyan);margin-top:3px;font-weight:800">'+r.emails.length+'</div></div>'+
+      '<div class="info-box" style="margin:0;text-align:center;padding:10px"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">Sent</div><div style="font-size:18px;color:#7dd3fc;margin-top:3px;font-weight:800">'+sent+'</div></div>'+
+      '<div class="info-box" style="margin:0;text-align:center;padding:10px"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">Opened</div><div style="font-size:18px;color:#86efac;margin-top:3px;font-weight:800">'+opened+'</div></div>'+
+      '<div class="info-box" style="margin:0;text-align:center;padding:10px"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">Spam</div><div style="font-size:18px;color:#fca5a5;margin-top:3px;font-weight:800">'+spam+'</div></div>'+
+    '</div>';
+    var h=summary+'<table class="data-table"><thead><tr><th>Recipient</th><th>Company</th><th>Subject</th><th>Sent</th><th>Status</th><th>Opened</th><th>Attach</th></tr></thead><tbody>';
+    r.emails.forEach(function(e){
+      var st=e.status||'Sent';
+      var stCls=st==='Opened'?'opened':st==='Sent'?'sent':'pending';
+      var stIcon=st==='Opened'?'👁':st==='Sent'?'📤':'⏳';
+      h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(e.recipientEmail||'—')+'</td><td style="font-size:11px">'+esc(e.company||'—')+'</td><td style="font-size:11px;max-width:200px">'+esc((e.subject||'—').substring(0,60))+'</td><td style="font-size:10px">'+fmtDate(e.sentAt)+'</td><td><span class="badge '+stCls+'">'+stIcon+' '+esc(st)+'</span></td><td style="font-size:10px">'+(e.openedAt?fmtDate(e.openedAt):'—')+'</td><td>'+(e.attachmentsCount||0)+'</td></tr>';
+    });
     h+='</tbody></table>';$('modalContent').innerHTML=h;
   });
 }
