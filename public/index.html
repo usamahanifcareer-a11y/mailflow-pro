@@ -202,7 +202,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .sig-preview-outer{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:14px;display:none}
 .sig-preview-canvas{background:#fff!important;border-radius:10px;padding:20px;overflow-x:auto;font-family:Arial,Helvetica,sans-serif}
 
-.file-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;transition:.2s}
+.file-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;transition:.2s;cursor:pointer}
 .file-card.selected{border-color:var(--cyan);background:rgba(56,189,248,.05)}
 .file-card .info{flex:1;min-width:0;display:flex;align-items:center;gap:10px}
 .file-card .name{font-size:12px;font-weight:600;color:var(--text);word-break:break-all}
@@ -304,11 +304,6 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .inbox-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:12px}
 .inbox-toolbar select{background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:8px 30px 8px 12px;font-size:12px;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;font-weight:500}
 .inbox-toolbar button{padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none}
-.inbox-pagination{display:flex;justify-content:center;align-items:center;gap:10px;padding:14px;background:var(--bg2);border-top:1px solid var(--border);border-radius:0 0 14px 14px}
-.inbox-pagination .page-info{font-size:12px;color:var(--text2);font-weight:600}
-.inbox-pagination button{padding:8px 16px;font-size:12px;font-weight:600;border-radius:8px;border:1px solid var(--border2);background:var(--bg2);color:#cbd5e1;cursor:pointer;transition:.2s}
-.inbox-pagination button:hover:not(:disabled){background:#1e293b;border-color:var(--cyan);color:#7dd3fc}
-.inbox-pagination button:disabled{opacity:.4;cursor:not-allowed}
 
 .inbox-layout{display:grid;grid-template-columns:400px 1fr;gap:0;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--bg2);min-height:700px}
 @media(max-width:900px){.inbox-layout{grid-template-columns:1fr;min-height:auto}.inbox-list{max-height:400px}}
@@ -334,9 +329,11 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .email-meta .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start}
 .email-meta .row b{color:var(--text);font-weight:700;min-width:70px;flex-shrink:0}
 .email-meta .row span{color:#cbd5e1;word-break:break-word;flex:1}
-.email-body{padding:0;overflow-y:auto;flex:1;background:#fff;max-height:550px}
-.email-body iframe{width:100%;border:none;background:#fff;display:block}
-.email-body .plain-body{padding:24px;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;font-size:14px;line-height:1.7;color:#222;white-space:pre-wrap;word-break:break-word;background:#fff;min-height:200px}
+.email-body{padding:0;overflow-y:auto;flex:1;background:#fff;max-height:550px;min-height:300px;display:flex;align-items:center;justify-content:center}
+.email-body iframe{width:100%;border:none;background:#fff;display:block;min-height:300px}
+.email-body .plain-body{padding:24px;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;font-size:14px;line-height:1.7;color:#222;white-space:pre-wrap;word-break:break-word;background:#fff;min-height:200px;width:100%}
+.email-body .loading{color:var(--text2);font-size:13px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.email-body .loading .spin{width:24px;height:24px;border:3px solid rgba(56,189,248,.3);border-top-color:var(--cyan);border-radius:50%;animation:spin .8s linear infinite}
 .email-attachments{padding:14px 20px;border-top:1px solid var(--border);background:rgba(10,14,26,.6)}
 .email-attachments .title{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:10px}
 .attachment-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;text-decoration:none;color:var(--text);transition:.2s;cursor:pointer}
@@ -347,6 +344,12 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 .attachment-item .fmeta{font-size:10px;color:var(--text3);margin-top:2px}
 .attachment-item .dl{font-size:11px;color:var(--cyan);font-weight:700;flex-shrink:0}
 .email-actions{padding:14px 20px;border-top:1px solid var(--border);background:rgba(10,14,26,.8);display:flex;gap:10px;flex-wrap:wrap}
+
+.inbox-pagination{display:flex;justify-content:center;align-items:center;gap:12px;padding:16px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-top:14px;flex-wrap:wrap}
+.inbox-pagination .page-info{font-size:13px;color:var(--text2);font-weight:600;padding:8px 16px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)}
+.inbox-pagination button{padding:10px 20px;font-size:13px;font-weight:600;border-radius:10px;border:1px solid var(--border2);background:var(--bg2);color:#cbd5e1;cursor:pointer;transition:.2s}
+.inbox-pagination button:hover:not(:disabled){background:#1e293b;border-color:var(--cyan);color:#7dd3fc;transform:translateY(-1px)}
+.inbox-pagination button:disabled{opacity:.4;cursor:not-allowed;transform:none}
 
 .tag{display:inline-block;background:rgba(56,189,248,.1);color:#7dd3fc;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;border:1px solid rgba(56,189,248,.2)}
 
@@ -384,7 +387,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
       <div class="feat"><span class="ico">🛡️</span> Real-time spam detection</div>
       <div class="feat"><span class="ico">📤</span> Bulk personalized campaigns</div>
       <div class="feat"><span class="ico">👁️</span> Open tracking & analytics</div>
-      <div class="feat"><span class="ico">💬</span> Reply analysis & categories</div>
+      <div class="feat"><span class="ico">📥</span> Fast inbox with categorization</div>
       <div class="feat"><span class="ico">🔒</span> End-to-end encrypted tokens</div>
     </div>
   </div>
@@ -420,7 +423,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
             <div class="tip"><span class="tip-ic">🔗</span><div><b>Max 2 links</b><span>Too many links trigger filters</span></div></div>
             <div class="tip"><span class="tip-ic">❌</span><div><b>No trigger words</b><span>Free, Guarantee, Act now</span></div></div>
             <div class="tip"><span class="tip-ic">🔠</span><div><b>No ALL CAPS</b><span>Write subject in normal case</span></div></div>
-            <div class="tip"><span class="tip-ic">⏱️</span><div><b>Slow sending</b><span>20-40 sec gap per email</span></div></div>
+            <div class="tip"><span class="tip-ic">⏱️</span><div><b>Slow sending</b><span>2-5 sec gap per email</span></div></div>
             <div class="tip"><span class="tip-ic">💬</span><div><b>Personalize content</b><span>Use {name} & {company}</span></div></div>
           </div>
         </div>
@@ -557,6 +560,11 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
               <div class="field" style="margin:0"><label>☀️ End</label><select id="quietEndSel"></select></div>
             </div>
           </div>
+          <div class="field" style="margin-top:12px">
+            <label>⏱️ Send Delay (seconds between emails)</label>
+            <input type="number" id="sendDelayInput" min="0" max="120" value="3" placeholder="3">
+            <div style="font-size:10px;color:var(--text3);margin-top:4px">Lower = faster sending. 2-5 sec recommended.</div>
+          </div>
           <button class="btn save-btn" onclick="savePrefs()">💾 Save Settings</button>
         </div>
 
@@ -624,7 +632,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
           <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
             <button class="btn ghost small" onclick="selectAllFiles()">☑️ Select All</button>
             <button class="btn ghost small" onclick="unselectAllFiles()">⬜ Unselect All</button>
-            <span style="font-size:11px;color:var(--text3);align-self:center">Selected files will be attached when sending</span>
+            <span style="font-size:11px;color:var(--text3);align-self:center">Click files to select/deselect</span>
           </div>
           <div id="filesList"></div>
         </div>
@@ -719,7 +727,7 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
           <option value="50">50 per page</option>
         </select>
         <button class="btn small" onclick="loadInbox()">🔄 Refresh</button>
-        <span style="margin-left:auto;font-size:11px;color:var(--text3)">AI-powered categorization</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--text2)">⚡ Super fast (no AI delay)</span>
       </div>
       <div class="inbox-layout">
         <div class="inbox-list" id="inboxList">
@@ -737,7 +745,9 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
                 <div class="row" id="viewCategoryRow" style="display:none"><b>Category:</b><span id="viewCategory"></span></div>
               </div>
             </div>
-            <div class="email-body" id="viewBody"></div>
+            <div class="email-body" id="viewBody">
+              <div class="loading"><div class="spin"></div><span>Select an email...</span></div>
+            </div>
             <div class="email-attachments hidden" id="viewAttachments">
               <div class="title">📎 Attachments</div>
               <div id="viewAttachmentsList"></div>
@@ -779,7 +789,6 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
       <div class="ico">🧪</div>
       <div class="txt">TEST LAB — Ye emails normal dashboard/stats mein count nahi honge. Sirf testing ke liye.</div>
     </div>
-
     <div class="stats">
       <div class="stat s1"><div class="label">Test Recipients</div><div class="value" id="tstTotal">0</div></div>
       <div class="stat s2"><div class="label">Test Sent</div><div class="value" id="tstSent">0</div></div>
@@ -787,7 +796,6 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
       <div class="stat s4"><div class="label">Test Pending</div><div class="value" id="tstPending">0</div></div>
       <div class="stat s5"><div class="label">Test Log</div><div class="value" id="tstLog">0</div></div>
     </div>
-
     <div class="panel">
       <h2>➕ Add Test Recipients</h2>
       <textarea class="bulk-area" id="testBulkInput" placeholder="Paste test emails..."></textarea>
@@ -796,7 +804,6 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
         <button class="btn danger" onclick="clearTestData()">🗑 Clear All</button>
       </div>
     </div>
-
     <div class="panel">
       <h2>📤 Send Test Email</h2>
       <div class="field"><label>To</label><input type="text" id="testTo" placeholder="test@example.com" autocomplete="off"></div>
@@ -808,12 +815,10 @@ table.data-table tr.selected td{background:rgba(56,189,248,.08)}
       </div>
       <button class="btn" onclick="sendTestEmail()">🚀 Send Test</button>
     </div>
-
     <div class="panel">
       <h2>📋 Test Recipients</h2>
       <div id="testRecipientsWrap" class="tbl-wrap"></div>
     </div>
-
     <div class="panel">
       <h2>📜 Test Log</h2>
       <div id="testLogWrap" class="tbl-wrap"></div>
@@ -932,12 +937,31 @@ function toast(m,t){var el=$('toast');el.innerText=m;el.className='toast show '+
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function api(p,m,b){return fetch(p,{method:m||'GET',credentials:'include',headers:{'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined}).then(function(r){return r.json();});}
 function fmtSize(b){if(!b)return '—';if(b<1024)return b+' B';if(b<1048576)return (b/1024).toFixed(1)+' KB';return (b/1048576).toFixed(2)+' MB';}
-function fmtDate(d){if(!d)return '—';try{var t=d._seconds?d._seconds*1000:(d.seconds?d.seconds*1000:new Date(d).getTime());var dt=new Date(t);return dt.toLocaleDateString()+' '+dt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}catch(e){return '—';}}
-function fmtTimeAgo(d){
-  if(!d)return '—';
+function fmtDate(d){if(!d)return '—';try{var t=d._seconds?d._seconds*1000:(d.seconds?d.seconds*1000:new Date(d).getTime());var dt=new Date(t);return dt.toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'})+' · '+dt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}catch(e){return '—';}}
+
+// Clean date with user timezone (no +0000)
+function fmtEmailDate(dateISO){
+  if(!dateISO)return '—';
   try{
-    var t=d._seconds?d._seconds*1000:(d.seconds?d.seconds*1000:new Date(d).getTime());
-    var diff=Date.now()-t;
+    var d=new Date(dateISO);
+    if(isNaN(d.getTime()))return '—';
+    var now=new Date();
+    var diff=now-d;
+    var min=Math.floor(diff/60000);
+    var timeStr=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    var dateStr=d.toLocaleDateString('en-US',{day:'numeric',month:'short'});
+    // If today - just show time
+    if(d.toDateString()===now.toDateString())return timeStr;
+    // If this year - show date + time
+    if(d.getFullYear()===now.getFullYear())return dateStr+' · '+timeStr;
+    return d.toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'})+' · '+timeStr;
+  }catch(e){return '—';}
+}
+function fmtTimeAgo(dateISO){
+  if(!dateISO)return '—';
+  try{
+    var d=new Date(dateISO);
+    var diff=Date.now()-d.getTime();
     var min=Math.floor(diff/60000);
     if(min<1)return 'Just now';
     if(min<60)return min+'m ago';
@@ -945,13 +969,8 @@ function fmtTimeAgo(d){
     if(hr<24)return hr+'h ago';
     var day=Math.floor(hr/24);
     if(day<7)return day+'d ago';
-    var dt=new Date(t);
-    return dt.toLocaleDateString()+' '+dt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    return d.toLocaleDateString('en-US',{day:'numeric',month:'short'});
   }catch(e){return '—';}
-}
-function htmlToText(html){
-  if(!html)return '';
-  return html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi,'').replace(/<script[^>]*>[\s\S]*?<\/script>/gi,'').replace(/<br\s*\/?>/gi,'\n').replace(/<\/p>/gi,'\n\n').replace(/<[^>]+>/g,'').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/\n\s*\n\s*\n/g,'\n\n').trim();
 }
 
 function showConfirm(opts){
@@ -1412,6 +1431,7 @@ function loadPrefs(){
     $('totalAutoSent').innerText=p.totalAutoSent||0;
     if($('optAutoSig'))$('optAutoSig').checked=p.autoSendIncludeSignature!==false;
     if($('optAutoLogo'))$('optAutoLogo').checked=p.autoSendIncludeLogo!==false;
+    if($('sendDelayInput'))$('sendDelayInput').value=p.sendDelay!==undefined?p.sendDelay:3;
     validateBatchSize();
   });
 }
@@ -1419,16 +1439,18 @@ document.getElementById('quietToggle').addEventListener('change',function(){$('q
 document.getElementById('autoSendToggle').addEventListener('change',function(){$('batchSizeBox').classList.toggle('show',this.checked);});
 function savePrefs(){
   var bs=parseInt($('batchNumber').value)||5;
+  var sd=parseInt($('sendDelayInput').value);if(isNaN(sd)||sd<0)sd=3;if(sd>120)sd=120;
   if(bs>MY_QUOTA.remaining){toast('❌ Cannot exceed remaining quota ('+MY_QUOTA.remaining+')','err');return;}
-  var payload={autoSend:$('autoSendToggle').checked,autoSendBatchSize:bs,quietEnabled:$('quietToggle').checked,quietStart:Number($('quietStartSel').value),quietEnd:Number($('quietEndSel').value)};
+  var payload={autoSend:$('autoSendToggle').checked,autoSendBatchSize:bs,quietEnabled:$('quietToggle').checked,quietStart:Number($('quietStartSel').value),quietEnd:Number($('quietEndSel').value),sendDelay:sd};
   if($('optAutoSig'))payload.autoSendIncludeSignature=$('optAutoSig').checked;
   if($('optAutoLogo'))payload.autoSendIncludeLogo=$('optAutoLogo').checked;
   api('/api/prefs','POST',payload).then(function(r){if(r.ok)toast('✅ Saved');else toast('Error: '+r.error,'err');});
 }
 
-// ============ INBOX ============
+// ============ INBOX (FAST, no AI) ============
 function loadInbox(){
   var folder=$('inboxFolder').value;var limit=parseInt($('inboxLimit').value)||20;
+  var startTime = Date.now();
   $('inboxList').innerHTML='<div class="empty"><div class="ico">⏳</div>Loading page '+inboxPage+'...</div>';
   $('inboxEmpty').classList.remove('hidden');
   $('inboxViewerContent').classList.add('hidden');
@@ -1437,26 +1459,27 @@ function loadInbox(){
   $('inboxPrevBtn').disabled=inboxPage<=1;
   $('inboxNextBtn').disabled=true;
 
-  api('/api/ai/analyze-replies','POST',{folder:folder,limit:limit,page:inboxPage,pageSize:limit}).then(function(r){
+  api('/api/inbox/list','POST',{folder:folder,page:inboxPage,pageSize:limit}).then(function(r){
     if(!r.ok){$('inboxList').innerHTML='<div class="empty"><div class="ico">❌</div>'+esc(r.error)+'</div>';return;}
     INBOX_EMAILS=r.emails||[];
+    var elapsed = Date.now() - startTime;
     if(!INBOX_EMAILS.length){$('inboxList').innerHTML='<div class="empty"><div class="ico">📭</div>No emails on this page</div>';return;}
     $('inboxNextBtn').disabled=!r.hasMore;
     var h='';
     INBOX_EMAILS.forEach(function(e,i){
       var catClass=(e.category||'other').toLowerCase().replace('_','-');
-      var attachIcon=e.hasAttachments?'<span class="attach-icon">📎 '+e.attachments.length+'</span>':'';
       h+='<div class="inbox-item'+(e.isRead?'':' unread')+'" onclick="openInboxEmail('+i+')" data-idx="'+i+'">';
-      h+='<div class="from"><span class="from-name">'+esc(e.fromName||e.fromEmail)+'</span><span class="date">'+esc(fmtTimeAgo(e.dateRaw))+'</span></div>';
+      h+='<div class="from"><span class="from-name">'+esc(e.fromName||e.fromEmail)+'</span><span class="date">'+esc(fmtTimeAgo(e.dateISO))+'</span></div>';
       h+='<div class="subj">'+esc(e.subject)+'</div>';
-      h+='<div class="prev">'+esc(e.bodyPreview||e.snippet)+'</div>';
+      h+='<div class="prev">'+esc(e.snippet||'')+'</div>';
       h+='<div class="badges"><span class="tag">'+esc(e.folder)+'</span>';
-      if(e.category)h+='<span class="badge '+catClass+'">'+esc(e.category.replace('_',' '))+'</span>';
-      if(e.needsReply)h+='<span class="badge question">↩️ Reply</span>';
-      if(attachIcon)h+='<span class="badge attach">'+attachIcon+'</span>';
+      if(e.category && e.category !== 'OTHER')h+='<span class="badge '+catClass+'">'+esc(e.category.replace('_',' '))+'</span>';
       h+='</div></div>';
     });
     $('inboxList').innerHTML=h;
+    console.log('Inbox loaded in', elapsed, 'ms');
+  }).catch(function(e){
+    $('inboxList').innerHTML='<div class="empty"><div class="ico">❌</div>Network error</div>';
   });
 }
 
@@ -1470,54 +1493,65 @@ function openInboxEmail(i){
   $('viewSubject').innerText=e.subject;
   $('viewFrom').innerText=e.fromName+' <'+e.fromEmail+'>';
   $('viewTo').innerText=e.toEmail;
-  $('viewDate').innerText=e.dateRaw;
-  if(e.category){
+  $('viewDate').innerText=fmtEmailDate(e.dateISO);
+  if(e.category && e.category !== 'OTHER'){
     $('viewCategoryRow').style.display='flex';
     var catClass=(e.category||'other').toLowerCase().replace('_','-');
-    $('viewCategory').innerHTML='<span class="badge '+catClass+'">'+esc(e.category.replace('_',' '))+'</span>'+(e.summary?' <span style="color:var(--text2);font-size:11px">'+esc(e.summary)+'</span>':'');
+    $('viewCategory').innerHTML='<span class="badge '+catClass+'">'+esc(e.category.replace('_',' '))+'</span>';
   } else $('viewCategoryRow').style.display='none';
 
-  // Render body in iframe for full HTML fidelity
+  // Show loading
   var bodyContainer=$('viewBody');
-  bodyContainer.innerHTML='';
-  if(e.bodyHtml && e.bodyHtml.trim().length > 0){
-    var iframe=document.createElement('iframe');
-    iframe.style.cssText='width:100%;border:none;background:#fff;display:block;';
-    iframe.setAttribute('sandbox','allow-same-origin');
-    bodyContainer.appendChild(iframe);
-    try{
-      var doc=iframe.contentDocument || iframe.contentWindow.document;
-      doc.open();
-      doc.write('<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;color:#222;word-break:break-word}img{max-width:100%;height:auto}a{color:#1a73e8}table{max-width:100%}</style></head><body>'+e.bodyHtml+'</body></html>');
-      doc.close();
-      setTimeout(function(){
-        try{var h=doc.body.scrollHeight;iframe.style.height=Math.max(300,Math.min(h+40,1000))+'px';}catch(err){iframe.style.height='500px';}
-      },150);
-    }catch(err){
-      bodyContainer.innerHTML='<div class="plain-body">'+esc(e.bodyText||e.snippet)+'</div>';
-    }
-  } else {
-    bodyContainer.innerHTML='<div class="plain-body">'+esc(e.bodyText||e.snippet||'(no content)')+'</div>';
-  }
+  bodyContainer.innerHTML='<div class="loading"><div class="spin"></div><span>Loading email...</span></div>';
 
-  // Attachments
-  var attWrap=$('viewAttachments');
-  var attList=$('viewAttachmentsList');
-  if(e.attachments && e.attachments.length > 0){
-    attWrap.classList.remove('hidden');
-    attList.innerHTML=e.attachments.map(function(a){
-      var url='/api/inbox/attachment/'+encodeURIComponent(e.id)+'/'+encodeURIComponent(a.attachmentId)+'?filename='+encodeURIComponent(a.filename)+'&mime='+encodeURIComponent(a.mimeType);
-      var icon='📎';
-      if(a.mimeType.startsWith('image/'))icon='🖼️';
-      else if(a.mimeType.includes('pdf'))icon='📄';
-      else if(a.mimeType.includes('zip')||a.mimeType.includes('rar'))icon='🗜️';
-      else if(a.mimeType.includes('word')||a.mimeType.includes('document'))icon='📝';
-      else if(a.mimeType.includes('sheet')||a.mimeType.includes('excel'))icon='📊';
-      return '<a class="attachment-item" href="'+url+'" download="'+esc(a.filename)+'"><div class="icon">'+icon+'</div><div class="info"><div class="fname">'+esc(a.filename)+'</div><div class="fmeta">'+fmtSize(a.size)+' · '+esc(a.mimeType)+'</div></div><div class="dl">⬇️</div></a>';
-    }).join('');
-  } else {
-    attWrap.classList.add('hidden');
-  }
+  // Fetch full email body
+  api('/api/inbox/email/'+encodeURIComponent(e.id)).then(function(r){
+    if(!r.ok){bodyContainer.innerHTML='<div class="plain-body">Failed to load: '+esc(r.error||'Unknown error')+'</div>';return;}
+    var email=r.email;
+    
+    // Update attachments
+    var attWrap=$('viewAttachments');
+    var attList=$('viewAttachmentsList');
+    if(email.attachments && email.attachments.length > 0){
+      attWrap.classList.remove('hidden');
+      attList.innerHTML=email.attachments.map(function(a){
+        var url='/api/inbox/attachment/'+encodeURIComponent(e.id)+'/'+encodeURIComponent(a.attachmentId)+'?filename='+encodeURIComponent(a.filename)+'&mime='+encodeURIComponent(a.mimeType);
+        var icon='📎';
+        if(a.mimeType.startsWith('image/'))icon='🖼️';
+        else if(a.mimeType.includes('pdf'))icon='📄';
+        else if(a.mimeType.includes('zip')||a.mimeType.includes('rar'))icon='🗜️';
+        else if(a.mimeType.includes('word')||a.mimeType.includes('document'))icon='📝';
+        else if(a.mimeType.includes('sheet')||a.mimeType.includes('excel'))icon='📊';
+        return '<a class="attachment-item" href="'+url+'" download="'+esc(a.filename)+'"><div class="icon">'+icon+'</div><div class="info"><div class="fname">'+esc(a.filename)+'</div><div class="fmeta">'+fmtSize(a.size)+' · '+esc(a.mimeType.split('/')[1]||a.mimeType)+'</div></div><div class="dl">⬇️</div></a>';
+      }).join('');
+    } else {
+      attWrap.classList.add('hidden');
+    }
+    
+    // Render body in iframe
+    bodyContainer.innerHTML='';
+    if(email.bodyHtml && email.bodyHtml.trim().length > 0){
+      var iframe=document.createElement('iframe');
+      iframe.style.cssText='width:100%;border:none;background:#fff;display:block;';
+      iframe.setAttribute('sandbox','allow-same-origin');
+      bodyContainer.appendChild(iframe);
+      try{
+        var doc=iframe.contentDocument || iframe.contentWindow.document;
+        doc.open();
+        doc.write('<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;color:#222;word-break:break-word;background:#fff}img{max-width:100%;height:auto}a{color:#1a73e8}table{max-width:100%}</style></head><body>'+email.bodyHtml+'</body></html>');
+        doc.close();
+        setTimeout(function(){
+          try{var h=doc.body.scrollHeight;iframe.style.height=Math.max(400,Math.min(h+60,1500))+'px';}catch(err){iframe.style.height='500px';}
+        },200);
+      }catch(err){
+        bodyContainer.innerHTML='<div class="plain-body">'+esc(email.bodyText||email.snippet||'(no content)')+'</div>';
+      }
+    } else {
+      bodyContainer.innerHTML='<div class="plain-body">'+esc(email.bodyText||email.snippet||'(no content)')+'</div>';
+    }
+  }).catch(function(err){
+    bodyContainer.innerHTML='<div class="plain-body">Error loading email: '+esc(err.message||'Network error')+'</div>';
+  });
 }
 function openReplyCompose(){
   if(!ACTIVE_EMAIL)return;

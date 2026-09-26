@@ -14,6 +14,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_EMAIL = 'usama.hanif.career@gmail.com';
 const DEFAULT_DAILY_LIMIT = 500;
+const DEFAULT_SEND_DELAY = 3;
 const IS_VERCEL = !!process.env.VERCEL;
 const CRON_SECRET = process.env.CRON_SECRET || 'mf-cron-default-change-me';
 
@@ -81,10 +82,46 @@ function stripSignature(text) {
   let t = text;
   t = t.replace(/\n{1,}(Best regards|Regards|Sincerely|Thanks|Thank you|Warm regards|Kind regards|Yours truly|Cheers|Warmly|Yours|Respectfully|Looking forward)[^\n]*[\s\S]*$/i, '');
   t = t.replace(/\n{1,}[-—=_]{2,}[\s\S]*$/i, '');
-  t = t.replace(/\n{1,}(Sent from|Sent via)[^\n]*[\s\S]*$/i, '');
   return t.trim();
 }
 
+// ============ FAST LOCAL CATEGORIZATION (No AI) ============
+function localCategorize(fromEmail, subject, bodyText) {
+  const f = (fromEmail || '').toLowerCase();
+  const s = (subject || '').toLowerCase();
+  const b = (bodyText || '').toLowerCase();
+  
+  // Auto reply / noreply
+  if (f.includes('noreply') || f.includes('no-reply') || f.includes('donotreply') || f.includes('do-not-reply')) {
+    if (s.includes('welcome') || s.includes('verify') || s.includes('confirm') || s.includes('activate')) return 'NEWSLETTER';
+    return 'AUTO_REPLY';
+  }
+  
+  // Newsletter patterns
+  if (s.includes('newsletter') || s.includes('unsubscribe') || b.includes('unsubscribe') || f.includes('newsletter') || f.includes('mailer') || f.includes('notifications@') || f.includes('updates@')) return 'NEWSLETTER';
+  
+  // Spam
+  if (s.includes('winner') || s.includes('prize') || s.includes('claim') || s.includes('lottery') || s.includes('congratulations you')) return 'SPAM';
+  
+  // Meeting request
+  if (s.includes('meeting') || s.includes('invite') || s.includes('calendar') || s.includes('schedule a call')) return 'MEETING_REQUEST';
+  
+  // Question
+  if (s.includes('?') || s.includes('question') || s.includes('how do') || s.includes('can you')) return 'QUESTION';
+  
+  // Follow up
+  if (s.includes('following up') || s.includes('re:') || s.includes('follow up')) return 'FOLLOW_UP';
+  
+  // Interested
+  if (b.includes('interested') || b.includes('let\'s discuss') || b.includes('would like to') || b.includes('looking forward')) return 'INTERESTED';
+  
+  // Not interested
+  if (b.includes('not interested') || b.includes('no thank') || b.includes('unfortunately')) return 'NOT_INTERESTED';
+  
+  return 'OTHER';
+}
+
+// ============ AI PROVIDERS ============
 async function callGroq(prompt) {
   if (!GROQ_KEY) throw new Error('No key');
   const r = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
@@ -133,18 +170,10 @@ async function callAI(prompt) {
   const cached = getCachedResponse(prompt);
   if (cached) return cached;
   const providers = [
-    { name: 'Groq', fn: callGroq },
-    { name: 'Gemini', fn: callGemini },
-    { name: 'OpenRouter', fn: callOpenRouter },
-    { name: 'Mistral', fn: callMistral }
+    { fn: callGroq }, { fn: callGemini }, { fn: callOpenRouter }, { fn: callMistral }
   ];
   for (const p of providers) {
-    try {
-      const text = await p.fn(prompt);
-      if (!text || text.length < 5) continue;
-      setCachedResponse(prompt, text);
-      return text;
-    } catch (err) {}
+    try { const text = await p.fn(prompt); if (!text || text.length < 5) continue; setCachedResponse(prompt, text); return text; } catch (err) {}
   }
   throw new Error('All AI failed');
 }
@@ -193,6 +222,16 @@ function isQuietHours(p) { if (!p || !p.quietEnabled) return false; const n = ne
 function getCurrentHourKey() { const n = new Date(); return n.toISOString().split('T')[0] + '-' + n.getHours(); }
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+// ============ EMAIL DATE PARSER (Clean timezone) ============
+function parseEmailDate(dateStr) {
+  if (!dateStr) return null;
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString();
+  } catch (e) { return null; }
+}
+
 app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL, firebase: !!serviceAccount.project_id, ai: { groq: !!GROQ_KEY, gemini: !!GEMINI_KEY, mistral: !!MISTRAL_KEY, openrouter: !!OPENROUTER_KEY } }));
 
 app.get('/auth/google', (req, res) => { const url = oauth2Client.generateAuthUrl({ access_type: 'offline', scope: SCOPES, prompt: 'consent' }); res.redirect(url); });
@@ -211,12 +250,14 @@ app.get('/auth/google/callback', async (req, res) => {
       data.autoSend = false; data.autoSendBatchSize = 5; data.signature = ''; data.logoUrl = ''; data.sigFields = {};
       data.appAccountId = generateAppAccountId(); data.lastAutoSendRun = null; data.totalAutoSent = 0; data.lastSendTime = null;
       data.dailyLimit = DEFAULT_DAILY_LIMIT;
+      data.sendDelay = DEFAULT_SEND_DELAY;
     } else {
       const ex = existing.data();
       if (!ex.appAccountId) data.appAccountId = generateAppAccountId();
       if (ex.autoSendBatchSize === undefined) data.autoSendBatchSize = 5;
       if (ex.totalAutoSent === undefined) data.totalAutoSent = 0;
       if (ex.dailyLimit === undefined) data.dailyLimit = DEFAULT_DAILY_LIMIT;
+      if (ex.sendDelay === undefined) data.sendDelay = DEFAULT_SEND_DELAY;
     }
     await db.collection('users').doc(uid).set(data, { merge: true });
     const fresh = await db.collection('users').doc(uid).get();
@@ -234,7 +275,6 @@ app.get('/api/me', async (req, res) => {
 app.post('/api/logout', (req, res) => { req.session = null; res.json({ ok: true }); });
 app.get('/api/quiet-status', authRequired, async (req, res) => { try { const d = await getUserData(req.session.user.id); const q = isQuietHours(d); res.json({ ok: true, inQuiet: q, quietEnd: d.quietEnd }); } catch (e) { res.json({ ok: false, error: e.message }); } });
 
-// ============ QUOTA ============
 app.get('/api/quota', authRequired, async (req, res) => {
   try {
     const userId = req.session.user.id;
@@ -262,7 +302,6 @@ app.get('/api/quota', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ============ AI ANALYSIS ============
 app.post('/api/ai/analyze-live', authRequired, async (req, res) => {
   try {
     const { subject, body } = req.body;
@@ -403,20 +442,6 @@ app.post('/api/ai/parse-bulk', authRequired, async (req, res) => {
       }
     }
     const items = Object.keys(foundEmails).map(e => ({ email: e, company: foundEmails[e] }));
-    const emptyCount = items.filter(i => !i.company).length;
-    if (emptyCount > 0 && emptyCount < items.length) {
-      try {
-        const prompt = `Extract company/name for each email. Return ONLY JSON.\nText:\n${text.substring(0, 1500)}\nReturn: {"items":[{"email":"...","company":"..."}]}`;
-        const aiText = await callAI(prompt);
-        const parsed = safeParseJSON(aiText);
-        if (parsed && parsed.items) {
-          const aiMap = {};
-          parsed.items.forEach(i => { if (i.email) aiMap[i.email.toLowerCase()] = i.company || ''; });
-          const improved = items.map(i => ({ email: i.email, company: i.company || aiMap[i.email] || '' }));
-          return res.json({ ok: true, items: improved, aiPowered: true });
-        }
-      } catch (e) {}
-    }
     res.json({ ok: true, items, aiPowered: false });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
@@ -438,8 +463,9 @@ app.get('/api/ai/best-time', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: true, bestHours: [9, 11, 14], reasoning: 'Default', aiPowered: false }); }
 });
 
-// ============ INBOX — Full HTML + Attachments + Pagination ============
-app.post('/api/ai/analyze-replies', authRequired, async (req, res) => {
+// ============ FAST INBOX — No AI, Real-time ============
+app.post('/api/inbox/list', authRequired, async (req, res) => {
+  const startTime = Date.now();
   try {
     const uid = req.session.user.id;
     const user = await getUserData(uid);
@@ -450,7 +476,6 @@ app.post('/api/ai/analyze-replies', authRequired, async (req, res) => {
     const folder = req.body.folder || 'inbox';
     const page = Math.max(1, parseInt(req.body.page) || 1);
     const pageSize = Math.min(parseInt(req.body.pageSize) || 20, 50);
-    const skipAI = req.body.skipAI === true;
 
     const queries = [];
     if (folder === 'inbox' || folder === 'both') queries.push({ q: 'in:inbox', label: 'Inbox' });
@@ -468,117 +493,139 @@ app.post('/api/ai/analyze-replies', authRequired, async (req, res) => {
         const sliced = list.data.messages.slice(startIdx, startIdx + pageSize);
         if (list.data.messages.length > startIdx + pageSize) hasMore = true;
 
-        for (const msg of sliced) {
-          try {
-            const full = await gmail.users.messages.get({ userId: 'me', id: msg.id, format: 'full' });
-            const headers = full.data.payload.headers || [];
-            const getHeader = (n) => { const h = headers.find(x => x.name.toLowerCase() === n.toLowerCase()); return h ? h.value : ''; };
-            const from = getHeader('From');
-            const to = getHeader('To');
-            const subject = getHeader('Subject');
-            const dateRaw = getHeader('Date');
-            const snippet = full.data.snippet || '';
-            const threadId = full.data.threadId;
+        // Fetch all in parallel (much faster)
+        const fetchPromises = sliced.map(msg => 
+          gmail.users.messages.get({ userId: 'me', id: msg.id, format: 'metadata', metadataHeaders: ['From', 'To', 'Subject', 'Date'] })
+            .then(r => ({ msg, full: r }))
+            .catch(() => null)
+        );
+        const fetched = await Promise.all(fetchPromises);
 
-            let htmlBody = '';
-            let textBody = '';
-            const attachments = [];
+        for (const item of fetched) {
+          if (!item) continue;
+          const { msg, full } = item;
+          const headers = full.data.payload.headers || [];
+          const getHeader = (n) => { const h = headers.find(x => x.name.toLowerCase() === n.toLowerCase()); return h ? h.value : ''; };
+          const from = getHeader('From');
+          const to = getHeader('To');
+          const subject = getHeader('Subject');
+          const dateRaw = getHeader('Date');
+          const dateISO = parseEmailDate(dateRaw) || new Date().toISOString();
+          const snippet = full.data.snippet || '';
 
-            const walkParts = (parts) => {
-              for (const p of parts || []) {
-                if (p.filename && p.body?.attachmentId) {
-                  attachments.push({
-                    attachmentId: p.body.attachmentId,
-                    filename: p.filename,
-                    mimeType: p.mimeType || 'application/octet-stream',
-                    size: p.body.size || 0
-                  });
-                }
-                if (p.mimeType === 'text/html' && p.body?.data && !htmlBody) {
-                  htmlBody = Buffer.from(p.body.data, 'base64').toString('utf8');
-                } else if (p.mimeType === 'text/plain' && p.body?.data && !textBody) {
-                  textBody = Buffer.from(p.body.data, 'base64').toString('utf8');
-                } else if (p.parts && p.parts.length) {
-                  walkParts(p.parts);
-                }
-              }
-            };
+          let fromName = from, fromEmail = from;
+          const em = from.match(/<([^>]+)>/);
+          if (em) { fromEmail = em[1]; fromName = from.replace(/<[^>]+>/, '').replace(/"/g, '').trim() || fromEmail.split('@')[0]; }
+          else if (from.includes('@')) { fromEmail = from; fromName = from.split('@')[0]; }
+          fromName = fromName.replace(/^[-,\s]+|[-,\s]+$/g, '').replace(/['"]/g, '').trim();
+          if (!fromName || fromName.includes('@')) fromName = fromEmail.split('@')[0];
+          // Capitalize first letters
+          fromName = fromName.split(/[\.\-_]/).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
 
-            const payload = full.data.payload;
-            if (payload.parts) walkParts(payload.parts);
-            else if (payload.body?.data) {
-              if (payload.mimeType === 'text/html') htmlBody = Buffer.from(payload.body.data, 'base64').toString('utf8');
-              else if (payload.mimeType === 'text/plain') textBody = Buffer.from(payload.body.data, 'base64').toString('utf8');
-            }
+          let toEmail = to;
+          const tm = to.match(/<([^>]+)>/);
+          if (tm) toEmail = tm[1];
 
-            // Fallbacks
-            if (!textBody && htmlBody) textBody = htmlBody.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '').replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/\s+/g, ' ').trim();
-            if (!htmlBody && textBody) htmlBody = '<pre style="white-space:pre-wrap;font-family:inherit;">' + textBody.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</pre>';
-            if (!htmlBody && !textBody) { htmlBody = '<p>' + snippet + '</p>'; textBody = snippet; }
+          const category = localCategorize(fromEmail, subject, snippet);
 
-            let fromName = from, fromEmail = from;
-            const em = from.match(/<([^>]+)>/);
-            if (em) { fromEmail = em[1]; fromName = from.replace(/<[^>]+>/, '').replace(/"/g, '').trim() || fromEmail.split('@')[0]; }
-            else if (from.includes('@')) { fromEmail = from; fromName = from.split('@')[0]; }
-            fromName = fromName.replace(/^[-,\s]+|[-,\s]+$/g, '');
-            if (!fromName || fromName.includes('@')) fromName = fromEmail.split('@')[0];
-
-            let toEmail = to;
-            const tm = to.match(/<([^>]+)>/);
-            if (tm) toEmail = tm[1];
-
-            allEmails.push({
-              id: msg.id,
-              threadId,
-              folder: query.label,
-              from, fromName, fromEmail,
-              to, toEmail,
-              subject: subject || '(no subject)',
-              dateRaw,
-              snippet,
-              bodyHtml: htmlBody.substring(0, 100000),
-              bodyText: textBody.substring(0, 20000),
-              bodyPreview: (textBody || snippet).substring(0, 200).replace(/\s+/g, ' '),
-              attachments,
-              hasAttachments: attachments.length > 0,
-              isRead: !(full.data.labelIds || []).includes('UNREAD'),
-              labels: full.data.labelIds || []
-            });
-          } catch (e) { console.error('Email fetch:', e.message); }
+          allEmails.push({
+            id: msg.id,
+            threadId: full.data.threadId,
+            folder: query.label,
+            from, fromName, fromEmail, to, toEmail,
+            subject: subject || '(no subject)',
+            dateRaw, dateISO,
+            snippet,
+            bodyPreview: snippet.substring(0, 200),
+            category,
+            isRead: !(full.data.labelIds || []).includes('UNREAD'),
+            hasAttachments: false
+          });
         }
       } catch (e) { console.error('Folder fetch:', e.message); }
     }
 
-    if (!allEmails.length) return res.json({ ok: true, emails: [], hasMore: false, page });
-
-    if (!skipAI) {
-      try {
-        const prompt = `Categorize these emails. Return ONLY JSON.
-${allEmails.slice(0, 15).map((e, i) => `[${i}] Folder:${e.folder}\nFrom:${e.fromName}\nSubject:${e.subject}\nPreview:${e.bodyPreview.substring(0, 150)}`).join('\n---\n')}
-Return: {"categories":[{"index":0,"type":"INTERESTED"|"NOT_INTERESTED"|"AUTO_REPLY"|"QUESTION"|"SPAM"|"MEETING_REQUEST"|"FOLLOW_UP"|"NEWSLETTER"|"OTHER","sentiment":"POSITIVE"|"NEUTRAL"|"NEGATIVE","summary":"short","needsReply":true|false}]}`;
-        const text = await callAI(prompt);
-        const parsed = safeParseJSON(text);
-        if (parsed && parsed.categories) {
-          allEmails.forEach((e, i) => {
-            const cat = (parsed.categories || []).find(c => c.index === i) || {};
-            e.category = cat.type || 'OTHER';
-            e.sentiment = cat.sentiment || 'NEUTRAL';
-            e.summary = cat.summary || '';
-            e.needsReply = cat.needsReply === true;
-          });
-        }
-      } catch (e) {
-        allEmails.forEach(e => { e.category = 'OTHER'; e.sentiment = 'NEUTRAL'; e.summary = ''; e.needsReply = false; });
-      }
-    } else {
-      allEmails.forEach(e => { e.category = 'OTHER'; e.sentiment = 'NEUTRAL'; e.summary = ''; e.needsReply = false; });
-    }
-
-    res.json({ ok: true, emails: allEmails, page, pageSize, hasMore });
+    res.json({ ok: true, emails: allEmails, page, pageSize, hasMore, elapsed: Date.now() - startTime });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ============ Download Attachment ============
+// ============ GET FULL EMAIL (on demand) ============
+app.get('/api/inbox/email/:id', authRequired, async (req, res) => {
+  try {
+    const uid = req.session.user.id;
+    const user = await getUserData(uid);
+    if (!user.tokens) return res.json({ ok: false, error: 'Session expired' });
+    const client = setUserOAuth(user.tokens);
+    const gmail = google.gmail({ version: 'v1', auth: client });
+
+    const full = await gmail.users.messages.get({ userId: 'me', id: req.params.id, format: 'full' });
+    const headers = full.data.payload.headers || [];
+    const getHeader = (n) => { const h = headers.find(x => x.name.toLowerCase() === n.toLowerCase()); return h ? h.value : ''; };
+
+    let htmlBody = '';
+    let textBody = '';
+    const attachments = [];
+
+    const walkParts = (parts) => {
+      for (const p of parts || []) {
+        if (p.filename && p.body?.attachmentId) {
+          attachments.push({
+            attachmentId: p.body.attachmentId,
+            filename: p.filename,
+            mimeType: p.mimeType || 'application/octet-stream',
+            size: p.body.size || 0
+          });
+        }
+        if (p.mimeType === 'text/html' && p.body?.data && !htmlBody) {
+          htmlBody = Buffer.from(p.body.data, 'base64').toString('utf8');
+        } else if (p.mimeType === 'text/plain' && p.body?.data && !textBody) {
+          textBody = Buffer.from(p.body.data, 'base64').toString('utf8');
+        } else if (p.parts && p.parts.length) walkParts(p.parts);
+      }
+    };
+
+    const payload = full.data.payload;
+    if (payload.parts) walkParts(payload.parts);
+    else if (payload.body?.data) {
+      if (payload.mimeType === 'text/html') htmlBody = Buffer.from(payload.body.data, 'base64').toString('utf8');
+      else if (payload.mimeType === 'text/plain') textBody = Buffer.from(payload.body.data, 'base64').toString('utf8');
+    }
+
+    if (!textBody && htmlBody) textBody = htmlBody.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '').replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/\s+/g, ' ').trim();
+    if (!htmlBody && textBody) htmlBody = '<pre style="white-space:pre-wrap;font-family:inherit;font-size:14px;line-height:1.6;color:#222;">' + textBody.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</pre>';
+    if (!htmlBody && !textBody) { htmlBody = '<p>' + (full.data.snippet || '') + '</p>'; textBody = full.data.snippet || ''; }
+
+    const from = getHeader('From');
+    let fromName = from, fromEmail = from;
+    const em = from.match(/<([^>]+)>/);
+    if (em) { fromEmail = em[1]; fromName = from.replace(/<[^>]+>/, '').replace(/"/g, '').trim() || fromEmail.split('@')[0]; }
+    else if (from.includes('@')) { fromEmail = from; fromName = from.split('@')[0]; }
+    fromName = fromName.replace(/^[-,\s]+|[-,\s]+$/g, '').replace(/['"]/g, '').trim();
+    if (!fromName || fromName.includes('@')) fromName = fromEmail.split('@')[0];
+    fromName = fromName.split(/[\.\-_]/).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+
+    const to = getHeader('To');
+    let toEmail = to;
+    const tm = to.match(/<([^>]+)>/);
+    if (tm) toEmail = tm[1];
+
+    res.json({
+      ok: true,
+      email: {
+        id: req.params.id,
+        threadId: full.data.threadId,
+        from, fromName, fromEmail, to, toEmail,
+        subject: getHeader('Subject') || '(no subject)',
+        dateRaw: getHeader('Date'),
+        dateISO: parseEmailDate(getHeader('Date')),
+        bodyHtml: htmlBody.substring(0, 200000),
+        bodyText: textBody.substring(0, 50000),
+        attachments
+      }
+    });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
 app.get('/api/inbox/attachment/:messageId/:attachmentId', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -596,7 +643,6 @@ app.get('/api/inbox/attachment/:messageId/:attachmentId', authRequired, async (r
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-// ============ Reply ============
 app.post('/api/reply/send', authRequired, async (req, res) => {
   try {
     const { threadId, messageId, to, subject, body } = req.body;
@@ -740,7 +786,7 @@ app.get('/api/test/log', adminRequired, async (req, res) => {
   try { const s = await db.collection('users').doc(req.session.user.id).collection('testLog').orderBy('sentAt','desc').limit(200).get(); const l = []; s.forEach(d => l.push({ id: d.id, ...d.data() })); res.json({ ok: true, logs: l }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ============ LOGO / FILES / TEMPLATES / RECIPIENTS ============
+// ============ FILES / TEMPLATES / RECIPIENTS ============
 app.post('/api/upload-logo', authRequired, async (req, res) => {
   try {
     const { base64, mimeType, filename } = req.body;
@@ -891,6 +937,7 @@ app.get('/api/my-emails', authRequired, async (req, res) => {
 
 function encS(s) { return /^[\x00-\x7F]*$/.test(s) ? s : '=?UTF-8?B?' + Buffer.from(s, 'utf8').toString('base64') + '?='; }
 function htmlToPlain(h) { return h.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '').replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '').replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/\n\s*\n\s*\n/g, '\n\n').trim(); }
+
 function buildMime(fn, fe, to, sub, h, atts) {
   const mB = 'm_' + crypto.randomBytes(8).toString('hex');
   const aB = 'a_' + crypto.randomBytes(8).toString('hex');
@@ -923,11 +970,18 @@ async function sendOne(userId, userEmail, recipientId, attachFiles, options) {
   const r = await db.collection('users').doc(userId).collection('recipients').doc(recipientId).get();
   if (!r.exists) throw new Error('Not found');
   const rec = r.data();
+  
+  // User-configurable delay (default 3 seconds)
   if (u.lastSendTime && !options.skipDelay) {
     const l = u.lastSendTime._seconds ? u.lastSendTime._seconds * 1000 : new Date(u.lastSendTime).getTime();
-    const el = Date.now() - l; const mg = 20000 + Math.floor(Math.random() * 20000);
+    const delaySec = u.sendDelay !== undefined ? Number(u.sendDelay) : DEFAULT_SEND_DELAY;
+    const delayMs = Math.max(0, delaySec * 1000);
+    const jitter = Math.floor(Math.random() * 1000);
+    const el = Date.now() - l;
+    const mg = delayMs + jitter;
     if (el < mg) await sleep(mg - el);
   }
+  
   const c = setUserOAuth(u.tokens);
   const g = google.gmail({ version: 'v1', auth: c });
   let t;
@@ -958,7 +1012,6 @@ async function sendOne(userId, userEmail, recipientId, attachFiles, options) {
   if (attachFiles !== false && options.includeAttachments !== false) {
     const fs = await db.collection('users').doc(userId).collection('files').get();
     const dr = google.drive({ version: 'v3', auth: c });
-    // Filter by selected IDs if provided
     const selectedIds = options.selectedFileIds;
     for (const fd of fs.docs) {
       if (selectedIds && selectedIds.length > 0 && selectedIds.indexOf(fd.id) === -1) continue;
@@ -1017,13 +1070,14 @@ app.get('/api/signature', authRequired, async (req, res) => { try { const d = aw
 app.post('/api/signature', authRequired, async (req, res) => { try { const u = { signature: req.body.signature || '' }; if (req.body.fields) u.sigFields = req.body.fields; await db.collection('users').doc(req.session.user.id).update(u); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); } });
 
 app.get('/api/prefs', authRequired, async (req, res) => {
-  try { const d = await getUserData(req.session.user.id); res.json({ ok: true, prefs: { quietEnabled: d.quietEnabled === true, quietStart: d.quietStart !== undefined ? d.quietStart : 22, quietEnd: d.quietEnd !== undefined ? d.quietEnd : 7, autoSend: d.autoSend === true, autoSendBatchSize: d.autoSendBatchSize !== undefined ? d.autoSendBatchSize : 5, appAccountId: d.appAccountId || '', totalAutoSent: d.totalAutoSent || 0, autoSendIncludeLogo: d.autoSendIncludeLogo !== false, autoSendIncludeSignature: d.autoSendIncludeSignature !== false } }); } catch (e) { res.json({ ok: false, error: e.message }); }
+  try { const d = await getUserData(req.session.user.id); res.json({ ok: true, prefs: { quietEnabled: d.quietEnabled === true, quietStart: d.quietStart !== undefined ? d.quietStart : 22, quietEnd: d.quietEnd !== undefined ? d.quietEnd : 7, autoSend: d.autoSend === true, autoSendBatchSize: d.autoSendBatchSize !== undefined ? d.autoSendBatchSize : 5, appAccountId: d.appAccountId || '', totalAutoSent: d.totalAutoSent || 0, autoSendIncludeLogo: d.autoSendIncludeLogo !== false, autoSendIncludeSignature: d.autoSendIncludeSignature !== false, sendDelay: d.sendDelay !== undefined ? d.sendDelay : DEFAULT_SEND_DELAY } }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.post('/api/prefs', authRequired, async (req, res) => {
   try {
-    const { quietEnabled, quietStart, quietEnd, autoSend, autoSendBatchSize, autoSendIncludeLogo, autoSendIncludeSignature } = req.body;
+    const { quietEnabled, quietStart, quietEnd, autoSend, autoSendBatchSize, autoSendIncludeLogo, autoSendIncludeSignature, sendDelay } = req.body;
     let bs = Number(autoSendBatchSize); if (isNaN(bs) || bs < 1) bs = 5; if (bs > 500) bs = 500;
-    const update = { quietEnabled: !!quietEnabled, quietStart: Number(quietStart), quietEnd: Number(quietEnd), autoSend: !!autoSend, autoSendBatchSize: bs, updatedAt: new Date() };
+    let sd = Number(sendDelay); if (isNaN(sd) || sd < 0) sd = DEFAULT_SEND_DELAY; if (sd > 120) sd = 120;
+    const update = { quietEnabled: !!quietEnabled, quietStart: Number(quietStart), quietEnd: Number(quietEnd), autoSend: !!autoSend, autoSendBatchSize: bs, sendDelay: sd, updatedAt: new Date() };
     if (autoSendIncludeLogo !== undefined) update.autoSendIncludeLogo = !!autoSendIncludeLogo;
     if (autoSendIncludeSignature !== undefined) update.autoSendIncludeSignature = !!autoSendIncludeSignature;
     await db.collection('users').doc(req.session.user.id).update(update);
@@ -1049,8 +1103,9 @@ async function runAutoSend(uid, ue, ud) {
   const ps = await db.collection('users').doc(uid).collection('recipients').where('status', '==', 'Pending').limit(bs).get();
   if (ps.empty) return { sent: 0, failed: 0 };
   let s = 0, f = 0;
+  const delaySec = ud.sendDelay !== undefined ? Number(ud.sendDelay) : DEFAULT_SEND_DELAY;
   for (const r of ps.docs) {
-    try { await sendOne(uid, ue, r.id, true, { force: true, includeSignature: ud.autoSendIncludeSignature !== false, includeLogo: ud.autoSendIncludeLogo !== false, includeAttachments: true }); s++; await sleep(20000 + Math.floor(Math.random() * 20000)); }
+    try { await sendOne(uid, ue, r.id, true, { force: true, includeSignature: ud.autoSendIncludeSignature !== false, includeLogo: ud.autoSendIncludeLogo !== false, includeAttachments: true }); s++; await sleep(delaySec * 1000 + Math.floor(Math.random() * 1000)); }
     catch (e) { f++; if (e.code === 'QUIET_HOURS') break; }
   }
   if (s > 0) await db.collection('users').doc(uid).update({ totalAutoSent: (ud.totalAutoSent || 0) + s, lastAutoSendRun: new Date() });
