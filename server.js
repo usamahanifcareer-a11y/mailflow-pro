@@ -72,17 +72,24 @@ function safeParseJSON(text) {
 
 async function fetchWithTimeout(url, opts, ms) {
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), ms || 15000);
+  const t = setTimeout(() => ctrl.abort(), ms || 20000);
   try { const r = await fetch(url, { ...opts, signal: ctrl.signal }); clearTimeout(t); return r; }
   catch (e) { clearTimeout(t); throw e; }
 }
 
+// ✅ FIXED: Only strip if closer is at the very end (last 2 lines), not mid-email
 function stripSignature(text) {
   if (!text) return text;
-  let t = text;
-  t = t.replace(/\n{1,}(Best regards|Regards|Sincerely|Thanks|Thank you|Warm regards|Kind regards|Yours truly|Cheers|Warmly|Yours|Respectfully)[^\n]*[\s\S]*$/i, '');
-  t = t.replace(/\n{1,}[-—=_]{2,}[\s\S]*$/i, '');
-  return t.trim();
+  let t = text.trim();
+  const lines = t.split('\n');
+  while (lines.length > 0 && !lines[lines.length - 1].trim()) lines.pop();
+  if (lines.length < 2) return t;
+  const closer = /^(best regards|regards|sincerely|thank you|thanks|warm regards|kind regards|cheers|warmly|yours truly|yours faithfully|respectfully|all the best)[,.!\s]*$/i;
+  const lastLine = lines[lines.length - 1].trim();
+  const secondLast = lines.length >= 2 ? lines[lines.length - 2].trim() : '';
+  if (closer.test(lastLine)) return lines.slice(0, -1).join('\n').trim();
+  if (lines.length >= 3 && closer.test(secondLast)) return lines.slice(0, -2).join('\n').trim();
+  return t;
 }
 
 function localCategorize(fromEmail, subject, bodyText) {
@@ -107,7 +114,7 @@ async function callGroq(prompt) {
   if (!GROQ_KEY) throw new Error('No key');
   const r = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY },
-    body: JSON.stringify({ model: 'openai/gpt-oss-120b', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 1200 })
+    body: JSON.stringify({ model: 'openai/gpt-oss-120b', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 1500 })
   }, 20000);
   if (!r.ok) throw new Error('Groq ' + r.status);
   const d = await r.json(); return (d.choices?.[0]?.message?.content || '').trim();
@@ -124,7 +131,7 @@ async function callOpenRouter(prompt) {
   const r = await fetchWithTimeout('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENROUTER_KEY, 'HTTP-Referer': process.env.BACKEND_URL || 'https://mailflow-pro-ten.vercel.app', 'X-Title': 'MailFlow Pro' },
-    body: JSON.stringify({ model: 'openrouter/free', messages: [{ role: 'user', content: prompt + '\nReturn valid JSON only.' }], temperature: 0.7, max_tokens: 1200 })
+    body: JSON.stringify({ model: 'openrouter/free', messages: [{ role: 'user', content: prompt + '\nReturn valid JSON only.' }], temperature: 0.7, max_tokens: 1500 })
   }, 20000);
   if (!r.ok) throw new Error('OpenRouter ' + r.status);
   const d = await r.json(); return (d.choices?.[0]?.message?.content || '').trim();
@@ -134,7 +141,7 @@ async function callMistral(prompt) {
   const doFetch = async () => {
     const r = await fetchWithTimeout('https://api.mistral.ai/v1/chat/completions', {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + MISTRAL_KEY },
-      body: JSON.stringify({ model: 'mistral-small-latest', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 1200 })
+      body: JSON.stringify({ model: 'mistral-small-latest', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 1500 })
     }, 20000);
     if (r.status === 429) { const e = new Error('Rate limited'); e.retryAfter = parseInt(r.headers.get('retry-after') || '5', 10); throw e; }
     if (!r.ok) throw new Error('Mistral ' + r.status);
@@ -323,7 +330,6 @@ app.get('/api/quota', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ============ AI ANALYZE ============
 app.post('/api/ai/analyze-live', authRequired, async (req, res) => {
   try {
     const { subject, body } = req.body;
@@ -395,15 +401,15 @@ Return: {"subject":"under 60 chars","body":"with \\n\\n breaks"}`;
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ============ AI SMART REPLY (IMPROVED) ============
+// ✅ FIXED: Better smart reply, use light signature strip
 app.post('/api/ai/smart-reply', authRequired, async (req, res) => {
   try {
     const { originalSubject, originalBody, originalFrom, instruction } = req.body;
     if (!originalBody) return res.json({ ok: false, error: 'No original body' });
     const u = await getUserData(req.session.user.id);
     const userName = u.name || u.email.split('@')[0];
-    
-    const prompt = `You are an expert email assistant. Write a thoughtful, professional reply to this email.
+
+    const prompt = `You are an expert email assistant. Write a thoughtful, professional reply.
 
 ORIGINAL EMAIL:
 From: ${originalFrom || 'Unknown'}
@@ -416,17 +422,15 @@ ${instruction ? 'USER INSTRUCTION: ' + instruction : ''}
 YOUR NAME: ${userName}
 
 RULES:
-1. Start with a proper greeting (Dear [name], or Hi [name],) matching the formality of the original
-2. Write 2-3 concise paragraphs addressing the points in the original email
-3. Be warm, professional, and helpful
-4. If it's a job/application email, respond politely and professionally
-5. If it's a question, answer it directly
-6. If it's a follow-up, acknowledge and respond appropriately
-7. End with a final sentence of content (no "Best regards", "Sincerely", "Thank you", name, or signature block)
-8. Match the language of the original email
+1. Start with greeting like "Dear [name]," or "Hi [name],"
+2. Write 2-3 concise paragraphs addressing the points
+3. Be warm and professional
+4. Do NOT include "Best regards", "Regards", "Sincerely", "Thanks", or any closing with a name
+5. End with a final sentence of content
+6. Match the formality of the original
 
-Return ONLY JSON: {"subject":"Re: ...","body":"the complete reply message"}`;
-    
+Return ONLY JSON: {"subject":"Re: ...","body":"complete reply"}`;
+
     try {
       const text = await callAI(prompt);
       const parsed = safeParseJSON(text);
@@ -434,15 +438,14 @@ Return ONLY JSON: {"subject":"Re: ...","body":"the complete reply message"}`;
         return res.json({ ok: true, subject: parsed.subject || ('Re: ' + originalSubject), body: stripSignature(parsed.body), aiPowered: true });
       }
     } catch (e) { console.error('AI smart reply failed:', e.message); }
-    
-    // Fallback
+
     const firstName = (originalFrom || '').match(/^([A-Za-z]+)/);
     const greetName = firstName ? firstName[1] : 'there';
-    res.json({ 
-      ok: true, 
-      subject: 'Re: ' + (originalSubject || ''), 
-      body: `Dear ${greetName},\n\nThank you for your email. I have received your message and will review it carefully.\n\nI will get back to you shortly with a detailed response.\n\nLooking forward to connecting with you.`, 
-      aiPowered: false 
+    res.json({
+      ok: true,
+      subject: 'Re: ' + (originalSubject || ''),
+      body: `Dear ${greetName},\n\nThank you for your email. I have received your message and will review it carefully.\n\nI will get back to you shortly with a detailed response.`,
+      aiPowered: false
     });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
@@ -524,7 +527,6 @@ app.get('/api/ai/best-time', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: true, bestHours: [9, 11, 14], reasoning: 'Default', aiPowered: false }); }
 });
 
-// ============ INBOX ============
 app.post('/api/inbox/list', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -673,7 +675,7 @@ app.post('/api/reply/send', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ============ TEST LAB ============
+// ✅ FIXED: Test Lab with tracking support
 app.get('/api/test/stats', adminRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -781,7 +783,12 @@ app.post('/api/test/automation/run', adminRequired, async (req, res) => {
         const sig = u.testSignature || u.signature || '';
         const bodyHtml = bodyText.replace(/\n/g, '<br>');
         const sigHtml = sig ? '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>' : '';
-        const full = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">' + bodyHtml + sigHtml + '</div>';
+        // Tracking pixel
+        const tok = crypto.randomBytes(16).toString('hex');
+        await db.collection('users').doc(uid).collection('testRecipients').doc(r.id).update({ trackToken: tok });
+        const tu = (process.env.BACKEND_URL || 'https://mailflow-pro-ten.vercel.app') + '/track/' + r.id + '?u=' + uid + '&t=' + tok + '&type=test';
+        const pix = '<img src="' + tu + '" width="1" height="1" alt="" style="border:0;display:block;width:1px;height:1px">';
+        const full = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">' + bodyHtml + sigHtml + pix + '</div>';
         const raw = buildMime(u.name || 'User', u.email, rec.email, subject, full, [], { isBulk: false });
         await gmail.users.messages.send({ userId: 'me', requestBody: { raw } });
         await db.collection('users').doc(uid).collection('testLog').add({ recipientEmail: rec.email, subject, body: bodyText, sentAt: new Date(), recipientId: r.id, attachmentsCount: 0 });
@@ -795,6 +802,8 @@ app.post('/api/test/automation/run', adminRequired, async (req, res) => {
     res.json({ ok: true, sent, failed });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
+
+// ✅ FIXED: Test send with tracking pixel
 app.post('/api/test/send', adminRequired, async (req, res) => {
   try {
     const { recipientId, subject, body, to, includeSignature, includeLogo, selectedFileIds, sendDelay, useTestSignature } = req.body;
@@ -818,8 +827,17 @@ app.post('/api/test/send', adminRequired, async (req, res) => {
       if (includeLogo === false) sig = sig.replace(/<img[^>]*>/gi, '');
       sigHtml = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>';
     }
+    // Add tracking pixel
+    let pix = '';
+    let trackTok = null;
+    if (recipientId) {
+      trackTok = crypto.randomBytes(16).toString('hex');
+      await db.collection('users').doc(uid).collection('testRecipients').doc(recipientId).update({ trackToken: trackTok });
+      const tu = (process.env.BACKEND_URL || 'https://mailflow-pro-ten.vercel.app') + '/track/' + recipientId + '?u=' + uid + '&t=' + trackTok + '&type=test';
+      pix = '<img src="' + tu + '" width="1" height="1" alt="" style="border:0;display:block;width:1px;height:1px">';
+    }
     const bodyHtml = body.replace(/\n/g, '<br>');
-    const full = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">' + bodyHtml + sigHtml + '</div>';
+    const full = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">' + bodyHtml + sigHtml + pix + '</div>';
     const atts = [];
     if (selectedFileIds && selectedFileIds.length > 0) {
       const fs = await db.collection('users').doc(uid).collection('files').get();
@@ -841,7 +859,6 @@ app.get('/api/test/log', adminRequired, async (req, res) => {
   try { const s = await db.collection('users').doc(req.session.user.id).collection('testLog').orderBy('sentAt','desc').limit(200).get(); const l = []; s.forEach(d => l.push({ id: d.id, ...d.data() })); res.json({ ok: true, logs: l }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ============ FILES / LOGO / TEMPLATES / RECIPIENTS / SEND ============
 app.post('/api/upload-logo', authRequired, async (req, res) => {
   try {
     const { base64, mimeType, filename } = req.body;
@@ -1077,14 +1094,16 @@ app.post('/api/resend', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+// ✅ FIXED: Track endpoint supports both regular and test recipients
 app.get('/track/:id', async (req, res) => {
   try {
-    const u = req.query.u; const t = req.query.t;
+    const u = req.query.u; const t = req.query.t; const type = req.query.type;
     if (u && t) {
-      const r = await db.collection('users').doc(u).collection('recipients').doc(req.params.id).get();
+      const coll = type === 'test' ? 'testRecipients' : 'recipients';
+      const r = await db.collection('users').doc(u).collection(coll).doc(req.params.id).get();
       if (r.exists && r.data().trackToken === t) {
         if (r.data().status !== 'Opened') {
-          await db.collection('users').doc(u).collection('recipients').doc(req.params.id).update({ status: 'Opened', openedAt: new Date() });
+          await db.collection('users').doc(u).collection(coll).doc(req.params.id).update({ status: 'Opened', openedAt: new Date() });
         }
       }
     }

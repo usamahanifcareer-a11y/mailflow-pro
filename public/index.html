@@ -10,12 +10,7 @@
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-:root{
-  --bg:#060912;--bg2:#0a0e1a;--bg3:#0f172a;--panel:rgba(15,23,42,.72);
-  --border:#1a2338;--border2:#243049;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
-  --cyan:#38bdf8;--indigo:#6366f1;--purple:#a78bfa;--green:#22c55e;--amber:#f59e0b;--red:#ef4444;--pink:#ec4899;
-  --grad:linear-gradient(135deg,#38bdf8,#6366f1,#a78bfa);
-}
+:root{--bg:#060912;--bg2:#0a0e1a;--bg3:#0f172a;--panel:rgba(15,23,42,.72);--border:#1a2338;--border2:#243049;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--cyan:#38bdf8;--indigo:#6366f1;--purple:#a78bfa;--green:#22c55e;--amber:#f59e0b;--red:#ef4444;--pink:#ec4899;--grad:linear-gradient(135deg,#38bdf8,#6366f1,#a78bfa)}
 html,body{min-height:100vh;overflow-x:hidden}
 body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
 body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at top left,rgba(56,189,248,.07),transparent 50%),radial-gradient(ellipse at bottom right,rgba(168,85,247,.07),transparent 50%);pointer-events:none;z-index:0}
@@ -51,7 +46,7 @@ input,textarea,select{font-variant-numeric:tabular-nums}
 .logo-top{font-size:17px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.3px;white-space:nowrap}
 .user-chip{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);flex-wrap:wrap}
 .user-avatar{width:30px;height:30px;border-radius:50%;border:2px solid var(--cyan);object-fit:cover;box-shadow:0 0 0 3px rgba(56,189,248,.15)}
-.user-chip button{background:#1e293b;border:1px solid #334155;color:#cbd5e1;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:.2s}
+.user-chip button{background:#1e293b;border:1px solid #334155;color:#cbd5e1;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:600}
 .user-chip button:hover{background:#334155;color:#fff}
 .badge.admin{background:linear-gradient(90deg,rgba(168,85,247,.3),rgba(56,189,248,.3));color:#e9d5ff;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;border:1px solid rgba(168,85,247,.4)}
 .app-id-pill{background:var(--grad);color:white;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:700;font-family:'Courier New',monospace;letter-spacing:.5px}
@@ -92,10 +87,10 @@ input,textarea,select{font-variant-numeric:tabular-nums}
 /* FIELDS */
 .field{margin-bottom:12px}
 .field label{display:block;font-size:10px;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.6px;font-weight:700}
-.field input,.field textarea,.field select{width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:11px 13px;font-size:15px;transition:.2s;outline:none;-webkit-appearance:none;appearance:none}
-.field select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
-.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.15);background:#0c1220}
-.field input::placeholder,.field textarea::placeholder{color:#475569}
+.field>input,.field>textarea,.field>select{width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:11px 13px;font-size:15px;transition:.2s;outline:none;-webkit-appearance:none;appearance:none}
+.field>select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
+.field>input:focus,.field>textarea:focus,.field>select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.15);background:#0c1220}
+.field>input::placeholder,.field>textarea::placeholder{color:#475569}
 
 /* BUTTONS */
 .btn{background:var(--grad);color:white;border:none;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;justify-content:center;transition:.25s;box-shadow:0 4px 12px rgba(56,189,248,.2);white-space:nowrap}
@@ -142,7 +137,6 @@ table.data-table th{text-align:left;font-size:10px;color:var(--text2);text-trans
 table.data-table td{padding:12px 10px;border-bottom:1px solid rgba(26,35,56,.5);color:#cbd5e1;vertical-align:middle}
 table.data-table tbody tr:hover td{background:rgba(56,189,248,.04)}
 table.data-table tr.selected td{background:rgba(56,189,248,.08)}
-table.data-table tbody tr:last-child td{border-bottom:none}
 
 /* BADGES */
 .badge{display:inline-flex;align-items:center;gap:3px;padding:4px 9px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap;letter-spacing:.3px}
@@ -161,10 +155,10 @@ table.data-table tbody tr:last-child td{border-bottom:none}
 .badge.other{background:rgba(100,116,139,.15);color:#94a3b8;border:1px solid rgba(100,116,139,.3)}
 .badge.attach{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3);font-weight:800}
 
-/* CHECKBOX */
-.cbox{appearance:none;-webkit-appearance:none;width:18px;height:18px;border:2px solid #475569;border-radius:5px;cursor:pointer;position:relative;background:var(--bg2);vertical-align:middle;transition:.15s;flex-shrink:0}
+/* CHECKBOX — FIXED SIZE */
+.cbox{appearance:none;-webkit-appearance:none;width:18px!important;height:18px!important;min-width:18px!important;max-width:18px!important;border:2px solid #475569;border-radius:5px;cursor:pointer;position:relative;background:var(--bg2);vertical-align:middle;flex-shrink:0;padding:0!important;margin:0}
 .cbox:checked{background:var(--cyan);border-color:var(--cyan)}
-.cbox:checked::after{content:'✓';position:absolute;color:white;font-size:13px;font-weight:700;top:50%;left:50%;transform:translate(-50%,-50%)}
+.cbox:checked::after{content:'✓';position:absolute;color:white;font-size:13px;font-weight:700;top:50%;left:50%;transform:translate(-50%,-50%);line-height:1}
 
 /* EMPTY */
 .empty{text-align:center;padding:40px 20px;color:var(--text3);font-size:13px}
@@ -176,7 +170,7 @@ table.data-table tbody tr:last-child td{border-bottom:none}
 .tpl-card .info{flex:1;min-width:0}
 .tpl-card .name{font-size:14px;font-weight:700;color:var(--text);word-break:break-word}
 .tpl-card .sub{font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:4px}
-.tpl-card button{padding:6px 10px;font-size:11px;border-radius:7px;border:none;cursor:pointer;background:#1e293b;color:#cbd5e1;font-weight:600;transition:.2s}
+.tpl-card button{padding:6px 10px;font-size:11px;border-radius:7px;border:none;cursor:pointer;background:#1e293b;color:#cbd5e1;font-weight:600}
 .tpl-card button:hover{background:#334155;color:#fff}
 .tpl-card button.danger{background:rgba(127,29,29,.5);color:#fca5a5}
 
@@ -233,17 +227,16 @@ table.data-table tbody tr:last-child td{border-bottom:none}
 .sig-preview-outer{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:14px;display:none}
 .sig-preview-canvas{background:#fff!important;border-radius:10px;padding:20px;overflow-x:auto;font-family:Arial,Helvetica,sans-serif}
 
-/* FILE CARD (Clean) */
-.file-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;transition:.2s;cursor:pointer;user-select:none}
+/* FILE ITEM — FIXED (no vertical text) */
+.file-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;transition:.2s;cursor:pointer;user-select:none;width:100%}
 .file-item:hover{border-color:var(--border2);background:#0c1220}
 .file-item.selected{border-color:var(--cyan);background:rgba(56,189,248,.08);box-shadow:0 0 0 1px rgba(56,189,248,.25)}
-.file-item .check{width:20px;height:20px;flex-shrink:0}
 .file-item .icon{width:40px;height:40px;border-radius:9px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-.file-item .info{flex:1;min-width:0}
+.file-item .info{flex:1;min-width:0;overflow:hidden}
 .file-item .fname{font-size:13px;font-weight:600;color:var(--text);word-break:break-all;line-height:1.3}
 .file-item .fmeta{font-size:11px;color:var(--text3);margin-top:3px}
-.file-item .actions{display:flex;gap:6px;flex-shrink:0}
-.file-item .actions button{padding:6px 10px;font-size:11px;border-radius:7px;border:none;cursor:pointer;background:rgba(127,29,29,.5);color:#fca5a5;font-weight:600;transition:.2s}
+.file-item .actions{flex-shrink:0}
+.file-item .actions button{padding:6px 10px;font-size:11px;border-radius:7px;border:none;cursor:pointer;background:rgba(127,29,29,.5);color:#fca5a5;font-weight:600}
 .file-item .actions button:hover{background:rgba(153,27,27,.7)}
 
 /* MODAL */
@@ -274,12 +267,11 @@ table.data-table tbody tr:last-child td{border-bottom:none}
 .tip-ic{font-size:16px;flex-shrink:0;line-height:1.3}
 .tip b{display:block;font-size:12px;color:var(--text);margin-bottom:2px}
 .tip span{font-size:11px;color:var(--text2);line-height:1.5;display:block}
-
 .logo-warning{background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(239,68,68,.1));border:1px solid rgba(245,158,11,.4);border-radius:10px;padding:10px 12px;margin-bottom:12px;display:flex;align-items:flex-start;gap:10px}
 .logo-warning .warn-ic{font-size:18px;flex-shrink:0}
 .logo-warning .warn-text{font-size:11px;color:#fcd34d;line-height:1.5}
 
-.quiet-banner{display:none;background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(239,68,68,.1));border:1px solid rgba(245,158,11,.4);border-radius:12px;padding:12px 16px;margin-bottom:18px;align-items:center;gap:12px;flex-wrap:wrap;animation:fadeIn .3s}
+.quiet-banner{display:none;background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(239,68,68,.1));border:1px solid rgba(245,158,11,.4);border-radius:12px;padding:12px 16px;margin-bottom:18px;align-items:center;gap:12px;flex-wrap:wrap}
 .quiet-banner.show{display:flex}
 .quiet-banner .icn{font-size:22px}
 .quiet-banner .info{flex:1;min-width:180px}
@@ -323,12 +315,12 @@ table.data-table tbody tr:last-child td{border-bottom:none}
 .ai-issue.high{background:rgba(239,68,68,.1);border-color:var(--red);color:#fca5a5}
 .ai-issue.low{background:rgba(56,189,248,.1);border-color:var(--cyan);color:#7dd3fc}
 .ai-suggestion{padding:8px 10px;background:rgba(34,197,94,.08);border-left:3px solid var(--green);border-radius:6px;font-size:11px;color:#86efac;margin-bottom:6px;line-height:1.4}
-.ai-subject-item{padding:9px 11px;background:#0f172a;border:1px solid var(--border);border-radius:6px;margin-bottom:6px;font-size:12px;color:#cbd5e1;cursor:pointer;line-height:1.4;transition:.2s}
+.ai-subject-item{padding:9px 11px;background:#0f172a;border:1px solid var(--border);border-radius:6px;margin-bottom:6px;font-size:12px;color:#cbd5e1;cursor:pointer;line-height:1.4}
 .ai-subject-item:hover{border-color:var(--cyan);background:#1e293b;color:#7dd3fc}
-.deep-btn{background:linear-gradient(135deg,#a78bfa,#6366f1);border:none;color:white;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;text-transform:none;letter-spacing:0}
+.deep-btn{background:linear-gradient(135deg,#a78bfa,#6366f1);border:none;color:white;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;text-transform:none}
 
 .send-options-row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
-.send-options-row label{display:flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--border);padding:9px 12px;border-radius:8px;font-size:12px;color:#cbd5e1;cursor:pointer;transition:.2s;font-weight:500}
+.send-options-row label{display:flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--border);padding:9px 12px;border-radius:8px;font-size:12px;color:#cbd5e1;cursor:pointer;font-weight:500}
 .send-options-row label:hover{border-color:var(--cyan)}
 .send-options-row input[type=checkbox]{accent-color:var(--cyan);width:15px;height:15px;cursor:pointer}
 
@@ -390,8 +382,8 @@ table.data-table tbody tr:last-child td{border-bottom:none}
 .inbox-pagination{display:flex;justify-content:center;align-items:center;gap:12px;padding:16px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-top:14px;flex-wrap:wrap}
 .inbox-pagination .page-info{font-size:13px;color:var(--text2);font-weight:600;padding:8px 16px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)}
 .inbox-pagination button{padding:10px 20px;font-size:13px;font-weight:600;border-radius:10px;border:1px solid var(--border2);background:var(--bg2);color:#cbd5e1;cursor:pointer;transition:.2s}
-.inbox-pagination button:hover:not(:disabled){background:#1e293b;border-color:var(--cyan);color:#7dd3fc;transform:translateY(-1px)}
-.inbox-pagination button:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.inbox-pagination button:hover:not(:disabled){background:#1e293b;border-color:var(--cyan);color:#7dd3fc}
+.inbox-pagination button:disabled{opacity:.4;cursor:not-allowed}
 
 .tag{display:inline-block;background:rgba(56,189,248,.1);color:#7dd3fc;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;border:1px solid rgba(56,189,248,.2)}
 
@@ -406,7 +398,6 @@ table.data-table tbody tr:last-child td{border-bottom:none}
 .danger-zone{border-color:rgba(239,68,68,.3);background:linear-gradient(135deg,rgba(239,68,68,.05),rgba(220,38,38,.03))}
 .danger-zone h2{color:#fca5a5}
 
-/* Mobile nav */
 @media(max-width:768px){
   .maintabs{position:fixed;bottom:0;top:auto;left:0;right:0;padding:6px 8px;z-index:200;border-top:1px solid var(--border);border-bottom:none;justify-content:space-around;box-shadow:0 -10px 30px rgba(0,0,0,.3)}
   .maintab{flex:1;text-align:center;font-size:10px;padding:8px 4px}
@@ -625,7 +616,7 @@ table.data-table tbody tr:last-child td{border-bottom:none}
           <h2>✍️ My Signature <span>Logo + details</span></h2>
           <div class="logo-warning">
             <div class="warn-ic">⚠️</div>
-            <div class="warn-text"><b>Warning:</b> Adding a logo <b>increases spam risk</b>. Skip the logo for better inbox placement.</div>
+            <div class="warn-text"><b>Warning:</b> Adding a logo <b>increases spam risk</b>. Skip for better inbox placement.</div>
           </div>
           <div class="upload-area">
             <input type="file" id="logoInput" accept="image/*">
@@ -852,7 +843,6 @@ table.data-table tbody tr:last-child td{border-bottom:none}
       <div class="stat s5"><div class="label">Test Log</div><div class="value" id="tstLog">0</div></div>
     </div>
 
-    <!-- Add Test Recipients -->
     <div class="panel">
       <h2>➕ Add Test Recipients <span>Bulk & Manual</span></h2>
       <div class="tabs">
@@ -873,7 +863,7 @@ table.data-table tbody tr:last-child td{border-bottom:none}
           <input type="file" id="testBulkFileInput" accept=".txt,.csv,.xlsx,.xls,.json" style="display:none">
           <button class="btn ghost" onclick="document.getElementById('testBulkFileInput').click()" style="border:1px dashed var(--cyan);color:#7dd3fc">📁 Upload File (CSV/Excel/TXT)</button>
         </div>
-        <textarea class="bulk-area" id="testBulkInput" placeholder="Paste test emails here...&#10;Example:&#10;test1@gmail.com&#10;Test Company, test2@gmail.com"></textarea>
+        <textarea class="bulk-area" id="testBulkInput" placeholder="Paste test emails here..."></textarea>
         <div class="bulk-preview-wrap" id="testBulkPreviewWrap">
           <div class="bulk-preview-head">
             <div class="lbl">🔍 Preview</div>
@@ -891,15 +881,17 @@ table.data-table tbody tr:last-child td{border-bottom:none}
       </div>
     </div>
 
-    <!-- Send Test Email -->
     <div class="panel">
       <h2>📤 Send Test Email <span>Full features</span></h2>
       
       <div class="field">
         <label>📝 Use Template (Optional)</label>
-        <select id="testTemplateSelect" onchange="onTestTemplateChange()">
-          <option value="">-- Manual entry --</option>
-        </select>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <select id="testTemplateSelect" onchange="onTestTemplateChange()" style="flex:1;min-width:200px">
+            <option value="">-- Manual entry --</option>
+          </select>
+          <button class="btn ghost small" onclick="saveTestAsTemplate()" style="white-space:nowrap">💾 Save as Template</button>
+        </div>
       </div>
 
       <div class="field"><label>To (Email)</label><input type="text" id="testTo" placeholder="test@example.com" autocomplete="off"></div>
@@ -918,7 +910,10 @@ table.data-table tbody tr:last-child td{border-bottom:none}
       <div style="margin-bottom:12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
           <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;font-weight:700">📝 Test Signature (Optional)</div>
-          <button class="btn ghost tiny" onclick="toggleTestSigPanel()" id="testSigToggleBtn">✏️ Edit Test Signature</button>
+          <div style="display:flex;gap:6px">
+            <button class="btn ghost tiny" onclick="previewTestSig()">👁 Preview</button>
+            <button class="btn ghost tiny" onclick="toggleTestSigPanel()" id="testSigToggleBtn">✏️ Edit</button>
+          </div>
         </div>
         <div id="testSigFields" class="hidden" style="padding:12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px">
           <div class="sig-fields">
@@ -933,30 +928,23 @@ table.data-table tbody tr:last-child td{border-bottom:none}
           <div class="field"><label>Extra Line</label><input type="text" id="testSbExtra" placeholder="Optional" autocomplete="off"></div>
           <button class="btn small" onclick="saveTestSignature()">💾 Save Test Signature</button>
         </div>
-      </div>
-
-      <div class="field">
-        <label>⏱️ Send Delay (seconds)</label>
-        <input type="number" id="testDelay" min="0" max="60" value="0" placeholder="0" oninput="checkTestDelayWarning()">
-        <div id="testDelayWarning" class="warning-banner" style="display:none">
-          <div class="icn">⚠️</div>
-          <div id="testDelayWarningText"></div>
+        <div id="testSigPreviewBox" class="sig-preview-outer">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;font-weight:700">📧 TEST SIGNATURE PREVIEW</div>
+          <div class="sig-preview-canvas" id="testSigPreviewContent"></div>
         </div>
       </div>
 
       <div class="field">
         <label>📎 Select Files to Attach</label>
-        <div id="testFilesList" style="padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;max-height:250px;overflow-y:auto"></div>
-        <div style="font-size:10px;color:var(--text3);margin-top:4px">Files upload karo dashboard se. Yahan click karke select karo.</div>
+        <div id="testFilesList" style="padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;max-height:280px;overflow-y:auto"></div>
       </div>
       
       <button class="btn" onclick="sendTestEmail()" style="width:100%;margin-top:8px;padding:14px;font-size:15px;font-weight:700">🚀 Send Test Email</button>
     </div>
 
-    <!-- Automation Testing -->
     <div class="panel">
       <h2>🤖 Automation Testing <span>Manual trigger</span></h2>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Auto-send manually trigger karo test ke liye. Normal automation affect nahi hoga.</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Auto-send manually trigger karo. Normal automation affect nahi hoga.</div>
       
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
         <div class="field" style="margin:0">
@@ -976,14 +964,12 @@ table.data-table tbody tr:last-child td{border-bottom:none}
       </div>
 
       <button class="btn warn" onclick="runTestAutomation()" style="width:100%">▶️ Run Auto-Send Now (Test)</button>
-      <div style="font-size:10px;color:var(--text3);margin-top:6px;text-align:center">Ye sirf test recipients ko bhejega</div>
     </div>
 
-    <!-- Test Recipients -->
     <div class="panel">
       <h2>📋 Test Recipients <span id="testRecipCount"></span></h2>
       <div class="filter-bar">
-        <input type="text" class="search-bar" id="testRecipSearch" placeholder="Search test recipients..." oninput="renderTestRecipients()">
+        <input type="text" class="search-bar" id="testRecipSearch" placeholder="Search..." oninput="renderTestRecipients()">
         <select id="testRecipStatusFilter" onchange="renderTestRecipients()">
           <option value="all">All Status</option>
           <option value="Pending">Pending</option>
@@ -994,19 +980,17 @@ table.data-table tbody tr:last-child td{border-bottom:none}
       <div class="bulk-action-bar" id="testBulkActionBar">
         <span id="testSelectedCount" style="color:#7dd3fc;font-weight:700;font-size:12px;margin-right:auto">0 selected</span>
         <button class="btn ghost small" onclick="testSelectAll()">☑️ Select All</button>
-        <button class="btn danger small" onclick="testDeleteSelected()">🗑 Delete Selected</button>
+        <button class="btn danger small" onclick="testDeleteSelected()">🗑 Delete</button>
         <button class="btn ghost small" onclick="testClearSelection()">Clear</button>
       </div>
       <div id="testRecipientsWrap" class="tbl-wrap"></div>
     </div>
 
-    <!-- Test Send Log -->
     <div class="panel">
       <h2>📜 Test Send Log</h2>
       <div id="testLogWrap" class="tbl-wrap"></div>
     </div>
 
-    <!-- Danger Zone -->
     <div class="panel danger-zone">
       <h2>🗑 Danger Zone</h2>
       <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Sab test recipients aur logs delete karo. Permanent hai.</div>
@@ -1079,8 +1063,8 @@ table.data-table tbody tr:last-child td{border-bottom:none}
     <div class="field"><label>To</label><input type="text" id="replyTo" autocomplete="off"></div>
     <div class="field"><label>Subject</label><input type="text" id="replySubject" autocomplete="off"></div>
     <div class="field"><label>Message</label><textarea id="replyBody" class="bulk-area" placeholder="Write your reply..." style="min-height:220px;font-family:inherit;font-size:14px;line-height:1.6"></textarea></div>
-    <div id="replyAIActions" style="display:none;margin-bottom:12px;display:flex;gap:8px">
-      <button class="btn ghost small" onclick="regenerateAIReply()" style="flex:1">🔄 Regenerate AI Reply</button>
+    <div id="replyAIActions" style="display:none;margin-bottom:12px">
+      <button class="btn ghost small" onclick="regenerateAIReply()" style="width:100%">🔄 Regenerate AI Reply</button>
     </div>
     <button class="btn" onclick="sendReply()" style="width:100%">📤 Send Reply</button>
   </div>
@@ -1252,15 +1236,6 @@ function checkSendDelayWarning(){
   else if(val<3){warn.style.display='flex';warn.className='warning-banner';txt.innerHTML='<b>Caution:</b> 3-5 seconds recommended for best inbox placement.';}
   else{warn.style.display='none';}
 }
-function checkTestDelayWarning(){
-  var input=$('testDelay');if(!input)return;
-  var val=parseInt(input.value)||0;
-  var warn=$('testDelayWarning'), txt=$('testDelayWarningText');
-  if(!warn)return;
-  if(val<2 && val>=0){warn.style.display='flex';warn.className='warning-banner danger';txt.innerHTML='<b>High spam risk!</b> Below 2s. Real automation mein minimum 3s rakho.';}
-  else if(val<3 && val>=2){warn.style.display='flex';warn.className='warning-banner';txt.innerHTML='<b>Caution:</b> 3-5 seconds recommended for best delivery.';}
-  else{warn.style.display='none';}
-}
 
 // ============ AI ============
 function scheduleAnalysis(){if(analysisTimer)clearTimeout(analysisTimer);$('aiLiveStatus').innerText='Typing...';analysisTimer=setTimeout(runLiveAnalysis,1500);}
@@ -1413,6 +1388,48 @@ function saveSig(){var h=buildSigHtml();if(!h)return toast('Fill some fields','e
 async function resetSig(){var ok=await showConfirm({icon:'🗑',title:'Reset Signature?',message:'All fields cleared.',okText:'Reset',primary:false});if(!ok)return;['sbName','sbPos','sbCompany','sbPhone','sbEmail','sbLinkedin','sbGreeting','sbExtra'].forEach(function(id){$(id).value='';});$('sigPreviewBox').style.display='none';}
 function loadSignature(){api('/api/signature').then(function(r){if(!r.ok)return;var f=r.fields||{};['name','pos','company','phone','email','linkedin','greeting','extra'].forEach(function(k){var id='sb'+k.charAt(0).toUpperCase()+k.slice(1);if(f[k]&&$(id))$(id).value=f[k];});if(r.signature){$('sigPreviewContent').innerHTML=r.signature;$('sigPreviewBox').style.display='block';}});}
 
+function buildTestSigHtml(){
+  var name=$('testSbName').value.trim(),pos=$('testSbPos').value.trim(),comp=$('testSbCompany').value.trim();
+  var phone=$('testSbPhone').value.trim(),mail=$('testSbEmail').value.trim(),li=$('testSbLinkedin').value.trim();
+  var greet=$('testSbGreeting').value.trim(),extra=$('testSbExtra').value.trim();
+  if(!name&&!phone&&!mail&&!extra)return '';
+  var phoneClean=phone.replace(/[^0-9+]/g,'');
+  var liUrl=li?(li.indexOf('http')===0?li:'https://'+li):'';
+  var h='<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-family:Arial,sans-serif"><tr><td style="vertical-align:top">';
+  if(greet)h+='<div style="color:#666;margin-bottom:8px;font-size:13px">'+esc(greet)+'</div>';
+  if(name)h+='<div style="font-weight:bold;font-size:15px;color:#111;margin-bottom:2px">'+esc(name)+'</div>';
+  if(pos)h+='<div style="color:#666;font-size:12px">'+esc(pos)+'</div>';
+  if(comp)h+='<div style="color:#666;font-size:12px;margin-bottom:8px">'+esc(comp)+'</div>';
+  var lines=[];
+  if(phone)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">📞 <b>Phone:</b> <a href="tel:'+phoneClean+'" style="color:#1a73e8;text-decoration:none">'+esc(phone)+'</a></div>');
+  if(mail)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">✉️ <b>Email:</b> <a href="mailto:'+esc(mail)+'" style="color:#1a73e8;text-decoration:none">'+esc(mail)+'</a></div>');
+  if(liUrl)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">🔗 <b>LinkedIn:</b> <a href="'+liUrl+'" style="color:#1a73e8;text-decoration:none">'+esc(li)+'</a></div>');
+  if(extra)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">'+esc(extra)+'</div>');
+  if(lines.length)h+=lines.join('');
+  h+='</td></tr></table>';
+  return h;
+}
+function previewTestSig(){
+  var h=buildTestSigHtml();
+  if(!h)return toast('Fill some fields first','err');
+  $('testSigPreviewContent').innerHTML=h;
+  $('testSigPreviewBox').style.display='block';
+}
+function saveTestSignature(){
+  var h=buildTestSigHtml();
+  if(!h)return toast('Fill some fields','err');
+  var f={name:$('testSbName').value.trim(),pos:$('testSbPos').value.trim(),company:$('testSbCompany').value.trim(),phone:$('testSbPhone').value.trim(),email:$('testSbEmail').value.trim(),linkedin:$('testSbLinkedin').value.trim(),greeting:$('testSbGreeting').value.trim(),extra:$('testSbExtra').value.trim()};
+  api('/api/test/signature','POST',{signature:h,fields:f}).then(function(r){
+    if(r.ok){toast('✅ Test signature saved');$('testSigPreviewContent').innerHTML=h;$('testSigPreviewBox').style.display='block';}
+    else toast('Error: '+r.error,'err');
+  });
+}
+function toggleTestSigPanel(){
+  var p=$('testSigFields');if(!p)return;
+  if(p.classList.contains('hidden')){p.classList.remove('hidden');$('testSigToggleBtn').innerText='✖ Close';}
+  else{p.classList.add('hidden');$('testSigToggleBtn').innerText='✏️ Edit';}
+}
+
 // ============ LOGO ============
 function loadLogo(){
   api('/api/logo').then(function(r){
@@ -1512,6 +1529,17 @@ function onTestTemplateChange(){
   $('testBody').value=t.body||'';
   toast('✅ Template loaded');
 }
+function saveTestAsTemplate(){
+  var subject=$('testSubject').value.trim();
+  var body=$('testBody').value.trim();
+  if(!subject||!body)return toast('Fill Subject and Body first','err');
+  var name=prompt('Template name:',subject.substring(0,30));
+  if(!name)return;
+  api('/api/templates','POST',{name:name,subject:subject,body:body}).then(function(r){
+    if(r.ok){toast('✅ Saved as "'+(r.name||name)+'"');loadTemplates();}
+    else toast('Error: '+r.error,'err');
+  });
+}
 
 // ============ RECIPIENTS ============
 function addRow(){var w=$('recipients'),d=document.createElement('div');d.className='recip-row';d.innerHTML='<input type="text" placeholder="Company (optional)" autocomplete="off"><input type="email" placeholder="email@example.com" autocomplete="off"><button class="del" onclick="this.parentNode.remove()">✕</button>';w.appendChild(d);}
@@ -1580,28 +1608,15 @@ function readFileToText(file,callback){
 document.addEventListener('DOMContentLoaded',function(){
   var ta=$('bulkInput');if(ta)ta.addEventListener('input',updateBulk);
   var fi=$('bulkFileInput');
-  if(fi){
-    fi.addEventListener('change',function(e){
-      var file=e.target.files[0];if(!file)return;
-      readFileToText(file,function(text){$('bulkInput').value=text;updateBulk();toast('✅ Loaded: '+file.name);});
-      e.target.value='';
-    });
-  }
+  if(fi){fi.addEventListener('change',function(e){var file=e.target.files[0];if(!file)return;readFileToText(file,function(text){$('bulkInput').value=text;updateBulk();toast('✅ Loaded: '+file.name);});e.target.value='';});}
   var tfi=$('testBulkFileInput');
-  if(tfi){
-    tfi.addEventListener('change',function(e){
-      var file=e.target.files[0];if(!file)return;
-      readFileToText(file,function(text){$('testBulkInput').value=text;updateTestBulk();toast('✅ Loaded: '+file.name);});
-      e.target.value='';
-    });
-  }
+  if(tfi){tfi.addEventListener('change',function(e){var file=e.target.files[0];if(!file)return;readFileToText(file,function(text){$('testBulkInput').value=text;updateTestBulk();toast('✅ Loaded: '+file.name);});e.target.value='';});}
   var tbi=$('testBulkInput');
   if(tbi)tbi.addEventListener('input',updateTestBulk);
   var sdi=$('sendDelayInput');
   if(sdi){sdi.addEventListener('input',checkSendDelayWarning);sdi.addEventListener('change',checkSendDelayWarning);}
 });
 
-// ============ LOAD ALL ============
 function loadAll(isManual){
   if(isManual)toast('Refreshing...');
   api('/api/stats').then(function(r){if(!r.ok)return;$('stTotal').innerText=r.stats.total;$('stSent').innerText=r.stats.sent;$('stOpened').innerText=r.stats.opened;$('stPending').innerText=r.stats.pending;$('stTotalSends').innerText=r.stats.totalSends||0;});
@@ -1822,12 +1837,12 @@ function openReplyCompose(useAI){
   $('replyBody').value='';
   $('replyModalTitle').innerText=useAI?'🤖 AI Smart Reply':'↩️ Reply';
   $('replyAIHint').style.display=useAI?'block':'none';
-  $('replyAIActions').style.display=useAI?'flex':'none';
+  $('replyAIActions').style.display=useAI?'block':'none';
   $('replyComposeBackdrop').classList.remove('hidden');
   $('replyComposeBackdrop').setAttribute('data-thread',ACTIVE_EMAIL.threadId||'');
   $('replyComposeBackdrop').setAttribute('data-msgid',ACTIVE_EMAIL.id||'');
   if(useAI){
-    $('replyAIStatus').innerText='🤖 AI Smart Reply — analyzing full email...';
+    $('replyAIStatus').innerText='🤖 AI analyzing full email...';
     generateAIReply(ACTIVE_EMAIL);
   }
 }
@@ -1836,7 +1851,11 @@ async function generateAIReply(email){
     var bodyText = email.snippet || '';
     try{
       var r = await api('/api/inbox/email/'+encodeURIComponent(email.id));
-      if(r.ok && r.email) bodyText = r.email.bodyText || r.email.bodyHtml || r.email.snippet;
+      if(r.ok && r.email){
+        var fullBody = r.email.bodyText || '';
+        if(!fullBody && r.email.bodyHtml) fullBody = r.email.bodyHtml.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+        if(fullBody) bodyText = fullBody;
+      }
     }catch(e){}
     $('replyAIStatus').innerText='🤖 Generating reply...';
     var res = await api('/api/ai/smart-reply','POST',{
@@ -1847,18 +1866,24 @@ async function generateAIReply(email){
     if(res.ok && res.body){
       $('replyBody').value = res.body;
       if(res.subject) $('replySubject').value = res.subject;
-      $('replyAIStatus').innerText = res.aiPowered ? '✅ AI reply generated — edit if needed' : '⚠️ Basic reply (AI busy) — edit if needed';
+      $('replyAIStatus').innerText = res.aiPowered ? '✅ AI reply generated — edit if needed' : '⚠️ Basic reply (AI busy)';
       toast(res.aiPowered?'✅ AI reply generated':'⚠️ Basic reply');
     } else {
-      $('replyAIStatus').innerText='⚠️ Failed to generate — write manually';
+      $('replyAIStatus').innerText='⚠️ Failed to generate';
       toast('Failed to generate AI reply','err');
     }
   }catch(e){
-    $('replyAIStatus').innerText='⚠️ Error — write manually';
+    $('replyAIStatus').innerText='⚠️ Error';
     toast('AI error: '+e.message,'err');
   }
 }
-function regenerateAIReply(){if(ACTIVE_EMAIL){$('replyBody').value='';toast('🔄 Regenerating...');generateAIReply(ACTIVE_EMAIL);}}
+function regenerateAIReply(){
+  if(!ACTIVE_EMAIL)return;
+  $('replyBody').value='';
+  $('replyAIStatus').innerText='🤖 Regenerating...';
+  toast('🔄 Regenerating...');
+  generateAIReply(ACTIVE_EMAIL);
+}
 function closeReplyCompose(){$('replyComposeBackdrop').classList.add('hidden');}
 function sendReply(){
   var to=$('replyTo').value.trim();var subject=$('replySubject').value.trim();var body=$('replyBody').value.trim();
@@ -1931,6 +1956,7 @@ function loadTestDashboard(){
   api('/api/test/signature').then(function(r){
     if(!r.ok)return;var f=r.fields||{};
     ['name','pos','company','phone','email','linkedin','greeting','extra'].forEach(function(k){var id='testSb'+k.charAt(0).toUpperCase()+k.slice(1);if(f[k]&&$(id))$(id).value=f[k];});
+    if(r.signature){$('testSigPreviewContent').innerHTML=r.signature;$('testSigPreviewBox').style.display='block';}
   });
   renderTestFiles();
 }
@@ -1943,12 +1969,13 @@ function renderTestRecipients(){
   if($('testRecipCount'))$('testRecipCount').innerText=filtered.length+' / '+TEST_RECIPIENTS.length;
   if(!TEST_RECIPIENTS.length){w.innerHTML='<div class="empty">No test recipients</div>';updateTestBulkBar();return;}
   if(!filtered.length){w.innerHTML='<div class="empty">No matches</div>';updateTestBulkBar();return;}
-  var h='<table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" class="cbox" onchange="testToggleAll(this.checked)"></th><th>Email</th><th>Company</th><th>Status</th><th>Sent</th><th>Action</th></tr></thead><tbody>';
+  var h='<table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" class="cbox" onchange="testToggleAll(this.checked)"></th><th>Email</th><th>Company</th><th>Status</th><th>Sent</th><th>Opened</th><th>Action</th></tr></thead><tbody>';
   filtered.forEach(function(x){
     var st=(x.status||'').toLowerCase();var cls=st==='opened'?'opened':st==='sent'?'sent':'pending';
+    var icon=st==='opened'?'👁':st==='sent'?'📤':'⏳';
     h+='<tr class="'+(TEST_SELECTED[x.id]?'selected':'')+'"><td><input type="checkbox" class="cbox" '+(TEST_SELECTED[x.id]?'checked':'')+' onchange="testToggleOne(\''+x.id+'\',this.checked)"></td>';
-    h+='<td>'+esc(x.email)+'</td><td>'+esc(x.company||'—')+'</td><td><span class="badge '+cls+'">'+esc(x.status)+'</span></td><td style="font-size:11px">'+fmtDate(x.sentAt)+'</td>';
-    h+='<td><button class="btn ghost small" onclick="document.getElementById(\'testTo\').value=\''+esc(x.email)+'\'">Use</button> <button class="btn danger small" onclick="delTestRec(\''+x.id+'\')">✕</button></td></tr>';
+    h+='<td>'+esc(x.email)+'</td><td>'+esc(x.company||'—')+'</td><td><span class="badge '+cls+'">'+icon+' '+esc(x.status)+'</span></td><td style="font-size:11px">'+fmtDate(x.sentAt)+'</td><td style="font-size:11px">'+(x.openedAt?fmtDate(x.openedAt):'—')+'</td>';
+    h+='<td style="white-space:nowrap"><button class="btn ghost small" onclick="document.getElementById(\'testTo\').value=\''+esc(x.email)+'\'">Use</button> <button class="btn danger small" onclick="delTestRec(\''+x.id+'\')">✕</button></td></tr>';
   });
   h+='</tbody></table>';w.innerHTML=h;updateTestBulkBar();
 }
@@ -1978,46 +2005,15 @@ async function clearTestData(){
   });
 }
 
-function toggleTestSigPanel(){
-  var p=$('testSigFields');if(!p)return;
-  if(p.classList.contains('hidden')){p.classList.remove('hidden');$('testSigToggleBtn').innerText='✖ Close';}
-  else{p.classList.add('hidden');$('testSigToggleBtn').innerText='✏️ Edit Test Signature';}
-}
-function saveTestSignature(){
-  var name=$('testSbName').value.trim(),pos=$('testSbPos').value.trim(),comp=$('testSbCompany').value.trim();
-  var phone=$('testSbPhone').value.trim(),mail=$('testSbEmail').value.trim(),li=$('testSbLinkedin').value.trim();
-  var greet=$('testSbGreeting').value.trim(),extra=$('testSbExtra').value.trim();
-  if(!name&&!phone&&!mail&&!extra)return toast('Fill some fields','err');
-  var phoneClean=phone.replace(/[^0-9+]/g,'');
-  var liUrl=li?(li.indexOf('http')===0?li:'https://'+li):'';
-  var h='<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-family:Arial,sans-serif"><tr><td style="vertical-align:top">';
-  if(greet)h+='<div style="color:#666;margin-bottom:8px;font-size:13px">'+esc(greet)+'</div>';
-  if(name)h+='<div style="font-weight:bold;font-size:15px;color:#111;margin-bottom:2px">'+esc(name)+'</div>';
-  if(pos)h+='<div style="color:#666;font-size:12px">'+esc(pos)+'</div>';
-  if(comp)h+='<div style="color:#666;font-size:12px;margin-bottom:8px">'+esc(comp)+'</div>';
-  var lines=[];
-  if(phone)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">📞 <b>Phone:</b> <a href="tel:'+phoneClean+'" style="color:#1a73e8;text-decoration:none">'+esc(phone)+'</a></div>');
-  if(mail)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">✉️ <b>Email:</b> <a href="mailto:'+esc(mail)+'" style="color:#1a73e8;text-decoration:none">'+esc(mail)+'</a></div>');
-  if(liUrl)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">🔗 <b>LinkedIn:</b> <a href="'+liUrl+'" style="color:#1a73e8;text-decoration:none">'+esc(li)+'</a></div>');
-  if(extra)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">'+esc(extra)+'</div>');
-  if(lines.length)h+=lines.join('');
-  h+='</td></tr></table>';
-  api('/api/test/signature','POST',{signature:h,fields:{name,pos,company:comp,phone,email:mail,linkedin:li,greeting:greet,extra}}).then(function(r){
-    if(r.ok){toast('✅ Test signature saved');}
-    else toast('Error: '+r.error,'err');
-  });
-}
-
 function sendTestEmail(){
   var to=$('testTo').value.trim(),subject=$('testSubject').value.trim(),body=$('testBody').value.trim();
   if(!to||!subject||!body)return toast('Fill To, Subject, Body','err');
-  var delay=parseInt($('testDelay').value)||0;
   var selectedFiles=Object.keys(TEST_SELECTED_FILES);
   var useTestSig=$('testUseTestSig').checked;
   var useNormalSig=$('testUseNormalSig').checked;
   var includeSig=useTestSig||useNormalSig;
-  var payload={to:to,subject:subject,body:body,includeSignature:includeSig,includeLogo:$('testIncludeLogo').checked,selectedFileIds:selectedFiles,sendDelay:delay,useTestSignature:useTestSig};
-  toast(delay>0?('Delaying '+delay+'s before send...'):'Sending test...');
+  var payload={to:to,subject:subject,body:body,includeSignature:includeSig,includeLogo:$('testIncludeLogo').checked,selectedFileIds:selectedFiles,sendDelay:0,useTestSignature:useTestSig};
+  toast('Sending test...');
   api('/api/test/send','POST',payload).then(function(r){
     if(r.ok){toast('✅ Test sent to '+r.email);loadTestDashboard();}
     else toast('Error: '+r.error,'err');
