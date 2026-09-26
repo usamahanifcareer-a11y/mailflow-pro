@@ -80,7 +80,7 @@ async function fetchWithTimeout(url, opts, ms) {
 function stripSignature(text) {
   if (!text) return text;
   let t = text;
-  t = t.replace(/\n{1,}(Best regards|Regards|Sincerely|Thanks|Thank you|Warm regards|Kind regards|Yours truly|Cheers|Warmly|Yours|Respectfully|Looking forward)[^\n]*[\s\S]*$/i, '');
+  t = t.replace(/\n{1,}(Best regards|Regards|Sincerely|Thanks|Thank you|Warm regards|Kind regards|Yours truly|Cheers|Warmly|Yours|Respectfully)[^\n]*[\s\S]*$/i, '');
   t = t.replace(/\n{1,}[-—=_]{2,}[\s\S]*$/i, '');
   return t.trim();
 }
@@ -107,8 +107,8 @@ async function callGroq(prompt) {
   if (!GROQ_KEY) throw new Error('No key');
   const r = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY },
-    body: JSON.stringify({ model: 'openai/gpt-oss-120b', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 900 })
-  }, 15000);
+    body: JSON.stringify({ model: 'openai/gpt-oss-120b', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 1200 })
+  }, 20000);
   if (!r.ok) throw new Error('Groq ' + r.status);
   const d = await r.json(); return (d.choices?.[0]?.message?.content || '').trim();
 }
@@ -124,8 +124,8 @@ async function callOpenRouter(prompt) {
   const r = await fetchWithTimeout('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENROUTER_KEY, 'HTTP-Referer': process.env.BACKEND_URL || 'https://mailflow-pro-ten.vercel.app', 'X-Title': 'MailFlow Pro' },
-    body: JSON.stringify({ model: 'openrouter/free', messages: [{ role: 'user', content: prompt + '\nReturn valid JSON only.' }], temperature: 0.7, max_tokens: 900 })
-  }, 15000);
+    body: JSON.stringify({ model: 'openrouter/free', messages: [{ role: 'user', content: prompt + '\nReturn valid JSON only.' }], temperature: 0.7, max_tokens: 1200 })
+  }, 20000);
   if (!r.ok) throw new Error('OpenRouter ' + r.status);
   const d = await r.json(); return (d.choices?.[0]?.message?.content || '').trim();
 }
@@ -134,8 +134,8 @@ async function callMistral(prompt) {
   const doFetch = async () => {
     const r = await fetchWithTimeout('https://api.mistral.ai/v1/chat/completions', {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + MISTRAL_KEY },
-      body: JSON.stringify({ model: 'mistral-small-latest', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 900 })
-    }, 15000);
+      body: JSON.stringify({ model: 'mistral-small-latest', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 1200 })
+    }, 20000);
     if (r.status === 429) { const e = new Error('Rate limited'); e.retryAfter = parseInt(r.headers.get('retry-after') || '5', 10); throw e; }
     if (!r.ok) throw new Error('Mistral ' + r.status);
     const d = await r.json(); return (d.choices?.[0]?.message?.content || '').trim();
@@ -259,8 +259,7 @@ function buildMime(fromName, fromEmail, to, subject, htmlBody, attachments, opti
   return Buffer.from(headers.join('\r\n')).toString('base64').replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 }
 
-// ============ AUTH ============
-app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL, firebase: !!serviceAccount.project_id }));
+app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL }));
 
 app.get('/auth/google', (req, res) => { const url = oauth2Client.generateAuthUrl({ access_type: 'offline', scope: SCOPES, prompt: 'consent' }); res.redirect(url); });
 
@@ -281,8 +280,6 @@ app.get('/auth/google/callback', async (req, res) => {
     } else {
       const ex = existing.data();
       if (!ex.appAccountId) data.appAccountId = generateAppAccountId();
-      if (ex.autoSendBatchSize === undefined) data.autoSendBatchSize = 5;
-      if (ex.totalAutoSent === undefined) data.totalAutoSent = 0;
       if (ex.sendDelay === undefined) data.sendDelay = DEFAULT_SEND_DELAY;
     }
     await db.collection('users').doc(uid).set(data, { merge: true });
@@ -307,7 +304,7 @@ app.get('/api/quota', authRequired, async (req, res) => {
     const u = await getUserData(userId);
     if (!u || !u.tokens) return res.json({ ok: false, error: 'Session expired' });
     const cached = quotaCache.get(userId);
-    if (cached && Date.now() - cached.time < 30000) return res.json({ ...cached.data, cached: true });
+    if (cached && Date.now() - cached.time < 20000) return res.json({ ...cached.data, cached: true });
     let sent = 0;
     try {
       const client = setUserOAuth(u.tokens);
@@ -326,13 +323,12 @@ app.get('/api/quota', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ============ AI ============
+// ============ AI ANALYZE ============
 app.post('/api/ai/analyze-live', authRequired, async (req, res) => {
   try {
     const { subject, body } = req.body;
     if (!subject && !body) return res.json({ ok: true, empty: true });
     try {
-      const u = await getUserData(req.session.user.id);
       const cleanBody = (body || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 1200);
       const prompt = `Analyze this email for spam score. Return ONLY JSON.
 Subject: "${(subject || '').substring(0, 200)}"
@@ -399,13 +395,15 @@ Return: {"subject":"under 60 chars","body":"with \\n\\n breaks"}`;
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+// ============ AI SMART REPLY (IMPROVED) ============
 app.post('/api/ai/smart-reply', authRequired, async (req, res) => {
   try {
     const { originalSubject, originalBody, originalFrom, instruction } = req.body;
     if (!originalBody) return res.json({ ok: false, error: 'No original body' });
     const u = await getUserData(req.session.user.id);
     const userName = u.name || u.email.split('@')[0];
-    const prompt = `You are an expert email assistant. Write a SMART, PROFESSIONAL reply.
+    
+    const prompt = `You are an expert email assistant. Write a thoughtful, professional reply to this email.
 
 ORIGINAL EMAIL:
 From: ${originalFrom || 'Unknown'}
@@ -416,14 +414,36 @@ ${(originalBody || '').substring(0, 3000)}
 ${instruction ? 'USER INSTRUCTION: ' + instruction : ''}
 
 YOUR NAME: ${userName}
-STRICT: Return ONLY the reply body — no signature, no sign-off name.
-Return ONLY JSON: {"subject":"Re: ...","body":"the reply message"}`;
+
+RULES:
+1. Start with a proper greeting (Dear [name], or Hi [name],) matching the formality of the original
+2. Write 2-3 concise paragraphs addressing the points in the original email
+3. Be warm, professional, and helpful
+4. If it's a job/application email, respond politely and professionally
+5. If it's a question, answer it directly
+6. If it's a follow-up, acknowledge and respond appropriately
+7. End with a final sentence of content (no "Best regards", "Sincerely", "Thank you", name, or signature block)
+8. Match the language of the original email
+
+Return ONLY JSON: {"subject":"Re: ...","body":"the complete reply message"}`;
+    
     try {
       const text = await callAI(prompt);
       const parsed = safeParseJSON(text);
-      if (parsed && parsed.body) return res.json({ ok: true, subject: parsed.subject || ('Re: ' + originalSubject), body: stripSignature(parsed.body), aiPowered: true });
-    } catch (e) {}
-    res.json({ ok: true, subject: 'Re: ' + (originalSubject || ''), body: 'Thank you for your email. I will review it and respond shortly.', aiPowered: false });
+      if (parsed && parsed.body && parsed.body.length > 20) {
+        return res.json({ ok: true, subject: parsed.subject || ('Re: ' + originalSubject), body: stripSignature(parsed.body), aiPowered: true });
+      }
+    } catch (e) { console.error('AI smart reply failed:', e.message); }
+    
+    // Fallback
+    const firstName = (originalFrom || '').match(/^([A-Za-z]+)/);
+    const greetName = firstName ? firstName[1] : 'there';
+    res.json({ 
+      ok: true, 
+      subject: 'Re: ' + (originalSubject || ''), 
+      body: `Dear ${greetName},\n\nThank you for your email. I have received your message and will review it carefully.\n\nI will get back to you shortly with a detailed response.\n\nLooking forward to connecting with you.`, 
+      aiPowered: false 
+    });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -613,8 +633,7 @@ app.get('/api/inbox/email/:id', authRequired, async (req, res) => {
 
 app.get('/api/inbox/attachment/:messageId/:attachmentId', authRequired, async (req, res) => {
   try {
-    const uid = req.session.user.id;
-    const u = await getUserData(uid);
+    const u = await getUserData(req.session.user.id);
     if (!u.tokens) return res.status(401).json({ ok: false });
     const client = setUserOAuth(u.tokens);
     const gmail = google.gmail({ version: 'v1', auth: client });
@@ -666,11 +685,9 @@ app.get('/api/test/stats', adminRequired, async (req, res) => {
     res.json({ ok: true, stats: { total: t.data().count, sent: s.data().count, opened: o.data().count, pending: p.data().count, totalSends: ts.data().count } });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-
 app.get('/api/test/recipients', adminRequired, async (req, res) => {
   try { const s = await db.collection('users').doc(req.session.user.id).collection('testRecipients').orderBy('createdAt','desc').limit(500).get(); const l = []; s.forEach(d => l.push({ id: d.id, ...d.data() })); res.json({ ok: true, recipients: l }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-
 app.post('/api/test/recipients', adminRequired, async (req, res) => {
   try {
     const { list } = req.body;
@@ -688,15 +705,11 @@ app.post('/api/test/recipients', adminRequired, async (req, res) => {
     res.json({ ok: true, added: a });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-
-app.delete('/api/test/recipients/:id', adminRequired, async (req, res) => {
-  try { await db.collection('users').doc(req.session.user.id).collection('testRecipients').doc(req.params.id).delete(); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-
+app.delete('/api/test/recipients/:id', adminRequired, async (req, res) => { try { await db.collection('users').doc(req.session.user.id).collection('testRecipients').doc(req.params.id).delete(); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); } });
 app.post('/api/test/recipients/bulk-delete', adminRequired, async (req, res) => {
   try {
     const { ids } = req.body;
-    if (!ids || !ids.length) return res.json({ ok: false, error: 'No ids' });
+    if (!ids || !ids.length) return res.json({ ok: false });
     const b = db.batch();
     const r = db.collection('users').doc(req.session.user.id).collection('testRecipients');
     ids.forEach(id => b.delete(r.doc(id)));
@@ -704,7 +717,6 @@ app.post('/api/test/recipients/bulk-delete', adminRequired, async (req, res) => 
     res.json({ ok: true, deleted: ids.length });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-
 app.post('/api/test/clear', adminRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -731,45 +743,24 @@ app.post('/api/test/clear', adminRequired, async (req, res) => {
     res.json({ ok: true, deleted: totalDeleted });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-
-// Test templates
-app.get('/api/test/templates', adminRequired, async (req, res) => {
-  try { const s = await db.collection('users').doc(req.session.user.id).collection('testTemplates').get(); const l = []; s.forEach(d => l.push({ id: d.id, ...d.data() })); res.json({ ok: true, templates: l }); } catch (e) { res.json({ ok: false, error: e.message }); }
+app.get('/api/test/prefs', adminRequired, async (req, res) => {
+  try { const d = await getUserData(req.session.user.id); res.json({ ok: true, prefs: { sendDelay: d.testSendDelay !== undefined ? d.testSendDelay : DEFAULT_SEND_DELAY, autoSend: d.testAutoSend === true, autoSendBatchSize: d.testAutoSendBatchSize || 5, lastRun: d.testLastAutoRun || null, totalAutoSent: d.testTotalAutoSent || 0 } }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-app.post('/api/test/templates', adminRequired, async (req, res) => {
+app.post('/api/test/prefs', adminRequired, async (req, res) => {
   try {
-    const { name, subject, body } = req.body;
-    if (!name || !subject || !body) return res.json({ ok: false, error: 'Required' });
-    const d = await db.collection('users').doc(req.session.user.id).collection('testTemplates').add({ name, subject, body, createdAt: new Date() });
-    res.json({ ok: true, id: d.id });
+    const { sendDelay, autoSend, autoSendBatchSize } = req.body;
+    let sd = Number(sendDelay); if (isNaN(sd) || sd < 0) sd = DEFAULT_SEND_DELAY; if (sd > 120) sd = 120;
+    let bs = Number(autoSendBatchSize); if (isNaN(bs) || bs < 1) bs = 5; if (bs > 100) bs = 100;
+    await db.collection('users').doc(req.session.user.id).update({ testSendDelay: sd, testAutoSend: !!autoSend, testAutoSendBatchSize: bs });
+    res.json({ ok: true });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-app.delete('/api/test/templates/:id', adminRequired, async (req, res) => { try { await db.collection('users').doc(req.session.user.id).collection('testTemplates').doc(req.params.id).delete(); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); } });
-
-// Test signature
 app.get('/api/test/signature', adminRequired, async (req, res) => {
   try { const d = await getUserData(req.session.user.id); res.json({ ok: true, signature: d.testSignature || d.signature || '', fields: d.testSigFields || d.sigFields || {} }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.post('/api/test/signature', adminRequired, async (req, res) => {
   try { const u = { testSignature: req.body.signature || '' }; if (req.body.fields) u.testSigFields = req.body.fields; await db.collection('users').doc(req.session.user.id).update(u); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-
-// Test prefs (delay, automation)
-app.get('/api/test/prefs', adminRequired, async (req, res) => {
-  try { const d = await getUserData(req.session.user.id); res.json({ ok: true, prefs: { sendDelay: d.testSendDelay !== undefined ? d.testSendDelay : DEFAULT_SEND_DELAY, autoSend: d.testAutoSend === true, autoSendBatchSize: d.testAutoSendBatchSize || 5, quietEnabled: d.testQuietEnabled === true, quietStart: d.testQuietStart !== undefined ? d.testQuietStart : 22, quietEnd: d.testQuietEnd !== undefined ? d.testQuietEnd : 7, lastRun: d.testLastAutoRun || null, totalAutoSent: d.testTotalAutoSent || 0 } }); } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-app.post('/api/test/prefs', adminRequired, async (req, res) => {
-  try {
-    const { sendDelay, autoSend, autoSendBatchSize, quietEnabled, quietStart, quietEnd } = req.body;
-    let sd = Number(sendDelay); if (isNaN(sd) || sd < 0) sd = DEFAULT_SEND_DELAY; if (sd > 120) sd = 120;
-    let bs = Number(autoSendBatchSize); if (isNaN(bs) || bs < 1) bs = 5; if (bs > 100) bs = 100;
-    const update = { testSendDelay: sd, testAutoSend: !!autoSend, testAutoSendBatchSize: bs, testQuietEnabled: !!quietEnabled, testQuietStart: Number(quietStart) || 22, testQuietEnd: Number(quietEnd) || 7 };
-    await db.collection('users').doc(req.session.user.id).update(update);
-    res.json({ ok: true });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-
-// Test run automation (manual trigger)
 app.post('/api/test/automation/run', adminRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -785,7 +776,7 @@ app.post('/api/test/automation/run', adminRequired, async (req, res) => {
     for (const r of ps.docs) {
       try {
         const rec = r.data();
-        const subject = u.name ? 'Test Email from ' + u.name : 'Test Email';
+        const subject = 'Test Email from MailFlow Pro';
         const bodyText = 'Hello,\n\nThis is an automated test email.\n\nThank you.';
         const sig = u.testSignature || u.signature || '';
         const bodyHtml = bodyText.replace(/\n/g, '<br>');
@@ -804,7 +795,6 @@ app.post('/api/test/automation/run', adminRequired, async (req, res) => {
     res.json({ ok: true, sent, failed });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-
 app.post('/api/test/send', adminRequired, async (req, res) => {
   try {
     const { recipientId, subject, body, to, includeSignature, includeLogo, selectedFileIds, sendDelay, useTestSignature } = req.body;
@@ -847,7 +837,6 @@ app.post('/api/test/send', adminRequired, async (req, res) => {
     res.json({ ok: true, email: targetEmail });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-
 app.get('/api/test/log', adminRequired, async (req, res) => {
   try { const s = await db.collection('users').doc(req.session.user.id).collection('testLog').orderBy('sentAt','desc').limit(200).get(); const l = []; s.forEach(d => l.push({ id: d.id, ...d.data() })); res.json({ ok: true, logs: l }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
@@ -1094,7 +1083,9 @@ app.get('/track/:id', async (req, res) => {
     if (u && t) {
       const r = await db.collection('users').doc(u).collection('recipients').doc(req.params.id).get();
       if (r.exists && r.data().trackToken === t) {
-        if (r.data().status !== 'Opened') await db.collection('users').doc(u).collection('recipients').doc(req.params.id).update({ status: 'Opened', openedAt: new Date() });
+        if (r.data().status !== 'Opened') {
+          await db.collection('users').doc(u).collection('recipients').doc(req.params.id).update({ status: 'Opened', openedAt: new Date() });
+        }
       }
     }
   } catch (e) {}
@@ -1174,7 +1165,6 @@ app.post('/api/auto-send-check', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ============ ADMIN ============
 app.get('/api/admin/dashboard', adminRequired, async (req, res) => {
   try {
     const us = await db.collection('users').get();
