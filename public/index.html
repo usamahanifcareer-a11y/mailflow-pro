@@ -7,6 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#060912">
+<meta name="google-site-verification" content="Y_1_w9TfP74Xl2ZSqPhjCe656klGCiZh84tDWabJkcQ" />
 <title>MailFlow Pro — AI Email Automation</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -131,6 +132,7 @@ table.data-table tr.clickable{cursor:pointer}
 .badge.sent{background:rgba(56,189,248,.15);color:#7dd3fc;border:1px solid rgba(56,189,248,.3)}
 .badge.opened{background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.3);animation:pulse-opened 2s ease-in-out infinite}
 .badge.count{background:rgba(236,72,153,.15);color:#f9a8d4;border:1px solid rgba(236,72,153,.3)}
+.badge.attach{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3);font-weight:800}
 .badge.interested{background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.3)}
 .badge.not-interested{background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.3)}
 .badge.question{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3)}
@@ -142,7 +144,6 @@ table.data-table tr.clickable{cursor:pointer}
 .badge.other{background:rgba(100,116,139,.15);color:#94a3b8;border:1px solid rgba(100,116,139,.3)}
 .badge.invoice{background:rgba(56,189,248,.15);color:#7dd3fc;border:1px solid rgba(56,189,248,.3)}
 .badge.order{background:rgba(168,85,247,.15);color:#c4b5fd;border:1px solid rgba(168,85,247,.3)}
-.badge.attach{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3);font-weight:800}
 .cbox{appearance:none;-webkit-appearance:none;width:18px!important;height:18px!important;min-width:18px!important;max-width:18px!important;border:2px solid #475569;border-radius:5px;cursor:pointer;position:relative;background:var(--bg2);vertical-align:middle;flex-shrink:0;padding:0!important;margin:0}
 .cbox:checked{background:var(--cyan);border-color:var(--cyan)}
 .cbox:checked::after{content:'✓';position:absolute;color:white;font-size:13px;font-weight:700;top:50%;left:50%;transform:translate(-50%,-50%);line-height:1}
@@ -450,7 +451,6 @@ input,textarea,select{min-height:44px}
 <div class="maintab hidden" id="tabAdmin" onclick="switchMain('admin')">👑 Admin</div>
 </div>
 
-<!-- DASHBOARD -->
 <div class="container" id="myView">
 <div class="page-layout">
 <aside class="sidebar">
@@ -698,7 +698,6 @@ input,textarea,select{min-height:44px}
 </div>
 </div>
 
-<!-- INBOX -->
 <div class="container hidden" id="inboxView">
 <div id="imapSetupPanel" class="hidden">
 <div class="setup-card">
@@ -763,7 +762,6 @@ input,textarea,select{min-height:44px}
 </div>
 </div>
 
-<!-- AI PROFILE -->
 <div class="container hidden" id="profileView">
 <div class="panel">
 <h2>🧠 AI Profile <span>AI personalizes emails as YOU</span></h2>
@@ -786,7 +784,6 @@ input,textarea,select{min-height:44px}
 </div>
 </div>
 
-<!-- AI TOOLS -->
 <div class="container hidden" id="testView">
 <div class="panel" style="background:linear-gradient(135deg,rgba(168,85,247,.08),rgba(56,189,248,.08));border-color:rgba(168,85,247,.3)">
 <h2>🤖 AI Tools <span>Multi-provider</span></h2>
@@ -809,7 +806,6 @@ input,textarea,select{min-height:44px}
 </div>
 </div>
 
-<!-- TEST LAB -->
 <div class="container hidden" id="testDashView">
 <div class="test-banner"><div class="ico">🧪</div><div class="txt">TEST LAB — Admin only. Emails sent here do NOT count in your dashboard stats.</div></div>
 <div class="stats">
@@ -940,7 +936,6 @@ input,textarea,select{min-height:44px}
 </div>
 </div>
 
-<!-- ADMIN -->
 <div class="container hidden" id="adminView">
 <div class="stats">
 <div class="stat s1"><div class="label">Users</div><div class="value" id="adTotalUsers">0</div></div>
@@ -962,7 +957,6 @@ input,textarea,select{min-height:44px}
 </div>
 </div>
 
-<!-- MODALS -->
 <div id="aiWriterModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeAIWriter()">
 <div class="modal" style="max-width:560px">
 <button class="close-btn" onclick="closeAIWriter()">✕</button>
@@ -1203,7 +1197,7 @@ function addRow(){var w=$('recipients'),d=document.createElement('div');d.classN
 function submitRecipients(){var rows=$('recipients').querySelectorAll('.recip-row'),list=[];rows.forEach(function(r){var i=r.querySelectorAll('input');if(i[1].value.trim())list.push({company:i[0].value.trim(),email:i[1].value.trim()});});if(!list.length)return toast('No emails entered','err');api('/api/recipients','POST',{list:list,templateId:$('tplSelect').value}).then(function(r){if(r.ok){toast('✅ '+r.added+' recipients added');$('recipients').innerHTML='';addRow();loadAll();}else toast('Error: '+r.error,'err');});}
 function switchTab(t){if(t==='manual'){$('tabManual').classList.add('active');$('tabBulk').classList.remove('active');$('manualTab').classList.remove('hidden');$('bulkTab').classList.add('hidden');}else{$('tabBulk').classList.add('active');$('tabManual').classList.remove('active');$('bulkTab').classList.remove('hidden');$('manualTab').classList.add('hidden');updateBulk();}}
 function parseBulk(text){var emailRx=/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;var lines=text.split(/\r?\n/);var found={};var seen=new Set();var dup=0;for(var i=0;i<lines.length;i++){var line=lines[i];if(!line.trim())continue;var emails=line.match(emailRx)||[];if(!emails.length)continue;var cleanLine=line;for(var j=0;j<emails.length;j++)cleanLine=cleanLine.replace(emails[j],' ');cleanLine=cleanLine.replace(/[,;|<>"'\(\)\[\]]/g,' ').replace(/\s+/g,' ').trim();var company='';if(cleanLine.length>=2&&cleanLine.length<=80){var compacted=cleanLine.replace(/\s/g,'');var looksLikeDomain=/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(compacted);var isSingleWord=!cleanLine.includes(' ');if(!looksLikeDomain&&!(isSingleWord&&/^[a-z0-9._-]+$/i.test(cleanLine)))company=cleanLine;}for(var k=0;k<emails.length;k++){var em=emails[k].toLowerCase();if(seen.has(em)){dup++;continue;}seen.add(em);found[em]=company;}}var valid=Object.keys(found).map(function(e){return{email:e,company:found[e]};});return{valid:valid,dup:dup};}
-function updateBulk(){var text=$('bulkInput').value;var r=parseBulk(text);var wrap=$('bulkPreviewWrap');var table=$('bulkPreviewTable');$('bulkValidPill').innerText='✅ '+r.valid.length;$('bulkDupPill').innerText='🔁 '+r.dup;if(!text.trim()||r.valid.length===0){wrap.classList.remove('show');return;}wrap.classList.add('show');var h='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3);position:sticky;top:0">#</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3)">Company</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3)">Email</th></tr></thead><tbody>';r.valid.slice(0,50).forEach(function(row,idx){h+='<tr><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:var(--text3);font-size:11px">'+(idx+1)+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#cbd5e1">'+(row.company?esc(row.company):'—')+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#7dd3fc;font-family:Courier New,monospace;font-size:11px;word-break:break-all">'+esc(row.email)+'</td></tr>';});if(r.valid.length>50)h+='<tr><td colspan="3" style="text-align:center;color:var(--text3);font-style:italic;padding:10px">... +'+(r.valid.length-50)+' more</td></tr>';h+='</tbody></table>';table.innerHTML=h;}
+function updateBulk(){var text=$('bulkInput').value;var r=parseBulk(text);var wrap=$('bulkPreviewWrap');var table=$('bulkPreviewTable');$('bulkValidPill').innerText='✅ '+r.valid.length;$('bulkDupPill').innerText='🔁 '+r.dup;if(!text.trim()||r.valid.length===0){wrap.classList.remove('show');return;}wrap.classList.add('show');var h='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3)">#</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3)">Company</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3)">Email</th></tr></thead><tbody>';r.valid.slice(0,50).forEach(function(row,idx){h+='<tr><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:var(--text3);font-size:11px">'+(idx+1)+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#cbd5e1">'+(row.company?esc(row.company):'—')+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#7dd3fc;font-family:Courier New,monospace;font-size:11px;word-break:break-all">'+esc(row.email)+'</td></tr>';});if(r.valid.length>50)h+='<tr><td colspan="3" style="text-align:center;color:var(--text3);font-style:italic;padding:10px">... +'+(r.valid.length-50)+' more</td></tr>';h+='</tbody></table>';table.innerHTML=h;}
 function clearBulk(){$('bulkInput').value='';updateBulk();}
 function submitBulk(){var r=parseBulk($('bulkInput').value);if(!r.valid.length)return toast('No emails found','err');var items=r.valid;var emptyCount=r.valid.filter(function(x){return !x.company;}).length;if(emptyCount>0&&emptyCount<r.valid.length){toast('🤖 AI extracting company names...');api('/api/ai/parse-bulk','POST',{text:$('bulkInput').value}).then(function(aiRes){if(aiRes.ok&&aiRes.items&&aiRes.items.length)items=aiRes.items.map(function(i){return{email:i.email,company:i.company||''};});sendBulkRecipients(items);}).catch(function(){sendBulkRecipients(items);});}else sendBulkRecipients(items);}
 function sendBulkRecipients(items){api('/api/recipients','POST',{list:items,templateId:$('tplSelect').value}).then(function(res){if(res.ok){toast('✅ '+res.added+' recipients added');$('bulkInput').value='';updateBulk();loadAll();switchTab('manual');}else toast('Error: '+res.error,'err');});}
@@ -1298,7 +1292,6 @@ document.getElementById('quietToggle').addEventListener('change',function(){$('q
 document.getElementById('autoSendToggle').addEventListener('change',function(){$('batchSizeBox').classList.toggle('show',this.checked);});
 function savePrefs(){var bs=parseInt($('batchNumber').value)||5;var sd=parseInt($('sendDelayInput').value);if(isNaN(sd)||sd<0)sd=20;if(sd>120)sd=120;if(bs>MY_QUOTA.remaining){toast('❌ Cannot exceed remaining quota ('+MY_QUOTA.remaining+')','err');return;}var payload={autoSend:$('autoSendToggle').checked,autoSendBatchSize:bs,quietEnabled:$('quietToggle').checked,quietStart:Number($('quietStartSel').value),quietEnd:Number($('quietEndSel').value),sendDelay:sd};if($('optAutoSig'))payload.autoSendIncludeSignature=$('optAutoSig').checked;if($('optAutoLogo'))payload.autoSendIncludeLogo=$('optAutoLogo').checked;api('/api/prefs','POST',payload).then(function(r){if(r.ok)toast('✅ Settings saved');else toast('Error: '+r.error,'err');});}
 
-/* IMAP */
 function checkIMAPStatus(){api('/api/imap/status').then(function(r){if(!r.ok){showIMAPSetup();return;}IMAP_CONNECTED=!!r.connected;if(IMAP_CONNECTED){$('imapSetupPanel').classList.add('hidden');$('imapInboxUI').classList.remove('hidden');if($('imapSyncInfo'))$('imapSyncInfo').innerText='⚡ Total synced: '+(r.totalSynced||0);}else{showIMAPSetup();}}).catch(function(){showIMAPSetup();});}
 function showIMAPSetup(){$('imapSetupPanel').classList.remove('hidden');$('imapInboxUI').classList.add('hidden');}
 async function connectIMAP(){var pass=$('imapAppPassword').value.trim();if(!pass||pass.replace(/\s/g,'').length<16){return toast('App Password must be 16 characters','err');}var btn=$('imapConnectBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Testing connection...';toast('🔌 Testing IMAP connection...');try{var r=await api('/api/imap/connect','POST',{appPassword:pass});if(r.ok){toast('✅ Inbox connected!');$('imapAppPassword').value='';IMAP_CONNECTED=true;$('imapSetupPanel').classList.add('hidden');$('imapInboxUI').classList.remove('hidden');loadIMAPInbox();}else{toast('Error: '+r.error,'err');}}catch(e){toast('Error: '+e.message,'err');}btn.disabled=false;btn.innerHTML='🔌 Connect Inbox';}
@@ -1309,7 +1302,6 @@ function openIMAPEmail(i){var e=INBOX_EMAILS[i];if(!e)return;ACTIVE_EMAIL=e;docu
 async function deleteIMAPEmail(){if(!ACTIVE_EMAIL)return;var ok=await showConfirm({icon:'🗑',title:'Delete from MailFlow?',message:'This removes the email from MailFlow only (not from Gmail).',okText:'Delete'});if(!ok)return;api('/api/imap/email/'+encodeURIComponent(ACTIVE_EMAIL.id),'DELETE').then(function(r){if(r.ok){toast('Deleted');INBOX_EMAILS=INBOX_EMAILS.filter(function(e){return e.id!==ACTIVE_EMAIL.id;});ACTIVE_EMAIL=null;$('inboxViewerContent').classList.add('hidden');$('inboxEmpty').classList.remove('hidden');renderInboxList();}else toast('Error: '+r.error,'err');});}
 function composeReplyToInbox(){if(!ACTIVE_EMAIL)return;var subj=ACTIVE_EMAIL.subject||'';$('composerSubject').value=/^re:/i.test(subj)?subj:('Re: '+subj);$('composerBody').value='';switchMain('my');setTimeout(function(){$('composerSubject').scrollIntoView({behavior:'smooth',block:'center'});toast('✍️ Compose your reply and add recipient');},300);}
 
-/* TEST LAB */
 function switchTestTab(t){if(t==='manual'){$('testTabManual').classList.add('active');$('testTabBulk').classList.remove('active');$('testManualTab').classList.remove('hidden');$('testBulkTab').classList.add('hidden');}else{$('testTabBulk').classList.add('active');$('testTabManual').classList.remove('active');$('testBulkTab').classList.remove('hidden');$('testManualTab').classList.add('hidden');updateTestBulk();}}
 function addTestRow(){var w=$('testRecipientsRows');if(!w)return;var d=document.createElement('div');d.className='recip-row';d.innerHTML='<input type="text" placeholder="Company (optional)" autocomplete="off"><input type="email" placeholder="test@example.com" autocomplete="off"><button class="del" onclick="this.parentNode.remove()">✕</button>';w.appendChild(d);}
 function submitTestRecipientsManual(){var rows=$('testRecipientsRows').querySelectorAll('.recip-row');var list=[];rows.forEach(function(r){var i=r.querySelectorAll('input');if(i[1].value.trim())list.push({company:i[0].value.trim(),email:i[1].value.trim()});});if(!list.length)return toast('No emails entered','err');api('/api/test/recipients','POST',{list:list}).then(function(res){if(res.ok){toast('✅ '+res.added+' added');$('testRecipientsRows').innerHTML='';addTestRow();loadTestDashboard();}else toast('Error: '+res.error,'err');});}
@@ -1330,7 +1322,6 @@ async function clearTestData(){var ok=await showConfirm({icon:'⚠️',title:'Cl
 function sendTestEmail(){var to=$('testTo').value.trim(),subject=$('testSubject').value.trim(),body=$('testBody').value.trim();if(!to||!subject||!body)return toast('Fill To, Subject, and Body','err');var selectedFiles=Object.keys(TEST_SELECTED_FILES);var useTestSig=$('testUseTestSig').checked;var useNormalSig=$('testUseNormalSig').checked;var includeSig=useTestSig||useNormalSig;var payload={to:to,subject:subject,body:body,includeSignature:includeSig,includeLogo:$('testIncludeLogo').checked,selectedFileIds:selectedFiles,useTestSignature:useTestSig};toast('Sending test email...');api('/api/test/send','POST',payload).then(function(r){if(r.ok){toast('✅ Test sent to '+r.email);loadTestDashboard();}else toast('Error: '+r.error,'err');});}
 async function runTestAutomation(){var bs=parseInt($('testAutoBatchSize').value)||5;var delay=parseInt($('testAutoDelay').value)||20;var ok=await showConfirm({icon:'▶️',title:'Run Test Auto-Send?',message:'Will send to '+bs+' pending test recipients with '+delay+'s delay.',okText:'Run Now',primary:true});if(!ok)return;toast('⏳ Running test auto-send...');api('/api/test/automation/run','POST',{batchSize:bs,delay:delay}).then(function(r){if(r.ok){if(r.sent>0)toast('✅ Sent '+r.sent+' test emails'+(r.failed?' ('+r.failed+' failed)':''));else toast(r.message||'No pending test recipients','warn');loadTestDashboard();}else toast('Error: '+r.error,'err');});}
 
-/* ADMIN */
 function loadAdmin(){$('adminUsersList').innerHTML='<div class="empty">Loading...</div>';api('/api/admin/dashboard').then(function(r){if(!r.ok){$('adminUsersList').innerHTML='<div class="empty">Error: '+esc(r.error)+'</div>';return;}ADMIN_USERS=r.users||[];$('adTotalUsers').innerText=r.stats.totalUsers;$('adTotalEmails').innerText=r.stats.totalEmails;$('adTotalOpened').innerText=r.stats.totalOpened;$('adTotalPending').innerText=r.stats.totalPending;$('adTotalSends').innerText=r.stats.totalSends||0;renderAdminUsers();});api('/api/admin/all-emails').then(function(r){if(!r.ok)return;ADMIN_ALL_EMAILS=r.emails||[];renderAllEmails();});}
 function renderAdminUsers(){var q=($('adminSearch').value||'').toLowerCase();var filtered=ADMIN_USERS.filter(function(u){return !q||u.email.toLowerCase().indexOf(q)!==-1||(u.name||'').toLowerCase().indexOf(q)!==-1||(u.appAccountId||'').toLowerCase().indexOf(q)!==-1;});if(!filtered.length){$('adminUsersList').innerHTML='<div class="empty">No users found</div>';return;}var h='';filtered.forEach(function(u){h+='<div class="tpl-card" style="flex-direction:column;align-items:stretch;cursor:pointer" data-uid="'+esc(u.id)+'" data-email="'+esc(u.email)+'">';h+='<div class="info"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div class="name">'+esc(u.name||'(no name)')+'</div><span class="app-id-pill">'+esc(u.appAccountId||'N/A')+'</span></div>';h+='<div class="sub" style="white-space:normal;word-break:break-all;margin-top:4px">'+esc(u.email)+'</div>';h+='<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><span class="badge sent">📨 '+u.total+'</span><span class="badge opened">✅ '+u.sent+'</span><span class="badge opened">👁 '+u.opened+'</span><span class="badge pending">⏳ '+u.pending+'</span><span class="badge count">📤 '+u.totalSends+'</span>'+(u.autoSend?'<span class="badge sent">🤖 Auto</span>':'')+'</div>';h+='</div></div>';});$('adminUsersList').innerHTML=h;$('adminUsersList').querySelectorAll('.tpl-card').forEach(function(el){el.onclick=function(){openUserEmails(this.getAttribute('data-uid'),this.getAttribute('data-email'));};});}
 function renderAllEmails(){var w=$('adminAllEmailsWrap');var q=($('adminEmailSearch').value||'').toLowerCase();var filtered=ADMIN_ALL_EMAILS.filter(function(e){return !q||(e.userEmail||'').toLowerCase().indexOf(q)!==-1||(e.recipientEmail||'').toLowerCase().indexOf(q)!==-1||(e.subject||'').toLowerCase().indexOf(q)!==-1;});if(!filtered.length){w.innerHTML='<div class="empty">No emails</div>';return;}var h='<table class="data-table"><thead><tr><th>User</th><th>Recipient</th><th>Subject</th><th>Sent</th><th>AI</th></tr></thead><tbody>';filtered.slice(0,500).forEach(function(e){var pred=e.aiPrediction||'GOOD';var prob=e.aiInboxProb||75;var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';h+='<tr><td style="font-size:10px;word-break:break-all">'+esc(e.userEmail)+'</td><td style="font-size:11px;word-break:break-all">'+esc(e.recipientEmail)+'</td><td style="font-size:10px">'+esc(e.subject||'—')+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(e.sentAt)+'</td><td><span style="padding:2px 8px;border-radius:12px;font-size:9px;font-weight:700;background:'+pc+'22;color:'+pc+'">'+prob+'%</span></td></tr>';});h+='</tbody></table>';w.innerHTML=h;}
