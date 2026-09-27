@@ -115,18 +115,9 @@ function localCategorize(fromEmail, subject, bodyText) {
   return 'OTHER';
 }
 
-/* ============ AI PROVIDERS WITH MULTI-MODEL FALLBACK ============ */
-
 async function callGroq(prompt) {
   if (!GROQ_KEY) throw new Error('No key');
-  const models = [
-    'openai/gpt-oss-120b',
-    'llama-3.3-70b-versatile',
-    'llama-3.1-8b-instant',
-    'llama3-70b-8192',
-    'mixtral-8x7b-32768',
-    'gemma2-9b-it'
-  ];
+  const models = ['openai/gpt-oss-120b','llama-3.3-70b-versatile','llama-3.1-8b-instant','llama3-70b-8192','mixtral-8x7b-32768','gemma2-9b-it'];
   let lastErr = null;
   for (const model of models) {
     try {
@@ -151,7 +142,7 @@ async function callGroq(prompt) {
 
 async function callGemini(prompt) {
   if (!GEMINI_KEY) throw new Error('No key');
-  const models = ['gemini-2.0-flash-exp', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-pro'];
+  const models = ['gemini-2.0-flash-exp','gemini-2.0-flash','gemini-1.5-flash','gemini-1.5-flash-latest','gemini-1.5-pro'];
   let lastErr = null;
   for (const modelName of models) {
     try {
@@ -168,13 +159,7 @@ async function callGemini(prompt) {
 
 async function callOpenRouter(prompt) {
   if (!OPENROUTER_KEY) throw new Error('No key');
-  const models = [
-    'meta-llama/llama-3.3-70b-instruct:free',
-    'meta-llama/llama-3.1-8b-instruct:free',
-    'google/gemini-flash-1.5-8b:free',
-    'mistralai/mistral-7b-instruct:free',
-    'qwen/qwen-2.5-7b-instruct:free'
-  ];
+  const models = ['meta-llama/llama-3.3-70b-instruct:free','meta-llama/llama-3.1-8b-instruct:free','google/gemini-flash-1.5-8b:free','mistralai/mistral-7b-instruct:free','qwen/qwen-2.5-7b-instruct:free'];
   let lastErr = null;
   for (const model of models) {
     try {
@@ -226,12 +211,7 @@ async function callMistral(prompt) {
 async function callAI(prompt) {
   const cached = getCachedResponse(prompt);
   if (cached) return cached;
-  const providers = [
-    { n: 'groq', f: callGroq },
-    { n: 'gemini', f: callGemini },
-    { n: 'openrouter', f: callOpenRouter },
-    { n: 'mistral', f: callMistral }
-  ];
+  const providers = [{ n: 'groq', f: callGroq },{ n: 'gemini', f: callGemini },{ n: 'openrouter', f: callOpenRouter },{ n: 'mistral', f: callMistral }];
   const errs = [];
   for (const p of providers) {
     try {
@@ -249,7 +229,6 @@ async function callAI(prompt) {
   throw new Error('All AI failed: ' + errs.join(' | '));
 }
 
-/* ============ MIDDLEWARE ============ */
 app.set('trust proxy', 1);
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -282,6 +261,9 @@ app.use(cookieSession({
   overwrite: true
 }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, 'public', 'privacy.html')));
+app.get('/terms', (req, res) => res.sendFile(path.join(__dirname, 'public', 'terms.html')));
 
 let serviceAccount = {};
 try {
@@ -352,8 +334,6 @@ function htmlToPlain(h) {
     .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\n\s*\n\s*\n/g, '\n\n').trim();
 }
-
-/* ============ CV EXTRACTION HELPERS ============ */
 
 function looksLikeBinaryCv(text) {
   if (!text) return true;
@@ -456,7 +436,6 @@ async function extractCvFromBuffer(buf, filename, mimeType) {
   return '';
 }
 
-/* ============ MIME BUILDER ============ */
 function buildMime(fromName, fromEmail, to, subject, htmlBody, attachments, options) {
   options = options || {};
   const isBulk = options.isBulk === true;
@@ -526,18 +505,12 @@ function localAnalysis(subject, body) {
   return { score, prediction, inboxProbability, issues, suggestions, tone: 'professional', readability: 75, emotionalTone: 'neutral' };
 }
 
-/* ============ BASIC ROUTES ============ */
 app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL }));
 
 app.get('/api/ai/test', async (req, res) => {
   const results = {};
   const testPrompt = 'Reply with only this JSON: {"ok":true,"msg":"hello"}';
-  const providers = [
-    ['groq', callGroq, !!GROQ_KEY],
-    ['gemini', callGemini, !!GEMINI_KEY],
-    ['openrouter', callOpenRouter, !!OPENROUTER_KEY],
-    ['mistral', callMistral, !!MISTRAL_KEY]
-  ];
+  const providers = [['groq', callGroq, !!GROQ_KEY],['gemini', callGemini, !!GEMINI_KEY],['openrouter', callOpenRouter, !!OPENROUTER_KEY],['mistral', callMistral, !!MISTRAL_KEY]];
   for (const [name, fn, hasKey] of providers) {
     if (!hasKey) { results[name] = { status: 'NO_KEY' }; continue; }
     const start = Date.now();
@@ -630,7 +603,6 @@ app.get('/api/quota', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ AI ROUTES ============ */
 app.post('/api/ai/analyze-live', authRequired, async (req, res) => {
   try {
     const { subject, body } = req.body;
@@ -664,7 +636,6 @@ app.post('/api/ai/write-email', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ CV EXTRACTION + ANALYSIS ============ */
 app.post('/api/ai/extract-cv', authRequired, async (req, res) => {
   try {
     const { fileId, base64, mimeType, filename } = req.body || {};
@@ -714,28 +685,7 @@ app.post('/api/ai/analyze-cv', authRequired, async (req, res) => {
     }
     if (looksLikeBinaryCv(text)) return res.json({ ok: false, error: 'CV file is not readable text. Upload PDF/DOCX/TXT so we can extract content.' });
     if (!text || text.replace(/\s/g, '').length < 30) return res.json({ ok: false, error: 'CV text too short' });
-    const prompt = `You are an expert career coach. Analyze this CV and write a professional job application email.
-
-CV Content:
-"""${text.substring(0, 3500)}"""
-
-Target Role: ${targetRole || 'Not specified'}
-Job Description: ${jobDescription ? jobDescription.substring(0, 600) : 'Not provided'}
-
-Tasks:
-1. Identify strongest skills, experiences, and achievements
-2. Match them to the target role
-3. Write a compelling professional email highlighting the best fit
-4. Score candidate fit 0-100
-
-Return ONLY JSON:
-{
-  "subject":"compelling subject under 65 chars",
-  "body":"professional email body with \\n\\n between paragraphs, NO signature/sign-off",
-  "keySkills":["skill1","skill2","skill3","skill4"],
-  "analysis":"2-3 sentence summary of candidate strength",
-  "score":0-100
-}`;
+    const prompt = `You are an expert career coach. Analyze this CV and write a professional job application email.\n\nCV Content:\n"""${text.substring(0, 3500)}"""\n\nTarget Role: ${targetRole || 'Not specified'}\nJob Description: ${jobDescription ? jobDescription.substring(0, 600) : 'Not provided'}\n\nTasks:\n1. Identify strongest skills, experiences, and achievements\n2. Match them to the target role\n3. Write a compelling professional email highlighting the best fit\n4. Score candidate fit 0-100\n\nReturn ONLY JSON:\n{\n  "subject":"compelling subject under 65 chars",\n  "body":"professional email body with \\n\\n between paragraphs, NO signature/sign-off",\n  "keySkills":["skill1","skill2","skill3","skill4"],\n  "analysis":"2-3 sentence summary of candidate strength",\n  "score":0-100\n}`;
     const aiText = await callAI(prompt);
     const parsed = safeParseJSON(aiText);
     if (parsed && parsed.subject && parsed.body) {
@@ -753,38 +703,7 @@ app.post('/api/ai/smart-reply', authRequired, async (req, res) => {
     const userName = u.name || u.email.split('@')[0];
     const userCompany = (u.sigFields && u.sigFields.company) || '';
     const userPos = (u.sigFields && u.sigFields.pos) || '';
-    const prompt = `You are an expert email assistant. Analyze the incoming email carefully, understand its intent, and write a thoughtful professional reply.
-
-INCOMING EMAIL:
-From: ${originalFrom || 'Unknown'}
-Subject: ${originalSubject || '(no subject)'}
-Body:
-"""${(originalBody || '').substring(0, 4000)}"""
-
-${instruction ? 'EXTRA INSTRUCTION FROM USER: ' + instruction : ''}
-
-YOUR IDENTITY:
-Name: ${userName}
-${userPos ? 'Position: ' + userPos : ''}
-${userCompany ? 'Company: ' + userCompany : ''}
-
-TASKS:
-1. Identify the email's intent (question, request, meeting, complaint, follow-up, newsletter, etc.)
-2. Address EVERY specific point, question, or request raised in the original email
-3. If it's a question email → answer clearly
-4. If it's a meeting request → confirm or propose a time
-5. If it's a follow-up → acknowledge and give a clear next step
-6. Match the original email's tone (formal ↔ casual)
-7. Use a proper greeting with the sender's first name if identifiable
-
-RULES:
-- 2-4 paragraphs, concise but complete
-- NO sign-off like "Best regards", "Regards", "Sincerely", "Thanks", "Cheers"
-- NO name at the end
-- End with a final sentence of actual content
-- Do NOT invent facts not present in the original email
-
-Return ONLY valid JSON: {"subject":"Re: ...","body":"complete reply with \\n\\n between paragraphs"}`;
+    const prompt = `You are an expert email assistant. Analyze the incoming email carefully, understand its intent, and write a thoughtful professional reply.\n\nINCOMING EMAIL:\nFrom: ${originalFrom || 'Unknown'}\nSubject: ${originalSubject || '(no subject)'}\nBody:\n"""${(originalBody || '').substring(0, 4000)}"""\n\n${instruction ? 'EXTRA INSTRUCTION FROM USER: ' + instruction : ''}\n\nYOUR IDENTITY:\nName: ${userName}\n${userPos ? 'Position: ' + userPos : ''}\n${userCompany ? 'Company: ' + userCompany : ''}\n\nTASKS:\n1. Identify the email's intent (question, request, meeting, complaint, follow-up, newsletter, etc.)\n2. Address EVERY specific point, question, or request raised in the original email\n3. If it's a question email → answer clearly\n4. If it's a meeting request → confirm or propose a time\n5. If it's a follow-up → acknowledge and give a clear next step\n6. Match the original email's tone (formal ↔ casual)\n7. Use a proper greeting with the sender's first name if identifiable\n\nRULES:\n- 2-4 paragraphs, concise but complete\n- NO sign-off like "Best regards", "Regards", "Sincerely", "Thanks", "Cheers"\n- NO name at the end\n- End with a final sentence of actual content\n- Do NOT invent facts not present in the original email\n\nReturn ONLY valid JSON: {"subject":"Re: ...","body":"complete reply with \\n\\n between paragraphs"}`;
     try {
       const text = await callAI(prompt);
       const parsed = safeParseJSON(text);
@@ -873,7 +792,6 @@ app.get('/api/ai/best-time', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: true, bestHours: [9, 11, 14], reasoning: 'Default', aiPowered: false }); }
 });
 
-/* ============ INBOX ============ */
 function walkPartsForAttachments(parts, out) {
   for (const p of (parts || [])) {
     if (p.filename && p.filename.length > 0) out.push(p.filename);
@@ -1029,7 +947,6 @@ app.post('/api/reply/send', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ TEMPLATES ============ */
 app.get('/api/templates', authRequired, async (req, res) => {
   try { const s = await db.collection('users').doc(req.session.user.id).collection('templates').get(); const l = []; s.forEach(d => l.push({ id: d.id, ...d.data() })); res.json({ ok: true, templates: l }); }
   catch (e) { res.json({ ok: false, error: e.message }); }
@@ -1055,7 +972,6 @@ app.delete('/api/templates/:id', authRequired, async (req, res) => {
   catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ RECIPIENTS ============ */
 app.get('/api/recipients', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -1104,7 +1020,6 @@ app.post('/api/recipients/bulk-delete', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ LOGO ============ */
 app.post('/api/upload-logo', authRequired, async (req, res) => {
   try {
     const { base64, mimeType, filename } = req.body;
@@ -1140,7 +1055,6 @@ app.get('/api/logo', authRequired, async (req, res) => {
   catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ FILES ============ */
 app.post('/api/upload-file', authRequired, async (req, res) => {
   try {
     const { base64, mimeType, filename } = req.body;
@@ -1172,7 +1086,6 @@ app.delete('/api/files/:id', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ SIGNATURE / PREFS ============ */
 app.get('/api/signature', authRequired, async (req, res) => {
   try { const d = await getUserData(req.session.user.id); res.json({ ok: true, signature: d.signature || '', fields: d.sigFields || {} }); }
   catch (e) { res.json({ ok: false, error: e.message }); }
@@ -1201,7 +1114,6 @@ app.post('/api/prefs', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ STATS ============ */
 app.get('/api/stats', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -1214,7 +1126,6 @@ app.get('/api/stats', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ EMAIL HISTORY ============ */
 app.get('/api/my-emails', authRequired, async (req, res) => {
   try {
     const { range, search } = req.query;
@@ -1241,7 +1152,6 @@ app.get('/api/my-emails', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ SEND ============ */
 async function sendOne(userId, userEmail, recipientId, options) {
   options = options || {};
   const u = await getUserData(userId);
@@ -1343,7 +1253,6 @@ app.post('/api/resend', authRequired, async (req, res) => {
   }
 });
 
-/* ============ TRACKING PIXEL ============ */
 app.get('/track/:id', async (req, res) => {
   try {
     const u = req.query.u; const t = req.query.t; const type = req.query.type;
@@ -1372,7 +1281,6 @@ app.get('/track/:id', async (req, res) => {
   res.set('Content-Type', 'image/gif'); res.send(px);
 });
 
-/* ============ TEST LAB ============ */
 app.get('/api/test/stats', adminRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -1581,7 +1489,6 @@ app.get('/api/test/log', adminRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ AUTO-SEND ============ */
 async function runAutoSend(uid, ue, ud) {
   if (isQuietHours(ud)) return { skipped: true };
   const bs = Number(ud.autoSendBatchSize) || 5;
@@ -1631,7 +1538,6 @@ app.post('/api/auto-send-check', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ ADMIN ============ */
 app.get('/api/admin/dashboard', adminRequired, async (req, res) => {
   try {
     const us = await db.collection('users').get();
@@ -1689,7 +1595,6 @@ app.get('/api/admin/all-emails', adminRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ ERROR + FALLBACK ============ */
 app.use((err, req, res, next) => {
   console.error('Unhandled:', err.message);
   if (res.headersSent) return next(err);
