@@ -16,7 +16,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'usama.hanif.career@gmail.com').toLowerCase();
 const DEFAULT_DAILY_LIMIT = 500;
-const DEFAULT_SEND_DELAY = 3;
+const DEFAULT_SEND_DELAY = 20;
 const IS_VERCEL = !!process.env.VERCEL;
 const CRON_SECRET = process.env.CRON_SECRET || '';
 
@@ -538,7 +538,11 @@ async function fetchImapEmails(email, appPassword, options = {}) {
             textBody: (parsed.text || '').substring(0, 5000),
             htmlBody: (parsed.html || '').substring(0, 20000),
             snippet: (parsed.text || '').substring(0, 200).replace(/\s+/g, ' '),
-            attachments: (parsed.attachments || []).map(a => ({ filename: a.filename, size: a.size, contentType: a.contentType }))
+            attachments: (parsed.attachments || []).map(a => ({
+              filename: a.filename || 'attachment',
+              size: a.size || 0,
+              contentType: a.contentType || 'application/octet-stream'
+            }))
           });
         } catch (parseErr) {}
       }
@@ -771,8 +775,11 @@ app.post('/api/imap/inbox', authRequired, async (req, res) => {
         from: email.from, fromName: email.fromName, to: email.to,
         subject: email.subject, date: email.date,
         textBody: email.textBody, htmlBody: email.htmlBody,
-        snippet: email.snippet, attachments: email.attachments,
-        category: category, isRead: false, source: 'imap',
+        snippet: email.snippet, attachments: (email.attachments || []).map(a => ({
+          filename: a.filename || 'attachment',
+          size: a.size || 0,
+          contentType: a.contentType || a.mimeType || 'application/octet-stream'
+        })), category: category, isRead: false, source: 'imap',
         receivedAt: new Date()
       };
       const docRef = await db.collection('users').doc(req.session.user.id).collection('imapEmails').add(emailDoc);
