@@ -131,7 +131,7 @@ async function callGroq(prompt) {
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY },
         body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 1800 })
       }, 20000);
-      if (!r.ok) { const errText = await r.text().catch(() => ''); lastErr = new Error('Groq ' + model + ' HTTP ' + r.status); continue; }
+      if (!r.ok) { lastErr = new Error('Groq ' + model + ' HTTP ' + r.status); continue; }
       const d = await r.json();
       const content = (d.choices?.[0]?.message?.content || '').trim();
       if (content && content.length > 5) return content;
@@ -307,11 +307,6 @@ function isQuietHours(p) {
   return n >= s || n < e;
 }
 function getCurrentHourKey() { const n = new Date(); return n.toISOString().split('T')[0] + '-' + n.getHours(); }
-function parseEmailDate(dateStr) {
-  if (!dateStr) return null;
-  try { const d = new Date(dateStr); if (isNaN(d.getTime())) return null; return d.toISOString(); }
-  catch (e) { return null; }
-}
 function sanitizeSubject(subject) {
   if (!subject) return '';
   let s = subject.replace(/!{2,}/g, '!').replace(/\?{2,}/g, '?').trim();
@@ -491,8 +486,6 @@ function localAnalysis(subject, body) {
 }
 
 /* ============ IMAP HELPERS ============ */
-const activeImapConnections = new Map();
-
 async function testImapConnection(email, appPassword) {
   const client = new ImapFlow({
     host: 'imap.gmail.com', port: 993, secure: true,
@@ -518,37 +511,83 @@ async function fetchImapEmails(email, appPassword, options = {}) {
   const emails = [];
   try {
     await client.connect();
-    const mailbox = await client.mailboxOpen('INBOX');
-    const total = mailbox.exists;
-    const limit = Math.min(options.limit || 20, 50);
-    const start = Math.max(1, total - limit + 1);
+    const folder = options.folder || 'INBOX';
+    const mailbox = await client.mailboxOpen(folder);
+    const total = mailbox.exists || 0;
+    const pageSize = Math.min(options.pageSize || 20, 50);
+    const page = Math.max(1, options.page || 1);
+    let hasMore = false;
     if (total > 0) {
-      const range = `${start}:${total}`;
-      for await (const message of client.fetch(range, { envelope: true, source: true, uid: true })) {
-        try {
-          const parsed = await simpleParser(message.source);
-          emails.push({
-            uid: message.uid,
-            messageId: parsed.messageId || '',
-            from: parsed.from?.value?.[0]?.address || '',
-            fromName: parsed.from?.value?.[0]?.name || '',
-            to: parsed.to?.value?.[0]?.address || '',
-            subject: parsed.subject || '(no subject)',
-            date: parsed.date ? parsed.date.toISOString() : new Date().toISOString(),
-            textBody: (parsed.text || '').substring(0, 5000),
-            htmlBody: (parsed.html || '').substring(0, 20000),
-            snippet: (parsed.text || '').substring(0, 200).replace(/\s+/g, ' '),
-            attachments: (parsed.attachments || []).map(a => ({
-              filename: a.filename || 'attachment',
-              size: a.size || 0,
-              contentType: a.contentType || 'application/octet-stream'
-            }))
-          });
-        } catch (parseErr) {}
+      const end = total - (page - 1) * pageSize;
+      const start = Math.max(1, end - pageSize + 1);
+      if (end >= 1) {
+        hasMore = start > 1;
+        const raws = [];
+        for await (const message of client.fetch(`${start}:${end}`, { envelope: true, uid: true, flags: true })) {
+          raws.push(message);
+        }
+        raws.reverse();
+        for (const m of raws) {
+          try {
+            const env = m.envelope || {};
+            const fromAddr = env.from && env.from[0] ? env.from[0].address : '';
+            const fromName = env.from && env.from[0] ? env.from[0].name : '';
+            const toAddr = env.to && env.to[0] ? env.to[0].address : '';
+            const subj = env.subject || '(no subject)';
+            const dt = env.date ? new Date(env.date).toISOString() : new Date().toISOString();
+            const flags = m.flags || new Set();
+            const category = localCategorize(fromAddr, subj, '');
+            emails.push({
+              uid: m.uid,
+              seq: m.seq,
+              messageId: env.messageId || '',
+              from: fromAddr,
+              fromName: fromName || fromAddr,
+              to: toAddr,
+              subject: subj,
+              date: dt,
+              snippet: '',
+              category: category,
+              folder: folder,
+              isRead: flags.has('\\Seen'),
+              attachments: []
+            });
+          } catch (pe) {}
+        }
       }
     }
     await client.logout();
-    return { ok: true, emails: emails.reverse() };
+    return { ok: true, emails: emails, total: total, hasMore: hasMore, page: page, pageSize: pageSize, folder: folder };
+  } catch (e) {
+    try { await client.close(); } catch (err) {}
+    return { ok: false, error: e.message };
+  }
+}
+
+async function fetchImapBody(email, appPassword, folder, uid) {
+  const client = new ImapFlow({
+    host: 'imap.gmail.com', port: 993, secure: true,
+    auth: { user: email, pass: appPassword },
+    logger: false, tls: { rejectUnauthorized: false }
+  });
+  try {
+    await client.connect();
+    await client.mailboxOpen(folder || 'INBOX');
+    const msg = await client.fetchOne(String(uid), { source: true }, { uid: true });
+    if (!msg || !msg.source) { await client.logout(); return { ok: false, error: 'Message not found' }; }
+    const parsed = await simpleParser(msg.source);
+    const body = {
+      textBody: (parsed.text || '').substring(0, 10000),
+      htmlBody: (parsed.html || '').substring(0, 30000),
+      snippet: (parsed.text || '').substring(0, 200).replace(/\s+/g, ' '),
+      attachments: (parsed.attachments || []).map(a => ({
+        filename: a.filename || 'attachment',
+        size: a.size || 0,
+        contentType: a.contentType || 'application/octet-stream'
+      }))
+    };
+    await client.logout();
+    return { ok: true, body: body };
   } catch (e) {
     try { await client.close(); } catch (err) {}
     return { ok: false, error: e.message };
@@ -561,7 +600,7 @@ async function updateSenderMemory(userId, email) {
     const senderId = crypto.createHash('md5').update(email.from.toLowerCase()).digest('hex');
     const ref = db.collection('users').doc(userId).collection('senderMemory').doc(senderId);
     const existing = await ref.get();
-    const category = localCategorize(email.from, email.subject, email.textBody);
+    const category = localCategorize(email.from, email.subject, email.textBody || '');
     if (existing.exists) {
       const data = existing.data();
       await ref.update({
@@ -762,41 +801,41 @@ app.post('/api/imap/inbox', authRequired, async (req, res) => {
     if (!u.imapEnabled || !u.imapAppPassword) return res.json({ ok: false, error: 'IMAP not connected' });
     const appPassword = u.imapAppPassword;
     if (!appPassword) return res.json({ ok: false, error: 'Cannot decrypt password' });
-    const limit = parseInt(req.body.limit) || 20;
-    const result = await fetchImapEmails(u.email, appPassword, { limit });
+    const folder = req.body.folder || 'INBOX';
+    const page = parseInt(req.body.page) || 1;
+    const pageSize = Math.min(parseInt(req.body.pageSize) || 20, 50);
+    const result = await fetchImapEmails(u.email, appPassword, { folder, page, pageSize });
     if (!result.ok) return res.json({ ok: false, error: result.error });
-    const processed = [];
-    for (const email of result.emails) {
-      const existing = await db.collection('users').doc(req.session.user.id).collection('imapEmails').where('messageId', '==', email.messageId).limit(1).get();
-      if (!existing.empty) { processed.push({ id: existing.docs[0].id, ...existing.docs[0].data() }); continue; }
-      const category = localCategorize(email.from, email.subject, email.textBody);
-      const emailDoc = {
-        uid: email.uid, messageId: email.messageId,
-        from: email.from, fromName: email.fromName, to: email.to,
-        subject: email.subject, date: email.date,
-        textBody: email.textBody, htmlBody: email.htmlBody,
-        snippet: email.snippet, attachments: (email.attachments || []).map(a => ({
-          filename: a.filename || 'attachment',
-          size: a.size || 0,
-          contentType: a.contentType || a.mimeType || 'application/octet-stream'
-        })), category: category, isRead: false, source: 'imap',
-        receivedAt: new Date()
-      };
-      const docRef = await db.collection('users').doc(req.session.user.id).collection('imapEmails').add(emailDoc);
-      await updateSenderMemory(req.session.user.id, email);
-      processed.push({ id: docRef.id, ...emailDoc });
+    const uid = req.session.user.id;
+    const coll = db.collection('users').doc(uid).collection('imapEmails');
+    for (const e of result.emails) {
+      const key = folder.replace(/[^A-Za-z0-9]/g, '_') + '_' + e.uid;
+      coll.doc(key).set(e, { merge: true }).catch(() => {});
+      if (e.from) updateSenderMemory(uid, { from: e.from, fromName: e.fromName, subject: e.subject, textBody: '' });
     }
-    await db.collection('users').doc(req.session.user.id).update({ imapLastSync: new Date(), imapTotalSynced: (u.imapTotalSynced || 0) + processed.length });
-    res.json({ ok: true, emails: processed });
+    db.collection('users').doc(uid).update({ imapLastSync: new Date() }).catch(() => {});
+    res.json({ ok: true, emails: result.emails, total: result.total, hasMore: result.hasMore, page: result.page, pageSize: result.pageSize, folder: folder });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-app.get('/api/imap/email/:id', authRequired, async (req, res) => {
+app.post('/api/imap/body', authRequired, async (req, res) => {
   try {
-    const doc = await db.collection('users').doc(req.session.user.id).collection('imapEmails').doc(req.params.id).get();
-    if (!doc.exists) return res.json({ ok: false, error: 'Not found' });
-    await doc.ref.update({ isRead: true });
-    res.json({ ok: true, email: { id: doc.id, ...doc.data() } });
+    const u = await getUserData(req.session.user.id);
+    if (!u.imapEnabled || !u.imapAppPassword) return res.json({ ok: false, error: 'IMAP not connected' });
+    const { folder, uid } = req.body;
+    if (!uid) return res.json({ ok: false, error: 'Missing uid' });
+    const folderKey = (folder || 'INBOX').replace(/[^A-Za-z0-9]/g, '_');
+    const docId = folderKey + '_' + uid;
+    const ref = db.collection('users').doc(req.session.user.id).collection('imapEmails').doc(docId);
+    const cached = await ref.get();
+    if (cached.exists && cached.data().bodyFetched) {
+      return res.json({ ok: true, email: { id: docId, ...cached.data() } });
+    }
+    const result = await fetchImapBody(u.email, u.imapAppPassword, folder || 'INBOX', uid);
+    if (!result.ok) return res.json({ ok: false, error: result.error });
+    await ref.set({ ...result.body, bodyFetched: true, isRead: true }, { merge: true });
+    const fresh = await ref.get();
+    res.json({ ok: true, email: { id: docId, ...fresh.data() } });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -814,16 +853,6 @@ app.get('/api/memory/senders', authRequired, async (req, res) => {
     const senders = [];
     snap.forEach(d => senders.push({ id: d.id, ...d.data() }));
     res.json({ ok: true, senders });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-
-app.get('/api/memory/sender/:senderEmail', authRequired, async (req, res) => {
-  try {
-    const senderId = crypto.createHash('md5').update(String(req.params.senderEmail).toLowerCase()).digest('hex');
-    const ref = db.collection('users').doc(req.session.user.id).collection('senderMemory').doc(senderId);
-    const snap = await ref.get();
-    if (!snap.exists) return res.json({ ok: true, memory: null });
-    res.json({ ok: true, memory: snap.data() });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -923,54 +952,6 @@ app.post('/api/ai/analyze-cv', authRequired, async (req, res) => {
     const parsed = safeParseJSON(aiText);
     if (parsed && parsed.subject && parsed.body) return res.json({ ok: true, subject: parsed.subject, body: stripSignature(parsed.body), keySkills: parsed.keySkills || [], analysis: parsed.analysis || '', score: parsed.score || 70, aiPowered: true });
     res.json({ ok: false, error: 'AI could not parse CV' });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-
-app.post('/api/ai/smart-reply', authRequired, async (req, res) => {
-  try {
-    const { originalSubject, originalBody, originalFrom, instruction } = req.body;
-    if (!originalBody) return res.json({ ok: false, error: 'No original body' });
-    const u = await getUserData(req.session.user.id);
-    const aiProfile = u.aiProfile || {};
-    const userName = aiProfile.fullName || u.name || u.email.split('@')[0];
-    const userCompany = aiProfile.company || (u.sigFields?.company) || '';
-    const userPos = aiProfile.designation || (u.sigFields?.pos) || '';
-    const userTone = aiProfile.tone || 'professional';
-    const userAbout = aiProfile.aboutMe || '';
-    const prompt = `You are an expert email assistant writing AS ${userName}. Analyze the incoming email and write a thoughtful reply that sounds like ${userName}.
-
-SENDER PROFILE:
-Name: ${userName}
-${userPos ? 'Position: ' + userPos : ''}
-${userCompany ? 'Company: ' + userCompany : ''}
-${userAbout ? 'About: ' + userAbout : ''}
-Preferred Tone: ${userTone}
-
-INCOMING EMAIL:
-From: ${originalFrom || 'Unknown'}
-Subject: ${originalSubject || '(no subject)'}
-Body: """${(originalBody || '').substring(0, 4000)}"""
-
-${instruction ? 'EXTRA INSTRUCTION: ' + instruction : ''}
-
-RULES:
-- Write in FIRST PERSON as ${userName}
-- Match tone: ${userTone}
-- 2-4 paragraphs
-- Address EVERY point
-- NO sign-off (no "Best regards", "Regards", "Thanks", "Sincerely")
-- NO name at end
-- Do NOT invent facts
-
-Return ONLY JSON: {"subject":"Re: ...","body":"complete reply with \\n\\n"}`;
-    try {
-      const text = await callAI(prompt);
-      const parsed = safeParseJSON(text);
-      if (parsed && parsed.body && parsed.body.length > 20) return res.json({ ok: true, subject: parsed.subject || ('Re: ' + originalSubject), body: stripSignature(parsed.body), aiPowered: true });
-    } catch (e) {}
-    const firstName = (originalFrom || '').match(/^([A-Za-z]+)/);
-    const greetName = firstName ? firstName[1] : 'there';
-    res.json({ ok: true, subject: 'Re: ' + (originalSubject || ''), body: `Dear ${greetName},\n\nThank you for your email. I have received your message and will review it carefully.\n\nI will get back to you shortly.`, aiPowered: false });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -1274,11 +1255,9 @@ async function sendOne(userId, userEmail, recipientId, options) {
   const sentToday = sdChk.exists ? (sdChk.data().sent || 0) : 0;
   const limit = u.dailyLimit || DEFAULT_DAILY_LIMIT;
   if (sentToday >= limit) { const err = new Error('DAILY_LIMIT_REACHED'); err.code = 'DAILY_LIMIT_REACHED'; err.limit = limit; throw err; }
-
   const r = await db.collection('users').doc(userId).collection('recipients').doc(recipientId).get();
   if (!r.exists) throw new Error('Not found');
   const rec = r.data();
-
   if (u.lastSendTime && !options.skipDelay) {
     const l = u.lastSendTime._seconds ? u.lastSendTime._seconds * 1000 : new Date(u.lastSendTime).getTime();
     const delaySec = u.sendDelay !== undefined ? Number(u.sendDelay) : DEFAULT_SEND_DELAY;
@@ -1288,7 +1267,6 @@ async function sendOne(userId, userEmail, recipientId, options) {
     const mg = delayMs + jitter;
     if (el < mg) await sleep(mg - el);
   }
-
   const c = setUserOAuth(u.tokens);
   const g = google.gmail({ version: 'v1', auth: c });
   let t;
@@ -1394,7 +1372,7 @@ app.get('/track/:id', async (req, res) => {
   res.set('Content-Type', 'image/gif'); res.send(px);
 });
 
-/* ============ TEST LAB ============ */
+/* ============ TEST LAB (admin only) ============ */
 app.get('/api/test/stats', adminRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -1488,7 +1466,7 @@ app.post('/api/test/automation/run', adminRequired, async (req, res) => {
     const u = await getUserData(uid);
     if (!u.tokens) return res.json({ ok: false, error: 'Session expired' });
     const batchSize = Number(req.body.batchSize) || 5;
-    const delay = Number(req.body.delay) || 3;
+    const delay = Number(req.body.delay) || 20;
     const ps = await db.collection('users').doc(uid).collection('testRecipients').where('status', '==', 'Pending').limit(batchSize).get();
     if (ps.empty) return res.json({ ok: true, sent: 0, message: 'No pending test recipients' });
     let sent = 0, failed = 0;
@@ -1568,11 +1546,7 @@ app.post('/api/test/send', adminRequired, async (req, res) => {
     if (recId) {
       const rec = await db.collection('users').doc(uid).collection('testRecipients').doc(recId).get();
       const prev = rec.exists ? (rec.data().status || '') : '';
-      await db.collection('users').doc(uid).collection('testRecipients').doc(recId).update({
-        status: prev === 'Opened' ? 'Opened' : 'Sent',
-        lastSentAt: new Date(),
-        sentAt: prev === 'Opened' && rec.data().sentAt ? rec.data().sentAt : new Date()
-      });
+      await db.collection('users').doc(uid).collection('testRecipients').doc(recId).update({ status: prev === 'Opened' ? 'Opened' : 'Sent', lastSentAt: new Date(), sentAt: prev === 'Opened' && rec.data().sentAt ? rec.data().sentAt : new Date() });
     }
     res.json({ ok: true, email: targetEmail });
   } catch (e) { res.json({ ok: false, error: e.message }); }
