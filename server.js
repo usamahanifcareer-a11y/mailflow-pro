@@ -48,7 +48,6 @@ function decrypt(data) {
   } catch (e) { return null; }
 }
 
-/* ============ PASSWORD HASHING ============ */
 function hashPassword(password, salt) {
   if (!salt) salt = crypto.randomBytes(16).toString('hex');
   const hash = crypto.scryptSync(password, salt, 64).toString('hex');
@@ -656,15 +655,12 @@ app.post('/api/auth/register', async (req, res) => {
     const emailLower = String(email).toLowerCase();
     const uid = crypto.createHash('md5').update(emailLower).digest('hex');
     const ip = getClientIP(req);
-    
     const banned = await db.collection('bannedUsers').doc(uid).get();
     if (banned.exists) return res.json({ ok: false, error: 'This email is suspended', banned: true });
     const ipBanned = await db.collection('bannedUsers').where('ip', '==', ip).limit(1).get();
     if (!ipBanned.empty) return res.json({ ok: false, error: 'Your IP is suspended', banned: true });
-    
     const existing = await db.collection('users').doc(uid).get();
     if (existing.exists && existing.data().passwordHash) return res.json({ ok: false, error: 'Email already registered' });
-    
     const { hash, salt } = hashPassword(password);
     const now = new Date();
     const data = {
@@ -698,21 +694,17 @@ app.post('/api/auth/login', async (req, res) => {
     if (!email || !password) return res.json({ ok: false, error: 'Email and password required' });
     const emailLower = String(email).toLowerCase();
     const uid = crypto.createHash('md5').update(emailLower).digest('hex');
-    
     const banned = await db.collection('bannedUsers').doc(uid).get();
     if (banned.exists) return res.json({ ok: false, error: 'Account suspended', banned: true, reason: banned.data().reason });
     const ip = getClientIP(req);
     const ipBanned = await db.collection('bannedUsers').where('ip', '==', ip).limit(1).get();
     if (!ipBanned.empty) return res.json({ ok: false, error: 'IP suspended', banned: true });
-    
     const userSnap = await db.collection('users').doc(uid).get();
     if (!userSnap.exists) return res.json({ ok: false, error: 'Invalid credentials' });
     const userData = userSnap.data();
     if (!userData.passwordHash || !userData.passwordSalt) return res.json({ ok: false, error: 'This account uses Google login. Please continue with Google.' });
-    
     const valid = verifyPassword(password, userData.passwordHash, userData.passwordSalt);
     if (!valid) return res.json({ ok: false, error: 'Invalid credentials' });
-    
     await db.collection('users').doc(uid).update({ lastLogin: new Date(), lastIP: ip });
     req.session.user = { id: uid, email: userData.email, name: userData.name, picture: userData.profilePicture || '', appAccountId: userData.appAccountId, isAdmin: userData.email.toLowerCase() === ADMIN_EMAIL };
     res.json({ ok: true, user: req.session.user });
@@ -766,12 +758,10 @@ app.get('/auth/google/callback', async (req, res) => {
     const email = info.data.email, name = info.data.name, picture = info.data.picture || '';
     const uid = crypto.createHash('md5').update(email).digest('hex');
     const ip = getClientIP(req);
-
     const bannedSnap = await db.collection('bannedUsers').doc(uid).get();
     if (bannedSnap.exists) return res.redirect((process.env.FRONTEND_URL || 'http://localhost:3000') + '/?banned=1');
     const ipBanned = await db.collection('bannedUsers').where('ip', '==', ip).limit(1).get();
     if (!ipBanned.empty) return res.redirect((process.env.FRONTEND_URL || 'http://localhost:3000') + '/?banned=1');
-
     const existing = await db.collection('users').doc(uid).get();
     const data = { email, name, picture, tokens: encrypt(tokens), updatedAt: new Date(), lastIP: ip, lastLogin: new Date() };
     if (!existing.exists) {
@@ -1257,44 +1247,47 @@ app.post('/api/recipients/bulk-delete', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ RECIPIENT FULL HISTORY (ALL TIME) ============ */
+/* ============ RECIPIENT FULL HISTORY (INDEX-FREE) ============ */
 app.get('/api/recipient/:id/history', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
     const recipientId = req.params.id;
-    
-    // Get recipient info
     const recSnap = await db.collection('users').doc(uid).collection('recipients').doc(recipientId).get();
     if (!recSnap.exists) return res.json({ ok: false, error: 'Recipient not found' });
     const rec = recSnap.data();
-    
-    // Get ALL emails for this recipient (no limit, paginated internally)
+
+    // Fetch ALL emails WITHOUT orderBy (no composite index needed)
     const allEmails = [];
     let lastDoc = null;
-    let hasMore = true;
+    let more = true;
     let iterations = 0;
-    while (hasMore && iterations < 20) {
+    while (more && iterations < 40) {
       iterations++;
       let q = db.collection('users').doc(uid).collection('emailLog')
         .where('recipientId', '==', recipientId)
-        .orderBy('sentAt', 'desc')
         .limit(500);
       if (lastDoc) q = q.startAfter(lastDoc);
       const snap = await q.get();
-      if (snap.empty) { hasMore = false; break; }
+      if (snap.empty) { more = false; break; }
       snap.forEach(d => allEmails.push({ id: d.id, ...d.data() }));
       lastDoc = snap.docs[snap.docs.length - 1];
-      if (snap.size < 500) hasMore = false;
+      if (snap.size < 500) more = false;
     }
-    
-    // Stats
+
+    // Sort client-side by sentAt descending
+    allEmails.sort((a, b) => {
+      const ta = a.sentAt && a.sentAt._seconds ? a.sentAt._seconds * 1000 : new Date(a.sentAt || 0).getTime();
+      const tb = b.sentAt && b.sentAt._seconds ? b.sentAt._seconds * 1000 : new Date(b.sentAt || 0).getTime();
+      return tb - ta;
+    });
+
     const totalSent = allEmails.length;
     const totalOpened = allEmails.filter(e => !!e.openedAt).length;
     const totalNotOpened = totalSent - totalOpened;
     const openRate = totalSent > 0 ? Math.round((totalOpened / totalSent) * 100) : 0;
     const firstSent = allEmails.length ? allEmails[allEmails.length - 1].sentAt : null;
     const lastSent = allEmails.length ? allEmails[0].sentAt : null;
-    
+
     res.json({
       ok: true,
       recipient: { id: recipientId, email: rec.email, company: rec.company || '', status: rec.status || 'Pending', everOpened: rec.everOpened === true, openedAt: rec.openedAt || null },
@@ -1381,7 +1374,7 @@ app.post('/api/signature', authRequired, async (req, res) => {
 app.get('/api/prefs', authRequired, async (req, res) => {
   try {
     const d = await getUserData(req.session.user.id);
-    res.json({ ok: true, prefs: { quietEnabled: d.quietEnabled === true, quietStart: d.quietStart !== undefined ? d.quietStart : 22, quietEnd: d.quietEnd !== undefined ? d.quietEnd : 7, autoSend: d.autoSend === true, autoSendBatchSize: d.autoSendBatchSize !== undefined ? d.autoSendBatchSize : 5, appAccountId: d.appAccountId || '', totalAutoSent: d.totalAutoSent || 0, autoSendIncludeLogo: d.autoSendIncludeLogo !== false, autoSendIncludeSignature: d.autoSendIncludeSignature !== false, sendDelay: d.sendDelay !== undefined ? d.sendDelay : DEFAULT_SEND_DELAY } });
+    res.json({ ok: true, prefs: { quietEnabled: d.quietEnabled === true, quietStart: d.quietStart !== undefined ? d.quietStart : 22, quietEnd: d.quietEnd !== undefined ? d.quietEnd : 7, autoSend: d.autoSend === true, autoSendBatchSize: d.autoSendBatchSize !== undefined ? d.autoSendBatchSize : 5, appAccountId: d.appAccountId || '', totalAutoSent: d.totalAutoSent || 0, autoSendIncludeLogo: d.autoSendIncludeLogo !== false, autoSendIncludeSignature: d.autoSendIncludeSignature !== false, sendDelay: d.sendDelay !== undefined ? d.sendDelay : DEFAULT_SEND_DELAY, lastAutoSendRun: d.lastAutoSendRun || null } });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.post('/api/prefs', authRequired, async (req, res) => {

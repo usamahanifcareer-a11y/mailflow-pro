@@ -3,73 +3,63 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#060912">
-<meta name="google-site-verification" content="Y_1_w9TfP74Xl2ZSqPhjCe656klGCiZh84tDWabJkcQ" />
 <title>MailFlow Pro — AI Email Automation</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{--bg:#060912;--bg2:#0a0e1a;--bg3:#0f172a;--panel:rgba(15,23,42,.72);--border:#1a2338;--border2:#243049;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--cyan:#38bdf8;--indigo:#6366f1;--purple:#a78bfa;--green:#22c55e;--amber:#f59e0b;--red:#ef4444;--pink:#ec4899;--grad:linear-gradient(135deg,#38bdf8,#6366f1,#a78bfa)}
 html,body{min-height:100vh;overflow-x:hidden}
-body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.55}
 body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at top left,rgba(56,189,248,.07),transparent 50%),radial-gradient(ellipse at bottom right,rgba(168,85,247,.07),transparent 50%);pointer-events:none;z-index:0}
 .hidden{display:none!important}
 button,input,textarea,select{font-family:inherit;font-size:16px}
-input[type=number]{-moz-appearance:textfield;appearance:textfield}
 input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-::selection{background:rgba(56,189,248,.3)}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
-@keyframes float{0%,100%{transform:translate(0,0)}50%{transform:translate(-5%,5%)}}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 @keyframes spin{to{transform:rotate(360deg)}}
-.auth-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;position:relative;overflow:hidden;z-index:1}
-.auth-card{background:rgba(15,23,42,.75);backdrop-filter:blur(30px);padding:48px 36px;border-radius:24px;width:100%;max-width:440px;box-shadow:0 32px 100px rgba(0,0,0,.8);border:1px solid rgba(51,65,85,.6);text-align:center;position:relative;z-index:1}
+@keyframes slideIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+.auth-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;position:relative;z-index:1}
+.auth-card{background:rgba(15,23,42,.75);backdrop-filter:blur(30px);padding:48px 36px;border-radius:24px;width:100%;max-width:440px;box-shadow:0 32px 100px rgba(0,0,0,.8);border:1px solid rgba(51,65,85,.6);text-align:center}
 @media(max-width:480px){.auth-card{padding:36px 24px}}
 .brand-logo{width:88px;height:88px;margin:0 auto 22px;filter:drop-shadow(0 20px 44px rgba(56,189,248,.5))}
-.brand-logo svg{width:100%;height:100%;display:block}
-.auth-card h1{font-size:30px;margin-bottom:8px;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;letter-spacing:-.5px}
-.auth-card p.sub{color:var(--text2);margin-bottom:32px;font-size:14px;line-height:1.6}
-.google-btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;background:#fff;color:#1f2937;border:none;padding:15px;border-radius:14px;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;transition:.25s}
-.google-btn:hover{transform:translateY(-2px)}
+.brand-logo svg{width:100%;height:100%}
+.auth-card h1{font-size:30px;margin-bottom:8px;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:800}
+.auth-card p.sub{color:var(--text2);margin-bottom:32px;font-size:14px}
+.google-btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;background:#fff;color:#1f2937;border:none;padding:15px;border-radius:14px;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none}
 .google-btn img{width:20px;height:20px}
-.auth-divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:var(--text3);font-size:11px;text-transform:uppercase;letter-spacing:1px}
+.auth-divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:var(--text3);font-size:11px;text-transform:uppercase}
 .auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border)}
 .auth-toggle{display:flex;gap:6px;margin-bottom:16px;background:var(--bg2);padding:5px;border-radius:12px;border:1px solid var(--border)}
 .auth-toggle .tab{padding:9px 16px;text-align:center;font-size:12px;color:var(--text2);cursor:pointer;border-radius:8px;font-weight:600;flex:1}
 .auth-toggle .tab.active{background:var(--grad);color:white}
 .auth-form{text-align:left}
 .auth-form .field{margin-bottom:12px}
-.auth-form .field label{display:block;font-size:10px;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+.auth-form .field label{display:block;font-size:10px;color:var(--text2);margin-bottom:6px;text-transform:uppercase;font-weight:700}
 .auth-form .field input{width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:15px;outline:none}
-.auth-form .field input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.15)}
-.auth-error{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5;padding:10px 12px;border-radius:8px;font-size:12px;margin-bottom:12px;text-align:left}
+.auth-form .field input:focus{border-color:var(--cyan)}
+.auth-error{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5;padding:10px;border-radius:8px;font-size:12px;margin-bottom:12px}
 .auth-features{margin-top:28px;padding-top:24px;border-top:1px solid var(--border);text-align:left}
 .auth-features .feat{display:flex;align-items:center;gap:12px;padding:9px 0;font-size:13px;color:#cbd5e1}
-.auth-features .feat .ico{font-size:16px;width:32px;height:32px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.auth-legal{margin-top:22px;font-size:11px;color:var(--text3);text-align:center;line-height:1.7}
+.auth-features .feat .ico{font-size:16px;width:32px;height:32px;background:rgba(56,189,248,.1);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.auth-legal{margin-top:22px;font-size:11px;color:var(--text3)}
 .auth-legal a{color:var(--cyan);text-decoration:none}
 .topbar{background:rgba(10,14,26,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;gap:8px;flex-wrap:wrap}
-.logo-top{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:800;letter-spacing:-.3px;white-space:nowrap}
-.logo-top .mini-logo{width:32px;height:32px;filter:drop-shadow(0 4px 10px rgba(56,189,248,.5))}
+.logo-top{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:800}
+.logo-top .mini-logo{width:32px;height:32px}
 .logo-top .mini-logo svg{width:100%;height:100%}
 .logo-top .brand-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 .user-chip{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);flex-wrap:wrap}
-.user-avatar{width:32px;height:32px;border-radius:50%;border:2px solid var(--cyan);object-fit:cover;background:#1e293b;cursor:pointer}
-.user-chip .chip-btn{background:#1e293b;border:1px solid #334155;color:#cbd5e1;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px}
-.user-chip .chip-btn:hover{background:#334155;color:#fff}
-.badge.admin{background:linear-gradient(90deg,rgba(168,85,247,.3),rgba(56,189,248,.3));color:#e9d5ff;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:700;border:1px solid rgba(168,85,247,.4)}
-.app-id-pill{background:var(--grad);color:white;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;font-family:'Courier New',monospace}
+.user-avatar{width:32px;height:32px;border-radius:50%;border:2px solid var(--cyan);object-fit:cover;cursor:pointer}
+.user-chip .chip-btn{background:#1e293b;border:1px solid #334155;color:#cbd5e1;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:600}
+.badge.admin{background:linear-gradient(90deg,rgba(168,85,247,.3),rgba(56,189,248,.3));color:#e9d5ff;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:700}
+.app-id-pill{background:var(--grad);color:white;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;font-family:monospace}
 @media(max-width:480px){.app-id-pill{display:none}}
 .maintabs{display:flex;gap:4px;padding:6px 14px;background:rgba(10,14,26,.85);border-bottom:1px solid var(--border);overflow-x:auto;position:sticky;top:52px;z-index:99;backdrop-filter:blur(20px)}
 .maintabs::-webkit-scrollbar{display:none}
-.maintab{padding:9px 14px;font-size:12px;color:var(--text2);cursor:pointer;font-weight:600;white-space:nowrap;border-radius:8px;transition:.2s;flex-shrink:0}
+.maintab{padding:9px 14px;font-size:12px;color:var(--text2);cursor:pointer;font-weight:600;white-space:nowrap;border-radius:8px;flex-shrink:0}
 .maintab.active{color:var(--cyan);background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2)}
 .container{max-width:1400px;margin:0 auto;padding:16px;position:relative;z-index:1}
 @media(max-width:640px){.container{padding:12px}}
@@ -82,7 +72,7 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .stat{background:linear-gradient(135deg,rgba(30,41,59,.8),rgba(15,23,42,.8));border:1px solid var(--border);border-radius:14px;padding:14px;position:relative;overflow:hidden}
 .stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--grad);opacity:.6}
 .stat .label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;font-weight:700}
-.stat .value{font-size:22px;font-weight:800;margin-top:4px;letter-spacing:-.5px}
+.stat .value{font-size:22px;font-weight:800;margin-top:4px}
 .stat.s1 .value{color:var(--cyan)}.stat.s2 .value{color:var(--green)}.stat.s3 .value{color:var(--purple)}.stat.s4 .value{color:var(--amber)}.stat.s5 .value{color:var(--pink)}
 .panel{background:var(--panel);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px}
 @media(max-width:640px){.panel{padding:12px;border-radius:14px}}
@@ -93,7 +83,7 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .field>input,.field>textarea,.field>select{width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:11px 13px;font-size:15px;outline:none;-webkit-appearance:none;appearance:none}
 .field>select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
 .field>input:focus,.field>textarea:focus,.field>select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.15)}
-.btn{background:var(--grad);color:white;border:none;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;justify-content:center;transition:.25s;white-space:nowrap}
+.btn{background:var(--grad);color:white;border:none;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;justify-content:center;white-space:nowrap}
 .btn:hover{transform:translateY(-1px)}
 .btn.ghost{background:transparent;border:1px solid var(--border2);color:#cbd5e1}
 .btn.ghost:hover{background:#1e293b}
@@ -101,7 +91,6 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .btn.warn{background:linear-gradient(135deg,#f59e0b,#d97706)}
 .btn.success{background:linear-gradient(135deg,#22c55e,#16a34a)}
 .btn.small{padding:7px 12px;font-size:12px;border-radius:8px}
-.btn.tiny{padding:5px 10px;font-size:11px;border-radius:6px}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .btn.save-btn{width:100%;padding:14px;font-size:14px;font-weight:700;background:linear-gradient(135deg,#22c55e,#16a34a);margin-top:16px}
 .btn .spin{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
@@ -119,12 +108,12 @@ input:checked+.slider:before{transform:translateX(20px);background:#fff}
 .tab{padding:9px 16px;text-align:center;font-size:12px;color:var(--text2);cursor:pointer;border-radius:8px;font-weight:600;flex:1;min-width:80px}
 .tab.active{background:var(--grad);color:white}
 .filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
-.filter-bar select{background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px 34px 10px 12px;font-size:13px;font-weight:500;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.filter-bar select{background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px 34px 10px 12px;font-size:13px;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
 .search-bar{width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:11px 14px 11px 40px;font-size:14px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:12px center;outline:none}
 .filter-bar .search-bar{flex:1;min-width:200px;margin:0}
 .tbl-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--border);-webkit-overflow-scrolling:touch}
 table.data-table{width:100%;border-collapse:collapse;font-size:13px;min-width:600px}
-table.data-table th{text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:12px 10px;border-bottom:1px solid var(--border);font-weight:700;background:rgba(10,14,26,.7);letter-spacing:.5px;white-space:nowrap}
+table.data-table th{text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:12px 10px;border-bottom:1px solid var(--border);font-weight:700;background:rgba(10,14,26,.7);white-space:nowrap}
 table.data-table td{padding:12px 10px;border-bottom:1px solid rgba(26,35,56,.5);color:#cbd5e1;vertical-align:middle}
 table.data-table tbody tr:hover td{background:rgba(56,189,248,.04)}
 table.data-table tr.selected td{background:rgba(56,189,248,.08)}
@@ -134,36 +123,30 @@ table.data-table tr.clickable{cursor:pointer}
 .badge.sent{background:rgba(56,189,248,.15);color:#7dd3fc;border:1px solid rgba(56,189,248,.3)}
 .badge.opened{background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.3)}
 .badge.count{background:rgba(236,72,153,.15);color:#f9a8d4;border:1px solid rgba(236,72,153,.3)}
-.badge.attach{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3);font-weight:800}
+.badge.attach{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3)}
 .badge.everopened{background:rgba(168,85,247,.15);color:#c4b5fd;border:1px solid rgba(168,85,247,.3);font-size:9px}
-.badge.banned{background:rgba(239,68,68,.2);color:#fca5a5;border:1px solid rgba(239,68,68,.4);font-weight:800}
-.badge.interested{background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.3)}
-.badge.spam{background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.3)}
-.badge.newsletter{background:rgba(100,116,139,.15);color:#94a3b8;border:1px solid rgba(100,116,139,.3)}
-.badge.other{background:rgba(100,116,139,.15);color:#94a3b8;border:1px solid rgba(100,116,139,.3)}
-.cbox{appearance:none;width:18px!important;height:18px!important;min-width:18px!important;max-width:18px!important;border:2px solid #475569;border-radius:5px;cursor:pointer;position:relative;background:var(--bg2);vertical-align:middle;flex-shrink:0;padding:0!important;margin:0}
+.badge.banned{background:rgba(239,68,68,.2);color:#fca5a5;border:1px solid rgba(239,68,68,.4)}
+.cbox{appearance:none;width:18px!important;height:18px!important;min-width:18px!important;max-width:18px!important;border:2px solid #475569;border-radius:5px;cursor:pointer;position:relative;background:var(--bg2);padding:0!important;margin:0}
 .cbox:checked{background:var(--cyan);border-color:var(--cyan)}
-.cbox:checked::after{content:'✓';position:absolute;color:white;font-size:13px;font-weight:700;top:50%;left:50%;transform:translate(-50%,-50%);line-height:1}
+.cbox:checked::after{content:'✓';position:absolute;color:white;font-size:13px;font-weight:700;top:50%;left:50%;transform:translate(-50%,-50%)}
 .empty{text-align:center;padding:40px 20px;color:var(--text3);font-size:13px}
 .empty .ico{font-size:44px;margin-bottom:12px;opacity:.5;display:block}
 .tpl-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .tpl-card .info{flex:1;min-width:0}
-.tpl-card .name{font-size:14px;font-weight:700;color:var(--text);word-break:break-word}
+.tpl-card .name{font-size:14px;font-weight:700;word-break:break-word}
 .tpl-card .sub{font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:4px}
 .tpl-card button{padding:6px 10px;font-size:11px;border-radius:7px;border:none;cursor:pointer;background:#1e293b;color:#cbd5e1;font-weight:600}
 .tpl-card button.danger{background:rgba(127,29,29,.5);color:#fca5a5}
-.bulk-help{background:linear-gradient(135deg,rgba(56,189,248,.08),rgba(99,102,241,.08));border:1px solid rgba(56,189,248,.25);border-radius:12px;padding:12px 14px;margin-bottom:12px}
-.bulk-help .title{font-size:12px;color:#7dd3fc;font-weight:700;margin-bottom:6px}
-.bulk-help .desc{font-size:11px;color:var(--text2);line-height:1.6}
-.bulk-area{width:100%;min-height:180px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:14px;font-family:'Inter',monospace;font-size:13px;resize:vertical;outline:none;line-height:1.7}
+.bulk-help{background:linear-gradient(135deg,rgba(56,189,248,.08),rgba(99,102,241,.08));border:1px solid rgba(56,189,248,.25);border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:12px;color:#7dd3fc;font-weight:700}
+.bulk-area{width:100%;min-height:180px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:14px;font-size:13px;resize:vertical;outline:none;line-height:1.7;font-family:'Inter',monospace}
 .bulk-area:focus{border-color:var(--cyan)}
 .bulk-preview-wrap{margin-top:12px;border:1px solid var(--border);border-radius:12px;overflow:hidden;display:none}
 .bulk-preview-wrap.show{display:block}
 .bulk-preview-head{background:rgba(10,14,26,.6);padding:10px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
 .bulk-preview-head .lbl{font-size:11px;color:var(--text2);font-weight:700;text-transform:uppercase}
 .bulk-preview-head .stat-pill{padding:4px 10px;border-radius:20px;font-weight:700;font-size:11px}
-.bulk-preview-head .stat-pill.ok{background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.3)}
-.bulk-preview-head .stat-pill.dup{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3)}
+.bulk-preview-head .stat-pill.ok{background:rgba(34,197,94,.15);color:#86efac}
+.bulk-preview-head .stat-pill.dup{background:rgba(245,158,11,.15);color:#fcd34d}
 .info-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-top:12px}
 .info-box .row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;gap:10px;align-items:center}
 .info-box .row .k{color:var(--text2)}
@@ -174,48 +157,46 @@ table.data-table tr.clickable{cursor:pointer}
 .quota-fill.crit{background:linear-gradient(90deg,#ef4444,#991b1b)}
 .quota-live{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--green);font-weight:600}
 .quota-live .dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 1.5s infinite}
-.toast{position:fixed;bottom:20px;right:20px;left:20px;background:rgba(15,23,42,.97);backdrop-filter:blur(20px);border:1px solid var(--border);color:var(--text);padding:14px 18px;border-radius:12px;font-size:13px;z-index:5000;opacity:0;transform:translateY(20px);transition:.3s;max-width:400px;margin:0 auto;font-weight:500;pointer-events:none}
+.toast{position:fixed;bottom:20px;right:20px;left:20px;background:rgba(15,23,42,.97);backdrop-filter:blur(20px);border:1px solid var(--border);padding:14px 18px;border-radius:12px;font-size:13px;z-index:5000;opacity:0;transform:translateY(20px);transition:.3s;max-width:400px;margin:0 auto;font-weight:500;pointer-events:none}
 .toast.show{opacity:1;transform:translateY(0)}
 .toast.ok{border-left:4px solid var(--green)}
 .toast.err{border-left:4px solid var(--red)}
 .toast.warn{border-left:4px solid var(--amber)}
 .upload-area{display:flex;align-items:center;gap:12px;padding:14px;border:2px dashed var(--border2);border-radius:12px;margin-bottom:12px;cursor:pointer;background:var(--bg2)}
-.upload-area:hover{border-color:var(--cyan)}
 .upload-area input[type=file]{display:none}
 .upload-area label{cursor:pointer;display:flex;align-items:center;gap:12px;width:100%}
 .preview-box{width:64px;height:64px;border-radius:12px;background:#fff;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
 .preview-box img{max-width:100%;max-height:100%;object-fit:contain}
 .preview-box .ph{font-size:26px;color:#475569}
 .upload-info{flex:1;min-width:0}
-.upload-info .t{font-size:13px;color:var(--text);font-weight:600;margin-bottom:3px}
+.upload-info .t{font-size:13px;font-weight:600;margin-bottom:3px}
 .upload-info .s{font-size:11px;color:var(--text3);word-break:break-all}
 .sig-fields{display:grid;grid-template-columns:1fr;gap:10px}
 @media(min-width:600px){.sig-fields{grid-template-columns:1fr 1fr}}
 .sig-preview-outer{background:rgba(10,14,26,.6);border:1px solid var(--border2);border-radius:12px;padding:14px;margin-top:14px;display:none}
 .sig-preview-outer.show{display:block}
-.sig-preview-canvas{background:#ffffff;color:#222;border-radius:10px;padding:20px;overflow-x:auto;font-family:Arial,Helvetica,sans-serif}
-.file-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;user-select:none;width:100%}
+.sig-preview-canvas{background:#ffffff;color:#222;border-radius:10px;padding:20px;overflow-x:auto;font-family:Arial,sans-serif}
+.file-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;width:100%}
 .file-item.selected{border-color:var(--cyan);background:rgba(56,189,248,.08)}
-.file-item .icon{width:40px;height:40px;border-radius:9px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.file-item .icon{width:40px;height:40px;border-radius:9px;background:rgba(56,189,248,.1);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
 .file-item .info{flex:1;min-width:0;overflow:hidden}
-.file-item .fname{font-size:13px;font-weight:600;color:var(--text);word-break:break-all;line-height:1.3}
+.file-item .fname{font-size:13px;font-weight:600;word-break:break-all}
 .file-item .fmeta{font-size:11px;color:var(--text3);margin-top:3px}
-.file-item .actions{flex-shrink:0}
-.file-item .actions button{padding:6px 10px;font-size:11px;border-radius:7px;border:none;cursor:pointer;background:rgba(127,29,29,.5);color:#fca5a5;font-weight:600}
+.file-item .actions button{padding:6px 10px;font-size:11px;border-radius:7px;border:none;cursor:pointer;background:rgba(127,29,29,.5);color:#fca5a5}
 .cv-file-pick{padding:11px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:12px}
 .cv-file-pick.selected{border-color:var(--cyan);background:rgba(56,189,248,.1)}
 .cv-file-pick .ico{font-size:22px;flex-shrink:0;width:36px;height:36px;display:flex;align-items:center;justify-content:center}
-.cv-file-pick .nm{font-size:13px;font-weight:600;color:var(--text);word-break:break-all}
+.cv-file-pick .nm{font-size:13px;font-weight:600;word-break:break-all}
 .cv-file-pick .mt{font-size:11px;color:var(--text3);margin-top:2px}
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);z-index:2000;display:flex;align-items:center;justify-content:center;padding:14px;overflow-y:auto}
 .modal{background:linear-gradient(135deg,#0f172a,#0a0e1a);border:1px solid var(--border2);border-radius:18px;padding:20px;max-width:900px;width:100%;max-height:92vh;overflow-y:auto;position:relative;margin:auto}
 @media(max-width:640px){.modal{padding:14px;border-radius:14px}}
-.modal h3{font-size:16px;margin-bottom:16px;color:var(--text);padding-right:36px;font-weight:700}
+.modal h3{font-size:16px;margin-bottom:16px;padding-right:36px;font-weight:700}
 .modal .close-btn{position:absolute;top:12px;right:14px;background:transparent;border:none;color:var(--text2);font-size:22px;cursor:pointer}
 .confirm-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px}
 .confirm-box{background:linear-gradient(135deg,#0f172a,#0a0e1a);border:1px solid var(--border2);border-radius:18px;padding:24px;max-width:420px;width:100%;text-align:center}
 .confirm-box .icon{font-size:48px;margin-bottom:12px}
-.confirm-box .title{font-size:17px;font-weight:800;color:var(--text);margin-bottom:8px}
+.confirm-box .title{font-size:17px;font-weight:800;margin-bottom:8px}
 .confirm-box .message{font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.6}
 .confirm-box .buttons{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 .confirm-box button{padding:11px 22px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;min-width:100px}
@@ -226,52 +207,41 @@ table.data-table tr.clickable{cursor:pointer}
 .tips-panel h2{color:#fcd34d}
 .tips-list{display:flex;flex-direction:column;gap:8px}
 .tip{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;background:rgba(10,14,26,.5);border-radius:10px;border:1px solid var(--border)}
-.tip-ic{font-size:16px;flex-shrink:0;line-height:1.3}
-.tip b{display:block;font-size:12px;color:var(--text);margin-bottom:2px}
+.tip-ic{font-size:16px;flex-shrink:0}
+.tip b{display:block;font-size:12px;margin-bottom:2px}
 .tip span{font-size:11px;color:var(--text2);line-height:1.5;display:block}
-.logo-warning{background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(239,68,68,.1));border:1px solid rgba(245,158,11,.4);border-radius:10px;padding:10px 12px;margin-bottom:12px;display:flex;align-items:flex-start;gap:10px}
+.logo-warning{background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(239,68,68,.1));border:1px solid rgba(245,158,11,.4);border-radius:10px;padding:10px 12px;margin-bottom:12px;display:flex;gap:10px}
 .logo-warning .warn-ic{font-size:18px;flex-shrink:0}
-.logo-warning .warn-text{font-size:11px;color:#fcd34d;line-height:1.5}
+.logo-warning .warn-text{font-size:11px;color:#fcd34d}
 .quiet-banner{display:none;background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(239,68,68,.1));border:1px solid rgba(245,158,11,.4);border-radius:12px;padding:12px 16px;margin-bottom:16px;align-items:center;gap:12px;flex-wrap:wrap}
 .quiet-banner.show{display:flex}
 .quiet-banner .icn{font-size:22px}
 .quiet-banner .info{flex:1;min-width:180px}
 .quiet-banner .info .ttl{font-weight:700;color:#fcd34d;font-size:13px}
 .quiet-banner .info .dsc{font-size:11px;color:var(--text2);margin-top:2px}
-.batch-box{margin-top:12px;padding:16px;background:linear-gradient(135deg,rgba(56,189,248,.06),rgba(99,102,241,.04));border:1px solid rgba(56,189,248,.2);border-radius:12px;display:none}
-.batch-box.show{display:block}
-.batch-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;flex-wrap:wrap}
-.batch-value{background:var(--grad);color:white;padding:8px 22px;border-radius:12px;font-weight:800;font-size:20px;min-width:90px;text-align:center}
-.batch-slider{width:100%;height:6px;background:#1e293b;border-radius:8px;outline:none;-webkit-appearance:none;appearance:none;margin:10px 0;cursor:pointer}
-.batch-slider::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--grad);cursor:pointer;border:3px solid #0a0e1a}
-.batch-marks{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:4px}
-.batch-number-row{display:flex;gap:8px;align-items:center;margin-top:14px}
-.batch-number-row input{flex:1;background:#0c1220;border:1px solid var(--border2);border-radius:10px;padding:11px 14px;font-size:16px;font-weight:700;color:var(--cyan);text-align:center;outline:none;max-width:220px}
-.batch-hint{font-size:11px;color:var(--text3);margin-top:10px;padding:8px 10px;background:rgba(56,189,248,.05);border-radius:8px;border-left:3px solid var(--cyan);line-height:1.5}
-.batch-hint.err{color:#fca5a5;background:rgba(239,68,68,.05);border-left-color:var(--red)}
 .composer-layout{display:grid;grid-template-columns:1fr 340px;gap:16px}
 @media(max-width:1000px){.composer-layout{grid-template-columns:1fr}.composer-sidebar{position:static!important}}
 .composer-sidebar{position:sticky;top:180px;align-self:flex-start}
 .ai-analysis-panel{background:linear-gradient(135deg,rgba(56,189,248,.06),rgba(168,85,247,.05),rgba(10,14,26,.9));border:1px solid var(--border2);border-radius:14px;padding:16px}
-.ai-header{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;color:#7dd3fc;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.ai-header{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;color:#7dd3fc;text-transform:uppercase;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);flex-wrap:wrap}
 .ai-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 1.5s infinite;flex-shrink:0}
 .ai-score-section{display:flex;justify-content:center;margin-bottom:14px}
 .ai-score-circle{width:110px;height:110px;border-radius:50%;background:conic-gradient(#1e293b 0%,#1e293b 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
 .ai-score-circle::after{content:'';position:absolute;inset:8px;background:linear-gradient(135deg,#0c1220,#0a0e1a);border-radius:50%;z-index:1}
 .ai-score-value{font-size:32px;font-weight:800;color:var(--text2);z-index:2;position:relative;line-height:1}
-.ai-score-label{font-size:9px;color:var(--text2);z-index:2;position:relative;margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+.ai-score-label{font-size:9px;color:var(--text2);z-index:2;position:relative;margin-top:4px;text-transform:uppercase}
 .ai-prob-bar{margin-bottom:12px}
 .ai-prob-track{height:8px;background:#1e293b;border-radius:8px;overflow:hidden}
 .ai-prob-fill{height:100%;background:linear-gradient(90deg,#22c55e,#38bdf8);border-radius:8px;transition:.5s;width:0}
-.ai-issue{display:flex;gap:8px;padding:8px 10px;background:rgba(245,158,11,.1);border-left:3px solid var(--amber);border-radius:6px;font-size:11px;color:#fcd34d;margin-bottom:6px;line-height:1.4}
+.ai-issue{display:flex;gap:8px;padding:8px 10px;background:rgba(245,158,11,.1);border-left:3px solid var(--amber);border-radius:6px;font-size:11px;color:#fcd34d;margin-bottom:6px}
 .ai-issue.high{background:rgba(239,68,68,.1);border-color:var(--red);color:#fca5a5}
 .ai-issue.low{background:rgba(56,189,248,.1);border-color:var(--cyan);color:#7dd3fc}
-.ai-suggestion{padding:8px 10px;background:rgba(34,197,94,.08);border-left:3px solid var(--green);border-radius:6px;font-size:11px;color:#86efac;margin-bottom:6px;line-height:1.4}
-.ai-subject-item{padding:9px 11px;background:#0f172a;border:1px solid var(--border);border-radius:6px;margin-bottom:6px;font-size:12px;color:#cbd5e1;cursor:pointer;line-height:1.4}
+.ai-suggestion{padding:8px 10px;background:rgba(34,197,94,.08);border-left:3px solid var(--green);border-radius:6px;font-size:11px;color:#86efac;margin-bottom:6px}
+.ai-subject-item{padding:9px 11px;background:#0f172a;border:1px solid var(--border);border-radius:6px;margin-bottom:6px;font-size:12px;color:#cbd5e1;cursor:pointer}
 .ai-subject-item:hover{border-color:var(--cyan);background:#1e293b;color:#7dd3fc}
 .deep-btn{background:linear-gradient(135deg,#a78bfa,#6366f1);border:none;color:white;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer}
 .send-options-row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
-.send-options-row label{display:flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--border);padding:9px 12px;border-radius:8px;font-size:12px;color:#cbd5e1;cursor:pointer;font-weight:500}
+.send-options-row label{display:flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--border);padding:9px 12px;border-radius:8px;font-size:12px;color:#cbd5e1;cursor:pointer}
 .send-options-row input[type=checkbox]{accent-color:var(--cyan);width:15px;height:15px;cursor:pointer}
 .recip-row{display:flex;gap:8px;margin-bottom:8px;flex-direction:column}
 @media(min-width:600px){.recip-row{flex-direction:row}}
@@ -280,27 +250,27 @@ table.data-table tr.clickable{cursor:pointer}
 .bulk-action-bar{display:none;gap:8px;padding:12px;background:linear-gradient(135deg,rgba(56,189,248,.1),rgba(99,102,241,.1));border:1px solid rgba(56,189,248,.3);border-radius:12px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
 .bulk-action-bar.show{display:flex}
 .inbox-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:12px}
-.inbox-toolbar select{background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:8px 30px 8px 12px;font-size:12px;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;font-weight:500}
+.inbox-toolbar select{background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:8px 30px 8px 12px;font-size:12px;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
 .inbox-layout{display:grid;grid-template-columns:400px 1fr;gap:0;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--bg2);min-height:700px}
 @media(max-width:900px){.inbox-layout{grid-template-columns:1fr;min-height:auto}.inbox-list{max-height:400px}}
 .inbox-list{border-right:1px solid var(--border);background:rgba(10,14,26,.4);max-height:800px;overflow-y:auto}
 @media(max-width:900px){.inbox-list{border-right:none;border-bottom:1px solid var(--border)}}
-.inbox-item{padding:14px;border-bottom:1px solid var(--border);cursor:pointer;transition:.15s;position:relative}
+.inbox-item{padding:14px;border-bottom:1px solid var(--border);cursor:pointer;position:relative;animation:slideIn .2s}
 .inbox-item:hover{background:rgba(56,189,248,.05)}
 .inbox-item.active{background:rgba(56,189,248,.1);border-left:3px solid var(--cyan);padding-left:11px}
 .inbox-item.unread{border-left:3px solid var(--cyan);padding-left:11px}
 .inbox-item.unread .from-name{color:var(--cyan);font-weight:800}
-.inbox-item .from{font-size:13px;font-weight:700;color:var(--text);display:flex;justify-content:space-between;gap:8px;align-items:center}
+.inbox-item .from{font-size:13px;font-weight:700;display:flex;justify-content:space-between;gap:8px;align-items:center}
 .inbox-item .from-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
 .inbox-item .date{font-size:10px;color:var(--text3);white-space:nowrap}
-.inbox-item .subj{font-size:12px;color:#cbd5e1;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.inbox-item .subj{font-size:12px;color:#cbd5e1;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .inbox-item .badges{margin-top:8px;display:flex;gap:4px;flex-wrap:wrap}
 .inbox-viewer{display:flex;flex-direction:column;background:var(--bg);min-height:700px;position:relative}
 .email-head{padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.6)}
-.email-head h4{font-size:17px;font-weight:700;color:var(--text);margin-bottom:12px;word-break:break-word;line-height:1.4}
+.email-head h4{font-size:17px;font-weight:700;margin-bottom:12px;word-break:break-word}
 .email-meta{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--text2)}
 .email-meta .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start}
-.email-meta .row b{color:var(--text);font-weight:700;min-width:70px;flex-shrink:0}
+.email-meta .row b{color:var(--text);min-width:70px;flex-shrink:0}
 .email-meta .row span{color:#cbd5e1;word-break:break-word;flex:1}
 .email-body{padding:0;overflow-y:auto;flex:1;background:#fff;max-height:600px;min-height:300px;display:flex;align-items:flex-start;justify-content:center}
 .email-body iframe{width:100%;border:none;background:#fff;display:block;min-height:300px}
@@ -311,12 +281,12 @@ table.data-table tr.clickable{cursor:pointer}
 .inbox-pagination{display:flex;justify-content:center;align-items:center;gap:12px;padding:16px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-top:14px;flex-wrap:wrap}
 .inbox-pagination .page-info{font-size:13px;color:var(--text2);font-weight:600;padding:8px 16px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)}
 .inbox-pagination button{padding:10px 20px;font-size:13px;font-weight:600;border-radius:10px;border:1px solid var(--border2);background:var(--bg2);color:#cbd5e1;cursor:pointer}
-.inbox-pagination button:hover:not(:disabled){background:#1e293b;border-color:var(--cyan);color:#7dd3fc}
 .inbox-pagination button:disabled{opacity:.4;cursor:not-allowed}
+.live-dot{width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse 1.5s infinite;display:inline-block;margin-right:4px}
 .test-banner{background:linear-gradient(135deg,rgba(236,72,153,.15),rgba(168,85,247,.15));border:1px solid rgba(236,72,153,.4);border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px}
 .test-banner .ico{font-size:22px}
-.test-banner .txt{font-size:12px;color:#f9a8d4;font-weight:600;line-height:1.5}
-.warning-banner{background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(239,68,68,.1));border:1px solid rgba(245,158,11,.4);border-radius:10px;padding:10px 12px;margin-top:8px;display:flex;align-items:flex-start;gap:10px;font-size:11px;color:#fcd34d;line-height:1.5}
+.test-banner .txt{font-size:12px;color:#f9a8d4;font-weight:600}
+.warning-banner{background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(239,68,68,.1));border:1px solid rgba(245,158,11,.4);border-radius:10px;padding:10px 12px;margin-top:8px;display:flex;gap:10px;font-size:11px;color:#fcd34d}
 .warning-banner.danger{background:linear-gradient(135deg,rgba(239,68,68,.2),rgba(220,38,38,.15));border-color:rgba(239,68,68,.5);color:#fca5a5}
 .warning-banner.success{background:linear-gradient(135deg,rgba(34,197,94,.15),rgba(22,163,74,.1));border-color:rgba(34,197,94,.4);color:#86efac}
 .warning-banner .icn{font-size:16px;flex-shrink:0}
@@ -324,24 +294,23 @@ table.data-table tr.clickable{cursor:pointer}
 .danger-zone h2{color:#fca5a5}
 .setup-card{background:linear-gradient(135deg,rgba(56,189,248,.06),rgba(168,85,247,.05));border:1px solid rgba(56,189,248,.25);border-radius:16px;padding:24px;text-align:center;max-width:640px;margin:0 auto}
 .setup-card .setup-icon{font-size:56px;margin-bottom:14px;display:block}
-.setup-card h3{font-size:19px;font-weight:800;color:var(--text);margin-bottom:10px}
+.setup-card h3{font-size:19px;font-weight:800;margin-bottom:10px}
 .setup-card p{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:20px}
 .setup-steps{text-align:left;background:rgba(10,14,26,.6);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:20px}
 .setup-steps ol{padding-left:20px;font-size:13px;color:#cbd5e1;line-height:2}
 .setup-steps a{color:var(--cyan);text-decoration:none}
-.setup-steps code{background:rgba(56,189,248,.1);padding:2px 6px;border-radius:4px;font-size:12px;color:#7dd3fc;font-family:'Courier New',monospace}
+.setup-steps code{background:rgba(56,189,248,.1);padding:2px 6px;border-radius:4px;font-size:12px;color:#7dd3fc;font-family:monospace}
 .memory-item{padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px}
 .memory-item .top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap}
-.memory-item .sender{font-size:13px;font-weight:700;color:var(--text);word-break:break-all}
-.memory-item .count{font-size:10px;color:#7dd3fc;font-weight:700;padding:3px 8px;background:rgba(56,189,248,.1);border-radius:12px;border:1px solid rgba(56,189,248,.25)}
-.memory-item .subject{font-size:11px;color:var(--text2);line-height:1.5;margin-top:4px}
+.memory-item .sender{font-size:13px;font-weight:700;word-break:break-all}
+.memory-item .count{font-size:10px;color:#7dd3fc;font-weight:700;padding:3px 8px;background:rgba(56,189,248,.1);border-radius:12px}
 .ai-profile-banner{background:linear-gradient(135deg,rgba(168,85,247,.12),rgba(56,189,248,.08));border:1px solid rgba(168,85,247,.35);border-radius:12px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .ai-profile-banner .ico{font-size:22px}
-.ai-profile-banner .txt{font-size:12px;color:#c4b5fd;font-weight:600;line-height:1.5;flex:1;min-width:160px}
+.ai-profile-banner .txt{font-size:12px;color:#c4b5fd;font-weight:600;flex:1;min-width:160px}
 .recipient-stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
 @media(min-width:600px){.recipient-stat-grid{grid-template-columns:repeat(4,1fr)}}
 .recipient-stat{background:linear-gradient(135deg,rgba(30,41,59,.6),rgba(15,23,42,.6));border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center}
-.recipient-stat .label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:6px}
+.recipient-stat .label{font-size:10px;color:var(--text2);text-transform:uppercase;font-weight:700;margin-bottom:6px}
 .recipient-stat .value{font-size:24px;font-weight:800}
 .recipient-stat.total .value{color:var(--cyan)}
 .recipient-stat.sent .value{color:#7dd3fc}
@@ -349,68 +318,68 @@ table.data-table tr.clickable{cursor:pointer}
 .recipient-stat.pending .value{color:#fcd34d}
 .send-history-item{padding:14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px}
 .send-history-item .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:8px}
-.send-history-item .subj{font-size:13px;font-weight:600;color:var(--text);word-break:break-word;flex:1}
+.send-history-item .subj{font-size:13px;font-weight:600;word-break:break-word;flex:1}
 .send-history-item .meta{display:flex;gap:12px;font-size:11px;color:var(--text3);flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)}
-.send-history-item .meta b{color:var(--text2);font-weight:600}
 .send-history-item.opened{border-color:rgba(34,197,94,.4);background:linear-gradient(135deg,rgba(34,197,94,.05),rgba(10,14,26,.6))}
 .attachment-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .attachment-name{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:12px;font-size:10px;color:#fcd34d;font-weight:600;word-break:break-all;max-width:100%}
 .user-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
 .user-card.banned{border-color:rgba(239,68,68,.5);background:linear-gradient(135deg,rgba(239,68,68,.05),rgba(10,14,26,.6))}
 .user-card .top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
-.user-card .name{font-size:15px;font-weight:700;color:var(--text)}
+.user-card .name{font-size:15px;font-weight:700}
 .user-card .email{font-size:11px;color:var(--text3);word-break:break-all;margin-top:2px}
 .user-card .stats-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .user-card .actions-row{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
 .ai-usage-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px}
 @media(min-width:700px){.ai-usage-grid{grid-template-columns:repeat(4,1fr)}}
 .ai-usage-card{background:linear-gradient(135deg,rgba(56,189,248,.08),rgba(168,85,247,.08));border:1px solid rgba(56,189,248,.25);border-radius:12px;padding:14px;text-align:center}
-.ai-usage-card .lbl{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:6px}
+.ai-usage-card .lbl{font-size:10px;color:var(--text2);text-transform:uppercase;font-weight:700;margin-bottom:6px}
 .ai-usage-card .val{font-size:22px;font-weight:800;color:var(--cyan)}
 .ai-usage-card.highlight .val{color:#fbbf24}
 .profile-avatar{width:120px;height:120px;border-radius:50%;border:4px solid var(--cyan);object-fit:cover;background:var(--bg2);box-shadow:0 8px 24px rgba(56,189,248,.35)}
-.ban-banner{background:linear-gradient(135deg,rgba(239,68,68,.15),rgba(220,38,38,.1));border:1px solid rgba(239,68,68,.5);border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:flex-start;gap:12px}
+.ban-banner{background:linear-gradient(135deg,rgba(239,68,68,.15),rgba(220,38,38,.1));border:1px solid rgba(239,68,68,.5);border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;gap:12px}
 .ban-banner .icn{font-size:28px}
 .ban-banner .txt{flex:1}
 .ban-banner .txt .ttl{font-size:15px;font-weight:800;color:#fca5a5;margin-bottom:4px}
 .ban-banner .txt .dsc{font-size:12px;color:#fecaca;line-height:1.6}
 .request-form{background:linear-gradient(135deg,rgba(56,189,248,.06),rgba(168,85,247,.06));border:1px solid rgba(56,189,248,.3);border-radius:14px;padding:20px;margin-top:16px}
 .notice-banner{background:linear-gradient(135deg,rgba(56,189,248,.1),rgba(168,85,247,.08));border:1px solid rgba(56,189,248,.3);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#7dd3fc;line-height:1.6}
+.quick-auto-panel{background:linear-gradient(135deg,rgba(34,197,94,.08),rgba(56,189,248,.08));border:1px solid rgba(34,197,94,.35)}
+.quick-auto-panel h2{color:#86efac}
+.quick-stat{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:12px;color:var(--text2);border-bottom:1px dashed rgba(51,65,85,.5)}
+.quick-stat:last-child{border-bottom:none}
+.quick-stat b{color:var(--text);font-weight:700}
+.ocr-drop{padding:30px 20px;border:2px dashed var(--cyan);border-radius:12px;background:rgba(56,189,248,.05);text-align:center;cursor:pointer;transition:.2s}
+.ocr-drop:hover{background:rgba(56,189,248,.1);border-color:#7dd3fc}
+.ocr-drop .ico{font-size:42px;margin-bottom:8px;display:block}
+.ocr-drop .t{font-size:13px;color:#7dd3fc;font-weight:700;margin-bottom:4px}
+.ocr-drop .s{font-size:11px;color:var(--text3)}
+.ocr-preview{max-width:100%;max-height:300px;border-radius:10px;margin-top:12px;border:1px solid var(--border);display:none}
+.ocr-preview.show{display:block}
+.ocr-progress{margin-top:12px;background:#1e293b;border-radius:8px;height:8px;overflow:hidden;display:none}
+.ocr-progress.show{display:block}
+.ocr-progress-fill{height:100%;background:var(--grad);width:0%;transition:.3s}
 @media(max-width:768px){
 .maintabs{position:fixed;bottom:0;top:auto;left:0;right:0;padding:6px 8px;z-index:200;border-top:1px solid var(--border);border-bottom:none;justify-content:space-around;box-shadow:0 -10px 30px rgba(0,0,0,.3);padding-bottom:calc(6px + env(safe-area-inset-bottom));background:rgba(10,14,26,.98)}
 .maintab{flex:1;text-align:center;font-size:10px;padding:8px 4px}
 .container{padding-bottom:calc(80px + env(safe-area-inset-bottom))}
 .toast{bottom:calc(80px + env(safe-area-inset-bottom))}
-.inbox-layout{min-height:auto}
 .modal{margin:10px;max-height:calc(90vh - env(safe-area-inset-bottom))}
 .btn{min-height:44px}
 input,textarea,select{min-height:44px}
-.topbar{padding:8px 12px}
-.user-chip .chip-btn{padding:6px 8px;font-size:10px}
 }
 ::-webkit-scrollbar{width:8px;height:8px}
 ::-webkit-scrollbar-track{background:var(--bg2)}
 ::-webkit-scrollbar-thumb{background:#2a3550;border-radius:5px}
-*{scrollbar-color:#2a3550 var(--bg2);scrollbar-width:thin}
 </style>
 </head>
 <body>
 
-<!-- LOGIN VIEW -->
+<!-- LOGIN -->
 <div id="loginView" class="auth-wrap">
 <div class="auth-card">
 <div class="brand-logo">
-<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-<defs>
-<linearGradient id="mfGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset=".5" stop-color="#6366f1"/><stop offset="1" stop-color="#a78bfa"/></linearGradient>
-<linearGradient id="mfGrad2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e0e7ff"/></linearGradient>
-</defs>
-<rect x="2" y="2" width="60" height="60" rx="16" fill="url(#mfGrad)"/>
-<path d="M14 22 L32 34 L50 22 L50 46 Q50 48 48 48 L16 48 Q14 48 14 46 Z" fill="url(#mfGrad2)" opacity="0.97"/>
-<path d="M14 22 L32 34 L50 22" stroke="url(#mfGrad)" stroke-width="1.8" fill="none" stroke-linejoin="round"/>
-<circle cx="49" cy="15" r="6" fill="#fbbf24"/>
-<path d="M46.5 15 L48 16.5 L51.5 13" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>
+<svg viewBox="0 0 64 64"><defs><linearGradient id="mfGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset=".5" stop-color="#6366f1"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="16" fill="url(#mfGrad)"/><path d="M14 22 L32 34 L50 22 L50 46 Q50 48 48 48 L16 48 Q14 48 14 46 Z" fill="#fff" opacity=".97"/><path d="M14 22 L32 34 L50 22" stroke="url(#mfGrad)" stroke-width="1.8" fill="none" stroke-linejoin="round"/><circle cx="49" cy="15" r="6" fill="#fbbf24"/></svg>
 </div>
 <h1>MailFlow Pro</h1>
 <p class="sub">AI-powered email automation.<br>Send smart. Land in inbox.</p>
@@ -422,33 +391,29 @@ input,textarea,select{min-height:44px}
 </div>
 <div id="loginForm" class="auth-form">
 <div id="loginError" class="auth-error hidden"></div>
-<div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email"></div>
-<div class="field"><label>Password</label><input type="password" id="loginPassword" placeholder="Your password" autocomplete="current-password"></div>
+<div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="you@example.com"></div>
+<div class="field"><label>Password</label><input type="password" id="loginPassword" placeholder="Your password"></div>
 <button class="btn" onclick="doEmailLogin()" style="width:100%">🔓 Login</button>
 </div>
 <div id="registerForm" class="auth-form hidden">
 <div id="registerError" class="auth-error hidden"></div>
-<div class="field"><label>Full Name</label><input type="text" id="registerName" placeholder="Your name" autocomplete="name"></div>
-<div class="field"><label>Email</label><input type="email" id="registerEmail" placeholder="you@example.com" autocomplete="email"></div>
-<div class="field"><label>Password (min 8 chars)</label><input type="password" id="registerPassword" placeholder="Create password" autocomplete="new-password"></div>
+<div class="field"><label>Full Name</label><input type="text" id="registerName" placeholder="Your name"></div>
+<div class="field"><label>Email</label><input type="email" id="registerEmail" placeholder="you@example.com"></div>
+<div class="field"><label>Password (min 8 chars)</label><input type="password" id="registerPassword" placeholder="Create password"></div>
 <button class="btn save-btn" onclick="doEmailRegister()">✨ Create Account</button>
 </div>
-<div class="notice-banner" style="margin-top:16px">
-💡 <b>Note:</b> Email login gives access to AI features. Connect Google from Settings to send emails.
-</div>
+<div class="notice-banner" style="margin-top:16px">💡 <b>Note:</b> Email login = AI features. Google connect for sending.</div>
 <div class="auth-features">
 <div class="feat"><span class="ico">🤖</span> AI writes & improves emails</div>
-<div class="feat"><span class="ico">📄</span> AI CV Analyzer (PDF/DOCX)</div>
-<div class="feat"><span class="ico">🛡️</span> Real-time spam detection</div>
-<div class="feat"><span class="ico">📤</span> Bulk personalized campaigns</div>
-<div class="feat"><span class="ico">📥</span> Fast IMAP Inbox</div>
+<div class="feat"><span class="ico">📸</span> Screenshot → Text extractor</div>
+<div class="feat"><span class="ico">📥</span> Live IMAP inbox</div>
 <div class="feat"><span class="ico">👁️</span> Open tracking & analytics</div>
 </div>
-<div class="auth-legal">By continuing you agree to our <a href="/terms" target="_blank">Terms</a> & <a href="/privacy" target="_blank">Privacy Policy</a></div>
+<div class="auth-legal">By continuing you agree to <a href="/terms">Terms</a> & <a href="/privacy">Privacy</a></div>
 </div>
 </div>
 
-<!-- BANNED VIEW -->
+<!-- BANNED -->
 <div id="bannedView" class="auth-wrap hidden">
 <div class="auth-card" style="max-width:600px">
 <div style="font-size:64px;margin-bottom:16px">🚫</div>
@@ -456,43 +421,32 @@ input,textarea,select{min-height:44px}
 <div class="ban-banner" style="margin-top:20px;text-align:left">
 <div class="icn">⚠️</div>
 <div class="txt">
-<div class="ttl">Your account has been suspended</div>
-<div class="dsc" id="banReasonText">Your account was suspended for violating our terms of service. If you believe this is a mistake, you can submit an access request below.</div>
+<div class="ttl">Account suspended</div>
+<div class="dsc" id="banReasonText">You can submit an access request below.</div>
 </div>
 </div>
 <div class="request-form">
-<h3 style="font-size:15px;font-weight:800;margin-bottom:14px;color:var(--cyan)">📝 Request New Access</h3>
-<div class="field"><label>Full Name *</label><input type="text" id="reqName" placeholder="Your full name"></div>
-<div class="field"><label>New Email *</label><input type="email" id="reqEmail" placeholder="your.new@email.com"></div>
-<div class="field"><label>Company (Optional)</label><input type="text" id="reqCompany" placeholder="Company name"></div>
-<div class="field"><label>Phone (Optional)</label><input type="text" id="reqPhone" placeholder="+92..."></div>
-<div class="field"><label>Reason for Access *</label><textarea id="reqReason" class="bulk-area" placeholder="Why should we grant you access?" style="min-height:100px;font-size:13px"></textarea></div>
+<h3 style="font-size:15px;font-weight:800;margin-bottom:14px;color:var(--cyan)">📝 Request Access</h3>
+<div class="field"><label>Full Name *</label><input type="text" id="reqName"></div>
+<div class="field"><label>New Email *</label><input type="email" id="reqEmail"></div>
+<div class="field"><label>Company</label><input type="text" id="reqCompany"></div>
+<div class="field"><label>Phone</label><input type="text" id="reqPhone"></div>
+<div class="field"><label>Reason *</label><textarea id="reqReason" class="bulk-area" style="min-height:100px;font-size:13px"></textarea></div>
 <button class="btn save-btn" onclick="submitAccessRequest()">📩 Submit Request</button>
-<div style="margin-top:12px;font-size:11px;color:var(--text3);line-height:1.6;text-align:center">
-Admin will review your request within 24-48 hours.
 </div>
-</div>
-<button class="btn ghost" onclick="location.reload()" style="width:100%;margin-top:16px">← Back to Login</button>
+<button class="btn ghost" onclick="location.reload()" style="width:100%;margin-top:16px">← Back</button>
 </div>
 </div>
 
-<!-- APP VIEW -->
+<!-- APP -->
 <div id="appView" class="hidden">
 <div class="topbar">
 <div class="logo-top">
-<div class="mini-logo">
-<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-<defs><linearGradient id="mfGradM" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset=".5" stop-color="#6366f1"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs>
-<rect x="2" y="2" width="60" height="60" rx="14" fill="url(#mfGradM)"/>
-<path d="M14 22 L32 34 L50 22 L50 46 Q50 48 48 48 L16 48 Q14 48 14 46 Z" fill="#fff" opacity="0.97"/>
-<path d="M14 22 L32 34 L50 22" stroke="url(#mfGradM)" stroke-width="1.8" fill="none" stroke-linejoin="round"/>
-<circle cx="49" cy="15" r="5.5" fill="#fbbf24"/>
-</svg>
-</div>
+<div class="mini-logo"><svg viewBox="0 0 64 64"><defs><linearGradient id="mfGradM" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset=".5" stop-color="#6366f1"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="14" fill="url(#mfGradM)"/><path d="M14 22 L32 34 L50 22 L50 46 Q50 48 48 48 L16 48 Q14 48 14 46 Z" fill="#fff" opacity=".97"/><path d="M14 22 L32 34 L50 22" stroke="url(#mfGradM)" stroke-width="1.8" fill="none" stroke-linejoin="round"/><circle cx="49" cy="15" r="5.5" fill="#fbbf24"/></svg></div>
 <span class="brand-text">MailFlow Pro</span>
 </div>
 <div class="user-chip">
-<img id="userAvatar" class="user-avatar" src="" style="display:none" alt="" onclick="openProfileModal()">
+<img id="userAvatar" class="user-avatar" src="" style="display:none" onclick="openProfileModal()">
 <span id="topName" onclick="openProfileModal()" style="cursor:pointer;font-weight:600"></span>
 <span id="myAppId" class="app-id-pill hidden"></span>
 <span id="adminBadge" class="badge admin hidden">👑 ADMIN</span>
@@ -514,20 +468,20 @@ Admin will review your request within 24-48 hours.
 <div class="page-layout">
 <aside class="sidebar">
 <div class="panel tips-panel">
-<h2>🛡️ Inbox Placement</h2>
+<h2>🛡️ Inbox Tips</h2>
 <div class="tips-list">
-<div class="tip"><span class="tip-ic">⏱️</span><div><b>Delay 15-20+ sec</b><span>Below 15 = spam risk</span></div></div>
+<div class="tip"><span class="tip-ic">⏱️</span><div><b>Delay 15-20+ sec</b><span>Below 15 = spam</span></div></div>
 <div class="tip"><span class="tip-ic">📊</span><div><b>Batch 5-30/hour</b><span>Above 50 = flagged</span></div></div>
-<div class="tip"><span class="tip-ic">🚫</span><div><b>Avoid logos</b><span>Raises spam score</span></div></div>
 <div class="tip"><span class="tip-ic">💬</span><div><b>Personalize</b><span>Use {name} & {company}</span></div></div>
 </div>
 </div>
 </aside>
 <main class="main-area">
-<div id="googleBanner" class="notice-banner hidden" style="background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(239,68,68,.1));border:1px solid rgba(245,158,11,.4);color:#fcd34d">
-🔗 <b>Google not connected.</b> <a href="/auth/google" style="color:var(--cyan);text-decoration:underline;cursor:pointer">Connect Google</a> to send emails, track opens, and use Drive.
+<div id="googleBanner" class="notice-banner hidden" style="background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(239,68,68,.1));border-color:rgba(245,158,11,.4);color:#fcd34d">
+🔗 <b>Google not connected.</b> <a href="/auth/google" style="color:var(--cyan);text-decoration:underline">Connect Google</a> to send emails.
 </div>
-<div class="quiet-banner" id="quietBanner"><span class="icn">🌙</span><div class="info"><div class="ttl">Quiet Hours Active</div><div class="dsc">Auto-send is paused. <span id="quietMsg"></span></div></div></div>
+<div class="quiet-banner" id="quietBanner"><span class="icn">🌙</span><div class="info"><div class="ttl">Quiet Hours Active</div><div class="dsc">Auto-send paused. <span id="quietMsg"></span></div></div></div>
+
 <div class="stats">
 <div class="stat s1"><div class="label">Recipients</div><div class="value" id="stTotal">0</div></div>
 <div class="stat s2"><div class="label">Sent</div><div class="value" id="stSent">0</div></div>
@@ -535,8 +489,28 @@ Admin will review your request within 24-48 hours.
 <div class="stat s4"><div class="label">Pending</div><div class="value" id="stPending">0</div></div>
 <div class="stat s5"><div class="label">Total Sends</div><div class="value" id="stTotalSends">0</div></div>
 </div>
+
+<!-- QUICK AUTOMATION PANEL -->
+<div class="panel quick-auto-panel">
+<h2>⚡ Quick Automation <span id="quickStatus" style="color:var(--green)">●</span></h2>
+<div class="toggle-row">
+<div><div class="lbl">🤖 Auto-Send</div><div class="sub">Send pending emails hourly</div></div>
+<label class="switch"><input type="checkbox" id="qAutoSend" onchange="onQuickAutoToggle(this.checked)"><span class="slider"></span></label>
+</div>
+<div id="qAutoConfig" style="margin-top:12px;display:none">
+<div class="field" style="margin-bottom:10px"><label>Batch Size (per hour)</label><input type="number" id="qBatchSize" min="1" max="500" value="5" style="background:#0c1220"></div>
+<div class="field" style="margin-bottom:10px"><label>Delay (seconds)</label><input type="number" id="qDelay" min="0" max="120" value="20" style="background:#0c1220"></div>
+<button class="btn success small" onclick="saveQuickAuto()" style="width:100%">💾 Save Automation</button>
+</div>
+<div style="margin-top:10px">
+<div class="quick-stat"><span>Total Auto-Sent</span><b id="qTotalSent">0</b></div>
+<div class="quick-stat"><span>Last Run</span><b id="qLastRun">Never</b></div>
+<div class="quick-stat"><span>Pending Recipients</span><b id="qPending">0</b></div>
+</div>
+</div>
+
 <div class="panel">
-<h2>📊 Gmail Quota <span id="quotaSub" class="quota-live"><span class="dot"></span>Live</span></h2>
+<h2>📊 Gmail Quota <span class="quota-live"><span class="dot"></span>Live</span></h2>
 <div class="info-box">
 <div class="row"><span class="k">Sent today:</span><span class="v" id="quotaSent">—</span></div>
 <div class="row"><span class="k">Daily limit:</span><span class="v" id="quotaLimit">500</span></div>
@@ -544,11 +518,12 @@ Admin will review your request within 24-48 hours.
 </div>
 <div class="quota-bar"><div class="quota-fill" id="quotaFill"></div></div>
 </div>
+
 <div class="panel">
 <h2>✉️ AI Email Composer <span>Multi-provider</span></h2>
 <div class="composer-layout">
 <div class="composer-main">
-<div class="field"><label>Template Name</label><input type="text" id="composerName" placeholder="Enter template name"></div>
+<div class="field"><label>Template Name</label><input type="text" id="composerName" placeholder="Template name"></div>
 <div class="field">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px;flex-wrap:wrap">
 <label style="margin:0">Subject</label>
@@ -556,7 +531,7 @@ Admin will review your request within 24-48 hours.
 </div>
 <input type="text" id="composerSubject" placeholder="Email subject" oninput="scheduleAnalysis()">
 <div id="aiSubjectSuggestions" style="display:none;margin-top:8px;padding:10px;background:var(--bg2);border:1px solid var(--cyan);border-radius:10px">
-<div style="font-size:11px;color:#7dd3fc;font-weight:700;margin-bottom:8px;text-transform:uppercase">✨ AI Suggestions</div>
+<div style="font-size:11px;color:#7dd3fc;font-weight:700;margin-bottom:8px">✨ AI Suggestions</div>
 <div id="aiSubjectList"></div>
 </div>
 </div>
@@ -591,8 +566,8 @@ Admin will review your request within 24-48 hours.
 </div>
 </div>
 <div class="ai-prob-bar">
-<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:6px"><span>Inbox Probability</span><span id="aiProbValue" style="color:var(--text2);font-weight:700">—</span></div>
-<div class="ai-prob-track"><div class="ai-prob-fill" id="aiProbFill" style="width:0%"></div></div>
+<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:6px"><span>Inbox Probability</span><span id="aiProbValue" style="font-weight:700">—</span></div>
+<div class="ai-prob-track"><div class="ai-prob-fill" id="aiProbFill"></div></div>
 </div>
 <div id="aiIssues"></div>
 <div id="aiSuggestions"></div>
@@ -600,16 +575,19 @@ Admin will review your request within 24-48 hours.
 </div>
 </div>
 </div>
+
 <div class="panel">
 <h2>📝 Templates <span id="tplCount"></span></h2>
 <div id="tplList"></div>
 </div>
+
 <div class="panel">
 <h2>➕ Add Recipients</h2>
 <div class="field"><label>Template</label><select id="tplSelect"></select></div>
 <div class="tabs">
 <div class="tab active" id="tabManual" onclick="switchTab('manual')">✍️ Manual</div>
 <div class="tab" id="tabBulk" onclick="switchTab('bulk')">📋 Bulk</div>
+<div class="tab" id="tabOCR" onclick="switchTab('ocr')">📸 Screenshot</div>
 </div>
 <div id="manualTab">
 <div id="recipients"></div>
@@ -617,10 +595,11 @@ Admin will review your request within 24-48 hours.
 <button class="btn" onclick="submitRecipients()" style="margin-left:6px;margin-top:10px">Save</button>
 </div>
 <div id="bulkTab" class="hidden">
-<div class="bulk-help"><div class="title">📋 Paste Emails — Any Format</div></div>
+<div class="bulk-help">📋 Paste Emails — Any Format (comma, newline, CSV, semicolon)</div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
 <input type="file" id="bulkFileInput" accept=".txt,.csv,.xlsx,.xls,.json" style="display:none">
-<button class="btn ghost" onclick="document.getElementById('bulkFileInput').click()" style="border:1px dashed var(--cyan);color:#7dd3fc">📁 Upload</button>
+<button class="btn ghost" onclick="document.getElementById('bulkFileInput').click()" style="border:1px dashed var(--cyan);color:#7dd3fc">📁 Upload File</button>
+<button class="btn ghost" onclick="switchTab('ocr')" style="border:1px dashed var(--purple);color:#c4b5fd">📸 Screenshot → Text</button>
 </div>
 <textarea class="bulk-area" id="bulkInput" placeholder="Paste emails here..."></textarea>
 <div class="bulk-preview-wrap" id="bulkPreviewWrap">
@@ -632,11 +611,39 @@ Admin will review your request within 24-48 hours.
 <button class="btn ghost" onclick="clearBulk()">🗑 Clear</button>
 </div>
 </div>
+<div id="ocrTab" class="hidden">
+<div class="bulk-help" style="background:linear-gradient(135deg,rgba(168,85,247,.1),rgba(236,72,153,.08));border-color:rgba(168,85,247,.35);color:#c4b5fd">📸 Screenshot se email addresses & text extract karo — OCR powered!</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+<input type="file" id="ocrInput" accept="image/*" style="display:none">
+<button class="btn ghost" onclick="document.getElementById('ocrInput').click()" style="border:1px dashed var(--cyan);color:#7dd3fc;flex:1">📁 Choose Screenshot</button>
+<button class="btn ghost" onclick="openCameraCapture()" style="border:1px dashed var(--cyan);color:#7dd3fc;flex:1">📷 Camera</button>
 </div>
+<div id="ocrDropZone" class="ocr-drop" onclick="document.getElementById('ocrInput').click()">
+<span class="ico">📸</span>
+<div class="t">Click ya paste (Ctrl+V) karo screenshot</div>
+<div class="s">PNG, JPG, WEBP — max 5MB</div>
+</div>
+<img id="ocrPreviewImg" class="ocr-preview" alt="preview">
+<div id="ocrProgress" class="ocr-progress"><div class="ocr-progress-fill" id="ocrProgressFill"></div></div>
+<div id="ocrStatus" style="font-size:11px;color:var(--text2);margin-top:10px;text-align:center"></div>
+<div id="ocrResultWrap" style="display:none;margin-top:12px">
+<div class="field"><label>📝 Extracted Text</label>
+<textarea id="ocrText" class="bulk-area" style="min-height:180px;font-size:13px" placeholder="Extracted text yahan aayega..."></textarea>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn" onclick="extractEmailsFromOCR()" style="flex:1">📧 Extract Emails</button>
+<button class="btn success" onclick="sendOCRToBulk()" style="flex:1">📋 Send to Bulk</button>
+<button class="btn ghost" onclick="copyOCRText()">📋 Copy</button>
+<button class="btn ghost" onclick="clearOCR()">🗑 Clear</button>
+</div>
+</div>
+</div>
+</div>
+
 <div class="panel">
 <h2>📊 Tracking <span id="trackCount"></span></h2>
 <div style="font-size:11px;color:var(--text2);margin-bottom:12px;padding:10px;background:rgba(56,189,248,.06);border-radius:8px;border-left:3px solid var(--cyan)">
-💡 <b>Click any row</b> for full all-time history (from server, 5000+ emails supported)
+💡 <b>Click row</b> → full all-time history with attachments
 </div>
 <div class="filter-bar">
 <input type="text" class="search-bar" id="recipSearch" placeholder="Search..." oninput="renderRecipients()">
@@ -654,6 +661,7 @@ Admin will review your request within 24-48 hours.
 </div>
 <div id="tableWrap" class="tbl-wrap"></div>
 </div>
+
 <div class="panel">
 <h2>📧 Email History <span id="myEmailCount"></span></h2>
 <div class="filter-bar">
@@ -672,14 +680,14 @@ Admin will review your request within 24-48 hours.
 <div class="setup-card">
 <span class="setup-icon">📥</span>
 <h3>Connect Your Inbox</h3>
-<p>Use Gmail App Password — free, no Google verification needed!</p>
+<p>Gmail App Password use karo — free, no Google verification!</p>
 <div class="setup-steps">
 <ol>
 <li>Gmail → Settings → See all settings</li>
 <li>Security → Enable 2-Step Verification</li>
-<li>Open <a href="https://myaccount.google.com/apppasswords" target="_blank">myaccount.google.com/apppasswords</a></li>
+<li><a href="https://myaccount.google.com/apppasswords" target="_blank">myaccount.google.com/apppasswords</a></li>
 <li>App name: <code>MailFlow Pro</code> → Create</li>
-<li>Copy 16-character password</li>
+<li>Copy 16-char password</li>
 </ol>
 </div>
 <div class="field" style="text-align:left;max-width:420px;margin:0 auto 12px">
@@ -695,11 +703,11 @@ Admin will review your request within 24-48 hours.
 <select id="inboxFolder" onchange="imapPage=1;loadIMAPInbox()"><option value="INBOX">📥 Inbox</option><option value="[Gmail]/Sent Mail">📤 Sent</option></select>
 <select id="inboxLimit" onchange="imapPage=1;loadIMAPInbox()"><option value="20" selected>20</option><option value="30">30</option><option value="50">50</option></select>
 <button class="btn small" onclick="loadIMAPInbox()">🔄 Sync</button>
-<button class="btn ghost small" onclick="disconnectIMAP()">🔌 Disconnect</button>
-<span id="imapSyncInfo" style="margin-left:auto;font-size:11px;color:var(--text2)">⚡ IMAP</span>
+<button class="btn ghost small" onclick="disconnectIMAP()">🔌</button>
+<span id="imapSyncInfo" style="margin-left:auto;font-size:11px"><span class="live-dot"></span><span style="color:var(--green)">LIVE</span></span>
 </div>
 <div class="inbox-layout">
-<div class="inbox-list" id="inboxList"><div class="empty"><div class="ico">⏳</div>Click Sync</div></div>
+<div class="inbox-list" id="inboxList"><div class="empty"><div class="ico">⏳</div>Loading live inbox...</div></div>
 <div class="inbox-viewer">
 <div class="empty" id="inboxEmpty"><div class="ico">📩</div>Select an email</div>
 <div id="inboxViewerContent" class="hidden" style="display:flex;flex-direction:column;height:100%">
@@ -709,7 +717,6 @@ Admin will review your request within 24-48 hours.
 <div class="row"><b>From:</b><span id="viewFrom"></span></div>
 <div class="row"><b>To:</b><span id="viewTo"></span></div>
 <div class="row"><b>Date:</b><span id="viewDate"></span></div>
-<div class="row" id="viewCategoryRow" style="display:none"><b>Category:</b><span id="viewCategory"></span></div>
 </div>
 </div>
 <div class="email-body" id="viewBody"><div class="loading"><div class="spin"></div><span>Loading...</span></div></div>
@@ -734,18 +741,18 @@ Admin will review your request within 24-48 hours.
 <div class="container hidden" id="aiprofileView">
 <div class="panel">
 <h2>🧠 AI Profile <span>AI writes as YOU</span></h2>
-<div class="ai-profile-banner"><div class="ico">✨</div><div class="txt">This helps AI match your tone and style.</div></div>
+<div class="ai-profile-banner"><div class="ico">✨</div><div class="txt">AI tumhare tone & style match karega.</div></div>
 <div class="sig-fields">
-<div class="field" style="margin:0"><label>Full Name</label><input type="text" id="aipFullName" placeholder="Your name"></div>
-<div class="field" style="margin:0"><label>Designation</label><input type="text" id="aipDesignation" placeholder="e.g., Developer"></div>
-<div class="field" style="margin:0"><label>Company</label><input type="text" id="aipCompany" placeholder="Company"></div>
-<div class="field" style="margin:0"><label>Industry</label><input type="text" id="aipIndustry" placeholder="e.g., Software"></div>
+<div class="field" style="margin:0"><label>Full Name</label><input type="text" id="aipFullName"></div>
+<div class="field" style="margin:0"><label>Designation</label><input type="text" id="aipDesignation"></div>
+<div class="field" style="margin:0"><label>Company</label><input type="text" id="aipCompany"></div>
+<div class="field" style="margin:0"><label>Industry</label><input type="text" id="aipIndustry"></div>
 <div class="field" style="margin:0"><label>Preferred Tone</label>
 <select id="aipTone"><option value="professional">Professional</option><option value="friendly">Friendly</option><option value="casual">Casual</option><option value="confident">Confident</option></select>
 </div>
 </div>
-<div class="field" style="margin-top:12px"><label>About Me</label><textarea id="aipAboutMe" class="bulk-area" placeholder="Short bio..." style="min-height:100px;font-size:13px"></textarea></div>
-<div class="field"><label>Common Phrases / Style</label><textarea id="aipCommonPhrases" class="bulk-area" placeholder="Your style notes..." style="min-height:80px;font-size:13px"></textarea></div>
+<div class="field" style="margin-top:12px"><label>About Me</label><textarea id="aipAboutMe" class="bulk-area" style="min-height:100px;font-size:13px"></textarea></div>
+<div class="field"><label>Common Phrases</label><textarea id="aipCommonPhrases" class="bulk-area" style="min-height:80px;font-size:13px"></textarea></div>
 <button class="btn save-btn" onclick="saveAIProfile()">💾 Save AI Profile</button>
 </div>
 </div>
@@ -753,7 +760,7 @@ Admin will review your request within 24-48 hours.
 <!-- AI TOOLS -->
 <div class="container hidden" id="testView">
 <div class="panel" style="background:linear-gradient(135deg,rgba(168,85,247,.08),rgba(56,189,248,.08));border-color:rgba(168,85,247,.3)">
-<h2>🤖 AI Tools <span>Multi-provider</span></h2>
+<h2>🤖 AI Tools</h2>
 </div>
 <div class="panel">
 <h2>⏰ Best Sending Time</h2>
@@ -773,7 +780,7 @@ Admin will review your request within 24-48 hours.
 
 <!-- TEST LAB -->
 <div class="container hidden" id="testDashView">
-<div class="test-banner"><div class="ico">🧪</div><div class="txt">TEST LAB — Admin only. Not counted in dashboard.</div></div>
+<div class="test-banner"><div class="ico">🧪</div><div class="txt">TEST LAB — Admin only</div></div>
 <div class="stats">
 <div class="stat s1"><div class="label">Test Recipients</div><div class="value" id="tstTotal">0</div></div>
 <div class="stat s2"><div class="label">Test Sent</div><div class="value" id="tstSent">0</div></div>
@@ -782,44 +789,36 @@ Admin will review your request within 24-48 hours.
 <div class="stat s5"><div class="label">Test Log</div><div class="value" id="tstLog">0</div></div>
 </div>
 <div class="panel">
-<h2>➕ Add Test Recipients <span>Bulk & Manual</span></h2>
+<h2>➕ Add Test Recipients</h2>
 <div class="tabs">
 <div class="tab active" id="testTabManual" onclick="switchTestTab('manual')">✍️ Manual</div>
 <div class="tab" id="testTabBulk" onclick="switchTestTab('bulk')">📋 Bulk</div>
 </div>
 <div id="testManualTab">
 <div id="testRecipientsRows"></div>
-<button class="btn ghost small" onclick="addTestRow()" style="margin-top:10px">+ Add Row</button>
+<button class="btn ghost small" onclick="addTestRow()" style="margin-top:10px">+ Row</button>
 <button class="btn" onclick="submitTestRecipientsManual()" style="margin-left:6px;margin-top:10px">💾 Save</button>
 </div>
 <div id="testBulkTab" class="hidden">
-<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-<input type="file" id="testBulkFileInput" accept=".txt,.csv,.xlsx,.xls,.json" style="display:none">
-<button class="btn ghost" onclick="document.getElementById('testBulkFileInput').click()" style="border:1px dashed var(--cyan);color:#7dd3fc">📁 Upload</button>
-</div>
 <textarea class="bulk-area" id="testBulkInput" placeholder="Paste test emails..."></textarea>
-<div class="bulk-preview-wrap" id="testBulkPreviewWrap">
-<div class="bulk-preview-head"><div class="lbl">🔍 Preview</div><div style="display:flex;gap:8px"><span class="stat-pill ok" id="testBulkValidPill">✅ 0</span><span class="stat-pill dup" id="testBulkDupPill">🔁 0</span></div></div>
-<div class="bulk-preview-table" id="testBulkPreviewTable" style="max-height:280px;overflow-y:auto"></div>
-</div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
 <button class="btn" onclick="submitTestBulk()">➕ Add All</button>
-<button class="btn ghost" onclick="clearTestBulk()">🗑 Clear</button>
+<button class="btn ghost" onclick="clearTestBulk()">🗑</button>
 </div>
 </div>
 </div>
 <div class="panel">
-<h2>📤 Send Test Email</h2>
-<div class="field"><label>Template (Optional)</label><select id="testTemplateSelect" onchange="onTestTemplateChange()"><option value="">-- Manual --</option></select></div>
-<div class="field"><label>To</label><input type="text" id="testTo" placeholder="test@example.com"></div>
-<div class="field"><label>Subject</label><input type="text" id="testSubject" placeholder="Test subject"></div>
-<div class="field"><label>Body</label><textarea id="testBody" class="bulk-area" placeholder="Test body..." style="min-height:220px;font-size:14px"></textarea></div>
+<h2>📤 Send Test</h2>
+<div class="field"><label>Template</label><select id="testTemplateSelect" onchange="onTestTemplateChange()"><option value="">-- Manual --</option></select></div>
+<div class="field"><label>To</label><input type="text" id="testTo"></div>
+<div class="field"><label>Subject</label><input type="text" id="testSubject"></div>
+<div class="field"><label>Body</label><textarea id="testBody" class="bulk-area" style="min-height:220px;font-size:14px"></textarea></div>
 <button class="btn" onclick="sendTestEmail()" style="width:100%;padding:14px;font-weight:700">🚀 Send Test</button>
 </div>
 <div class="panel">
-<h2>🤖 Automation Testing</h2>
+<h2>🤖 Automation Test</h2>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-<div class="field" style="margin:0"><label>Batch Size</label><input type="number" id="testAutoBatchSize" min="1" max="50" value="5"></div>
+<div class="field" style="margin:0"><label>Batch</label><input type="number" id="testAutoBatchSize" min="1" max="50" value="5"></div>
 <div class="field" style="margin:0"><label>Delay (s)</label><input type="number" id="testAutoDelay" min="0" max="60" value="20"></div>
 </div>
 <div class="info-box" style="margin-bottom:12px">
@@ -827,7 +826,7 @@ Admin will review your request within 24-48 hours.
 <div class="row"><span class="k">Last run:</span><span class="v" id="testLastAutoRun">Never</span></div>
 <div class="row"><span class="k">Pending:</span><span class="v" id="testPendingCount">0</span></div>
 </div>
-<button class="btn warn" onclick="runTestAutomation()" style="width:100%">▶️ Run Auto-Send</button>
+<button class="btn warn" onclick="runTestAutomation()" style="width:100%">▶️ Run Now</button>
 </div>
 <div class="panel">
 <h2>📋 Test Recipients <span id="testRecipCount"></span></h2>
@@ -838,8 +837,7 @@ Admin will review your request within 24-48 hours.
 <div class="bulk-action-bar" id="testBulkActionBar">
 <span id="testSelectedCount" style="color:#7dd3fc;font-weight:700;font-size:12px;margin-right:auto">0</span>
 <button class="btn ghost small" onclick="testSelectAll()">☑️ All</button>
-<button class="btn danger small" onclick="testDeleteSelected()">🗑 Delete</button>
-<button class="btn ghost small" onclick="testClearSelection()">Clear</button>
+<button class="btn danger small" onclick="testDeleteSelected()">🗑</button>
 </div>
 <div id="testRecipientsWrap" class="tbl-wrap"></div>
 </div>
@@ -873,14 +871,8 @@ Admin will review your request within 24-48 hours.
 </div>
 <div id="adminAIUsageTable" class="tbl-wrap" style="margin-top:14px"></div>
 </div>
-<div class="panel">
-<h2>🚫 Banned Users <span id="adminBannedCount"></span></h2>
-<div id="adminBannedList"></div>
-</div>
-<div class="panel">
-<h2>📩 Access Requests <span id="adminReqCount"></span></h2>
-<div id="adminRequestList"></div>
-</div>
+<div class="panel"><h2>🚫 Banned Users <span id="adminBannedCount"></span></h2><div id="adminBannedList"></div></div>
+<div class="panel"><h2>📩 Access Requests <span id="adminReqCount"></span></h2><div id="adminRequestList"></div></div>
 <div class="panel">
 <h2>👥 All Users</h2>
 <input type="text" class="search-bar" id="adminSearch" placeholder="Search users..." oninput="renderAdminUsers()">
@@ -888,7 +880,7 @@ Admin will review your request within 24-48 hours.
 </div>
 <div class="panel">
 <h2>📨 All Sent Emails</h2>
-<input type="text" class="search-bar" id="adminEmailSearch" placeholder="Search emails..." oninput="renderAllEmails()">
+<input type="text" class="search-bar" id="adminEmailSearch" placeholder="Search..." oninput="renderAllEmails()">
 <div id="adminAllEmailsWrap" class="tbl-wrap" style="margin-top:14px"></div>
 </div>
 </div>
@@ -901,7 +893,7 @@ Admin will review your request within 24-48 hours.
 <h3>👤 My Profile</h3>
 <div style="display:flex;flex-direction:column;align-items:center;gap:16px;margin-bottom:20px">
 <div style="position:relative">
-<img id="profileAvatar" class="profile-avatar" src="" alt="Profile">
+<img id="profileAvatar" class="profile-avatar" src="">
 <div onclick="document.getElementById('profilePicInput').click()" style="position:absolute;bottom:0;right:0;width:38px;height:38px;border-radius:50%;background:var(--grad);border:4px solid #0a0e1a;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px">📷</div>
 <input type="file" id="profilePicInput" accept="image/*" style="display:none">
 </div>
@@ -910,7 +902,7 @@ Admin will review your request within 24-48 hours.
 <div style="font-size:12px;color:var(--text2);margin-top:4px" id="profileEmailDisplay"></div>
 </div>
 </div>
-<div class="field"><label>Display Name</label><input type="text" id="editProfileName" placeholder="Your name"></div>
+<div class="field"><label>Display Name</label><input type="text" id="editProfileName"></div>
 <button class="btn save-btn" onclick="saveProfileName()">💾 Save Name</button>
 <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">
 <div style="font-size:12px;color:var(--text2);line-height:1.8">
@@ -935,48 +927,10 @@ Admin will review your request within 24-48 hours.
 <button class="close-btn" onclick="closeSettingsModal()">✕</button>
 <h3>⚙️ Settings</h3>
 <div class="tabs">
-<div class="tab active" id="setTabAutomation" onclick="switchSettingsTab('automation')">🤖 Automation</div>
-<div class="tab" id="setTabSignature" onclick="switchSettingsTab('signature')">✍️ Signature</div>
+<div class="tab active" id="setTabSignature" onclick="switchSettingsTab('signature')">✍️ Signature</div>
 <div class="tab" id="setTabAttachments" onclick="switchSettingsTab('attachments')">📎 Files</div>
 </div>
-<div id="setAutomationTab">
-<div class="toggle-row">
-<div><div class="lbl">🤖 Auto-Send</div><div class="sub">Send pending emails hourly</div></div>
-<label class="switch"><input type="checkbox" id="autoSendToggle"><span class="slider"></span></label>
-</div>
-<div class="batch-box" id="batchSizeBox">
-<div class="batch-header">
-<div><div style="font-size:13px;font-weight:700">📊 Emails Per Hour</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Recommended: 5-30</div></div>
-<div class="batch-value" id="batchValue">5</div>
-</div>
-<input type="range" id="batchSlider" class="batch-slider" min="1" max="500" value="5" oninput="onSliderChange(this.value)">
-<div class="batch-marks"><span>1</span><span>125</span><span>250</span><span>375</span><span>500</span></div>
-<div class="batch-number-row"><input type="number" id="batchNumber" min="1" max="500" value="5" oninput="onNumberChange(this.value)" onblur="onNumberBlur()"></div>
-<div class="batch-hint" id="batchHint">Max: <b>500</b></div>
-<div id="batchWarning" class="warning-banner" style="display:none"><div class="icn">⚠️</div><div id="batchWarningText"></div></div>
-<div class="info-box" style="margin-top:12px">
-<div class="row"><span class="k">Total auto-sent:</span><span class="v" id="totalAutoSent">0</span></div>
-</div>
-</div>
-<div class="toggle-row" style="margin-top:12px">
-<div><div class="lbl">🌙 Quiet Hours</div><div class="sub">No emails during these hours</div></div>
-<label class="switch"><input type="checkbox" id="quietToggle"><span class="slider"></span></label>
-</div>
-<div id="quietTimesBox" style="margin-top:12px;display:none">
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-<div class="field" style="margin:0"><label>🌙 Start</label><select id="quietStartSel"></select></div>
-<div class="field" style="margin:0"><label>☀️ End</label><select id="quietEndSel"></select></div>
-</div>
-</div>
-<div class="field" style="margin-top:16px;max-width:340px">
-<label>⏱️ Send Delay (seconds)</label>
-<input type="number" id="sendDelayInput" min="0" max="120" value="20">
-<div id="sendDelayWarning" class="warning-banner" style="display:none"><div class="icn">⚠️</div><div id="sendDelayWarningText"></div></div>
-<div id="sendDelayGood" class="warning-banner success" style="display:none"><div class="icn">✅</div><div>Safe for inbox placement.</div></div>
-</div>
-<button class="btn save-btn" onclick="savePrefs()">💾 Save Automation</button>
-</div>
-<div id="setSignatureTab" class="hidden">
+<div id="setSignatureTab">
 <div class="logo-warning"><div class="warn-ic">⚠️</div><div class="warn-text"><b>Logo increases spam risk</b>. Skip for better delivery.</div></div>
 <div class="upload-area">
 <input type="file" id="logoInput" accept="image/*">
@@ -984,12 +938,12 @@ Admin will review your request within 24-48 hours.
 </div>
 <div id="logoActions" style="display:none;margin-bottom:12px"><button class="btn danger small" onclick="removeLogo()">🗑 Remove Logo</button></div>
 <div class="sig-fields">
-<div class="field" style="margin:0"><label>Name</label><input type="text" id="sbName" placeholder="Your name" oninput="previewSig()"></div>
-<div class="field" style="margin:0"><label>Designation</label><input type="text" id="sbPos" placeholder="Designation" oninput="previewSig()"></div>
-<div class="field" style="margin:0"><label>Company</label><input type="text" id="sbCompany" placeholder="Company" oninput="previewSig()"></div>
-<div class="field" style="margin:0"><label>📞 Phone</label><input type="text" id="sbPhone" placeholder="Phone" oninput="previewSig()"></div>
-<div class="field" style="margin:0"><label>✉️ Email</label><input type="text" id="sbEmail" placeholder="Email" oninput="previewSig()"></div>
-<div class="field" style="margin:0"><label>🔗 LinkedIn</label><input type="text" id="sbLinkedin" placeholder="URL" oninput="previewSig()"></div>
+<div class="field" style="margin:0"><label>Name</label><input type="text" id="sbName" oninput="previewSig()"></div>
+<div class="field" style="margin:0"><label>Designation</label><input type="text" id="sbPos" oninput="previewSig()"></div>
+<div class="field" style="margin:0"><label>Company</label><input type="text" id="sbCompany" oninput="previewSig()"></div>
+<div class="field" style="margin:0"><label>📞 Phone</label><input type="text" id="sbPhone" oninput="previewSig()"></div>
+<div class="field" style="margin:0"><label>✉️ Email</label><input type="text" id="sbEmail" oninput="previewSig()"></div>
+<div class="field" style="margin:0"><label>🔗 LinkedIn</label><input type="text" id="sbLinkedin" oninput="previewSig()"></div>
 </div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
 <button class="btn ghost" onclick="previewSig()">👁 Preview</button>
@@ -1023,7 +977,7 @@ Admin will review your request within 24-48 hours.
 <div id="replyAIHint" style="display:none;font-size:11px;color:#7dd3fc;margin-bottom:10px;padding:8px 10px;background:rgba(56,189,248,.08);border-radius:8px;border:1px solid rgba(56,189,248,.2)"><span id="replyAIStatus">🤖 AI analyzing...</span></div>
 <div class="field"><label>To</label><input type="text" id="replyTo"></div>
 <div class="field"><label>Subject</label><input type="text" id="replySubject"></div>
-<div class="field"><label>Message</label><textarea id="replyBody" class="bulk-area" placeholder="Write reply..." style="min-height:240px;font-size:14px"></textarea></div>
+<div class="field"><label>Message</label><textarea id="replyBody" class="bulk-area" style="min-height:240px;font-size:14px"></textarea></div>
 <button class="btn" onclick="sendReplyFromInbox()" style="width:100%">📤 Send Reply</button>
 </div>
 </div>
@@ -1061,10 +1015,10 @@ Admin will review your request within 24-48 hours.
 </div>
 <div id="cvTextWrap" style="display:none;margin-top:10px">
 <label style="font-size:10px;color:var(--text2);text-transform:uppercase;font-weight:700;display:block;margin-bottom:6px">📝 Extracted CV</label>
-<textarea id="cvText" class="bulk-area" placeholder="CV text..." style="min-height:160px;font-size:12px"></textarea>
+<textarea id="cvText" class="bulk-area" style="min-height:160px;font-size:12px"></textarea>
 </div>
-<div class="field" style="margin-top:12px"><label>🎯 Target Role</label><input type="text" id="cvTargetRole" placeholder="e.g., Manager"></div>
-<div class="field"><label>📋 Job Description</label><textarea id="cvJobDesc" class="bulk-area" placeholder="Paste JD..." style="min-height:80px;font-size:13px"></textarea></div>
+<div class="field" style="margin-top:12px"><label>🎯 Target Role</label><input type="text" id="cvTargetRole"></div>
+<div class="field"><label>📋 Job Description</label><textarea id="cvJobDesc" class="bulk-area" style="min-height:80px;font-size:13px"></textarea></div>
 <div id="cvAnalysisResult" style="display:none;margin-top:14px;padding:12px;background:var(--bg2);border:1px solid var(--cyan);border-radius:10px;font-size:12px;line-height:1.6"></div>
 <button class="btn" onclick="runCVAnalysis()" style="width:100%;margin-top:12px" id="cvAnalyzeBtn">🤖 Analyze & Generate</button>
 </div>
@@ -1125,15 +1079,14 @@ Admin will review your request within 24-48 hours.
 <div id="toast" class="toast"></div>
 
 <script>
-var USER=null,TEMPLATES=[],SELECTED={},CURRENT_ROWS=[],ALL_ROWS=[],FILES=[],SELECTED_FILES={},TEST_SELECTED_FILES={},TEST_RECIPIENTS=[],TEST_SELECTED={};
+var USER=null,TEMPLATES=[],SELECTED={},CURRENT_ROWS=[],ALL_ROWS=[],FILES=[],SELECTED_FILES={},TEST_RECIPIENTS=[],TEST_SELECTED={};
 var LOGO_URL='',LOGO_URL_ALT='',ADMIN_USERS=[],ADMIN_ALL_EMAILS=[],MY_EMAILS=[],ADMIN_BANNED=[],ADMIN_REQUESTS=[];
 var INBOX_EMAILS=[],ACTIVE_EMAIL=null,MY_QUOTA={sent:0,limit:500,remaining:500};
 var SENDERS=[],IMAP_CONNECTED=false,imapPage=1,imapHasMore=false;
-var POLL_TIMER=null,HOURLY_TIMER=null,analysisTimer=null,lastAnalyzedHash='';
+var POLL_TIMER=null,HOURLY_TIMER=null,analysisTimer=null,lastAnalyzedHash='',LIVE_INBOX_TIMER=null,lastInboxHash='';
 var MAX_UPLOAD_SIZE=3*1024*1024;
 var _currentSendId=null,CV_SELECTED_FILE_ID=null;
-var _useAIReply=false;
-var BANNED_USER_EMAIL='';
+var BANNED_USER_EMAIL='',OCR_WORKER=null;
 
 function $(id){return document.getElementById(id);}
 function toast(m,t){var el=$('toast');el.innerText=m;el.className='toast show '+(t||'ok');clearTimeout(el._t);el._t=setTimeout(function(){el.className='toast'},4000);}
@@ -1149,15 +1102,10 @@ function isCvFile(f){var n=(f.name||'').toLowerCase();var m=(f.mimeType||'').toL
 function buildHourSelects(){var s=$('quietStartSel'),e=$('quietEndSel');if(!s||!e)return;s.innerHTML='';e.innerHTML='';for(var h=0;h<24;h++){var lbl=((h%12)||12)+':00 '+(h<12?'AM':'PM');var o1=document.createElement('option');o1.value=h;o1.text=lbl;s.appendChild(o1);var o2=document.createElement('option');o2.value=h;o2.text=lbl;e.appendChild(o2);}}
 function showConfirm(opts){return new Promise(function(resolve){$('confirmIcon').innerText=opts.icon||'⚠️';$('confirmTitle').innerText=opts.title||'Are you sure?';$('confirmMessage').innerText=opts.message||'';var ok=$('confirmOk'),cancel=$('confirmCancel');ok.innerText=opts.okText||'Confirm';ok.className='confirm-btn'+(opts.primary?' primary':'');$('confirmBackdrop').classList.remove('hidden');var cleanup=function(){$('confirmBackdrop').classList.add('hidden');ok.onclick=null;cancel.onclick=null;};ok.onclick=function(){cleanup();resolve(true);};cancel.onclick=function(){cleanup();resolve(false);};});}
 
-/* ============ EMAIL/PASSWORD AUTH ============ */
+/* ============ AUTH ============ */
 function switchAuthTab(t){
-  if(t==='login'){
-    $('loginTab').classList.add('active');$('registerTab').classList.remove('active');
-    $('loginForm').classList.remove('hidden');$('registerForm').classList.add('hidden');
-  } else {
-    $('registerTab').classList.add('active');$('loginTab').classList.remove('active');
-    $('registerForm').classList.remove('hidden');$('loginForm').classList.add('hidden');
-  }
+  if(t==='login'){$('loginTab').classList.add('active');$('registerTab').classList.remove('active');$('loginForm').classList.remove('hidden');$('registerForm').classList.add('hidden');}
+  else{$('registerTab').classList.add('active');$('loginTab').classList.remove('active');$('registerForm').classList.remove('hidden');$('loginForm').classList.add('hidden');}
   $('loginError').classList.add('hidden');$('registerError').classList.add('hidden');
 }
 async function doEmailLogin(){
@@ -1168,54 +1116,35 @@ async function doEmailLogin(){
   try{
     var r=await api('/api/auth/login','POST',{email:email,password:password});
     if(r.ok){USER=r.user;enterApp();}
-    else if(r.banned){
-      BANNED_USER_EMAIL=email;
-      $('loginView').classList.add('hidden');
-      $('bannedView').classList.remove('hidden');
-      if(r.reason)$('banReasonText').innerText=r.reason;
-    } else {
-      $('loginError').innerText=r.error||'Login failed';
-      $('loginError').classList.remove('hidden');
-    }
-  } catch(e){
-    $('loginError').innerText='Error: '+e.message;
-    $('loginError').classList.remove('hidden');
-  }
+    else if(r.banned){BANNED_USER_EMAIL=email;$('loginView').classList.add('hidden');$('bannedView').classList.remove('hidden');if(r.reason)$('banReasonText').innerText=r.reason;}
+    else{$('loginError').innerText=r.error||'Login failed';$('loginError').classList.remove('hidden');}
+  }catch(e){$('loginError').innerText='Error: '+e.message;$('loginError').classList.remove('hidden');}
   btn.disabled=false;btn.innerHTML='🔓 Login';
 }
 async function doEmailRegister(){
   var name=$('registerName').value.trim(),email=$('registerEmail').value.trim(),password=$('registerPassword').value;
   if(!name||!email||!password){$('registerError').innerText='All fields required';$('registerError').classList.remove('hidden');return;}
-  if(password.length<8){$('registerError').innerText='Password must be 8+ characters';$('registerError').classList.remove('hidden');return;}
+  if(password.length<8){$('registerError').innerText='Password must be 8+ chars';$('registerError').classList.remove('hidden');return;}
   $('registerError').classList.add('hidden');
   var btn=event.target;btn.disabled=true;btn.innerHTML='<span class="spin"></span> Creating...';
   try{
     var r=await api('/api/auth/register','POST',{name:name,email:email,password:password});
     if(r.ok){USER=r.user;enterApp();}
     else{$('registerError').innerText=r.error||'Registration failed';$('registerError').classList.remove('hidden');}
-  } catch(e){
-    $('registerError').innerText='Error: '+e.message;
-    $('registerError').classList.remove('hidden');
-  }
+  }catch(e){$('registerError').innerText='Error: '+e.message;$('registerError').classList.remove('hidden');}
   btn.disabled=false;btn.innerHTML='✨ Create Account';
 }
 
-/* ============ INIT ============ */
 var urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('banned') === '1') {
-  $('loginView').classList.add('hidden');
-  $('bannedView').classList.remove('hidden');
+  $('loginView').classList.add('hidden');$('bannedView').classList.remove('hidden');
 } else {
   fetch('/api/me',{credentials:'include'}).then(function(r){return r.json();}).then(function(d){if(d&&d.ok&&d.user){USER=d.user;enterApp();}else{$('loginView').classList.remove('hidden');}}).catch(function(){$('loginView').classList.remove('hidden');});
 }
 
 function submitAccessRequest(){
-  var name=$('reqName').value.trim();
-  var email=$('reqEmail').value.trim();
-  var company=$('reqCompany').value.trim();
-  var phone=$('reqPhone').value.trim();
-  var reason=$('reqReason').value.trim();
-  if(!name||!email||!reason)return toast('Fill name, email, and reason','err');
+  var name=$('reqName').value.trim(),email=$('reqEmail').value.trim(),company=$('reqCompany').value.trim(),phone=$('reqPhone').value.trim(),reason=$('reqReason').value.trim();
+  if(!name||!email||!reason)return toast('Fill name, email, reason','err');
   api('/api/request-access','POST',{name:name,email:email,company:company,phone:phone,reason:reason,oldEmail:BANNED_USER_EMAIL}).then(function(r){
     if(r.ok){toast('✅ Request submitted');$('reqName').value='';$('reqEmail').value='';$('reqCompany').value='';$('reqPhone').value='';$('reqReason').value='';}
     else toast('Error: '+r.error,'err');
@@ -1247,21 +1176,54 @@ function startAutoRefresh(){
   POLL_TIMER=setInterval(function(){
     if(document.visibilityState!=='visible')return;
     if(!$('myView').classList.contains('hidden')){loadQuota();loadAll();loadMyEmails();}
-    if(!$('inboxView').classList.contains('hidden')&&IMAP_CONNECTED){loadIMAPInbox(true);}
     if(!$('adminView').classList.contains('hidden')){loadAdmin();loadAdminAIUsage();loadAdminBanned();loadAdminRequests();}
     if(!$('testDashView').classList.contains('hidden')){loadTestDashboard();}
   },60000);
 }
 
+function startLiveInbox(){
+  if(LIVE_INBOX_TIMER)clearInterval(LIVE_INBOX_TIMER);
+  LIVE_INBOX_TIMER=setInterval(function(){
+    if(document.visibilityState!=='visible')return;
+    if(!$('inboxView').classList.contains('hidden')&&IMAP_CONNECTED){loadIMAPInbox(true);}
+  },15000);
+}
+
 function switchMain(t){
 ['myView','inboxView','aiprofileView','testView','testDashView','adminView'].forEach(function(v){$(v).classList.add('hidden');});
 document.querySelectorAll('.maintab').forEach(function(el){el.classList.remove('active');});
-if(t==='my'){$('myView').classList.remove('hidden');$('tabMy').classList.add('active');loadAll();loadQuota();loadMyEmails();}
+if(t==='my'){$('myView').classList.remove('hidden');$('tabMy').classList.add('active');loadAll();loadQuota();loadMyEmails();loadQuickAuto();}
 else if(t==='inbox'){$('inboxView').classList.remove('hidden');$('tabInbox').classList.add('active');checkIMAPStatus();}
 else if(t==='aiprofile'){$('aiprofileView').classList.remove('hidden');$('tabAIP').classList.add('active');loadAIProfile();}
 else if(t==='test'){$('testView').classList.remove('hidden');$('tabTest').classList.add('active');loadAIPredictions();loadSenders();}
 else if(t==='testdash'){$('testDashView').classList.remove('hidden');$('tabTestDash').classList.add('active');loadTestDashboard();}
 else if(t==='admin'){$('adminView').classList.remove('hidden');$('tabAdmin').classList.add('active');loadAdmin();loadAdminAIUsage();loadAdminBanned();loadAdminRequests();}
+}
+
+/* ============ QUICK AUTO ============ */
+function loadQuickAuto(){
+  api('/api/prefs').then(function(r){
+    if(!r.ok)return;
+    var p=r.prefs;
+    $('qAutoSend').checked=p.autoSend;
+    $('qAutoConfig').style.display=p.autoSend?'block':'none';
+    $('qBatchSize').value=p.autoSendBatchSize||5;
+    $('qDelay').value=p.sendDelay!==undefined?p.sendDelay:20;
+    $('qTotalSent').innerText=p.totalAutoSent||0;
+    $('qLastRun').innerText=p.lastAutoSendRun?fmtTimeAgo(p.lastAutoSendRun):'Never';
+  });
+  api('/api/stats').then(function(r){if(!r.ok)return;$('qPending').innerText=r.stats.pending||0;});
+}
+function onQuickAutoToggle(v){$('qAutoConfig').style.display=v?'block':'none';}
+function saveQuickAuto(){
+  var bs=parseInt($('qBatchSize').value)||5;
+  var sd=parseInt($('qDelay').value);
+  if(isNaN(sd)||sd<0)sd=20;
+  if(sd>120)sd=120;
+  api('/api/prefs','POST',{autoSend:$('qAutoSend').checked,autoSendBatchSize:bs,sendDelay:sd,quietEnabled:false,quietStart:22,quietEnd:7}).then(function(r){
+    if(r.ok){toast('✅ Automation saved');loadQuickAuto();}
+    else toast('Error','err');
+  });
 }
 
 /* ============ PROFILE ============ */
@@ -1272,24 +1234,18 @@ function saveProfileName(){var name=$('editProfileName').value.trim();if(!name)r
 document.getElementById('profilePicInput').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;if(f.size>2*1024*1024){toast('Max 2MB','err');return;}var ok=['image/png','image/jpeg','image/jpg','image/webp'];if(ok.indexOf(f.type)===-1)return toast('PNG/JPG/WEBP only','err');var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading...');api('/api/profile/picture','POST',{base64:b,mimeType:f.type}).then(function(r){if(r.ok){toast('✅ Updated');$('profileAvatar').src=r.url;if($('userAvatar')){$('userAvatar').src=r.url;$('userAvatar').style.display='block';}}else toast('Error: '+r.error,'err');});};rd.readAsDataURL(f);e.target.value='';});
 
 /* ============ SETTINGS ============ */
-function openSettingsModal(){$('settingsModal').classList.remove('hidden');loadPrefs();loadSignature();loadFiles();loadLogo();}
+function openSettingsModal(){$('settingsModal').classList.remove('hidden');loadSignature();loadFiles();loadLogo();}
 function closeSettingsModal(){$('settingsModal').classList.add('hidden');}
 function switchSettingsTab(t){
-['Automation','Signature','Attachments'].forEach(function(x){var el=$('setTab'+x);if(el)el.classList.remove('active');var tab=$('set'+x+'Tab');if(tab)tab.classList.add('hidden');});
-var map={'automation':'Automation','signature':'Signature','attachments':'Attachments'};
-$('setTab'+map[t]).classList.add('active');
-$('set'+map[t]+'Tab').classList.remove('hidden');
+['Signature','Attachments'].forEach(function(x){var el=$('setTab'+x);if(el)el.classList.remove('active');var tab=$('set'+x+'Tab');if(tab)tab.classList.add('hidden');});
+var map={'signature':'Signature','attachments':'Attachments'};
+$('setTab'+map[t]).classList.add('active');$('set'+map[t]+'Tab').classList.remove('hidden');
 }
 
 function checkQuietStatus(){api('/api/quiet-status').then(function(r){if(!r.ok)return;var b=$('quietBanner');if(r.inQuiet){b.classList.add('show');$('quietMsg').innerText='Until '+((r.quietEnd%12)||12)+':00 '+(r.quietEnd<12?'AM':'PM')+'.';}else{b.classList.remove('show');}});}
 function startHourlyAutoSend(){setTimeout(function(){runAutoCheck();},8000);if(HOURLY_TIMER)clearInterval(HOURLY_TIMER);HOURLY_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;runAutoCheck();},60*60*1000);}
-function runAutoCheck(){api('/api/auto-send-check','POST').then(function(r){if(r.ok&&r.sent>0){toast('🤖 Auto-send: '+r.sent);loadAll();loadQuota();loadMyEmails();}}).catch(function(){});}
-function loadQuota(){api('/api/quota').then(function(r){if(!r.ok)return;MY_QUOTA={sent:r.sent,limit:r.limit,remaining:r.remaining};$('quotaSent').innerText=r.sent;$('quotaLimit').innerText=r.limit;$('quotaRemaining').innerText=r.remaining;var pct=(r.sent/r.limit)*100;$('quotaFill').style.width=Math.min(100,pct)+'%';$('quotaFill').className='quota-fill'+(pct>90?' crit':(pct>70?' warn':''));var slider=$('batchSlider'),numInput=$('batchNumber');if(slider)slider.max=Math.max(1,r.remaining);if(numInput)numInput.max=Math.max(1,r.remaining);validateBatchSize();});}
-function onSliderChange(v){v=parseInt(v)||1;$('batchValue').innerText=v;$('batchNumber').value=v;validateBatchSize();}
-function onNumberChange(v){var n=parseInt(v)||1;$('batchValue').innerText=n;$('batchSlider').value=Math.min(n,parseInt($('batchSlider').max)||500);validateBatchSize();}
-function onNumberBlur(){var n=parseInt($('batchNumber').value)||1;var max=MY_QUOTA.remaining||500;if(n<1)n=1;if(n>max)n=max;$('batchNumber').value=n;$('batchValue').innerText=n;$('batchSlider').value=Math.min(n,parseInt($('batchSlider').max)||500);validateBatchSize();}
-function validateBatchSize(){var val=parseInt($('batchNumber').value)||1;var max=MY_QUOTA.remaining||500;var hint=$('batchHint');var warn=$('batchWarning');var warnText=$('batchWarningText');if(val>max){hint.innerHTML='❌ Cannot exceed: <b>'+max+'</b>';hint.className='batch-hint err';}else{hint.innerHTML='Max: <b>'+max+'</b> · Rate: <b>'+val+'/hour</b>';hint.className='batch-hint';}if(warn&&warnText){if(val>50){warn.style.display='flex';warn.className='warning-banner danger';warnText.innerHTML='<b>HIGH SPAM RISK!</b> '+val+'/hour too aggressive. Recommended: 5-30.';}else if(val>30){warn.style.display='flex';warn.className='warning-banner';warnText.innerHTML='<b>Caution:</b> above recommendation (5-30).';}else{warn.style.display='none';}}}
-function checkSendDelayWarning(){var input=$('sendDelayInput');if(!input)return;var val=parseInt(input.value)||0;var warn=$('sendDelayWarning'),txt=$('sendDelayWarningText');var good=$('sendDelayGood');if(!warn)return;if(val<5){warn.style.display='flex';warn.className='warning-banner danger';txt.innerHTML='<b>CRITICAL!</b> Min 15-20s.';if(good)good.style.display='none';}else if(val<15){warn.style.display='flex';warn.className='warning-banner danger';txt.innerHTML='<b>HIGH RISK!</b> Use 15-20+ sec.';if(good)good.style.display='none';}else if(val<20){warn.style.display='flex';warn.className='warning-banner';txt.innerHTML='<b>Caution:</b> 20+ sec safer.';if(good)good.style.display='none';}else{warn.style.display='none';if(good)good.style.display='flex';}}
+function runAutoCheck(){api('/api/auto-send-check','POST').then(function(r){if(r.ok&&r.sent>0){toast('🤖 Auto-send: '+r.sent);loadAll();loadQuota();loadMyEmails();loadQuickAuto();}}).catch(function(){});}
+function loadQuota(){api('/api/quota').then(function(r){if(!r.ok)return;MY_QUOTA={sent:r.sent,limit:r.limit,remaining:r.remaining};$('quotaSent').innerText=r.sent;$('quotaLimit').innerText=r.limit;$('quotaRemaining').innerText=r.remaining;var pct=(r.sent/r.limit)*100;$('quotaFill').style.width=Math.min(100,pct)+'%';$('quotaFill').className='quota-fill'+(pct>90?' crit':(pct>70?' warn':''));});}
 function scheduleAnalysis(){if(analysisTimer)clearTimeout(analysisTimer);$('aiLiveStatus').innerText='Typing...';analysisTimer=setTimeout(runLiveAnalysis,1500);}
 function runLiveAnalysis(){var subject=$('composerSubject').value.trim();var body=$('composerBody').value.trim();if(!subject&&!body){resetAIAnalysisUI();$('aiLiveStatus').innerText='Waiting';return;}var hash=subject+'|'+body;if(hash===lastAnalyzedHash)return;lastAnalyzedHash=hash;$('aiLiveStatus').innerText='🤖 ...';api('/api/ai/analyze-live','POST',{subject:subject,body:body}).then(function(r){if(!r.ok){$('aiLiveStatus').innerText='Error';return;}if(r.empty){resetAIAnalysisUI();return;}$('aiLiveStatus').innerText=r.aiPowered?'🤖 AI':'⚡ Local';renderAIAnalysis(r);});}
 function runDeepAIAnalysis(){var subject=$('composerSubject').value.trim();var body=$('composerBody').value.trim();if(!subject&&!body){toast('Write something','err');return;}$('aiLiveStatus').innerText='🤖 Deep...';api('/api/ai/analyze-live','POST',{subject:subject,body:body}).then(function(r){if(!r.ok)return;$('aiLiveStatus').innerText=r.aiPowered?'🤖 AI':'⚠️';renderAIAnalysis(r);toast(r.aiPowered?'✅ Deep complete':'⚠️ AI busy');});}
@@ -1347,18 +1303,104 @@ async function delTpl(id){var ok=await showConfirm({icon:'🗑',title:'Delete te
 function onTestTemplateChange(){var id=$('testTemplateSelect').value;if(!id)return;var t=TEMPLATES.filter(function(x){return x.id===id;})[0];if(!t)return;$('testSubject').value=t.subject||'';$('testBody').value=t.body||'';toast('✅ Loaded');}
 
 function addRow(){var w=$('recipients'),d=document.createElement('div');d.className='recip-row';d.innerHTML='<input type="text" placeholder="Company (optional)"><input type="email" placeholder="email@example.com"><button class="del" onclick="this.parentNode.remove()">✕</button>';w.appendChild(d);}
-function submitRecipients(){var rows=$('recipients').querySelectorAll('.recip-row'),list=[];rows.forEach(function(r){var i=r.querySelectorAll('input');if(i[1].value.trim())list.push({company:i[0].value.trim(),email:i[1].value.trim()});});if(!list.length)return toast('No emails','err');api('/api/recipients','POST',{list:list,templateId:$('tplSelect').value}).then(function(r){if(r.ok){toast('✅ '+r.added+' added');$('recipients').innerHTML='';addRow();loadAll();}else toast('Error','err');});}
-function switchTab(t){if(t==='manual'){$('tabManual').classList.add('active');$('tabBulk').classList.remove('active');$('manualTab').classList.remove('hidden');$('bulkTab').classList.add('hidden');}else{$('tabBulk').classList.add('active');$('tabManual').classList.remove('active');$('bulkTab').classList.remove('hidden');$('manualTab').classList.add('hidden');updateBulk();}}
+function submitRecipients(){var rows=$('recipients').querySelectorAll('.recip-row'),list=[];rows.forEach(function(r){var i=r.querySelectorAll('input');if(i[1].value.trim())list.push({company:i[0].value.trim(),email:i[1].value.trim()});});if(!list.length)return toast('No emails','err');api('/api/recipients','POST',{list:list,templateId:$('tplSelect').value}).then(function(r){if(r.ok){toast('✅ '+r.added+' added');$('recipients').innerHTML='';addRow();loadAll();loadQuickAuto();}else toast('Error','err');});}
+function switchTab(t){
+  ['manual','bulk','ocr'].forEach(function(x){var el=$('tab'+x.charAt(0).toUpperCase()+x.slice(1));if(el)el.classList.remove('active');var tab=$(x+'Tab');if(tab)tab.classList.add('hidden');});
+  var map={manual:'Manual',bulk:'Bulk',ocr:'OCR'};
+  $('tab'+map[t]).classList.add('active');
+  $(t+'Tab').classList.remove('hidden');
+  if(t==='bulk')updateBulk();
+}
 function parseBulk(text){var emailRx=/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;var lines=text.split(/\r?\n/);var found={};var seen=new Set();var dup=0;for(var i=0;i<lines.length;i++){var line=lines[i];if(!line.trim())continue;var emails=line.match(emailRx)||[];if(!emails.length)continue;var cleanLine=line;for(var j=0;j<emails.length;j++)cleanLine=cleanLine.replace(emails[j],' ');cleanLine=cleanLine.replace(/[,;|<>"'\(\)\[\]]/g,' ').replace(/\s+/g,' ').trim();var company='';if(cleanLine.length>=2&&cleanLine.length<=80){var compacted=cleanLine.replace(/\s/g,'');var looksLikeDomain=/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(compacted);var isSingleWord=!cleanLine.includes(' ');if(!looksLikeDomain&&!(isSingleWord&&/^[a-z0-9._-]+$/i.test(cleanLine)))company=cleanLine;}for(var k=0;k<emails.length;k++){var em=emails[k].toLowerCase();if(seen.has(em)){dup++;continue;}seen.add(em);found[em]=company;}}var valid=Object.keys(found).map(function(e){return{email:e,company:found[e]};});return{valid:valid,dup:dup};}
 function updateBulk(){var text=$('bulkInput').value;var r=parseBulk(text);var wrap=$('bulkPreviewWrap');var table=$('bulkPreviewTable');$('bulkValidPill').innerText='✅ '+r.valid.length;$('bulkDupPill').innerText='🔁 '+r.dup;if(!text.trim()||r.valid.length===0){wrap.classList.remove('show');return;}wrap.classList.add('show');var h='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px">#</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px">Company</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px">Email</th></tr></thead><tbody>';r.valid.slice(0,50).forEach(function(row,idx){h+='<tr><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:var(--text3);font-size:11px">'+(idx+1)+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#cbd5e1">'+(row.company?esc(row.company):'—')+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#7dd3fc;font-size:11px;word-break:break-all">'+esc(row.email)+'</td></tr>';});h+='</tbody></table>';table.innerHTML=h;}
 function clearBulk(){$('bulkInput').value='';updateBulk();}
 function submitBulk(){var r=parseBulk($('bulkInput').value);if(!r.valid.length)return toast('No emails','err');sendBulkRecipients(r.valid);}
-function sendBulkRecipients(items){api('/api/recipients','POST',{list:items,templateId:$('tplSelect').value}).then(function(res){if(res.ok){toast('✅ '+res.added+' added');$('bulkInput').value='';updateBulk();loadAll();switchTab('manual');}else toast('Error','err');});}
+function sendBulkRecipients(items){api('/api/recipients','POST',{list:items,templateId:$('tplSelect').value}).then(function(res){if(res.ok){toast('✅ '+res.added+' added');$('bulkInput').value='';updateBulk();loadAll();loadQuickAuto();switchTab('manual');}else toast('Error','err');});}
 function readFileToText(file,callback){var name=file.name.toLowerCase();var reader=new FileReader();if(name.endsWith('.xlsx')||name.endsWith('.xls')){if(typeof XLSX==='undefined'){toast('Excel reader not loaded','err');return;}reader.onload=function(ev){try{var data=new Uint8Array(ev.target.result);var wb=XLSX.read(data,{type:'array'});var text='';wb.SheetNames.forEach(function(sn){var sheet=wb.Sheets[sn];var rows=XLSX.utils.sheet_to_json(sheet,{header:1});rows.forEach(function(row){var parts=row.filter(function(c){return c!==undefined&&c!=='';});if(parts.length)text+=parts.join(', ')+'\n';});});callback(text);}catch(err){toast('Error','err');}};reader.readAsArrayBuffer(file);}else{reader.onload=function(ev){callback(ev.target.result);};reader.readAsText(file);}}
-document.addEventListener('DOMContentLoaded',function(){var ta=$('bulkInput');if(ta)ta.addEventListener('input',updateBulk);var fi=$('bulkFileInput');if(fi){fi.addEventListener('change',function(e){var file=e.target.files[0];if(!file)return;readFileToText(file,function(text){$('bulkInput').value=text;updateBulk();toast('✅ Loaded');});e.target.value='';});}var tfi=$('testBulkFileInput');if(tfi){tfi.addEventListener('change',function(e){var file=e.target.files[0];if(!file)return;readFileToText(file,function(text){$('testBulkInput').value=text;updateTestBulk();toast('✅ Loaded');});e.target.value='';});}var tbi=$('testBulkInput');if(tbi)tbi.addEventListener('input',updateTestBulk);var sdi=$('sendDelayInput');if(sdi){sdi.addEventListener('input',checkSendDelayWarning);sdi.addEventListener('change',checkSendDelayWarning);}});
+
+/* ============ OCR ============ */
+document.getElementById('ocrInput').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;runOCRFile(f);e.target.value='';});
+document.addEventListener('paste',function(e){
+  if($('ocrTab').classList.contains('hidden'))return;
+  var items=e.clipboardData&&e.clipboardData.items;
+  if(!items)return;
+  for(var i=0;i<items.length;i++){
+    if(items[i].type.indexOf('image')!==-1){
+      var blob=items[i].getAsFile();
+      if(blob){runOCRFile(blob);toast('📋 Screenshot pasted!');}
+      break;
+    }
+  }
+});
+function openCameraCapture(){var inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.capture='environment';inp.onchange=function(e){var f=e.target.files[0];if(f)runOCRFile(f);};inp.click();}
+async function runOCRFile(file){
+  if(!file)return;
+  if(file.size>5*1024*1024){toast('Max 5MB','err');return;}
+  var img=$('ocrPreviewImg');
+  var reader=new FileReader();
+  reader.onload=function(e){img.src=e.target.result;img.classList.add('show');};
+  reader.readAsDataURL(file);
+  $('ocrProgress').classList.add('show');
+  $('ocrProgressFill').style.width='5%';
+  $('ocrStatus').innerHTML='⏳ OCR loading (first time ~10s)...';
+  try{
+    if(typeof Tesseract==='undefined')throw new Error('OCR library not loaded');
+    var worker=await Tesseract.createWorker('eng',1,{
+      logger:function(m){
+        if(m.status==='recognizing text'){
+          var p=Math.round((m.progress||0)*100);
+          $('ocrProgressFill').style.width=(5+p*0.9)+'%';
+          $('ocrStatus').innerHTML='🔍 Recognizing... '+p+'%';
+        } else if(m.status){
+          $('ocrStatus').innerHTML='⏳ '+m.status;
+        }
+      }
+    });
+    var result=await worker.recognize(file);
+    await worker.terminate();
+    $('ocrProgressFill').style.width='100%';
+    $('ocrStatus').innerHTML='<span style="color:#86efac">✅ Extracted '+ (result.data.text||'').length +' characters</span>';
+    $('ocrText').value=result.data.text||'';
+    $('ocrResultWrap').style.display='block';
+    toast('✅ OCR complete');
+  }catch(e){
+    $('ocrStatus').innerHTML='<span style="color:#fca5a5">❌ '+esc(e.message||'OCR failed')+'</span>';
+    toast('OCR failed: '+e.message,'err');
+  }
+}
+function extractEmailsFromOCR(){
+  var text=$('ocrText').value;
+  if(!text.trim())return toast('No text to extract','err');
+  var r=parseBulk(text);
+  if(!r.valid.length)return toast('No emails found in text','warn');
+  toast('📧 Found '+r.valid.length+' emails');
+  $('bulkInput').value=text;
+  updateBulk();
+  switchTab('bulk');
+}
+function sendOCRToBulk(){
+  var text=$('ocrText').value;
+  if(!text.trim())return toast('No text','err');
+  $('bulkInput').value=text;
+  updateBulk();
+  switchTab('bulk');
+  toast('📋 Sent to bulk');
+}
+function copyOCRText(){
+  var t=$('ocrText').value;
+  if(!t)return;
+  if(navigator.clipboard){navigator.clipboard.writeText(t).then(function(){toast('✅ Copied');});}
+  else{var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('✅ Copied');}
+}
+function clearOCR(){$('ocrText').value='';$('ocrPreviewImg').classList.remove('show');$('ocrResultWrap').style.display='none';$('ocrProgress').classList.remove('show');$('ocrProgressFill').style.width='0%';$('ocrStatus').innerHTML='';}
+
+document.addEventListener('DOMContentLoaded',function(){
+  var ta=$('bulkInput');if(ta)ta.addEventListener('input',updateBulk);
+  var fi=$('bulkFileInput');if(fi){fi.addEventListener('change',function(e){var file=e.target.files[0];if(!file)return;readFileToText(file,function(text){$('bulkInput').value=text;updateBulk();toast('✅ Loaded');});e.target.value='';});}
+});
 
 function loadAll(isManual){if(isManual)toast('🔄 Refreshing...');api('/api/stats').then(function(r){if(!r.ok)return;$('stTotal').innerText=r.stats.total;$('stSent').innerText=r.stats.sent;$('stOpened').innerText=r.stats.opened;$('stPending').innerText=r.stats.pending;$('stTotalSends').innerText=r.stats.totalSends||0;});api('/api/recipients').then(function(r){if(!r.ok)return;CURRENT_ROWS=r.recipients||[];ALL_ROWS=CURRENT_ROWS.slice();renderRecipients();});}
-function renderRecipients(){var w=$('tableWrap');var q=($('recipSearch').value||'').toLowerCase();var stF=$('statusFilter').value;var filtered=CURRENT_ROWS.filter(function(x){if(stF!=='all'&&(x.status||'')!==stF)return false;return !q||(x.company||'').toLowerCase().indexOf(q)!==-1||(x.email||'').toLowerCase().indexOf(q)!==-1;});$('trackCount').innerText=filtered.length+' / '+CURRENT_ROWS.length;if(!CURRENT_ROWS.length){w.innerHTML='<div class="empty"><div class="ico">📭</div>No recipients</div>';updateBulkBar();return;}if(!filtered.length){w.innerHTML='<div class="empty"><div class="ico">🔍</div>No matches</div>';updateBulkBar();return;}var h='<table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" class="cbox" onchange="toggleAll(this.checked)"></th><th>Company</th><th>Email</th><th>Last Status</th><th>Sends</th><th>Last Sent</th><th>Action</th></tr></thead><tbody>';filtered.forEach(function(x){var st=(x.status||'').toLowerCase();var cls='pending',lbl='Pending',icon='⏳';if(st.indexOf('opened')!==-1){cls='opened';lbl='Opened';icon='👁';}else if(st==='sent'){cls='sent';lbl='Sent';icon='📤';}h+='<tr class="clickable '+(SELECTED[x.id]?'selected':'')+'" onclick="openRecipHistory(\''+x.id+'\')"><td onclick="event.stopPropagation()"><input type="checkbox" class="cbox" '+(SELECTED[x.id]?'checked':'')+' onchange="toggleOne(\''+x.id+'\',this.checked)"></td>';h+='<td>'+esc(x.company||'—')+'</td><td style="word-break:break-all">'+esc(x.email)+'</td>';h+='<td><span class="badge '+cls+'">'+icon+' '+lbl+'</span></td>';h+='<td><span class="badge count">'+(x.sendCount||0)+'×</span></td>';h+='<td style="font-size:10px">'+fmtDate(x.lastSentAt||x.sentAt)+'</td>';h+='<td style="white-space:nowrap" onclick="event.stopPropagation()"><button class="btn ghost small" onclick="openRecipHistory(\''+x.id+'\')" title="Full history">📊</button> <button class="btn ghost small" onclick="openSendOptions(\''+x.id+'\')" title="Send">📤</button> <button class="btn danger small" onclick="delRec(\''+x.id+'\')" title="Delete">✕</button></td></tr>';});h+='</tbody></table>';w.innerHTML=h;updateBulkBar();}
+function renderRecipients(){var w=$('tableWrap');var q=($('recipSearch').value||'').toLowerCase();var stF=$('statusFilter').value;var filtered=CURRENT_ROWS.filter(function(x){if(stF!=='all'&&(x.status||'')!==stF)return false;return !q||(x.company||'').toLowerCase().indexOf(q)!==-1||(x.email||'').toLowerCase().indexOf(q)!==-1;});$('trackCount').innerText=filtered.length+' / '+CURRENT_ROWS.length;if(!CURRENT_ROWS.length){w.innerHTML='<div class="empty"><div class="ico">📭</div>No recipients</div>';updateBulkBar();return;}if(!filtered.length){w.innerHTML='<div class="empty"><div class="ico">🔍</div>No matches</div>';updateBulkBar();return;}var h='<table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" class="cbox" onchange="toggleAll(this.checked)"></th><th>Company</th><th>Email</th><th>Last Status</th><th>Sends</th><th>Last Sent</th><th>Action</th></tr></thead><tbody>';filtered.forEach(function(x){var st=(x.status||'').toLowerCase();var cls='pending',lbl='Pending',icon='⏳';if(st.indexOf('opened')!==-1){cls='opened';lbl='Opened';icon='👁';}else if(st==='sent'){cls='sent';lbl='Sent';icon='📤';}h+='<tr class="clickable '+(SELECTED[x.id]?'selected':'')+'" onclick="openRecipHistory(\''+x.id+'\')"><td onclick="event.stopPropagation()"><input type="checkbox" class="cbox" '+(SELECTED[x.id]?'checked':'')+' onchange="toggleOne(\''+x.id+'\',this.checked)"></td>';h+='<td>'+esc(x.company||'—')+'</td><td style="word-break:break-all">'+esc(x.email)+'</td>';h+='<td><span class="badge '+cls+'">'+icon+' '+lbl+'</span></td>';h+='<td><span class="badge count">'+(x.sendCount||0)+'×</span></td>';h+='<td style="font-size:10px">'+fmtDate(x.lastSentAt||x.sentAt)+'</td>';h+='<td style="white-space:nowrap" onclick="event.stopPropagation()"><button class="btn ghost small" onclick="openRecipHistory(\''+x.id+'\')" title="History">📊</button> <button class="btn ghost small" onclick="openSendOptions(\''+x.id+'\')" title="Send">📤</button> <button class="btn danger small" onclick="delRec(\''+x.id+'\')" title="Delete">✕</button></td></tr>';});h+='</tbody></table>';w.innerHTML=h;updateBulkBar();}
 function toggleOne(id,c){if(c)SELECTED[id]=true;else delete SELECTED[id];renderRecipients();}
 function toggleAll(c){var q=($('recipSearch').value||'').toLowerCase();var stF=$('statusFilter').value;var filtered=CURRENT_ROWS.filter(function(x){if(stF!=='all'&&(x.status||'')!==stF)return false;return !q||(x.company||'').toLowerCase().indexOf(q)!==-1||(x.email||'').toLowerCase().indexOf(q)!==-1;});if(c)filtered.forEach(function(r){SELECTED[r.id]=true;});else SELECTED={};renderRecipients();}
 function selectAll(){CURRENT_ROWS.forEach(function(r){SELECTED[r.id]=true;});renderRecipients();}
@@ -1373,21 +1415,19 @@ function openRecipHistory(recipientId){
   $('recipHistoryModal').classList.remove('hidden');
   api('/api/recipient/'+recipientId+'/history').then(function(r){
     if(!r.ok){$('recipHistoryInfo').innerHTML='<div class="empty">Error: '+esc(r.error||'Failed')+'</div>';return;}
-    var rec=r.recipient||{};
-    var stats=r.stats||{};
-    var emails=r.emails||[];
+    var rec=r.recipient||{},stats=r.stats||{},emails=r.emails||[];
     var info='<div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;word-break:break-all">'+esc(rec.email||'')+'</div>';
     if(rec.company)info+='<div style="font-size:12px;color:var(--text2)">Company: <b style="color:#cbd5e1">'+esc(rec.company)+'</b></div>';
     var statusColor=rec.status==='Opened'?'#86efac':rec.status==='Sent'?'#7dd3fc':'#fcd34d';
-    info+='<div style="font-size:12px;color:var(--text2);margin-top:4px">Last Status: <b style="color:'+statusColor+'">'+esc(rec.status||'Pending')+'</b>';
+    info+='<div style="font-size:12px;color:var(--text2);margin-top:4px">Status: <b style="color:'+statusColor+'">'+esc(rec.status||'Pending')+'</b>';
     if(rec.everOpened)info+=' <span class="badge everopened">✓ Ever Opened</span>';
     info+='</div>';
     $('recipHistoryInfo').innerHTML=info;
     var s='<div class="recipient-stat-grid">';
-    s+='<div class="recipient-stat total"><div class="label">Total Sends</div><div class="value">'+(stats.totalSent||0)+'</div></div>';
+    s+='<div class="recipient-stat total"><div class="label">Total</div><div class="value">'+(stats.totalSent||0)+'</div></div>';
     s+='<div class="recipient-stat sent"><div class="label">Opened</div><div class="value">'+(stats.totalOpened||0)+'</div></div>';
     s+='<div class="recipient-stat pending"><div class="label">Not Opened</div><div class="value">'+(stats.totalNotOpened||0)+'</div></div>';
-    s+='<div class="recipient-stat opened"><div class="label">Open Rate</div><div class="value">'+(stats.openRate||0)+'%</div></div></div>';
+    s+='<div class="recipient-stat opened"><div class="label">Rate</div><div class="value">'+(stats.openRate||0)+'%</div></div></div>';
     s+='<div class="info-box" style="margin-bottom:14px"><div class="row"><span class="k">First sent:</span><span class="v" style="font-size:12px">'+(stats.firstSent?fmtDate(stats.firstSent):'—')+'</span></div><div class="row"><span class="k">Last sent:</span><span class="v" style="font-size:12px">'+(stats.lastSent?fmtDate(stats.lastSent):'—')+'</span></div></div>';
     $('recipHistoryStats').innerHTML=s;
     if(!emails.length){$('recipHistoryList').innerHTML='<div class="empty"><div class="ico">📭</div>No emails sent yet</div>';return;}
@@ -1398,11 +1438,8 @@ function openRecipHistory(recipientId){
       var prob=e.aiInboxProb||75;
       var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';
       var attHtml='';
-      if(e.attachmentNames&&e.attachmentNames.length>0){
-        attHtml='<div class="attachment-list">'+e.attachmentNames.map(function(n){return '<span class="attachment-name">📎 '+esc(n)+'</span>';}).join('')+'</div>';
-      } else if(e.attachmentsCount&&e.attachmentsCount>0){
-        attHtml='<div class="attachment-list"><span class="attachment-name">📎 '+e.attachmentsCount+' file'+(e.attachmentsCount>1?'s':'')+'</span></div>';
-      }
+      if(e.attachmentNames&&e.attachmentNames.length>0){attHtml='<div class="attachment-list">'+e.attachmentNames.map(function(n){return '<span class="attachment-name">📎 '+esc(n)+'</span>';}).join('')+'</div>';}
+      else if(e.attachmentsCount&&e.attachmentsCount>0){attHtml='<div class="attachment-list"><span class="attachment-name">📎 '+e.attachmentsCount+' file'+(e.attachmentsCount>1?'s':'')+'</span></div>';}
       list+='<div class="send-history-item'+(opened?' opened':'')+'">';
       list+='<div class="top"><div class="subj">#'+(emails.length-i)+' · '+esc(e.subject||'(no subject)')+'</div><span class="badge '+(opened?'opened':'sent')+'">'+(opened?'👁 Opened':'📤 Sent')+'</span></div>';
       list+='<div class="meta"><span>📅 '+fmtDate(e.sentAt)+'</span>';
@@ -1416,53 +1453,48 @@ function openRecipHistory(recipientId){
   });
 }
 function closeRecipHistory(){$('recipHistoryModal').classList.add('hidden');}
-function openSendOptions(id){_currentSendId=id;var rec=ALL_ROWS.filter(function(x){return x.id===id;})[0]||{};var status=rec.status||'Pending';var info='<div><b style="color:var(--text)">'+esc(rec.email||'')+'</b>'+(rec.company?' — '+esc(rec.company):'')+'</div>';info+='<div style="margin-top:6px">Status: <b style="color:'+(status==='Opened'?'#86efac':status==='Sent'?'#7dd3fc':'#fcd34d')+'">'+status+'</b></div>';var selCount=Object.keys(SELECTED_FILES).length;if(selCount>0)info+='<div style="margin-top:6px;color:var(--cyan)">📎 '+selCount+' file(s) selected</div>';$('sendOptionsInfo').innerHTML=info;$('optSignature').checked=true;$('optLogo').checked=true;$('optAttachments').checked=true;$('sendOptionsBackdrop').classList.remove('hidden');}
+function openSendOptions(id){_currentSendId=id;var rec=ALL_ROWS.filter(function(x){return x.id===id;})[0]||{};var status=rec.status||'Pending';var info='<div><b style="color:var(--text)">'+esc(rec.email||'')+'</b>'+(rec.company?' — '+esc(rec.company):'')+'</div>';info+='<div style="margin-top:6px">Status: <b style="color:'+(status==='Opened'?'#86efac':status==='Sent'?'#7dd3fc':'#fcd34d')+'">'+status+'</b></div>';$('sendOptionsInfo').innerHTML=info;$('optSignature').checked=true;$('optLogo').checked=true;$('optAttachments').checked=true;$('sendOptionsBackdrop').classList.remove('hidden');}
 function closeSendOptions(){$('sendOptionsBackdrop').classList.add('hidden');_currentSendId=null;}
-document.getElementById('sendOptionsConfirm').addEventListener('click',function(){if(!_currentSendId)return;var id=_currentSendId;var payload={recipientId:id,includeSignature:$('optSignature').checked,includeLogo:$('optLogo').checked,includeAttachments:$('optAttachments').checked,selectedFileIds:Object.keys(SELECTED_FILES)};var btn=this;btn.disabled=true;btn.innerHTML='<span class="spin"></span> Sending...';api('/api/send','POST',payload).then(function(r){btn.disabled=false;btn.innerText='📤 Send';if(r.ok){toast('✅ Sent to '+r.email);closeSendOptions();loadAll();loadMyEmails();loadQuota();}else if(r.error==='QUIET_HOURS'){closeSendOptions();showConfirm({icon:'🌙',title:'Quiet Hours',message:'Until '+((r.quietEnd%12)||12)+':00 '+(r.quietEnd<12?'AM':'PM')+'. Send anyway?',okText:'Send',primary:true}).then(function(f){if(!f)return;api('/api/send','POST',Object.assign({force:true},payload)).then(function(r2){if(r2.ok){toast('✅ Sent');loadAll();}else toast('Error','err');});});}else if(r.error==='DAILY_LIMIT_REACHED'){toast('❌ Daily limit','err');}else toast('Error','err');}).catch(function(){btn.disabled=false;btn.innerText='📤 Send';});});
-async function delRec(id){var ok=await showConfirm({icon:'🗑',title:'Delete recipient?',message:'Permanent.',okText:'Delete'});if(!ok)return;api('/api/recipients/'+id,'DELETE').then(function(r){if(r.ok){toast('Deleted');delete SELECTED[id];loadAll();}});}
+document.getElementById('sendOptionsConfirm').addEventListener('click',function(){if(!_currentSendId)return;var id=_currentSendId;var payload={recipientId:id,includeSignature:$('optSignature').checked,includeLogo:$('optLogo').checked,includeAttachments:$('optAttachments').checked,selectedFileIds:Object.keys(SELECTED_FILES)};var btn=this;btn.disabled=true;btn.innerHTML='<span class="spin"></span> Sending...';api('/api/send','POST',payload).then(function(r){btn.disabled=false;btn.innerText='📤 Send';if(r.ok){toast('✅ Sent to '+r.email);closeSendOptions();loadAll();loadMyEmails();loadQuota();loadQuickAuto();}else if(r.error==='QUIET_HOURS'){closeSendOptions();showConfirm({icon:'🌙',title:'Quiet Hours',message:'Send anyway?',okText:'Send',primary:true}).then(function(f){if(!f)return;api('/api/send','POST',Object.assign({force:true},payload)).then(function(r2){if(r2.ok){toast('✅ Sent');loadAll();}else toast('Error','err');});});}else if(r.error==='DAILY_LIMIT_REACHED'){toast('❌ Daily limit','err');}else toast('Error','err');}).catch(function(){btn.disabled=false;btn.innerText='📤 Send';});});
+async function delRec(id){var ok=await showConfirm({icon:'🗑',title:'Delete recipient?',message:'Permanent.',okText:'Delete'});if(!ok)return;api('/api/recipients/'+id,'DELETE').then(function(r){if(r.ok){toast('Deleted');delete SELECTED[id];loadAll();loadQuickAuto();}});}
 async function resendSelected(){var ids=Object.keys(SELECTED);if(!ids.length)return toast('Select first','err');var ok=await showConfirm({icon:'🔁',title:'Resend to '+ids.length+'?',message:'',okText:'Resend',primary:true});if(!ok)return;var done=0,err=0;var selFiles=Object.keys(SELECTED_FILES);toast('Starting...');var next=function(i){if(i>=ids.length){toast('✅ '+done+' sent, '+err+' failed');clearSelection();loadAll();loadQuota();loadMyEmails();return;}setTimeout(function(){api('/api/resend','POST',{recipientId:ids[i],selectedFileIds:selFiles}).then(function(r){if(r.ok)done++;else if(r.error==='DAILY_LIMIT_REACHED'){toast('❌ Daily limit','err');clearSelection();loadAll();return;}else err++;next(i+1);}).catch(function(){err++;next(i+1);});},800);};next(0);}
-async function deleteSelected(){var ids=Object.keys(SELECTED);if(!ids.length)return toast('Select first','err');var ok=await showConfirm({icon:'⚠️',title:'Delete '+ids.length+'?',message:'Cannot undo.',okText:'Delete All'});if(!ok)return;api('/api/recipients/bulk-delete','POST',{ids:ids}).then(function(r){if(r.ok){toast('✅ '+r.deleted+' deleted');clearSelection();loadAll();}});}
+async function deleteSelected(){var ids=Object.keys(SELECTED);if(!ids.length)return toast('Select first','err');var ok=await showConfirm({icon:'⚠️',title:'Delete '+ids.length+'?',message:'Cannot undo.',okText:'Delete All'});if(!ok)return;api('/api/recipients/bulk-delete','POST',{ids:ids}).then(function(r){if(r.ok){toast('✅ '+r.deleted+' deleted');clearSelection();loadAll();loadQuickAuto();}});}
 
 function loadMyEmails(){var range=$('myEmailRange')?$('myEmailRange').value:'all';api('/api/my-emails?range='+encodeURIComponent(range)).then(function(r){if(!r.ok)return;MY_EMAILS=r.emails||[];renderMyEmails();});}
 function renderMyEmails(){var w=$('myEmailsWrap');var q=($('myEmailSearch').value||'').toLowerCase();var filtered=MY_EMAILS.filter(function(e){return !q||(e.recipientEmail||'').toLowerCase().indexOf(q)!==-1||(e.subject||'').toLowerCase().indexOf(q)!==-1;});if($('myEmailCount'))$('myEmailCount').innerText=filtered.length+' shown';if(!filtered.length){w.innerHTML='<div class="empty"><div class="ico">📧</div>No history</div>';return;}var h='<table class="data-table"><thead><tr><th>Recipient</th><th>Subject</th><th>Sent</th><th>Status</th><th>Opened</th><th>Files</th></tr></thead><tbody>';filtered.slice(0,300).forEach(function(e){var opened=!!e.openedAt;var stCls=opened?'opened':'sent';var stIcon=opened?'👁':'📤';var stLbl=opened?'Opened':'Sent';var attCell='—';if(e.attachmentNames&&e.attachmentNames.length>0){attCell='<div class="attachment-list">'+e.attachmentNames.map(function(n){return '<span class="attachment-name">📎 '+esc(n)+'</span>';}).join('')+'</div>';}else if((e.attachmentsCount||0)>0){attCell='<span class="badge attach">📎 '+e.attachmentsCount+'</span>';}h+='<tr><td style="word-break:break-all;font-size:11px">'+esc(e.recipientEmail)+'</td><td style="font-size:11px;max-width:280px">'+esc(e.subject||'—')+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(e.sentAt)+'</td><td><span class="badge '+stCls+'">'+stIcon+' '+stLbl+'</span></td><td style="font-size:10px;white-space:nowrap">'+(opened?fmtDate(e.openedAt):'—')+'</td><td>'+attCell+'</td></tr>';});h+='</tbody></table>';w.innerHTML=h;}
 
-function loadPrefs(){api('/api/prefs').then(function(r){if(!r.ok)return;var p=r.prefs;$('autoSendToggle').checked=p.autoSend;$('quietToggle').checked=p.quietEnabled;$('quietStartSel').value=p.quietStart;$('quietEndSel').value=p.quietEnd;$('quietTimesBox').style.display=p.quietEnabled?'block':'none';$('batchSizeBox').classList.toggle('show',p.autoSend);var bs=p.autoSendBatchSize||5;$('batchSlider').value=bs;$('batchNumber').value=bs;$('batchValue').innerText=bs;$('totalAutoSent').innerText=p.totalAutoSent||0;if($('sendDelayInput'))$('sendDelayInput').value=p.sendDelay!==undefined?p.sendDelay:20;validateBatchSize();checkSendDelayWarning();});}
-document.getElementById('quietToggle').addEventListener('change',function(){$('quietTimesBox').style.display=this.checked?'block':'none';});
-document.getElementById('autoSendToggle').addEventListener('change',function(){$('batchSizeBox').classList.toggle('show',this.checked);});
-function savePrefs(){var bs=parseInt($('batchNumber').value)||5;var sd=parseInt($('sendDelayInput').value);if(isNaN(sd)||sd<0)sd=20;if(sd>120)sd=120;var payload={autoSend:$('autoSendToggle').checked,autoSendBatchSize:bs,quietEnabled:$('quietToggle').checked,quietStart:Number($('quietStartSel').value),quietEnd:Number($('quietEndSel').value),sendDelay:sd};api('/api/prefs','POST',payload).then(function(r){if(r.ok)toast('✅ Saved');else toast('Error','err');});}
+function loadPrefs(){api('/api/prefs').then(function(r){if(!r.ok)return;var p=r.prefs;});}
 
 /* ============ IMAP ============ */
-function checkIMAPStatus(){api('/api/imap/status').then(function(r){if(!r.ok){showIMAPSetup();return;}IMAP_CONNECTED=!!r.connected;if(IMAP_CONNECTED){$('imapSetupPanel').classList.add('hidden');$('imapInboxUI').classList.remove('hidden');if($('imapSyncInfo'))$('imapSyncInfo').innerText='⚡ Total synced: '+(r.totalSynced||0);loadIMAPInbox();}else{showIMAPSetup();}}).catch(function(){showIMAPSetup();});}
+function checkIMAPStatus(){api('/api/imap/status').then(function(r){if(!r.ok){showIMAPSetup();return;}IMAP_CONNECTED=!!r.connected;if(IMAP_CONNECTED){$('imapSetupPanel').classList.add('hidden');$('imapInboxUI').classList.remove('hidden');loadIMAPInbox();startLiveInbox();}else{showIMAPSetup();}}).catch(function(){showIMAPSetup();});}
 function showIMAPSetup(){$('imapSetupPanel').classList.remove('hidden');$('imapInboxUI').classList.add('hidden');}
-async function connectIMAP(){var pass=$('imapAppPassword').value.trim();if(!pass||pass.replace(/\s/g,'').length<16){return toast('App Password 16 chars','err');}var btn=$('imapConnectBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Testing...';try{var r=await api('/api/imap/connect','POST',{appPassword:pass});if(r.ok){toast('✅ Connected');$('imapAppPassword').value='';IMAP_CONNECTED=true;$('imapSetupPanel').classList.add('hidden');$('imapInboxUI').classList.remove('hidden');loadIMAPInbox();}else{toast('Error: '+r.error,'err');}}catch(e){toast('Error','err');}btn.disabled=false;btn.innerHTML='🔌 Connect Inbox';}
-async function disconnectIMAP(){var ok=await showConfirm({icon:'🔌',title:'Disconnect?',message:'App Password removed.',okText:'Disconnect'});if(!ok)return;api('/api/imap/disconnect','POST').then(function(r){if(r.ok){toast('Disconnected');IMAP_CONNECTED=false;INBOX_EMAILS=[];$('imapSetupPanel').classList.remove('hidden');$('imapInboxUI').classList.add('hidden');}});}
-function loadIMAPInbox(silent){if(!IMAP_CONNECTED)return;var folder=$('inboxFolder').value;var pageSize=parseInt($('inboxLimit').value)||20;if(!silent){$('inboxList').innerHTML='<div class="empty"><div class="ico">⏳</div>Loading...</div>';$('inboxEmpty').classList.remove('hidden');$('inboxViewerContent').classList.add('hidden');ACTIVE_EMAIL=null;$('imapSyncInfo').innerText='⚡ Syncing...';}$('imapPageInfo').innerText='Page '+imapPage;$('imapPrevBtn').disabled=imapPage<=1;$('imapNextBtn').disabled=true;api('/api/imap/inbox','POST',{folder:folder,page:imapPage,pageSize:pageSize}).then(function(r){if(!r.ok){if(!silent)$('inboxList').innerHTML='<div class="empty"><div class="ico">❌</div>'+esc(r.error)+'</div>';return;}INBOX_EMAILS=r.emails||[];$('imapSyncInfo').innerText='✅ '+INBOX_EMAILS.length+' · Total '+r.total;$('imapNextBtn').disabled=!r.hasMore;if(!INBOX_EMAILS.length){$('inboxList').innerHTML='<div class="empty"><div class="ico">📭</div>No emails</div>';return;}renderInboxList();});}
+async function connectIMAP(){var pass=$('imapAppPassword').value.trim();if(!pass||pass.replace(/\s/g,'').length<16){return toast('App Password 16 chars','err');}var btn=$('imapConnectBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Testing...';try{var r=await api('/api/imap/connect','POST',{appPassword:pass});if(r.ok){toast('✅ Connected');$('imapAppPassword').value='';IMAP_CONNECTED=true;$('imapSetupPanel').classList.add('hidden');$('imapInboxUI').classList.remove('hidden');loadIMAPInbox();startLiveInbox();}else{toast('Error: '+r.error,'err');}}catch(e){toast('Error','err');}btn.disabled=false;btn.innerHTML='🔌 Connect Inbox';}
+async function disconnectIMAP(){var ok=await showConfirm({icon:'🔌',title:'Disconnect?',message:'App Password removed.',okText:'Disconnect'});if(!ok)return;api('/api/imap/disconnect','POST').then(function(r){if(r.ok){toast('Disconnected');IMAP_CONNECTED=false;INBOX_EMAILS=[];if(LIVE_INBOX_TIMER)clearInterval(LIVE_INBOX_TIMER);$('imapSetupPanel').classList.remove('hidden');$('imapInboxUI').classList.add('hidden');}});}
+function loadIMAPInbox(silent){if(!IMAP_CONNECTED)return;var folder=$('inboxFolder').value;var pageSize=parseInt($('inboxLimit').value)||20;if(!silent){$('inboxList').innerHTML='<div class="empty"><div class="ico">⏳</div>Loading live inbox...</div>';}$('imapPageInfo').innerText='Page '+imapPage;$('imapPrevBtn').disabled=imapPage<=1;$('imapNextBtn').disabled=true;api('/api/imap/inbox','POST',{folder:folder,page:imapPage,pageSize:pageSize}).then(function(r){if(!r.ok){if(!silent)$('inboxList').innerHTML='<div class="empty"><div class="ico">❌</div>'+esc(r.error)+'</div>';return;}var newEmails=r.emails||[];var newHash=JSON.stringify(newEmails.map(function(e){return e.uid+'-'+e.isRead;}));if(silent&&newHash===lastInboxHash)return;lastInboxHash=newHash;INBOX_EMAILS=newEmails;$('imapNextBtn').disabled=!r.hasMore;if(!INBOX_EMAILS.length){$('inboxList').innerHTML='<div class="empty"><div class="ico">📭</div>No emails</div>';return;}renderInboxList();});}
 function renderInboxList(){var h='';INBOX_EMAILS.forEach(function(e,i){var catClass=(e.category||'other').toLowerCase().replace('_','-');h+='<div class="inbox-item'+(e.isRead?'':' unread')+'" onclick="openIMAPEmail('+i+')" data-idx="'+i+'">';h+='<div class="from"><span class="from-name">'+esc(e.fromName||e.from||'Unknown')+'</span><span class="date">'+esc(fmtTimeAgo(e.date||e.receivedAt))+'</span></div>';h+='<div class="subj">'+esc(e.subject||'(no subject)')+'</div>';h+='<div class="badges">';if(e.category && e.category !== 'OTHER')h+='<span class="badge '+catClass+'">'+esc(e.category.replace('_',' '))+'</span>';if(e.attachments && e.attachments.length)h+='<span class="badge attach">📎</span>';h+='</div></div>';});$('inboxList').innerHTML=h;}
-function openIMAPEmail(i){var e=INBOX_EMAILS[i];if(!e)return;ACTIVE_EMAIL=e;document.querySelectorAll('.inbox-item').forEach(function(el){el.classList.remove('active');if(parseInt(el.getAttribute('data-idx'))===i)el.classList.add('active');});$('inboxEmpty').classList.add('hidden');$('inboxViewerContent').classList.remove('hidden');$('inboxViewerContent').style.display='flex';$('viewSubject').innerText=e.subject||'(no subject)';$('viewFrom').innerText=(e.fromName||'')+' <'+(e.from||'')+'>';$('viewTo').innerText=e.to||'';$('viewDate').innerText=fmtEmailDate(e.date||e.receivedAt);if(e.category && e.category !== 'OTHER'){$('viewCategoryRow').style.display='flex';var catClass=(e.category||'other').toLowerCase().replace('_','-');$('viewCategory').innerHTML='<span class="badge '+catClass+'">'+esc(e.category.replace('_',' '))+'</span>';}else $('viewCategoryRow').style.display='none';var bodyContainer=$('viewBody');bodyContainer.innerHTML='<div class="loading"><div class="spin"></div><span>Loading...</span></div>';api('/api/imap/body','POST',{folder:e.folder||'INBOX',uid:e.uid}).then(function(r){if(!r.ok){bodyContainer.innerHTML='<div class="plain-body">Failed: '+esc(r.error||'Unknown')+'</div>';return;}var email=r.email;ACTIVE_EMAIL=Object.assign({},e,email);bodyContainer.innerHTML='';if(email.htmlBody && email.htmlBody.trim().length>0){var iframe=document.createElement('iframe');iframe.style.cssText='width:100%;border:none;background:#fff;display:block;';iframe.setAttribute('sandbox','allow-same-origin allow-popups');bodyContainer.appendChild(iframe);try{var doc=iframe.contentDocument||iframe.contentWindow.document;doc.open();doc.write('<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;font-size:14px;line-height:1.6;color:#222;word-break:break-word;background:#fff}img{max-width:100%;height:auto}a{color:#1a73e8}table{max-width:100%}</style></head><body>'+email.htmlBody+'</body></html>');doc.close();setTimeout(function(){try{var hh=doc.body.scrollHeight;iframe.style.height=Math.max(400,Math.min(hh+60,1500))+'px';}catch(err){iframe.style.height='500px';}},200);}catch(err){bodyContainer.innerHTML='<div class="plain-body">'+esc(email.textBody||email.snippet||'(no content)')+'</div>';}}else bodyContainer.innerHTML='<div class="plain-body">'+esc(email.textBody||email.snippet||'(no content)')+'</div>';});}
+function openIMAPEmail(i){var e=INBOX_EMAILS[i];if(!e)return;ACTIVE_EMAIL=e;document.querySelectorAll('.inbox-item').forEach(function(el){el.classList.remove('active');if(parseInt(el.getAttribute('data-idx'))===i)el.classList.add('active');});$('inboxEmpty').classList.add('hidden');$('inboxViewerContent').classList.remove('hidden');$('inboxViewerContent').style.display='flex';$('viewSubject').innerText=e.subject||'(no subject)';$('viewFrom').innerText=(e.fromName||'')+' <'+(e.from||'')+'>';$('viewTo').innerText=e.to||'';$('viewDate').innerText=fmtEmailDate(e.date||e.receivedAt);var bodyContainer=$('viewBody');bodyContainer.innerHTML='<div class="loading"><div class="spin"></div><span>Loading...</span></div>';api('/api/imap/body','POST',{folder:e.folder||'INBOX',uid:e.uid}).then(function(r){if(!r.ok){bodyContainer.innerHTML='<div class="plain-body">Failed: '+esc(r.error||'Unknown')+'</div>';return;}var email=r.email;ACTIVE_EMAIL=Object.assign({},e,email);bodyContainer.innerHTML='';if(email.htmlBody && email.htmlBody.trim().length>0){var iframe=document.createElement('iframe');iframe.style.cssText='width:100%;border:none;background:#fff;display:block;';iframe.setAttribute('sandbox','allow-same-origin allow-popups');bodyContainer.appendChild(iframe);try{var doc=iframe.contentDocument||iframe.contentWindow.document;doc.open();doc.write('<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:20px;font-family:-apple-system,sans-serif;font-size:14px;line-height:1.6;color:#222;word-break:break-word;background:#fff}img{max-width:100%;height:auto}a{color:#1a73e8}table{max-width:100%}</style></head><body>'+email.htmlBody+'</body></html>');doc.close();setTimeout(function(){try{var hh=doc.body.scrollHeight;iframe.style.height=Math.max(400,Math.min(hh+60,1500))+'px';}catch(err){iframe.style.height='500px';}},200);}catch(err){bodyContainer.innerHTML='<div class="plain-body">'+esc(email.textBody||email.snippet||'(no content)')+'</div>';}}else bodyContainer.innerHTML='<div class="plain-body">'+esc(email.textBody||email.snippet||'(no content)')+'</div>';});}
 async function deleteIMAPEmail(){if(!ACTIVE_EMAIL)return;var ok=await showConfirm({icon:'🗑',title:'Delete from MailFlow?',message:'Not from Gmail.',okText:'Delete'});if(!ok)return;api('/api/imap/email/'+encodeURIComponent(ACTIVE_EMAIL.id),'DELETE').then(function(r){if(r.ok){toast('Deleted');INBOX_EMAILS=INBOX_EMAILS.filter(function(e){return e.id!==ACTIVE_EMAIL.id;});ACTIVE_EMAIL=null;$('inboxViewerContent').classList.add('hidden');$('inboxEmpty').classList.remove('hidden');renderInboxList();}});}
 
 /* ============ REPLY ============ */
-function openReplyModal(useAI){if(!ACTIVE_EMAIL)return;_useAIReply=useAI;$('replyTo').value=ACTIVE_EMAIL.from||'';$('replySubject').value=/^re:/i.test(ACTIVE_EMAIL.subject||'')?ACTIVE_EMAIL.subject:('Re: '+(ACTIVE_EMAIL.subject||''));$('replyBody').value='';$('replyModalTitle').innerText=useAI?'🤖 AI Smart Reply':'↩️ Reply';$('replyAIHint').style.display=useAI?'block':'none';$('replyModal').classList.remove('hidden');if(useAI){$('replyAIStatus').innerText='🤖 Analyzing full email...';generateAIReply(ACTIVE_EMAIL);}}
+function openReplyModal(useAI){if(!ACTIVE_EMAIL)return;$('replyTo').value=ACTIVE_EMAIL.from||'';$('replySubject').value=/^re:/i.test(ACTIVE_EMAIL.subject||'')?ACTIVE_EMAIL.subject:('Re: '+(ACTIVE_EMAIL.subject||''));$('replyBody').value='';$('replyModalTitle').innerText=useAI?'🤖 AI Smart Reply':'↩️ Reply';$('replyAIHint').style.display=useAI?'block':'none';$('replyModal').classList.remove('hidden');if(useAI){$('replyAIStatus').innerText='🤖 Analyzing...';generateAIReply(ACTIVE_EMAIL);}}
 function closeReplyModal(){$('replyModal').classList.add('hidden');}
 async function generateAIReply(email){try{var bodyText=email.textBody||email.snippet||'';if(!bodyText&&email.htmlBody)bodyText=email.htmlBody.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();if(!bodyText){$('replyAIStatus').innerText='⚠️ No body';return;}$('replyAIStatus').innerText='🤖 Generating...';var res=await api('/api/ai/smart-reply','POST',{originalSubject:email.subject,originalBody:bodyText.substring(0,4000),originalFrom:(email.fromName||'')+' <'+(email.from||'')+'>'});if(res.ok&&res.body){$('replyBody').value=res.body;if(res.subject)$('replySubject').value=res.subject;$('replyAIStatus').innerText=res.aiPowered?'✅ AI reply ready':'⚠️ Basic';toast(res.aiPowered?'✅ AI reply':'⚠️ Basic');}else{$('replyAIStatus').innerText='⚠️ Failed';}}catch(e){$('replyAIStatus').innerText='⚠️ Error';}}
-function sendReplyFromInbox(){var to=$('replyTo').value.trim();var subject=$('replySubject').value.trim();var body=$('replyBody').value.trim();if(!to||!body)return toast('Fill To and Body','err');var inReplyTo=ACTIVE_EMAIL?(ACTIVE_EMAIL.messageId||''):'';var references=ACTIVE_EMAIL?(ACTIVE_EMAIL.references||ACTIVE_EMAIL.messageId||''):'';toast('Sending...');api('/api/inbox/reply','POST',{to:to,subject:subject,body:body,inReplyTo:inReplyTo,references:references}).then(function(r){if(r.ok){toast('✅ Sent');closeReplyModal();}else toast('Error: '+r.error,'err');});}
+function sendReplyFromInbox(){var to=$('replyTo').value.trim(),subject=$('replySubject').value.trim(),body=$('replyBody').value.trim();if(!to||!body)return toast('Fill To and Body','err');var inReplyTo=ACTIVE_EMAIL?(ACTIVE_EMAIL.messageId||''):'';var references=ACTIVE_EMAIL?(ACTIVE_EMAIL.references||ACTIVE_EMAIL.messageId||''):'';toast('Sending...');api('/api/inbox/reply','POST',{to:to,subject:subject,body:body,inReplyTo:inReplyTo,references:references}).then(function(r){if(r.ok){toast('✅ Sent');closeReplyModal();}else toast('Error: '+r.error,'err');});}
 
 /* ============ TEST LAB ============ */
-function switchTestTab(t){if(t==='manual'){$('testTabManual').classList.add('active');$('testTabBulk').classList.remove('active');$('testManualTab').classList.remove('hidden');$('testBulkTab').classList.add('hidden');}else{$('testTabBulk').classList.add('active');$('testTabManual').classList.remove('active');$('testBulkTab').classList.remove('hidden');$('testManualTab').classList.add('hidden');updateTestBulk();}}
+function switchTestTab(t){if(t==='manual'){$('testTabManual').classList.add('active');$('testTabBulk').classList.remove('active');$('testManualTab').classList.remove('hidden');$('testBulkTab').classList.add('hidden');}else{$('testTabBulk').classList.add('active');$('testTabManual').classList.remove('active');$('testBulkTab').classList.remove('hidden');$('testManualTab').classList.add('hidden');}}
 function addTestRow(){var w=$('testRecipientsRows');if(!w)return;var d=document.createElement('div');d.className='recip-row';d.innerHTML='<input type="text" placeholder="Company"><input type="email" placeholder="test@example.com"><button class="del" onclick="this.parentNode.remove()">✕</button>';w.appendChild(d);}
 function submitTestRecipientsManual(){var rows=$('testRecipientsRows').querySelectorAll('.recip-row');var list=[];rows.forEach(function(r){var i=r.querySelectorAll('input');if(i[1].value.trim())list.push({company:i[0].value.trim(),email:i[1].value.trim()});});if(!list.length)return toast('No emails','err');api('/api/test/recipients','POST',{list:list}).then(function(res){if(res.ok){toast('✅ '+res.added);$('testRecipientsRows').innerHTML='';addTestRow();loadTestDashboard();}});}
-function updateTestBulk(){var text=$('testBulkInput').value;var r=parseBulk(text);var wrap=$('testBulkPreviewWrap');var table=$('testBulkPreviewTable');if(!wrap||!table)return;$('testBulkValidPill').innerText='✅ '+r.valid.length;$('testBulkDupPill').innerText='🔁 '+r.dup;if(!text.trim()||r.valid.length===0){wrap.classList.remove('show');return;}wrap.classList.add('show');var h='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px">#</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px">Company</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px">Email</th></tr></thead><tbody>';r.valid.slice(0,50).forEach(function(row,idx){h+='<tr><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:var(--text3);font-size:11px">'+(idx+1)+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#cbd5e1">'+(row.company?esc(row.company):'—')+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#7dd3fc;font-size:11px;word-break:break-all">'+esc(row.email)+'</td></tr>';});h+='</tbody></table>';table.innerHTML=h;}
-function clearTestBulk(){$('testBulkInput').value='';updateTestBulk();}
-function submitTestBulk(){var r=parseBulk($('testBulkInput').value);if(!r.valid.length)return toast('No emails','err');api('/api/test/recipients','POST',{list:r.valid}).then(function(res){if(res.ok){toast('✅ '+res.added);$('testBulkInput').value='';updateTestBulk();loadTestDashboard();switchTestTab('manual');}});}
+function clearTestBulk(){$('testBulkInput').value='';}
+function submitTestBulk(){var r=parseBulk($('testBulkInput').value);if(!r.valid.length)return toast('No emails','err');api('/api/test/recipients','POST',{list:r.valid}).then(function(res){if(res.ok){toast('✅ '+res.added);$('testBulkInput').value='';loadTestDashboard();switchTestTab('manual');}});}
 function loadTestDashboard(){api('/api/test/stats').then(function(r){if(!r.ok)return;var s=r.stats;$('tstTotal').innerText=s.total;$('tstSent').innerText=s.sent;$('tstOpened').innerText=s.opened;$('tstPending').innerText=s.pending;$('tstLog').innerText=s.totalSends;if($('testPendingCount'))$('testPendingCount').innerText=s.pending;});api('/api/test/recipients').then(function(r){if(!r.ok)return;TEST_RECIPIENTS=r.recipients||[];renderTestRecipients();});api('/api/test/log').then(function(r){if(!r.ok)return;var w=$('testLogWrap');var arr=r.logs||[];if(!arr.length){w.innerHTML='<div class="empty">No log</div>';return;}var h='<table class="data-table"><thead><tr><th>To</th><th>Subject</th><th>Sent</th><th>Status</th></tr></thead><tbody>';arr.slice(0,100).forEach(function(x){var op=!!x.openedAt;var st=op?'opened':'sent';var stIco=op?'👁 Opened':'📤 Sent';h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(x.recipientEmail)+'</td><td style="font-size:11px">'+esc(x.subject||'—')+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(x.sentAt)+'</td><td><span class="badge '+st+'">'+stIco+'</span></td></tr>';});h+='</tbody></table>';w.innerHTML=h;});api('/api/test/prefs').then(function(r){if(!r.ok)return;var p=r.prefs;if($('testAutoBatchSize'))$('testAutoBatchSize').value=p.autoSendBatchSize||5;if($('testAutoDelay'))$('testAutoDelay').value=p.sendDelay!==undefined?p.sendDelay:20;if($('testTotalAutoSent'))$('testTotalAutoSent').innerText=p.totalAutoSent||0;if($('testLastAutoRun'))$('testLastAutoRun').innerText=p.lastRun?fmtDate(p.lastRun):'Never';});}
 function renderTestRecipients(){var w=$('testRecipientsWrap');if(!w)return;var q=($('testRecipSearch').value||'').toLowerCase();var stF=$('testRecipStatusFilter').value;var filtered=TEST_RECIPIENTS.filter(function(x){if(stF!=='all'&&(x.status||'')!==stF)return false;return !q||(x.email||'').toLowerCase().indexOf(q)!==-1||(x.company||'').toLowerCase().indexOf(q)!==-1;});if($('testRecipCount'))$('testRecipCount').innerText=filtered.length+' / '+TEST_RECIPIENTS.length;if(!TEST_RECIPIENTS.length){w.innerHTML='<div class="empty">No test recipients</div>';updateTestBulkBar();return;}var h='<table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" class="cbox" onchange="testToggleAll(this.checked)"></th><th>Email</th><th>Company</th><th>Status</th><th>Sent</th><th>Action</th></tr></thead><tbody>';filtered.forEach(function(x){var st=(x.status||'').toLowerCase();var cls=st==='opened'?'opened':st==='sent'?'sent':'pending';var icon=st==='opened'?'👁':st==='sent'?'📤':'⏳';h+='<tr class="'+(TEST_SELECTED[x.id]?'selected':'')+'"><td><input type="checkbox" class="cbox" '+(TEST_SELECTED[x.id]?'checked':'')+' onchange="testToggleOne(\''+x.id+'\',this.checked)"></td>';h+='<td style="word-break:break-all">'+esc(x.email)+'</td><td>'+esc(x.company||'—')+'</td><td><span class="badge '+cls+'">'+icon+' '+esc(x.status||'Pending')+'</span></td><td style="font-size:11px">'+fmtDate(x.sentAt)+'</td>';h+='<td style="white-space:nowrap"><button class="btn ghost small" onclick="useTestRecipient(\''+esc(x.email).replace(/'/g,"\\'")+'\')">Use</button> <button class="btn danger small" onclick="delTestRec(\''+x.id+'\')">✕</button></td></tr>';});h+='</tbody></table>';w.innerHTML=h;updateTestBulkBar();}
 function useTestRecipient(email){$('testTo').value=email;toast('📋 Set');}
 function testToggleOne(id,c){if(c)TEST_SELECTED[id]=true;else delete TEST_SELECTED[id];renderTestRecipients();}
 function testToggleAll(c){if(c)TEST_RECIPIENTS.forEach(function(r){TEST_SELECTED[r.id]=true;});else TEST_SELECTED={};renderTestRecipients();}
 function testSelectAll(){TEST_RECIPIENTS.forEach(function(r){TEST_SELECTED[r.id]=true;});renderTestRecipients();}
-function testClearSelection(){TEST_SELECTED={};renderTestRecipients();}
 function updateTestBulkBar(){var ids=Object.keys(TEST_SELECTED);var b=$('testBulkActionBar');if(ids.length>0){b.classList.add('show');$('testSelectedCount').innerText=ids.length+' selected';}else b.classList.remove('show');}
-async function testDeleteSelected(){var ids=Object.keys(TEST_SELECTED);if(!ids.length)return toast('Select first','err');var ok=await showConfirm({icon:'🗑',title:'Delete '+ids.length+'?',message:'',okText:'Delete'});if(!ok)return;api('/api/test/recipients/bulk-delete','POST',{ids:ids}).then(function(r){if(r.ok){toast('✅ '+r.deleted);testClearSelection();loadTestDashboard();}});}
+async function testDeleteSelected(){var ids=Object.keys(TEST_SELECTED);if(!ids.length)return toast('Select first','err');var ok=await showConfirm({icon:'🗑',title:'Delete '+ids.length+'?',message:'',okText:'Delete'});if(!ok)return;api('/api/test/recipients/bulk-delete','POST',{ids:ids}).then(function(r){if(r.ok){toast('✅ '+r.deleted);TEST_SELECTED={};loadTestDashboard();}});}
 async function delTestRec(id){var ok=await showConfirm({icon:'🗑',title:'Delete?',message:'',okText:'Delete'});if(!ok)return;api('/api/test/recipients/'+id,'DELETE').then(function(r){if(r.ok){toast('Deleted');delete TEST_SELECTED[id];loadTestDashboard();}});}
 async function clearTestData(){var ok=await showConfirm({icon:'⚠️',title:'Clear ALL?',message:'Permanent.',okText:'Clear All'});if(!ok)return;toast('Clearing...');api('/api/test/clear','POST',{}).then(function(r){if(r.ok){toast('✅ '+r.deleted);TEST_SELECTED={};setTimeout(loadTestDashboard,500);}});}
 function sendTestEmail(){var to=$('testTo').value.trim(),subject=$('testSubject').value.trim(),body=$('testBody').value.trim();if(!to||!subject||!body)return toast('Fill To, Subject, Body','err');toast('Sending...');api('/api/test/send','POST',{to:to,subject:subject,body:body,includeSignature:true,includeLogo:false,selectedFileIds:[],useTestSignature:false}).then(function(r){if(r.ok){toast('✅ Sent to '+r.email);loadTestDashboard();}else toast('Error','err');});}
@@ -1472,17 +1504,16 @@ async function runTestAutomation(){var bs=parseInt($('testAutoBatchSize').value)
 function loadAdmin(){$('adminUsersList').innerHTML='<div class="empty">Loading...</div>';api('/api/admin/dashboard').then(function(r){if(!r.ok){$('adminUsersList').innerHTML='<div class="empty">Error: '+esc(r.error)+'</div>';return;}ADMIN_USERS=r.users||[];$('adTotalUsers').innerText=r.stats.totalUsers;$('adTotalEmails').innerText=r.stats.totalEmails;$('adTotalOpened').innerText=r.stats.totalOpened;$('adTotalPending').innerText=r.stats.totalPending;$('adTotalSends').innerText=r.stats.totalSends||0;renderAdminUsers();});api('/api/admin/all-emails').then(function(r){if(!r.ok)return;ADMIN_ALL_EMAILS=r.emails||[];renderAllEmails();});}
 function loadAdminAIUsage(){api('/api/admin/ai-usage').then(function(r){if(!r.ok)return;$('adAIUsers').innerText=r.summary.totalUsers||0;$('adAIActiveUsers').innerText=r.summary.activeAIUsers||0;$('adAITokensToday').innerText=fmtNum(r.summary.tokensToday||0);$('adAITokensMonth').innerText=fmtNum(r.summary.tokensThisMonth||0);$('adAITokensTotal').innerText=fmtNum(r.summary.tokensLifetime||0);$('adminAIUsageSummary').innerText=r.summary.monthKey||'';var w=$('adminAIUsageTable');if(!r.rows.length){w.innerHTML='<div class="empty">No AI usage</div>';return;}var h='<table class="data-table"><thead><tr><th>User</th><th>App ID</th><th>Today</th><th>Month</th><th>Lifetime</th><th>Calls</th><th>Providers</th></tr></thead><tbody>';r.rows.slice(0,100).forEach(function(row){var prov=Object.keys(row.totalProviders||{}).map(function(k){return '<span class="badge sent" style="font-size:9px;margin:1px">'+esc(k)+'</span>';}).join('');h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(row.email)+'</td><td style="font-size:10px"><span class="app-id-pill">'+esc(row.appAccountId)+'</span></td><td style="font-size:11px;text-align:center">'+fmtNum(row.todayTokens)+'</td><td style="font-size:11px;text-align:center">'+fmtNum(row.monthTokens)+'</td><td style="font-size:11px;text-align:center;color:#fbbf24;font-weight:800">'+fmtNum(row.totalTokens)+'</td><td style="font-size:11px;text-align:center">'+fmtNum(row.totalCalls)+'</td><td>'+prov+'</td></tr>';});h+='</tbody></table>';w.innerHTML=h;});}
 function loadAdminBanned(){api('/api/admin/banned-users').then(function(r){if(!r.ok)return;ADMIN_BANNED=r.banned||[];$('adminBannedCount').innerText=ADMIN_BANNED.length+' banned';var w=$('adminBannedList');if(!ADMIN_BANNED.length){w.innerHTML='<div class="empty">No banned users</div>';return;}w.innerHTML=ADMIN_BANNED.map(function(b){return '<div class="user-card banned"><div class="top"><div><div class="name">'+esc(b.name||'(no name)')+'</div><div class="email">'+esc(b.email)+'</div></div><span class="badge banned">🚫 BANNED</span></div><div style="font-size:11px;color:var(--text2);margin-top:6px"><b>Reason:</b> '+esc(b.reason||'—')+'</div><div style="font-size:11px;color:var(--text2);margin-top:4px"><b>IP:</b> '+esc(b.ip||'—')+' · <b>Banned:</b> '+fmtDate(b.bannedAt)+'</div><div class="actions-row"><button class="btn success small" onclick="unbanUser(\''+esc(b.id)+'\')">✓ Unban</button></div></div>';}).join('');});}
-function loadAdminRequests(){api('/api/admin/access-requests').then(function(r){if(!r.ok)return;ADMIN_REQUESTS=r.requests||[];var pending=ADMIN_REQUESTS.filter(function(x){return x.status==='pending';});$('adminReqCount').innerText=pending.length+' pending';var w=$('adminRequestList');if(!ADMIN_REQUESTS.length){w.innerHTML='<div class="empty">No requests</div>';return;}w.innerHTML=ADMIN_REQUESTS.map(function(req){var st=req.status||'pending';var stColor=st==='pending'?'#fcd34d':st==='approved'?'#86efac':'#fca5a5';return '<div class="user-card"><div class="top"><div><div class="name">'+esc(req.name||'(no name)')+'</div><div class="email">'+esc(req.email)+'</div></div><span class="badge" style="background:rgba(245,158,11,.15);color:'+stColor+';border:1px solid '+stColor+'44">'+st.toUpperCase()+'</span></div>'+(req.company?'<div style="font-size:11px;color:var(--text2);margin-top:4px"><b>Company:</b> '+esc(req.company)+'</div>':'')+(req.phone?'<div style="font-size:11px;color:var(--text2);margin-top:4px"><b>Phone:</b> '+esc(req.phone)+'</div>':'')+'<div style="font-size:12px;color:#cbd5e1;margin-top:8px;padding:10px;background:rgba(0,0,0,.2);border-radius:8px;line-height:1.6"><b>Reason:</b> '+esc(req.reason)+'</div><div style="font-size:11px;color:var(--text3);margin-top:6px">IP: '+esc(req.ip||'—')+' · '+fmtTimeAgo(req.requestedAt)+'</div>'+((st==='pending')?'<div class="actions-row"><button class="btn success small" onclick="approveRequest(\''+esc(req.id)+'\')">✓ Approve</button><button class="btn danger small" onclick="rejectRequest(\''+esc(req.id)+'\')">✕ Reject</button></div>':'')+'</div>';}).join('');});}
-async function approveRequest(id){var ok=await showConfirm({icon:'✓',title:'Approve Access?',message:'This will unban the user and let them sign up.',okText:'Approve',primary:true});if(!ok)return;api('/api/admin/access-requests/'+id+'/approve','POST',{}).then(function(r){if(r.ok){toast('✅ Approved');loadAdminRequests();loadAdminBanned();loadAdmin();}else toast('Error','err');});}
-async function rejectRequest(id){var reason=prompt('Reason for rejection (optional):')||'';api('/api/admin/access-requests/'+id+'/reject','POST',{reason:reason}).then(function(r){if(r.ok){toast('Rejected');loadAdminRequests();}});}
-async function unbanUser(id){var ok=await showConfirm({icon:'✓',title:'Unban this user?',message:'They will be able to log in again.',okText:'Unban',primary:true});if(!ok)return;api('/api/admin/user/'+id+'/unban','POST',{}).then(function(r){if(r.ok){toast('✅ Unbanned');loadAdminBanned();loadAdmin();}});}
-function renderAdminUsers(){var q=($('adminSearch').value||'').toLowerCase();var filtered=ADMIN_USERS.filter(function(u){return !q||u.email.toLowerCase().indexOf(q)!==-1||(u.name||'').toLowerCase().indexOf(q)!==-1||(u.appAccountId||'').toLowerCase().indexOf(q)!==-1;});if(!filtered.length){$('adminUsersList').innerHTML='<div class="empty">No users</div>';return;}var h='';filtered.forEach(function(u){h+='<div class="user-card '+(u.banned?'banned':'')+'"><div class="top"><div><div class="name">'+esc(u.name||'(no name)')+(u.banned?' <span class="badge banned">BANNED</span>':'')+'</div><div class="email">'+esc(u.email)+'</div></div><span class="app-id-pill">'+esc(u.appAccountId||'N/A')+'</span></div>';h+='<div class="stats-row"><span class="badge sent">📨 '+u.total+'</span><span class="badge opened">✅ '+u.sent+'</span><span class="badge opened">👁 '+u.opened+'</span><span class="badge pending">⏳ '+u.pending+'</span><span class="badge count">📤 '+u.totalSends+'</span>'+(u.autoSend?'<span class="badge sent">🤖 Auto</span>':'')+'</div>';h+='<div style="font-size:10px;color:var(--text3);margin-top:6px">Reg: '+fmtDate(u.createdAt)+' · IP: '+esc(u.lastIP||'unknown')+'</div>';h+='<div class="actions-row"><button class="btn ghost small" onclick="viewAdminUser(\''+esc(u.id)+'\')">👁 Details</button><button class="btn ghost small" onclick="openUserEmails(\''+esc(u.id)+'\',\''+esc(u.email)+'\')">📧 Emails</button>';if(u.email.toLowerCase()!==(USER.email||'').toLowerCase()){if(u.banned){h+='<button class="btn success small" onclick="unbanUser(\''+esc(u.id)+'\')">✓ Unban</button>';}else{h+='<button class="btn warn small" onclick="banUser(\''+esc(u.id)+'\',\''+esc(u.email)+'\')">🚫 Ban</button>';}h+='<button class="btn danger small" onclick="deleteUserAccount(\''+esc(u.id)+'\',\''+esc(u.email)+'\')">🗑 Delete</button>';}h+='</div></div>';});$('adminUsersList').innerHTML=h;}
-async function banUser(uid,email){var reason=prompt('Reason for banning '+email+':')||'Violation of terms';var banIP=confirm('Also ban IP? (Recommended to prevent re-signup)');var ok=await showConfirm({icon:'🚫',title:'Ban '+email+'?',message:'They will not be able to login. '+(banIP?'IP will also be banned.':''),okText:'Ban',primary:false});if(!ok)return;api('/api/admin/user/'+uid+'/ban','POST',{reason:reason,banIP:banIP}).then(function(r){if(r.ok){toast('✅ User banned');loadAdmin();loadAdminBanned();}else toast('Error: '+r.error,'err');});}
-async function deleteUserAccount(uid,email){var ok=await showConfirm({icon:'⚠️',title:'Delete User?',message:'Delete '+email+' and ALL data? Cannot be undone.',okText:'Delete'});if(!ok)return;var ok2=await showConfirm({icon:'🚨',title:'FINAL Confirmation',message:'Really delete '+email+'?',okText:'Yes, Delete'});if(!ok2)return;toast('Deleting...');api('/api/admin/user/'+uid,'DELETE').then(function(r){if(r.ok){toast('✅ Deleted');loadAdmin();loadAdminAIUsage();loadAdminBanned();}else toast('Error','err');});}
-function viewAdminUser(uid){$('adminUserContent').innerHTML='<div class="empty">Loading...</div>';$('adminUserModal').classList.remove('hidden');api('/api/admin/user/'+uid+'/details').then(function(r){if(!r.ok){$('adminUserContent').innerHTML='<div class="empty">Error</div>';return;}var u=r.user;var h='<div class="info-box" style="margin:0"><div class="row"><span class="k">Name:</span><span class="v">'+esc(u.name||'—')+'</span></div>';h+='<div class="row"><span class="k">Email:</span><span class="v" style="font-size:12px">'+esc(u.email)+'</span></div>';h+='<div class="row"><span class="k">App ID:</span><span class="v"><span class="app-id-pill">'+esc(u.appAccountId)+'</span></span></div>';h+='<div class="row"><span class="k">Auth Type:</span><span class="v">'+esc(u.authType||'google')+'</span></div>';h+='<div class="row"><span class="k">Registered:</span><span class="v" style="font-size:12px">'+fmtDate(u.createdAt)+'</span></div>';h+='<div class="row"><span class="k">Last Login:</span><span class="v" style="font-size:12px">'+fmtDate(u.lastLogin)+'</span></div>';h+='<div class="row"><span class="k">First IP:</span><span class="v" style="font-size:12px">'+esc(u.firstIP)+'</span></div>';h+='<div class="row"><span class="k">Last IP:</span><span class="v" style="font-size:12px">'+esc(u.lastIP)+'</span></div>';h+='<div class="row"><span class="k">Status:</span><span class="v">'+(u.banned?'<span class="badge banned">🚫 BANNED</span>':'<span class="badge opened">✅ Active</span>')+'</span></div>';if(u.banned)h+='<div class="row"><span class="k">Ban Reason:</span><span class="v" style="font-size:12px">'+esc(u.banReason||'—')+'</span></div>';h+='</div>';var s=u.stats;h+='<div class="recipient-stat-grid" style="margin-top:16px"><div class="recipient-stat total"><div class="label">Recipients</div><div class="value">'+s.total+'</div></div><div class="recipient-stat sent"><div class="label">Sent</div><div class="value">'+s.sent+'</div></div><div class="recipient-stat opened"><div class="label">Opened</div><div class="value">'+s.opened+'</div></div><div class="recipient-stat pending"><div class="label">Pending</div><div class="value">'+s.pending+'</div></div></div>';h+='<div class="info-box" style="margin-top:12px"><div class="row"><span class="k">Total Sends:</span><span class="v">'+s.totalSends+'</span></div></div>';$('adminUserContent').innerHTML=h;});}
+function loadAdminRequests(){api('/api/admin/access-requests').then(function(r){if(!r.ok)return;ADMIN_REQUESTS=r.requests||[];var pending=ADMIN_REQUESTS.filter(function(x){return x.status==='pending';});$('adminReqCount').innerText=pending.length+' pending';var w=$('adminRequestList');if(!ADMIN_REQUESTS.length){w.innerHTML='<div class="empty">No requests</div>';return;}w.innerHTML=ADMIN_REQUESTS.map(function(req){var st=req.status||'pending';var stColor=st==='pending'?'#fcd34d':st==='approved'?'#86efac':'#fca5a5';return '<div class="user-card"><div class="top"><div><div class="name">'+esc(req.name||'(no name)')+'</div><div class="email">'+esc(req.email)+'</div></div><span class="badge" style="background:rgba(245,158,11,.15);color:'+stColor+';border:1px solid '+stColor+'44">'+st.toUpperCase()+'</span></div>'+(req.company?'<div style="font-size:11px;color:var(--text2);margin-top:4px"><b>Company:</b> '+esc(req.company)+'</div>':'')+'<div style="font-size:12px;color:#cbd5e1;margin-top:8px;padding:10px;background:rgba(0,0,0,.2);border-radius:8px;line-height:1.6"><b>Reason:</b> '+esc(req.reason)+'</div><div style="font-size:11px;color:var(--text3);margin-top:6px">IP: '+esc(req.ip||'—')+' · '+fmtTimeAgo(req.requestedAt)+'</div>'+((st==='pending')?'<div class="actions-row"><button class="btn success small" onclick="approveRequest(\''+esc(req.id)+'\')">✓ Approve</button><button class="btn danger small" onclick="rejectRequest(\''+esc(req.id)+'\')">✕ Reject</button></div>':'')+'</div>';}).join('');});}
+async function approveRequest(id){var ok=await showConfirm({icon:'✓',title:'Approve?',message:'Unban user?',okText:'Approve',primary:true});if(!ok)return;api('/api/admin/access-requests/'+id+'/approve','POST',{}).then(function(r){if(r.ok){toast('✅ Approved');loadAdminRequests();loadAdminBanned();loadAdmin();}else toast('Error','err');});}
+async function rejectRequest(id){var reason=prompt('Reason:')||'';api('/api/admin/access-requests/'+id+'/reject','POST',{reason:reason}).then(function(r){if(r.ok){toast('Rejected');loadAdminRequests();}});}
+async function unbanUser(id){var ok=await showConfirm({icon:'✓',title:'Unban?',message:'They can login again.',okText:'Unban',primary:true});if(!ok)return;api('/api/admin/user/'+id+'/unban','POST',{}).then(function(r){if(r.ok){toast('✅ Unbanned');loadAdminBanned();loadAdmin();}});}
+function renderAdminUsers(){var q=($('adminSearch').value||'').toLowerCase();var filtered=ADMIN_USERS.filter(function(u){return !q||u.email.toLowerCase().indexOf(q)!==-1||(u.name||'').toLowerCase().indexOf(q)!==-1||(u.appAccountId||'').toLowerCase().indexOf(q)!==-1;});if(!filtered.length){$('adminUsersList').innerHTML='<div class="empty">No users</div>';return;}var h='';filtered.forEach(function(u){h+='<div class="user-card '+(u.banned?'banned':'')+'"><div class="top"><div><div class="name">'+esc(u.name||'(no name)')+(u.banned?' <span class="badge banned">BANNED</span>':'')+'</div><div class="email">'+esc(u.email)+'</div></div><span class="app-id-pill">'+esc(u.appAccountId||'N/A')+'</span></div>';h+='<div class="stats-row"><span class="badge sent">📨 '+u.total+'</span><span class="badge opened">✅ '+u.sent+'</span><span class="badge opened">👁 '+u.opened+'</span><span class="badge pending">⏳ '+u.pending+'</span><span class="badge count">📤 '+u.totalSends+'</span></div>';h+='<div style="font-size:10px;color:var(--text3);margin-top:6px">Reg: '+fmtDate(u.createdAt)+' · IP: '+esc(u.lastIP||'unknown')+'</div>';h+='<div class="actions-row"><button class="btn ghost small" onclick="viewAdminUser(\''+esc(u.id)+'\')">👁 Details</button>';if(u.email.toLowerCase()!==(USER.email||'').toLowerCase()){if(u.banned){h+='<button class="btn success small" onclick="unbanUser(\''+esc(u.id)+'\')">✓ Unban</button>';}else{h+='<button class="btn warn small" onclick="banUser(\''+esc(u.id)+'\',\''+esc(u.email)+'\')">🚫 Ban</button>';}h+='<button class="btn danger small" onclick="deleteUserAccount(\''+esc(u.id)+'\',\''+esc(u.email)+'\')">🗑 Delete</button>';}h+='</div></div>';});$('adminUsersList').innerHTML=h;}
+async function banUser(uid,email){var reason=prompt('Reason for banning '+email+':')||'Violation';var banIP=confirm('Also ban IP?');var ok=await showConfirm({icon:'🚫',title:'Ban '+email+'?',message:'They cannot login.',okText:'Ban'});if(!ok)return;api('/api/admin/user/'+uid+'/ban','POST',{reason:reason,banIP:banIP}).then(function(r){if(r.ok){toast('✅ Banned');loadAdmin();loadAdminBanned();}else toast('Error','err');});}
+async function deleteUserAccount(uid,email){var ok=await showConfirm({icon:'⚠️',title:'Delete?',message:'Delete '+email+' and ALL data?',okText:'Delete'});if(!ok)return;var ok2=await showConfirm({icon:'🚨',title:'FINAL',message:'Really delete '+email+'?',okText:'Yes Delete'});if(!ok2)return;toast('Deleting...');api('/api/admin/user/'+uid,'DELETE').then(function(r){if(r.ok){toast('✅ Deleted');loadAdmin();loadAdminAIUsage();loadAdminBanned();}else toast('Error','err');});}
+function viewAdminUser(uid){$('adminUserContent').innerHTML='<div class="empty">Loading...</div>';$('adminUserModal').classList.remove('hidden');api('/api/admin/user/'+uid+'/details').then(function(r){if(!r.ok){$('adminUserContent').innerHTML='<div class="empty">Error</div>';return;}var u=r.user;var h='<div class="info-box" style="margin:0"><div class="row"><span class="k">Name:</span><span class="v">'+esc(u.name||'—')+'</span></div>';h+='<div class="row"><span class="k">Email:</span><span class="v" style="font-size:12px">'+esc(u.email)+'</span></div>';h+='<div class="row"><span class="k">App ID:</span><span class="v"><span class="app-id-pill">'+esc(u.appAccountId)+'</span></span></div>';h+='<div class="row"><span class="k">Auth:</span><span class="v">'+esc(u.authType||'google')+'</span></div>';h+='<div class="row"><span class="k">Registered:</span><span class="v" style="font-size:12px">'+fmtDate(u.createdAt)+'</span></div>';h+='<div class="row"><span class="k">Last Login:</span><span class="v" style="font-size:12px">'+fmtDate(u.lastLogin)+'</span></div>';h+='<div class="row"><span class="k">First IP:</span><span class="v" style="font-size:12px">'+esc(u.firstIP)+'</span></div>';h+='<div class="row"><span class="k">Last IP:</span><span class="v" style="font-size:12px">'+esc(u.lastIP)+'</span></div>';h+='<div class="row"><span class="k">Status:</span><span class="v">'+(u.banned?'<span class="badge banned">🚫 BANNED</span>':'<span class="badge opened">✅ Active</span>')+'</span></div></div>';var s=u.stats;h+='<div class="recipient-stat-grid" style="margin-top:16px"><div class="recipient-stat total"><div class="label">Recipients</div><div class="value">'+s.total+'</div></div><div class="recipient-stat sent"><div class="label">Sent</div><div class="value">'+s.sent+'</div></div><div class="recipient-stat opened"><div class="label">Opened</div><div class="value">'+s.opened+'</div></div><div class="recipient-stat pending"><div class="label">Pending</div><div class="value">'+s.pending+'</div></div></div>';$('adminUserContent').innerHTML=h;});}
 function closeAdminUser(){$('adminUserModal').classList.add('hidden');}
 function renderAllEmails(){var w=$('adminAllEmailsWrap');var q=($('adminEmailSearch').value||'').toLowerCase();var filtered=ADMIN_ALL_EMAILS.filter(function(e){return !q||(e.userEmail||'').toLowerCase().indexOf(q)!==-1||(e.recipientEmail||'').toLowerCase().indexOf(q)!==-1||(e.subject||'').toLowerCase().indexOf(q)!==-1;});if(!filtered.length){w.innerHTML='<div class="empty">No emails</div>';return;}var h='<table class="data-table"><thead><tr><th>User</th><th>Recipient</th><th>Subject</th><th>Sent</th><th>AI</th></tr></thead><tbody>';filtered.slice(0,500).forEach(function(e){var pred=e.aiPrediction||'GOOD';var prob=e.aiInboxProb||75;var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';h+='<tr><td style="font-size:10px;word-break:break-all">'+esc(e.userEmail)+'</td><td style="font-size:11px;word-break:break-all">'+esc(e.recipientEmail)+'</td><td style="font-size:10px">'+esc(e.subject||'—')+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(e.sentAt)+'</td><td><span style="padding:2px 8px;border-radius:12px;font-size:9px;font-weight:700;background:'+pc+'22;color:'+pc+'">'+prob+'%</span></td></tr>';});h+='</tbody></table>';w.innerHTML=h;}
-function openUserEmails(uid,email){$('recipHistoryTitle').innerText='Emails: '+email;$('recipHistoryInfo').innerHTML='';$('recipHistoryStats').innerHTML='<div class="empty">Loading...</div>';$('recipHistoryList').innerHTML='';$('recipHistoryModal').classList.remove('hidden');api('/api/admin/user/'+uid+'/emails').then(function(r){if(!r.ok){$('recipHistoryStats').innerHTML='';$('recipHistoryList').innerHTML='<div class="empty">Error</div>';return;}if(!r.emails.length){$('recipHistoryStats').innerHTML='';$('recipHistoryList').innerHTML='<div class="empty">No emails</div>';return;}var h='<table class="data-table"><thead><tr><th>Recipient</th><th>Subject</th><th>Sent</th><th>Status</th></tr></thead><tbody>';r.emails.forEach(function(e){var st=e.status||'Sent';var stCls=st==='Opened'?'opened':st==='Sent'?'sent':'pending';var stIcon=st==='Opened'?'👁':st==='Sent'?'📤':'⏳';h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(e.recipientEmail||'—')+'</td><td style="font-size:11px">'+esc((e.subject||'—').substring(0,60))+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(e.sentAt)+'</td><td><span class="badge '+stCls+'">'+stIcon+' '+esc(st)+'</span></td></tr>';});h+='</tbody></table>';$('recipHistoryStats').innerHTML='';$('recipHistoryList').innerHTML=h;});}
 
 var url=new URL(window.location.href);
 if(url.searchParams.get('login')==='success'){window.history.replaceState({},'','/');location.reload();}
