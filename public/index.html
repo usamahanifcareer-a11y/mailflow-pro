@@ -53,17 +53,16 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .logo-top .mini-logo svg{width:100%;height:100%}
 .logo-top .brand-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 .user-chip{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);flex-wrap:wrap}
-.user-avatar{width:30px;height:30px;border-radius:50%;border:2px solid var(--cyan);object-fit:cover;box-shadow:0 0 0 3px rgba(56,189,248,.15)}
+.user-avatar{width:32px;height:32px;border-radius:50%;border:2px solid var(--cyan);object-fit:cover;box-shadow:0 0 0 3px rgba(56,189,248,.15);cursor:pointer}
 .user-chip button{background:#1e293b;border:1px solid #334155;color:#cbd5e1;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:600}
 .user-chip button:hover{background:#334155;color:#fff}
 .badge.admin{background:linear-gradient(90deg,rgba(168,85,247,.3),rgba(56,189,248,.3));color:#e9d5ff;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;border:1px solid rgba(168,85,247,.4)}
-.app-id-pill{background:var(--grad);color:white;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:700;font-family:'Courier New',monospace;letter-spacing:.5px}
+.app-id-pill{background:var(--grad);color:white;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:700;font-family:'Courier New',monospace}
 @media(max-width:480px){.app-id-pill{display:none}}
 .maintabs{display:flex;gap:4px;padding:6px 14px;background:rgba(10,14,26,.85);border-bottom:1px solid var(--border);overflow-x:auto;position:sticky;top:55px;z-index:99;backdrop-filter:blur(20px);-webkit-overflow-scrolling:touch}
 .maintabs::-webkit-scrollbar{display:none}
 .maintab{padding:10px 16px;font-size:12px;color:var(--text2);cursor:pointer;font-weight:600;white-space:nowrap;border-radius:8px;transition:.2s;flex-shrink:0}
 .maintab.active{color:var(--cyan);background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2)}
-.maintab:hover:not(.active){color:#cbd5e1;background:rgba(30,41,59,.5)}
 .container{max-width:1400px;margin:0 auto;padding:20px;position:relative;z-index:1}
 @media(max-width:640px){.container{padding:14px}}
 .page-layout{display:flex;gap:20px;align-items:flex-start}
@@ -72,34 +71,31 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 @media(max-width:1000px){.page-layout{flex-direction:column}.sidebar{width:100%;position:static;order:2}.main-area{order:1}}
 .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px}
 @media(min-width:700px){.stats{grid-template-columns:repeat(5,1fr)}}
-.stat{background:linear-gradient(135deg,rgba(30,41,59,.8),rgba(15,23,42,.8));border:1px solid var(--border);border-radius:14px;padding:16px;position:relative;overflow:hidden;transition:.3s}
+.stat{background:linear-gradient(135deg,rgba(30,41,59,.8),rgba(15,23,42,.8));border:1px solid var(--border);border-radius:14px;padding:16px;position:relative;overflow:hidden}
 .stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--grad);opacity:.6}
-.stat:hover{border-color:var(--border2);transform:translateY(-3px);box-shadow:0 16px 40px rgba(0,0,0,.4)}
 .stat .label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;font-weight:700}
 .stat .value{font-size:24px;font-weight:800;margin-top:6px;letter-spacing:-.5px}
 .stat.s1 .value{color:var(--cyan)}.stat.s2 .value{color:var(--green)}.stat.s3 .value{color:var(--purple)}.stat.s4 .value{color:var(--amber)}.stat.s5 .value{color:var(--pink)}
-.panel{background:var(--panel);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:18px;transition:.25s}
+.panel{background:var(--panel);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:18px}
 @media(max-width:640px){.panel{padding:14px;border-radius:14px}}
-.panel:hover{border-color:var(--border2)}
 .panel h2{font-size:15px;margin-bottom:16px;color:var(--text);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-weight:700}
 .panel h2 span{color:var(--text3);font-weight:500;font-size:11px}
 .field{margin-bottom:12px}
 .field label{display:block;font-size:10px;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.6px;font-weight:700}
 .field>input,.field>textarea,.field>select{width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:11px 13px;font-size:15px;transition:.2s;outline:none;-webkit-appearance:none;appearance:none}
 .field>select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
-.field>input:focus,.field>textarea:focus,.field>select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.15);background:#0c1220}
-.field>input::placeholder,.field>textarea::placeholder{color:#475569}
+.field>input:focus,.field>textarea:focus,.field>select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.15)}
 .btn{background:var(--grad);color:white;border:none;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;justify-content:center;transition:.25s;box-shadow:0 4px 12px rgba(56,189,248,.2);white-space:nowrap}
 .btn:hover{box-shadow:0 8px 24px rgba(56,189,248,.4);transform:translateY(-1px)}
 .btn.ghost{background:transparent;border:1px solid var(--border2);color:#cbd5e1;box-shadow:none}
-.btn.ghost:hover{background:#1e293b;border-color:#475569}
+.btn.ghost:hover{background:#1e293b}
 .btn.danger{background:linear-gradient(135deg,#ef4444,#dc2626)}
 .btn.warn{background:linear-gradient(135deg,#f59e0b,#d97706)}
 .btn.success{background:linear-gradient(135deg,#22c55e,#16a34a)}
 .btn.small{padding:7px 12px;font-size:12px;border-radius:8px}
 .btn.tiny{padding:5px 10px;font-size:11px;border-radius:6px}
-.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
-.btn.save-btn{width:100%;padding:14px;font-size:14px;font-weight:700;background:linear-gradient(135deg,#22c55e,#16a34a);box-shadow:0 8px 24px rgba(34,197,94,.35);margin-top:16px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.save-btn{width:100%;padding:14px;font-size:14px;font-weight:700;background:linear-gradient(135deg,#22c55e,#16a34a);margin-top:16px}
 .btn .spin{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
 .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;gap:12px;border-bottom:1px solid var(--border)}
 .toggle-row:last-child{border-bottom:none}
@@ -127,10 +123,11 @@ table.data-table tbody tr:hover td{background:rgba(56,189,248,.04)}
 table.data-table tr.selected td{background:rgba(56,189,248,.08)}
 table.data-table tbody tr:last-child td{border-bottom:none}
 table.data-table tr.clickable{cursor:pointer}
-.badge{display:inline-flex;align-items:center;gap:3px;padding:4px 9px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap;letter-spacing:.3px}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:4px 9px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap}
 .badge.pending{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3)}
 .badge.sent{background:rgba(56,189,248,.15);color:#7dd3fc;border:1px solid rgba(56,189,248,.3)}
-.badge.opened{background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.3);animation:pulse-opened 2s ease-in-out infinite}
+.badge.opened{background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.3)}
+.badge.everopened{background:rgba(168,85,247,.15);color:#c4b5fd;border:1px solid rgba(168,85,247,.3);font-size:9px}
 .badge.count{background:rgba(236,72,153,.15);color:#f9a8d4;border:1px solid rgba(236,72,153,.3)}
 .badge.attach{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3);font-weight:800}
 .badge.interested{background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.3)}
@@ -149,19 +146,17 @@ table.data-table tr.clickable{cursor:pointer}
 .cbox:checked::after{content:'✓';position:absolute;color:white;font-size:13px;font-weight:700;top:50%;left:50%;transform:translate(-50%,-50%);line-height:1}
 .empty{text-align:center;padding:40px 20px;color:var(--text3);font-size:13px}
 .empty .ico{font-size:44px;margin-bottom:12px;opacity:.5;display:block}
-.tpl-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;transition:.2s}
-.tpl-card:hover{border-color:var(--border2);background:#0c1220}
+.tpl-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .tpl-card .info{flex:1;min-width:0}
 .tpl-card .name{font-size:14px;font-weight:700;color:var(--text);word-break:break-word}
 .tpl-card .sub{font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:4px}
 .tpl-card button{padding:6px 10px;font-size:11px;border-radius:7px;border:none;cursor:pointer;background:#1e293b;color:#cbd5e1;font-weight:600}
-.tpl-card button:hover{background:#334155;color:#fff}
 .tpl-card button.danger{background:rgba(127,29,29,.5);color:#fca5a5}
 .bulk-help{background:linear-gradient(135deg,rgba(56,189,248,.08),rgba(99,102,241,.08));border:1px solid rgba(56,189,248,.25);border-radius:12px;padding:12px 14px;margin-bottom:12px}
 .bulk-help .title{font-size:12px;color:#7dd3fc;font-weight:700;margin-bottom:6px}
 .bulk-help .desc{font-size:11px;color:var(--text2);line-height:1.6}
 .bulk-area{width:100%;min-height:180px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:14px;font-family:'Inter',monospace;font-size:13px;resize:vertical;outline:none;line-height:1.7}
-.bulk-area:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.1)}
+.bulk-area:focus{border-color:var(--cyan)}
 .bulk-preview-wrap{margin-top:12px;border:1px solid var(--border);border-radius:12px;overflow:hidden;display:none}
 .bulk-preview-wrap.show{display:block}
 .bulk-preview-head{background:rgba(10,14,26,.6);padding:10px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
@@ -174,7 +169,7 @@ table.data-table tr.clickable{cursor:pointer}
 .info-box .row .k{color:var(--text2)}
 .info-box .row .v{color:var(--text);font-weight:700;text-align:right}
 .quota-bar{width:100%;height:8px;background:#1e293b;border-radius:8px;overflow:hidden;margin-top:10px}
-.quota-fill{height:100%;background:linear-gradient(90deg,#22c55e,#38bdf8);transition:.5s;width:0;border-radius:8px;box-shadow:0 0 12px rgba(56,189,248,.5)}
+.quota-fill{height:100%;background:linear-gradient(90deg,#22c55e,#38bdf8);transition:.5s;width:0;border-radius:8px}
 .quota-fill.warn{background:linear-gradient(90deg,#f59e0b,#ef4444)}
 .quota-fill.crit{background:linear-gradient(90deg,#ef4444,#991b1b);animation:pulse 1.5s infinite}
 .quota-live{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--green);font-weight:600}
@@ -185,7 +180,7 @@ table.data-table tr.clickable{cursor:pointer}
 .toast.err{border-left:4px solid var(--red)}
 .toast.warn{border-left:4px solid var(--amber)}
 .upload-area{display:flex;align-items:center;gap:12px;padding:14px;border:2px dashed var(--border2);border-radius:12px;margin-bottom:12px;cursor:pointer;background:var(--bg2);transition:.2s}
-.upload-area:hover{border-color:var(--cyan);background:rgba(56,189,248,.03)}
+.upload-area:hover{border-color:var(--cyan)}
 .upload-area input[type=file]{display:none}
 .upload-area label{cursor:pointer;display:flex;align-items:center;gap:12px;width:100%}
 .preview-box{width:64px;height:64px;border-radius:12px;background:#fff;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
@@ -196,14 +191,12 @@ table.data-table tr.clickable{cursor:pointer}
 .upload-info .s{font-size:11px;color:var(--text3);word-break:break-all}
 .sig-fields{display:grid;grid-template-columns:1fr;gap:10px}
 @media(min-width:600px){.sig-fields{grid-template-columns:1fr 1fr}}
-.sig-preview-outer{background:rgba(10,14,26,.6);border:1px solid var(--border2);border-radius:12px;padding:14px;margin-top:14px;display:none;animation:fadeIn .2s}
+.sig-preview-outer{background:rgba(10,14,26,.6);border:1px solid var(--border2);border-radius:12px;padding:14px;margin-top:14px;display:none}
 .sig-preview-outer.show{display:block}
 .sig-preview-outer .preview-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
-.sig-preview-canvas{background:#ffffff;color:#222;border-radius:10px;padding:20px;overflow-x:auto;font-family:Arial,Helvetica,sans-serif;box-shadow:inset 0 0 0 1px rgba(0,0,0,.05)}
-.sig-preview-canvas:empty{display:none}
+.sig-preview-canvas{background:#ffffff;color:#222;border-radius:10px;padding:20px;overflow-x:auto;font-family:Arial,Helvetica,sans-serif}
 .file-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;transition:.2s;cursor:pointer;user-select:none;width:100%}
-.file-item:hover{border-color:var(--border2);background:#0c1220}
-.file-item.selected{border-color:var(--cyan);background:rgba(56,189,248,.08);box-shadow:0 0 0 1px rgba(56,189,248,.25)}
+.file-item.selected{border-color:var(--cyan);background:rgba(56,189,248,.08)}
 .file-item .icon{width:40px;height:40px;border-radius:9px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
 .file-item .info{flex:1;min-width:0;overflow:hidden}
 .file-item .fname{font-size:13px;font-weight:600;color:var(--text);word-break:break-all;line-height:1.3}
@@ -211,7 +204,6 @@ table.data-table tr.clickable{cursor:pointer}
 .file-item .actions{flex-shrink:0}
 .file-item .actions button{padding:6px 10px;font-size:11px;border-radius:7px;border:none;cursor:pointer;background:rgba(127,29,29,.5);color:#fca5a5;font-weight:600}
 .cv-file-pick{padding:11px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:.2s}
-.cv-file-pick:hover{border-color:var(--cyan);background:rgba(56,189,248,.05)}
 .cv-file-pick.selected{border-color:var(--cyan);background:rgba(56,189,248,.1)}
 .cv-file-pick .ico{font-size:22px;flex-shrink:0;width:36px;height:36px;display:flex;align-items:center;justify-content:center}
 .cv-file-pick .nm{font-size:13px;font-weight:600;color:var(--text);word-break:break-all}
@@ -220,8 +212,7 @@ table.data-table tr.clickable{cursor:pointer}
 .modal{background:linear-gradient(135deg,#0f172a,#0a0e1a);border:1px solid var(--border2);border-radius:18px;padding:22px;max-width:900px;width:100%;max-height:92vh;overflow-y:auto;position:relative;box-shadow:0 32px 100px rgba(0,0,0,.8);animation:slideUp .25s;margin:auto}
 @media(max-width:640px){.modal{padding:16px;border-radius:14px}}
 .modal h3{font-size:16px;margin-bottom:16px;color:var(--text);padding-right:36px;font-weight:700}
-.modal .close-btn{position:absolute;top:14px;right:16px;background:transparent;border:none;color:var(--text2);font-size:22px;cursor:pointer;padding:0 6px;line-height:1}
-.modal .close-btn:hover{color:#fff}
+.modal .close-btn{position:absolute;top:14px;right:16px;background:transparent;border:none;color:var(--text2);font-size:22px;cursor:pointer;padding:0 6px}
 .confirm-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px}
 .confirm-box{background:linear-gradient(135deg,#0f172a,#0a0e1a);border:1px solid var(--border2);border-radius:18px;padding:24px;max-width:420px;width:100%;text-align:center}
 .confirm-box .icon{font-size:48px;margin-bottom:12px}
@@ -251,11 +242,9 @@ table.data-table tr.clickable{cursor:pointer}
 .batch-box{margin-top:12px;padding:16px;background:linear-gradient(135deg,rgba(56,189,248,.06),rgba(99,102,241,.04));border:1px solid rgba(56,189,248,.2);border-radius:12px;display:none}
 .batch-box.show{display:block;animation:slideUp .3s}
 .batch-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;flex-wrap:wrap}
-.batch-header .label-txt{font-size:13px;color:var(--text);font-weight:700;display:flex;align-items:center;gap:6px}
-.batch-header .sub-txt{font-size:11px;color:var(--text2);margin-top:2px}
-.batch-value{background:var(--grad);color:white;padding:8px 22px;border-radius:12px;font-weight:800;font-size:20px;min-width:90px;text-align:center;box-shadow:0 4px 16px rgba(56,189,248,.4)}
+.batch-value{background:var(--grad);color:white;padding:8px 22px;border-radius:12px;font-weight:800;font-size:20px;min-width:90px;text-align:center}
 .batch-slider{width:100%;height:6px;background:#1e293b;border-radius:8px;outline:none;-webkit-appearance:none;appearance:none;margin:10px 0;cursor:pointer}
-.batch-slider::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--grad);cursor:pointer;box-shadow:0 4px 12px rgba(56,189,248,.6);border:3px solid #0a0e1a}
+.batch-slider::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--grad);cursor:pointer;border:3px solid #0a0e1a}
 .batch-marks{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:4px}
 .batch-number-row{display:flex;gap:8px;align-items:center;margin-top:14px}
 .batch-number-row input{flex:1;background:#0c1220;border:1px solid var(--border2);border-radius:10px;padding:11px 14px;font-size:16px;font-weight:700;color:var(--cyan);text-align:center;outline:none;max-width:220px}
@@ -263,13 +252,12 @@ table.data-table tr.clickable{cursor:pointer}
 .batch-hint.err{color:#fca5a5;background:rgba(239,68,68,.05);border-left-color:var(--red)}
 .composer-layout{display:grid;grid-template-columns:1fr 340px;gap:18px}
 @media(max-width:1000px){.composer-layout{grid-template-columns:1fr}.composer-sidebar{position:static!important}}
-.composer-main{min-width:0}
 .composer-sidebar{position:sticky;top:180px;align-self:flex-start}
-.ai-analysis-panel{background:linear-gradient(135deg,rgba(56,189,248,.06),rgba(168,85,247,.05),rgba(10,14,26,.9));border:1px solid var(--border2);border-radius:14px;padding:16px;position:relative;overflow:hidden}
+.ai-analysis-panel{background:linear-gradient(135deg,rgba(56,189,248,.06),rgba(168,85,247,.05),rgba(10,14,26,.9));border:1px solid var(--border2);border-radius:14px;padding:16px}
 .ai-header{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;color:#7dd3fc;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);flex-wrap:wrap}
 .ai-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 1.5s infinite;flex-shrink:0}
 .ai-score-section{display:flex;justify-content:center;margin-bottom:14px}
-.ai-score-circle{width:110px;height:110px;border-radius:50%;background:conic-gradient(#1e293b 0%,#1e293b 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;transition:.5s}
+.ai-score-circle{width:110px;height:110px;border-radius:50%;background:conic-gradient(#1e293b 0%,#1e293b 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
 .ai-score-circle::after{content:'';position:absolute;inset:8px;background:linear-gradient(135deg,#0c1220,#0a0e1a);border-radius:50%;z-index:1}
 .ai-score-value{font-size:32px;font-weight:800;color:var(--text2);z-index:2;position:relative;line-height:1}
 .ai-score-label{font-size:9px;color:var(--text2);z-index:2;position:relative;margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
@@ -307,7 +295,6 @@ table.data-table tr.clickable{cursor:pointer}
 .inbox-item .from-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
 .inbox-item .date{font-size:10px;color:var(--text3);white-space:nowrap;font-weight:500}
 .inbox-item .subj{font-size:12px;color:#cbd5e1;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
-.inbox-item .prev{font-size:11px;color:var(--text3);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4}
 .inbox-item .badges{margin-top:8px;display:flex;gap:4px;flex-wrap:wrap}
 .inbox-viewer{display:flex;flex-direction:column;background:var(--bg);min-height:700px;position:relative}
 .email-head{padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.6)}
@@ -324,10 +311,9 @@ table.data-table tr.clickable{cursor:pointer}
 .email-actions{padding:14px 20px;border-top:1px solid var(--border);background:rgba(10,14,26,.8);display:flex;gap:10px;flex-wrap:wrap}
 .inbox-pagination{display:flex;justify-content:center;align-items:center;gap:12px;padding:16px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-top:14px;flex-wrap:wrap}
 .inbox-pagination .page-info{font-size:13px;color:var(--text2);font-weight:600;padding:8px 16px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)}
-.inbox-pagination button{padding:10px 20px;font-size:13px;font-weight:600;border-radius:10px;border:1px solid var(--border2);background:var(--bg2);color:#cbd5e1;cursor:pointer;transition:.2s}
+.inbox-pagination button{padding:10px 20px;font-size:13px;font-weight:600;border-radius:10px;border:1px solid var(--border2);background:var(--bg2);color:#cbd5e1;cursor:pointer}
 .inbox-pagination button:hover:not(:disabled){background:#1e293b;border-color:var(--cyan);color:#7dd3fc}
 .inbox-pagination button:disabled{opacity:.4;cursor:not-allowed}
-.tag{display:inline-block;background:rgba(56,189,248,.1);color:#7dd3fc;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;border:1px solid rgba(56,189,248,.2)}
 .test-banner{background:linear-gradient(135deg,rgba(236,72,153,.15),rgba(168,85,247,.15));border:1px solid rgba(236,72,153,.4);border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px}
 .test-banner .ico{font-size:22px}
 .test-banner .txt{font-size:12px;color:#f9a8d4;font-weight:600;line-height:1.5}
@@ -337,12 +323,6 @@ table.data-table tr.clickable{cursor:pointer}
 .warning-banner .icn{font-size:16px;flex-shrink:0}
 .danger-zone{border-color:rgba(239,68,68,.3);background:linear-gradient(135deg,rgba(239,68,68,.05),rgba(220,38,38,.03))}
 .danger-zone h2{color:#fca5a5}
-.send-history-item{padding:14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px}
-.send-history-item .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:8px}
-.send-history-item .subj{font-size:13px;font-weight:600;color:var(--text);word-break:break-word;flex:1}
-.send-history-item .meta{display:flex;gap:12px;font-size:11px;color:var(--text3);flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)}
-.send-history-item .meta b{color:var(--text2);font-weight:600}
-.send-history-item.opened{border-color:rgba(34,197,94,.4);background:linear-gradient(135deg,rgba(34,197,94,.05),rgba(10,14,26,.6))}
 .setup-card{background:linear-gradient(135deg,rgba(56,189,248,.06),rgba(168,85,247,.05));border:1px solid rgba(56,189,248,.25);border-radius:16px;padding:24px;text-align:center;max-width:640px;margin:0 auto}
 .setup-card .setup-icon{font-size:56px;margin-bottom:14px;display:block}
 .setup-card h3{font-size:19px;font-weight:800;color:var(--text);margin-bottom:10px}
@@ -362,13 +342,40 @@ table.data-table tr.clickable{cursor:pointer}
 .ai-profile-banner .txt{font-size:12px;color:#c4b5fd;font-weight:600;line-height:1.5;flex:1;min-width:160px}
 .recipient-stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
 @media(min-width:600px){.recipient-stat-grid{grid-template-columns:repeat(4,1fr)}}
-.recipient-stat{background:linear-gradient(135deg,rgba(30,41,59,.6),rgba(15,23,42,.6));border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;transition:.2s}
+.recipient-stat{background:linear-gradient(135deg,rgba(30,41,59,.6),rgba(15,23,42,.6));border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center}
 .recipient-stat .label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:6px}
-.recipient-stat .value{font-size:24px;font-weight:800;letter-spacing:-.5px}
+.recipient-stat .value{font-size:24px;font-weight:800}
 .recipient-stat.total .value{color:var(--cyan)}
 .recipient-stat.sent .value{color:#7dd3fc}
 .recipient-stat.opened .value{color:#86efac}
 .recipient-stat.pending .value{color:#fcd34d}
+.send-history-item{padding:14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px}
+.send-history-item .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.send-history-item .subj{font-size:13px;font-weight:600;color:var(--text);word-break:break-word;flex:1}
+.send-history-item .meta{display:flex;gap:12px;font-size:11px;color:var(--text3);flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)}
+.send-history-item .meta b{color:var(--text2);font-weight:600}
+.send-history-item.opened{border-color:rgba(34,197,94,.4);background:linear-gradient(135deg,rgba(34,197,94,.05),rgba(10,14,26,.6))}
+.attachment-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.attachment-name{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:12px;font-size:10px;color:#fcd34d;font-weight:600;word-break:break-all;max-width:200px}
+.profile-header{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:20px;background:linear-gradient(135deg,rgba(56,189,248,.08),rgba(168,85,247,.08));border:1px solid rgba(56,189,248,.25);border-radius:16px;margin-bottom:20px}
+.profile-avatar-wrap{position:relative}
+.profile-avatar{width:100px;height:100px;border-radius:50%;border:4px solid var(--cyan);object-fit:cover;background:var(--bg2);box-shadow:0 8px 24px rgba(56,189,248,.35)}
+.profile-avatar-edit{position:absolute;bottom:0;right:0;width:32px;height:32px;border-radius:50%;background:var(--grad);border:3px solid var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px}
+.profile-info{flex:1;min-width:200px}
+.profile-info h3{font-size:22px;font-weight:800;color:var(--text);margin-bottom:4px}
+.profile-info .p-email{font-size:13px;color:var(--text2);word-break:break-all}
+.profile-info .p-meta{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;font-size:11px}
+.ai-usage-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px}
+@media(min-width:700px){.ai-usage-grid{grid-template-columns:repeat(4,1fr)}}
+.ai-usage-card{background:linear-gradient(135deg,rgba(56,189,248,.08),rgba(168,85,247,.08));border:1px solid rgba(56,189,248,.25);border-radius:12px;padding:14px;text-align:center}
+.ai-usage-card .lbl{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:6px}
+.ai-usage-card .val{font-size:22px;font-weight:800;color:var(--cyan)}
+.ai-usage-card .sub{font-size:10px;color:var(--text3);margin-top:4px}
+.user-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
+.user-card .top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.user-card .name{font-size:15px;font-weight:700;color:var(--text)}
+.user-card .email{font-size:11px;color:var(--text3);word-break:break-all;margin-top:2px}
+.user-card .stats-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 @media(max-width:768px){
 .maintabs{position:fixed;bottom:0;top:auto;left:0;right:0;padding:6px 8px;z-index:200;border-top:1px solid var(--border);border-bottom:none;justify-content:space-around;box-shadow:0 -10px 30px rgba(0,0,0,.3);padding-bottom:calc(6px + env(safe-area-inset-bottom));background:rgba(10,14,26,.98)}
 .maintab{flex:1;text-align:center;font-size:10px;padding:8px 4px}
@@ -382,12 +389,12 @@ input,textarea,select{min-height:44px}
 ::-webkit-scrollbar{width:10px;height:10px}
 ::-webkit-scrollbar-track{background:var(--bg2);border-radius:5px}
 ::-webkit-scrollbar-thumb{background:#2a3550;border-radius:5px;border:2px solid var(--bg2)}
-::-webkit-scrollbar-thumb:hover{background:#3b4a68}
 *{scrollbar-color:#2a3550 var(--bg2);scrollbar-width:thin}
 </style>
 </head>
 <body>
 
+<!-- LOGIN VIEW -->
 <div id="loginView" class="auth-wrap">
 <div class="auth-card">
 <div class="brand-logo">
@@ -419,6 +426,7 @@ input,textarea,select{min-height:44px}
 </div>
 </div>
 
+<!-- APP VIEW -->
 <div id="appView" class="hidden">
 <div class="topbar">
 <div class="logo-top">
@@ -435,7 +443,7 @@ input,textarea,select{min-height:44px}
 <span class="brand-text">MailFlow Pro</span>
 </div>
 <div class="user-chip">
-<img id="userAvatar" class="user-avatar" src="" style="display:none" alt="">
+<img id="userAvatar" class="user-avatar" src="" style="display:none" alt="" onclick="switchMain('profile')">
 <span id="topName"></span>
 <span id="myAppId" class="app-id-pill hidden"></span>
 <span id="adminBadge" class="badge admin hidden">👑 ADMIN</span>
@@ -445,25 +453,25 @@ input,textarea,select{min-height:44px}
 <div class="maintabs">
 <div class="maintab active" id="tabMy" onclick="switchMain('my')">📊 Dashboard</div>
 <div class="maintab" id="tabInbox" onclick="switchMain('inbox')">📥 Inbox</div>
-<div class="maintab" id="tabProfile" onclick="switchMain('profile')">🧠 AI Profile</div>
+<div class="maintab" id="tabProfile" onclick="switchMain('profile')">👤 Profile</div>
+<div class="maintab" id="tabAIP" onclick="switchMain('aiprofile')">🧠 AI Profile</div>
 <div class="maintab" id="tabTest" onclick="switchMain('test')">🧪 AI Tools</div>
 <div class="maintab hidden" id="tabTestDash" onclick="switchMain('testdash')">🧪 Test Lab</div>
 <div class="maintab hidden" id="tabAdmin" onclick="switchMain('admin')">👑 Admin</div>
 </div>
 
+<!-- DASHBOARD -->
 <div class="container" id="myView">
 <div class="page-layout">
 <aside class="sidebar">
 <div class="panel tips-panel">
-<h2>🛡️ Inbox Placement Guide</h2>
+<h2>🛡️ Inbox Placement</h2>
 <div class="tips-list">
 <div class="tip"><span class="tip-ic">⏱️</span><div><b>Delay 15-20+ sec</b><span>Below 15 = spam risk</span></div></div>
 <div class="tip"><span class="tip-ic">📊</span><div><b>Batch 5-30/hour</b><span>Above 50 = flagged</span></div></div>
 <div class="tip"><span class="tip-ic">🚫</span><div><b>Avoid logos</b><span>Raises spam score</span></div></div>
 <div class="tip"><span class="tip-ic">🔗</span><div><b>Max 2 links</b><span>More = filter trigger</span></div></div>
-<div class="tip"><span class="tip-ic">❌</span><div><b>No trigger words</b><span>Free, Guarantee, Act now</span></div></div>
 <div class="tip"><span class="tip-ic">💬</span><div><b>Personalize</b><span>Use {name} & {company}</span></div></div>
-<div class="tip"><span class="tip-ic">🌙</span><div><b>Quiet hours</b><span>Business hours only</span></div></div>
 </div>
 </div>
 </aside>
@@ -477,7 +485,7 @@ input,textarea,select{min-height:44px}
 <div class="stat s5"><div class="label">Total Sends</div><div class="value" id="stTotalSends">0</div></div>
 </div>
 <div class="panel">
-<h2>📊 Gmail Quota <span id="quotaSub" class="quota-live"><span class="dot"></span>Live from Google</span></h2>
+<h2>📊 Gmail Quota <span id="quotaSub" class="quota-live"><span class="dot"></span>Live</span></h2>
 <div class="info-box">
 <div class="row"><span class="k">Sent today:</span><span class="v" id="quotaSent">—</span></div>
 <div class="row"><span class="k">Daily limit:</span><span class="v" id="quotaLimit">500</span></div>
@@ -486,7 +494,7 @@ input,textarea,select{min-height:44px}
 <div class="quota-bar"><div class="quota-fill" id="quotaFill"></div></div>
 </div>
 <div class="panel">
-<h2>✉️ AI Email Composer <span>Multi-provider AI</span></h2>
+<h2>✉️ AI Email Composer <span>Multi-provider</span></h2>
 <div class="composer-layout">
 <div class="composer-main">
 <div class="field"><label>Template Name</label><input type="text" id="composerName" placeholder="Enter template name" autocomplete="off"></div>
@@ -523,7 +531,7 @@ input,textarea,select{min-height:44px}
 <div class="ai-header">
 <span class="ai-dot"></span><span>AI Analysis</span>
 <button class="deep-btn" onclick="runDeepAIAnalysis()">🤖 Deep</button>
-<span id="aiLiveStatus" style="font-size:10px;color:var(--text2);text-transform:none;letter-spacing:0;margin-left:auto">Waiting</span>
+<span id="aiLiveStatus" style="font-size:10px;color:var(--text2);text-transform:none;margin-left:auto">Waiting</span>
 </div>
 <div class="ai-score-section">
 <div class="ai-score-circle" id="aiScoreCircle">
@@ -546,20 +554,20 @@ input,textarea,select{min-height:44px}
 <div id="tplList"></div>
 </div>
 <div class="panel">
-<h2>⚙️ Automation & Safety Settings <span>Server runs 24/7</span></h2>
+<h2>⚙️ Automation & Safety <span>Server runs 24/7</span></h2>
 <div class="toggle-row">
 <div><div class="lbl">🤖 Auto-Send Emails</div><div class="sub">Send pending emails hourly</div></div>
 <label class="switch"><input type="checkbox" id="autoSendToggle"><span class="slider"></span></label>
 </div>
 <div class="batch-box" id="batchSizeBox">
 <div class="batch-header">
-<div><div class="label-txt">📊 Emails Per Hour</div><div class="sub-txt">Recommended: 5-30/hour for safe inbox placement</div></div>
+<div><div style="font-size:13px;color:var(--text);font-weight:700">📊 Emails Per Hour</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Recommended: 5-30/hour</div></div>
 <div class="batch-value" id="batchValue">5</div>
 </div>
 <input type="range" id="batchSlider" class="batch-slider" min="1" max="500" value="5" oninput="onSliderChange(this.value)">
 <div class="batch-marks"><span>1</span><span>125</span><span>250</span><span>375</span><span>500</span></div>
 <div class="batch-number-row"><input type="number" id="batchNumber" min="1" max="500" value="5" oninput="onNumberChange(this.value)" onblur="onNumberBlur()"></div>
-<div class="batch-hint" id="batchHint">Max allowed: <b>500</b> · Scheduled: <b>5/hour</b></div>
+<div class="batch-hint" id="batchHint">Max: <b>500</b> · Rate: <b>5/hour</b></div>
 <div id="batchWarning" class="warning-banner" style="display:none"><div class="icn">⚠️</div><div id="batchWarningText"></div></div>
 <div class="info-box" style="margin-top:12px">
 <div class="row"><span class="k">Total auto-sent:</span><span class="v" id="totalAutoSent">0</span></div>
@@ -578,19 +586,19 @@ input,textarea,select{min-height:44px}
 </div>
 </div>
 <div class="field" style="margin-top:16px;max-width:340px">
-<label>⏱️ Send Delay (seconds between emails)</label>
+<label>⏱️ Send Delay (seconds)</label>
 <input type="number" id="sendDelayInput" min="0" max="120" value="20" placeholder="20">
 <div id="sendDelayWarning" class="warning-banner" style="display:none"><div class="icn">⚠️</div><div id="sendDelayWarningText"></div></div>
-<div id="sendDelayGood" class="warning-banner success" style="display:none"><div class="icn">✅</div><div>Excellent! This delay is safe for inbox placement.</div></div>
+<div id="sendDelayGood" class="warning-banner success" style="display:none"><div class="icn">✅</div><div>Excellent delay for inbox placement.</div></div>
 </div>
 <button class="btn save-btn" onclick="savePrefs()">💾 Save Settings</button>
 </div>
 <div class="panel">
-<h2>✍️ Signature <span>Optional — increases spam risk</span></h2>
+<h2>✍️ Signature <span>Optional</span></h2>
 <div class="logo-warning"><div class="warn-ic">⚠️</div><div class="warn-text"><b>Warning:</b> Adding a logo <b>increases spam risk</b>. Skip for better inbox placement.</div></div>
 <div class="upload-area">
 <input type="file" id="logoInput" accept="image/*">
-<label for="logoInput"><div class="preview-box"><div class="ph" id="logoPh">📷</div><img id="logoImg" src="" style="display:none" alt=""></div><div class="upload-info"><div class="t" id="logoTitle">Click to upload logo</div><div class="s" id="logoSub">PNG · JPG · GIF · SVG · WEBP — max 2MB</div></div></label>
+<label for="logoInput"><div class="preview-box"><div class="ph" id="logoPh">📷</div><img id="logoImg" src="" style="display:none" alt=""></div><div class="upload-info"><div class="t" id="logoTitle">Click to upload logo</div><div class="s" id="logoSub">PNG · JPG · GIF · SVG — max 2MB</div></div></label>
 </div>
 <div id="logoActions" style="display:none;margin-bottom:12px"><button class="btn danger small" onclick="removeLogo()">🗑 Remove Logo</button></div>
 <div class="sig-fields">
@@ -599,16 +607,7 @@ input,textarea,select{min-height:44px}
 <div class="field" style="margin:0"><label>Company</label><input type="text" id="sbCompany" placeholder="Company name" oninput="previewSig()" autocomplete="off"></div>
 <div class="field" style="margin:0"><label>📞 Phone</label><input type="text" id="sbPhone" placeholder="Phone number" oninput="previewSig()" autocomplete="off"></div>
 <div class="field" style="margin:0"><label>✉️ Email</label><input type="text" id="sbEmail" placeholder="Email address" oninput="previewSig()" autocomplete="off"></div>
-<div class="field" style="margin:0"><label>🔗 LinkedIn / Website</label><input type="text" id="sbLinkedin" placeholder="URL" oninput="previewSig()" autocomplete="off"></div>
-</div>
-<div class="field" style="margin-top:12px"><label>Greeting Line</label><input type="text" id="sbGreeting" placeholder="Optional greeting" oninput="previewSig()" autocomplete="off"></div>
-<div class="field"><label>Extra Line</label><input type="text" id="sbExtra" placeholder="Optional extra line" oninput="previewSig()" autocomplete="off"></div>
-<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
-<div style="font-size:13px;color:var(--text);font-weight:600;margin-bottom:10px">🤖 Auto-Send Options</div>
-<div class="send-options-row">
-<label><input type="checkbox" id="optAutoSig" checked> ✍️ Include Signature</label>
-<label><input type="checkbox" id="optAutoLogo" checked> 🖼️ Include Logo</label>
-</div>
+<div class="field" style="margin:0"><label>🔗 LinkedIn</label><input type="text" id="sbLinkedin" placeholder="URL" oninput="previewSig()" autocomplete="off"></div>
 </div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
 <button class="btn ghost" onclick="previewSig()">👁 Preview</button>
@@ -616,18 +615,15 @@ input,textarea,select{min-height:44px}
 <button class="btn ghost" onclick="resetSig()">🗑 Reset</button>
 </div>
 <div class="sig-preview-outer" id="sigPreviewBox">
-<div class="preview-label">
-<span>📧 Signature Preview</span>
-<label style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text2);text-transform:none;letter-spacing:0;cursor:pointer"><input type="checkbox" id="previewIncludeLogo" checked onchange="previewSig()" style="accent-color:var(--cyan)"> Show Logo</label>
-</div>
+<div class="preview-label"><span>📧 Signature Preview</span></div>
 <div class="sig-preview-canvas" id="sigPreviewContent"></div>
 </div>
 </div>
 <div class="panel">
-<h2>📎 Attachments <span>Select files to include</span></h2>
+<h2>📎 Attachments <span>Max 3MB each</span></h2>
 <div class="upload-area">
 <input type="file" id="fileInput" multiple>
-<label for="fileInput"><div class="preview-box"><div class="ph">📎</div></div><div class="upload-info"><div class="t">Click to upload files</div><div class="s">PDF · DOC · DOCX · JPG · PNG — max 3MB each</div></div></label>
+<label for="fileInput"><div class="preview-box"><div class="ph">📎</div></div><div class="upload-info"><div class="t">Click to upload files</div><div class="s">PDF · DOC · DOCX · JPG · PNG</div></div></label>
 </div>
 <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
 <button class="btn ghost small" onclick="selectAllFiles()">☑️ Select All</button>
@@ -649,12 +645,12 @@ input,textarea,select{min-height:44px}
 <button class="btn" onclick="submitRecipients()" style="margin-left:6px;margin-top:10px">Save</button>
 </div>
 <div id="bulkTab" class="hidden">
-<div class="bulk-help"><div class="title">📋 Paste Emails — Any Format</div><div class="desc"><b style="color:#86efac">Company name optional!</b> Paste emails in any format.</div></div>
+<div class="bulk-help"><div class="title">📋 Paste Emails — Any Format</div><div class="desc"><b style="color:#86efac">Company name optional!</b></div></div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
 <input type="file" id="bulkFileInput" accept=".txt,.csv,.xlsx,.xls,.json" style="display:none">
 <button class="btn ghost" onclick="document.getElementById('bulkFileInput').click()" style="border:1px dashed var(--cyan);color:#7dd3fc">📁 Upload File</button>
 </div>
-<textarea class="bulk-area" id="bulkInput" placeholder="Paste emails here — comma, newline, or mixed..."></textarea>
+<textarea class="bulk-area" id="bulkInput" placeholder="Paste emails here..."></textarea>
 <div class="bulk-preview-wrap" id="bulkPreviewWrap">
 <div class="bulk-preview-head"><div class="lbl">🔍 Preview</div><div style="display:flex;gap:8px"><span class="stat-pill ok" id="bulkValidPill">✅ 0</span><span class="stat-pill dup" id="bulkDupPill">🔁 0</span></div></div>
 <div class="bulk-preview-table" id="bulkPreviewTable" style="max-height:280px;overflow-y:auto"></div>
@@ -668,7 +664,7 @@ input,textarea,select{min-height:44px}
 <div class="panel">
 <h2>📊 Tracking <span id="trackCount"></span></h2>
 <div style="font-size:11px;color:var(--text2);margin-bottom:12px;padding:10px;background:rgba(56,189,248,.06);border-radius:8px;border-left:3px solid var(--cyan)">
-💡 <b>Click any row</b> to view full send history for that recipient — total emails sent, opened, timeline, and more.
+💡 <b>Click any row</b> to view full history for that recipient
 </div>
 <div class="filter-bar">
 <input type="text" class="search-bar" id="recipSearch" placeholder="Search by email or company..." oninput="renderRecipients()">
@@ -698,28 +694,28 @@ input,textarea,select{min-height:44px}
 </div>
 </div>
 
+<!-- INBOX -->
 <div class="container hidden" id="inboxView">
 <div id="imapSetupPanel" class="hidden">
 <div class="setup-card">
 <span class="setup-icon">📥</span>
 <h3>Connect Your Inbox</h3>
-<p>Connect your Gmail inbox using an <b>App Password</b> — completely free, no Google verification needed!</p>
+<p>Connect your Gmail inbox using an App Password — free, no Google verification needed!</p>
 <div class="setup-steps">
 <ol>
-<li>Open Gmail → <b>Settings</b> → <b>See all settings</b></li>
-<li>Security tab → Enable <b>2-Step Verification</b> (if not already)</li>
-<li>Then open <a href="https://myaccount.google.com/apppasswords" target="_blank">myaccount.google.com/apppasswords</a></li>
-<li>App name: <code>MailFlow Pro</code> → <b>Create</b></li>
-<li>Copy the 16-character password (remove spaces)</li>
-<li>Paste it below 👇</li>
+<li>Open Gmail → Settings → See all settings</li>
+<li>Security tab → Enable 2-Step Verification</li>
+<li>Open <a href="https://myaccount.google.com/apppasswords" target="_blank">myaccount.google.com/apppasswords</a></li>
+<li>App name: <code>MailFlow Pro</code> → Create</li>
+<li>Copy the 16-character password</li>
 </ol>
 </div>
 <div class="field" style="text-align:left;max-width:420px;margin:0 auto 12px">
-<label>🔑 Gmail App Password (16 characters)</label>
+<label>🔑 Gmail App Password</label>
 <input type="text" id="imapAppPassword" placeholder="xxxx xxxx xxxx xxxx" autocomplete="off" maxlength="20">
 </div>
 <button class="btn" onclick="connectIMAP()" style="padding:12px 28px" id="imapConnectBtn">🔌 Connect Inbox</button>
-<div style="margin-top:14px;font-size:11px;color:var(--text3);line-height:1.6">🔒 Your App Password is AES-256 encrypted. We never delete or modify your emails.</div>
+<div style="margin-top:14px;font-size:11px;color:var(--text3);line-height:1.6">🔒 AES-256 encrypted. We never delete or modify your emails.</div>
 </div>
 </div>
 <div id="imapInboxUI" class="hidden">
@@ -727,12 +723,12 @@ input,textarea,select{min-height:44px}
 <div class="inbox-toolbar">
 <select id="inboxFolder" onchange="imapPage=1;loadIMAPInbox()"><option value="INBOX">📥 Inbox</option><option value="[Gmail]/Sent Mail">📤 Sent</option></select>
 <select id="inboxLimit" onchange="imapPage=1;loadIMAPInbox()"><option value="20" selected>20 per page</option><option value="30">30 per page</option><option value="50">50 per page</option></select>
-<button class="btn small" onclick="loadIMAPInbox()">🔄 Sync Inbox</button>
+<button class="btn small" onclick="loadIMAPInbox()">🔄 Sync</button>
 <button class="btn ghost small" onclick="disconnectIMAP()">🔌 Disconnect</button>
 <span id="imapSyncInfo" style="margin-left:auto;font-size:11px;color:var(--text2)">⚡ IMAP</span>
 </div>
 <div class="inbox-layout">
-<div class="inbox-list" id="inboxList"><div class="empty"><div class="ico">⏳</div>Click "Sync Inbox" to load emails</div></div>
+<div class="inbox-list" id="inboxList"><div class="empty"><div class="ico">⏳</div>Click "Sync" to load emails</div></div>
 <div class="inbox-viewer">
 <div class="empty" id="inboxEmpty"><div class="ico">📩</div>Select an email to view</div>
 <div id="inboxViewerContent" class="hidden" style="display:flex;flex-direction:column;height:100%">
@@ -747,7 +743,6 @@ input,textarea,select{min-height:44px}
 </div>
 <div class="email-body" id="viewBody"><div class="loading"><div class="spin"></div><span>Loading email...</span></div></div>
 <div class="email-actions">
-<button class="btn" onclick="composeReplyToInbox()">✍️ Compose Reply</button>
 <button class="btn danger ghost" onclick="deleteIMAPEmail()">🗑 Delete from MailFlow</button>
 </div>
 </div>
@@ -762,36 +757,72 @@ input,textarea,select{min-height:44px}
 </div>
 </div>
 
+<!-- PROFILE VIEW -->
 <div class="container hidden" id="profileView">
+<div class="profile-header">
+<div class="profile-avatar-wrap">
+<img id="profileAvatar" class="profile-avatar" src="" alt="Profile">
+<div class="profile-avatar-edit" onclick="document.getElementById('profilePicInput').click()">📷</div>
+<input type="file" id="profilePicInput" accept="image/*" style="display:none">
+</div>
+<div class="profile-info">
+<h3 id="profileName">User</h3>
+<div class="p-email" id="profileEmail">email@example.com</div>
+<div class="p-meta">
+<span class="app-id-pill" id="profileAppId">MFP-XXXXXX</span>
+<span class="badge sent" id="profileJoined">Joined: —</span>
+</div>
+</div>
+</div>
+<div class="panel">
+<h2>👤 Edit Profile</h2>
+<div class="field"><label>Display Name</label><input type="text" id="editProfileName" placeholder="Your name" autocomplete="off"></div>
+<button class="btn save-btn" onclick="saveProfileName()">💾 Save Profile</button>
+</div>
+<div class="panel">
+<h2>🤖 AI Usage <span id="aiUsagePeriod"></span></h2>
+<div class="ai-usage-grid" id="aiUsageGrid">
+<div class="ai-usage-card"><div class="lbl">Today Calls</div><div class="val" id="aiTodayCalls">0</div></div>
+<div class="ai-usage-card"><div class="lbl">Today Tokens</div><div class="val" id="aiTodayTokens">0</div></div>
+<div class="ai-usage-card"><div class="lbl">Month Calls</div><div class="val" id="aiMonthCalls">0</div></div>
+<div class="ai-usage-card"><div class="lbl">Month Tokens</div><div class="val" id="aiMonthTokens">0</div></div>
+</div>
+<div id="aiProvidersBreakdown" style="margin-top:12px"></div>
+</div>
+</div>
+
+<!-- AI PROFILE VIEW -->
+<div class="container hidden" id="aiprofileView">
 <div class="panel">
 <h2>🧠 AI Profile <span>AI personalizes emails as YOU</span></h2>
 <div class="ai-profile-banner">
 <div class="ico">✨</div>
-<div class="txt">This info helps the AI write emails that match your tone and style — as if you wrote them yourself.</div>
+<div class="txt">This info helps the AI write emails that match your tone and style.</div>
 </div>
 <div class="sig-fields">
-<div class="field" style="margin:0"><label>Full Name</label><input type="text" id="aipFullName" placeholder="e.g., Usama Hanif" autocomplete="off"></div>
+<div class="field" style="margin:0"><label>Full Name</label><input type="text" id="aipFullName" placeholder="Your full name" autocomplete="off"></div>
 <div class="field" style="margin:0"><label>Designation</label><input type="text" id="aipDesignation" placeholder="e.g., Full Stack Developer" autocomplete="off"></div>
-<div class="field" style="margin:0"><label>Company</label><input type="text" id="aipCompany" placeholder="e.g., Tech Solutions" autocomplete="off"></div>
+<div class="field" style="margin:0"><label>Company</label><input type="text" id="aipCompany" placeholder="Company name" autocomplete="off"></div>
 <div class="field" style="margin:0"><label>Industry</label><input type="text" id="aipIndustry" placeholder="e.g., Software / SaaS" autocomplete="off"></div>
 <div class="field" style="margin:0"><label>Preferred Tone</label>
 <select id="aipTone"><option value="professional">Professional</option><option value="friendly">Friendly</option><option value="casual">Casual</option><option value="confident">Confident</option></select>
 </div>
 </div>
-<div class="field" style="margin-top:12px"><label>About Me (short bio)</label><textarea id="aipAboutMe" class="bulk-area" placeholder="e.g., 3 years experience in MERN stack..." style="min-height:100px;font-size:13px"></textarea></div>
-<div class="field"><label>Common Phrases / Style Notes</label><textarea id="aipCommonPhrases" class="bulk-area" placeholder="e.g., I prefer short sentences. Use 'Hi' not 'Dear'." style="min-height:80px;font-size:13px"></textarea></div>
+<div class="field" style="margin-top:12px"><label>About Me</label><textarea id="aipAboutMe" class="bulk-area" placeholder="Short bio..." style="min-height:100px;font-size:13px"></textarea></div>
+<div class="field"><label>Common Phrases / Style</label><textarea id="aipCommonPhrases" class="bulk-area" placeholder="Your writing style..." style="min-height:80px;font-size:13px"></textarea></div>
 <button class="btn save-btn" onclick="saveAIProfile()">💾 Save AI Profile</button>
 </div>
 </div>
 
+<!-- AI TOOLS -->
 <div class="container hidden" id="testView">
 <div class="panel" style="background:linear-gradient(135deg,rgba(168,85,247,.08),rgba(56,189,248,.08));border-color:rgba(168,85,247,.3)">
 <h2>🤖 AI Tools <span>Multi-provider</span></h2>
-<div style="font-size:12px;color:var(--text2);line-height:1.6">Advanced AI features for better deliverability and insights.</div>
+<div style="font-size:12px;color:var(--text2);line-height:1.6">Advanced AI features for better deliverability.</div>
 </div>
 <div class="panel">
 <h2>⏰ Best Sending Time</h2>
-<div id="bestTimeContent"><div class="empty">Click below to analyze your send history</div></div>
+<div id="bestTimeContent"><div class="empty">Click below to analyze</div></div>
 <button class="btn" onclick="loadBestTime()" style="margin-top:12px">✨ Analyze Best Time</button>
 </div>
 <div class="panel">
@@ -800,12 +831,13 @@ input,textarea,select{min-height:44px}
 </div>
 <div class="panel">
 <h2>🧠 Sender Memory <span id="sendersCount"></span></h2>
-<div style="font-size:11px;color:var(--text2);margin-bottom:12px">AI learns from your senders. Built automatically when you sync your inbox.</div>
+<div style="font-size:11px;color:var(--text2);margin-bottom:12px">Built automatically when you sync inbox.</div>
 <input type="text" class="search-bar" id="senderSearch" placeholder="Search senders..." oninput="renderSenders()" style="margin-bottom:12px">
-<div id="sendersList"><div class="empty">No sender memory yet. Sync your inbox to build it.</div></div>
+<div id="sendersList"><div class="empty">No sender memory yet.</div></div>
 </div>
 </div>
 
+<!-- TEST LAB -->
 <div class="container hidden" id="testDashView">
 <div class="test-banner"><div class="ico">🧪</div><div class="txt">TEST LAB — Admin only. Emails sent here do NOT count in your dashboard stats.</div></div>
 <div class="stats">
@@ -827,7 +859,7 @@ input,textarea,select{min-height:44px}
 <button class="btn" onclick="submitTestRecipientsManual()" style="margin-left:6px;margin-top:10px">💾 Save</button>
 </div>
 <div id="testBulkTab" class="hidden">
-<div class="bulk-help"><div class="title">📋 Paste Emails or Upload File</div><div class="desc">CSV, Excel, TXT supported.</div></div>
+<div class="bulk-help"><div class="title">📋 Paste Emails or Upload File</div></div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
 <input type="file" id="testBulkFileInput" accept=".txt,.csv,.xlsx,.xls,.json" style="display:none">
 <button class="btn ghost" onclick="document.getElementById('testBulkFileInput').click()" style="border:1px dashed var(--cyan);color:#7dd3fc">📁 Upload File</button>
@@ -838,7 +870,7 @@ input,textarea,select{min-height:44px}
 <div class="bulk-preview-table" id="testBulkPreviewTable" style="max-height:280px;overflow-y:auto"></div>
 </div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
-<button class="btn" onclick="submitTestBulk()">➕ Add All Recipients</button>
+<button class="btn" onclick="submitTestBulk()">➕ Add All</button>
 <button class="btn ghost" onclick="clearTestBulk()">🗑 Clear</button>
 </div>
 </div>
@@ -848,54 +880,7 @@ input,textarea,select{min-height:44px}
 <div class="field"><label>📝 Use Template (Optional)</label><select id="testTemplateSelect" onchange="onTestTemplateChange()"><option value="">-- Manual entry --</option></select></div>
 <div class="field"><label>To (Email)</label><input type="text" id="testTo" placeholder="test@example.com" autocomplete="off"></div>
 <div class="field"><label>Subject</label><input type="text" id="testSubject" placeholder="Test subject" autocomplete="off"></div>
-<div class="field">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px;flex-wrap:wrap">
-<label style="margin:0">Body</label>
-<button class="btn ghost small" onclick="openTestSaveTplModal()" style="font-size:11px;padding:4px 10px">💾 Save as Template</button>
-</div>
-<textarea id="testBody" class="bulk-area" placeholder="Test body..." style="min-height:260px;font-family:inherit;font-size:14px;resize:vertical"></textarea>
-</div>
-<div style="margin-bottom:12px">
-<div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:8px">✍️ Signature & Logo</div>
-<div class="send-options-row">
-<label><input type="checkbox" id="testUseNormalSig" checked onchange="updateTestSigPreview()"> ✍️ Normal Signature</label>
-<label><input type="checkbox" id="testUseTestSig" onchange="updateTestSigPreview()"> ✍️ Test Signature</label>
-<label><input type="checkbox" id="testIncludeLogo" checked onchange="updateTestSigPreview()"> 🖼️ Include Logo</label>
-</div>
-</div>
-<div style="margin-bottom:12px">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
-<div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;font-weight:700">📝 Test Signature (Optional)</div>
-<button class="btn ghost tiny" onclick="toggleTestSigPanel()" id="testSigToggleBtn">✏️ Edit</button>
-</div>
-<div id="testSigFields" class="hidden" style="padding:12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px">
-<div class="sig-fields">
-<div class="field" style="margin:0"><label>Name</label><input type="text" id="testSbName" placeholder="Test name" oninput="updateTestSigPreview()" autocomplete="off"></div>
-<div class="field" style="margin:0"><label>Designation</label><input type="text" id="testSbPos" placeholder="Designation" oninput="updateTestSigPreview()" autocomplete="off"></div>
-<div class="field" style="margin:0"><label>Company</label><input type="text" id="testSbCompany" placeholder="Company" oninput="updateTestSigPreview()" autocomplete="off"></div>
-<div class="field" style="margin:0"><label>📞 Phone</label><input type="text" id="testSbPhone" placeholder="Phone" oninput="updateTestSigPreview()" autocomplete="off"></div>
-<div class="field" style="margin:0"><label>✉️ Email</label><input type="text" id="testSbEmail" placeholder="Email" oninput="updateTestSigPreview()" autocomplete="off"></div>
-<div class="field" style="margin:0"><label>🔗 LinkedIn</label><input type="text" id="testSbLinkedin" placeholder="URL" oninput="updateTestSigPreview()" autocomplete="off"></div>
-</div>
-<div class="field" style="margin-top:10px"><label>Greeting</label><input type="text" id="testSbGreeting" placeholder="Optional" oninput="updateTestSigPreview()" autocomplete="off"></div>
-<div class="field"><label>Extra Line</label><input type="text" id="testSbExtra" placeholder="Optional" oninput="updateTestSigPreview()" autocomplete="off"></div>
-<button class="btn small" onclick="saveTestSignature()">💾 Save Test Signature</button>
-</div>
-<div id="testSigPreviewBox" class="sig-preview-outer">
-<div class="preview-label"><span>📧 Signature Preview</span></div>
-<div class="sig-preview-canvas" id="testSigPreviewContent"></div>
-</div>
-</div>
-<div class="field">
-<label>📎 Select Files to Attach</label>
-<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-<input type="file" id="testFileUploadInput" multiple style="display:none">
-<button class="btn ghost small" onclick="document.getElementById('testFileUploadInput').click()" style="border:1px dashed var(--cyan);color:#7dd3fc">📁 Upload New File</button>
-<button class="btn ghost small" onclick="toggleTestAllFiles()">☑️ Select All</button>
-<button class="btn ghost small" onclick="clearTestFileSelection()">⬜ Clear</button>
-</div>
-<div id="testFilesList" style="padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;max-height:280px;overflow-y:auto"></div>
-</div>
+<div class="field"><label>Body</label><textarea id="testBody" class="bulk-area" placeholder="Test body..." style="min-height:260px;font-family:inherit;font-size:14px;resize:vertical"></textarea></div>
 <button class="btn" onclick="sendTestEmail()" style="width:100%;margin-top:8px;padding:14px;font-size:15px;font-weight:700">🚀 Send Test Email</button>
 </div>
 <div class="panel">
@@ -905,9 +890,9 @@ input,textarea,select{min-height:44px}
 <div class="field" style="margin:0"><label>Delay (seconds)</label><input type="number" id="testAutoDelay" min="0" max="60" value="20"></div>
 </div>
 <div class="info-box" style="margin-bottom:12px">
-<div class="row"><span class="k">Test auto-sent total:</span><span class="v" id="testTotalAutoSent">0</span></div>
+<div class="row"><span class="k">Test auto-sent:</span><span class="v" id="testTotalAutoSent">0</span></div>
 <div class="row"><span class="k">Last run:</span><span class="v" id="testLastAutoRun">Never</span></div>
-<div class="row"><span class="k">Pending test recipients:</span><span class="v" id="testPendingCount">0</span></div>
+<div class="row"><span class="k">Pending:</span><span class="v" id="testPendingCount">0</span></div>
 </div>
 <button class="btn warn" onclick="runTestAutomation()" style="width:100%">▶️ Run Auto-Send Now (Test)</button>
 </div>
@@ -931,11 +916,11 @@ input,textarea,select{min-height:44px}
 </div>
 <div class="panel danger-zone">
 <h2>🗑 Danger Zone</h2>
-<div style="font-size:12px;color:var(--text2);margin-bottom:12px">Delete all test recipients and logs. This is permanent.</div>
 <button class="btn danger" onclick="clearTestData()" style="width:100%;padding:14px">🗑 Clear All Test Data</button>
 </div>
 </div>
 
+<!-- ADMIN -->
 <div class="container hidden" id="adminView">
 <div class="stats">
 <div class="stat s1"><div class="label">Users</div><div class="value" id="adTotalUsers">0</div></div>
@@ -943,6 +928,16 @@ input,textarea,select{min-height:44px}
 <div class="stat s3"><div class="label">Opened</div><div class="value" id="adTotalOpened">0</div></div>
 <div class="stat s4"><div class="label">Pending</div><div class="value" id="adTotalPending">0</div></div>
 <div class="stat s5"><div class="label">Sends</div><div class="value" id="adTotalSends">0</div></div>
+</div>
+<div class="panel">
+<h2>🧠 AI Usage <span id="adminAIUsageSummary"></span></h2>
+<div class="ai-usage-grid">
+<div class="ai-usage-card"><div class="lbl">Total Users</div><div class="val" id="adAIUsers">0</div></div>
+<div class="ai-usage-card"><div class="lbl">AI Active Users</div><div class="val" id="adAIActiveUsers">0</div></div>
+<div class="ai-usage-card"><div class="lbl">Tokens Today</div><div class="val" id="adAITokensToday">0</div></div>
+<div class="ai-usage-card"><div class="lbl">Tokens This Month</div><div class="val" id="adAITokensMonth">0</div></div>
+</div>
+<div id="adminAIUsageTable" class="tbl-wrap" style="margin-top:14px"></div>
 </div>
 <div class="panel">
 <h2>👥 All Users</h2>
@@ -957,6 +952,7 @@ input,textarea,select{min-height:44px}
 </div>
 </div>
 
+<!-- MODALS -->
 <div id="aiWriterModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeAIWriter()">
 <div class="modal" style="max-width:560px">
 <button class="close-btn" onclick="closeAIWriter()">✕</button>
@@ -975,11 +971,6 @@ input,textarea,select{min-height:44px}
 <div class="modal" style="max-width:700px">
 <button class="close-btn" onclick="closeCVAnalyzer()">✕</button>
 <h3>📄 AI CV Analyzer</h3>
-<div style="font-size:12px;color:var(--text2);margin-bottom:14px;padding:10px;background:var(--bg2);border-radius:10px;line-height:1.6">
-<b style="color:#7dd3fc">Step 1:</b> Choose a CV — pick from your files OR upload a new one<br>
-<b style="color:#7dd3fc">Step 2:</b> Fill target role (optional)<br>
-<b style="color:#7dd3fc">Step 3:</b> Click Analyze
-</div>
 <div class="field">
 <label>📁 Your Uploaded CV Files</label>
 <div id="cvFileList" style="max-height:220px;overflow-y:auto;padding:6px;background:rgba(0,0,0,.2);border-radius:10px;min-height:60px">
@@ -995,8 +986,8 @@ input,textarea,select{min-height:44px}
 <div id="cvUploadStatus" style="font-size:11px;color:var(--text3);margin-top:8px"></div>
 </div>
 <div id="cvTextWrap" style="display:none;margin-top:10px">
-<label style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;font-weight:700;display:block;margin-bottom:6px">📝 Extracted CV Text (editable)</label>
-<textarea id="cvText" class="bulk-area" placeholder="CV text will appear here..." style="min-height:160px;font-family:inherit;font-size:12px;resize:vertical"></textarea>
+<label style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;font-weight:700;display:block;margin-bottom:6px">📝 Extracted CV Text</label>
+<textarea id="cvText" class="bulk-area" placeholder="CV text..." style="min-height:160px;font-family:inherit;font-size:12px;resize:vertical"></textarea>
 </div>
 <div class="field" style="margin-top:12px"><label>🎯 Target Role</label><input type="text" id="cvTargetRole" placeholder="e.g., Customer Returns Manager" autocomplete="off"></div>
 <div class="field"><label>📋 Job Description (Optional)</label><textarea id="cvJobDesc" class="bulk-area" placeholder="Paste job description..." style="min-height:80px;font-family:inherit;font-size:13px"></textarea></div>
@@ -1011,16 +1002,6 @@ input,textarea,select{min-height:44px}
 <div id="recipHistoryInfo" style="font-size:12px;color:var(--text2);margin-bottom:14px;padding:12px;background:var(--bg2);border-radius:10px;border:1px solid var(--border)"></div>
 <div id="recipHistoryStats"></div>
 <div id="recipHistoryList"></div>
-</div>
-</div>
-<div id="saveTplModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeSaveTplModal()">
-<div class="modal" style="max-width:480px">
-<button class="close-btn" onclick="closeSaveTplModal()">✕</button>
-<h3>💾 Save as Template</h3>
-<div class="field"><label>Template Name</label><input type="text" id="saveTplName" placeholder="Template name" autocomplete="off"></div>
-<div class="field"><label>Subject</label><input type="text" id="saveTplSubject" placeholder="Subject" autocomplete="off"></div>
-<div class="field"><label>Body Preview</label><textarea id="saveTplBodyPreview" readonly style="background:var(--bg3);color:var(--text2);cursor:not-allowed;font-family:inherit;font-size:12px;min-height:80px"></textarea></div>
-<div style="display:flex;gap:8px;margin-top:14px"><button class="btn" onclick="confirmSaveTpl()" style="flex:1">💾 Save Template</button><button class="btn ghost" onclick="closeSaveTplModal()">Cancel</button></div>
 </div>
 </div>
 <div id="sendOptionsBackdrop" class="modal-backdrop hidden" onclick="if(event.target===this)closeSendOptions()">
@@ -1049,7 +1030,7 @@ input,textarea,select{min-height:44px}
 <div id="modalBackdrop" class="modal-backdrop hidden" onclick="if(event.target===this)closeModal()">
 <div class="modal">
 <button class="close-btn" onclick="closeModal()">✕</button>
-<h3 id="modalTitle">History</h3>
+<h3 id="modalTitle">Details</h3>
 <div id="modalContent"></div>
 </div>
 </div>
@@ -1096,7 +1077,7 @@ if(USER.picture){var av=$('userAvatar');av.src=USER.picture;av.style.display='bl
 if(USER.appAccountId){$('myAppId').innerText=USER.appAccountId;$('myAppId').classList.remove('hidden');}
 if(USER.isAdmin){$('adminBadge').classList.remove('hidden');$('tabAdmin').classList.remove('hidden');$('tabTestDash').classList.remove('hidden');}
 buildHourSelects();addRow();addTestRow();
-loadAll();loadLogo();loadSignature();loadFiles();loadTemplates();loadPrefs();loadQuota();loadMyEmails();loadAIProfile();checkQuietStatus();checkIMAPStatus();startHourlyAutoSend();
+loadAll();loadLogo();loadSignature();loadFiles();loadTemplates();loadPrefs();loadQuota();loadMyEmails();loadAIProfile();loadProfile();checkQuietStatus();checkIMAPStatus();startHourlyAutoSend();
 if(POLL_TIMER)clearInterval(POLL_TIMER);
 POLL_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if($('myView').classList.contains('hidden'))return;loadQuota();},30000);
 if(TRACK_TIMER)clearInterval(TRACK_TIMER);
@@ -1106,14 +1087,15 @@ window.addEventListener('focus',function(){loadQuota();});
 function logout(){api('/api/logout','POST').then(function(){location.reload();});}
 
 function switchMain(t){
-['myView','inboxView','profileView','testView','testDashView','adminView'].forEach(function(v){$(v).classList.add('hidden');});
+['myView','inboxView','profileView','aiprofileView','testView','testDashView','adminView'].forEach(function(v){$(v).classList.add('hidden');});
 document.querySelectorAll('.maintab').forEach(function(el){el.classList.remove('active');});
 if(t==='my'){$('myView').classList.remove('hidden');$('tabMy').classList.add('active');loadAll();loadQuota();}
 else if(t==='inbox'){$('inboxView').classList.remove('hidden');$('tabInbox').classList.add('active');checkIMAPStatus();}
-else if(t==='profile'){$('profileView').classList.remove('hidden');$('tabProfile').classList.add('active');loadAIProfile();}
+else if(t==='profile'){$('profileView').classList.remove('hidden');$('tabProfile').classList.add('active');loadProfile();loadAIUsage();}
+else if(t==='aiprofile'){$('aiprofileView').classList.remove('hidden');$('tabAIP').classList.add('active');loadAIProfile();}
 else if(t==='test'){$('testView').classList.remove('hidden');$('tabTest').classList.add('active');loadAIPredictions();loadSenders();}
 else if(t==='testdash'){$('testDashView').classList.remove('hidden');$('tabTestDash').classList.add('active');loadTestDashboard();}
-else if(t==='admin'){$('adminView').classList.remove('hidden');$('tabAdmin').classList.add('active');loadAdmin();}
+else if(t==='admin'){$('adminView').classList.remove('hidden');$('tabAdmin').classList.add('active');loadAdmin();loadAdminAIUsage();}
 }
 
 function checkQuietStatus(){api('/api/quiet-status').then(function(r){if(!r.ok)return;var b=$('quietBanner');if(r.inQuiet){b.classList.add('show');$('quietMsg').innerText='Until '+((r.quietEnd%12)||12)+':00 '+(r.quietEnd<12?'AM':'PM')+'.';}else{b.classList.remove('show');}});}
@@ -1123,29 +1105,35 @@ function loadQuota(){api('/api/quota').then(function(r){if(!r.ok)return;MY_QUOTA
 function onSliderChange(v){v=parseInt(v)||1;$('batchValue').innerText=v;$('batchNumber').value=v;validateBatchSize();}
 function onNumberChange(v){var n=parseInt(v)||1;$('batchValue').innerText=n;$('batchSlider').value=Math.min(n,parseInt($('batchSlider').max)||500);validateBatchSize();}
 function onNumberBlur(){var n=parseInt($('batchNumber').value)||1;var max=MY_QUOTA.remaining||500;if(n<1)n=1;if(n>max)n=max;$('batchNumber').value=n;$('batchValue').innerText=n;$('batchSlider').value=Math.min(n,parseInt($('batchSlider').max)||500);validateBatchSize();}
-function validateBatchSize(){var val=parseInt($('batchNumber').value)||1;var max=MY_QUOTA.remaining||500;var hint=$('batchHint');var warn=$('batchWarning');var warnText=$('batchWarningText');if(val>max){hint.innerHTML='❌ Cannot exceed quota: <b>'+max+'</b>';hint.className='batch-hint err';}else{hint.innerHTML='Max: <b>'+max+'</b> · Rate: <b>'+val+'/hour</b>';hint.className='batch-hint';if($('scheduledRate'))$('scheduledRate').innerText=val+' / hour';}if(warn&&warnText){if(val>50){warn.style.display='flex';warn.className='warning-banner danger';warnText.innerHTML='<b>HIGH SPAM RISK!</b> '+val+' emails/hour is very aggressive. Recommended: <b>5-30/hour</b>.';}else if(val>30){warn.style.display='flex';warn.className='warning-banner';warnText.innerHTML='<b>Caution:</b> '+val+'/hour is above the safe recommendation (5-30/hour).';}else{warn.style.display='none';}}}
-function checkSendDelayWarning(){var input=$('sendDelayInput');if(!input)return;var val=parseInt(input.value)||0;var warn=$('sendDelayWarning'),txt=$('sendDelayWarningText');var good=$('sendDelayGood');if(!warn)return;if(val<5){warn.style.display='flex';warn.className='warning-banner danger';txt.innerHTML='<b>CRITICAL SPAM RISK!</b> '+val+'s delay is too low. Minimum 15-20 seconds required.';if(good)good.style.display='none';}else if(val<15){warn.style.display='flex';warn.className='warning-banner danger';txt.innerHTML='<b>HIGH SPAM RISK!</b> '+val+'s delay will trigger spam filters. Use <b>15-20+ seconds</b>.';if(good)good.style.display='none';}else if(val<20){warn.style.display='flex';warn.className='warning-banner';txt.innerHTML='<b>Caution:</b> '+val+'s is acceptable but <b>20+ seconds</b> is safer.';if(good)good.style.display='none';}else{warn.style.display='none';if(good)good.style.display='flex';}}
+function validateBatchSize(){var val=parseInt($('batchNumber').value)||1;var max=MY_QUOTA.remaining||500;var hint=$('batchHint');var warn=$('batchWarning');var warnText=$('batchWarningText');if(val>max){hint.innerHTML='❌ Cannot exceed quota: <b>'+max+'</b>';hint.className='batch-hint err';}else{hint.innerHTML='Max: <b>'+max+'</b> · Rate: <b>'+val+'/hour</b>';hint.className='batch-hint';if($('scheduledRate'))$('scheduledRate').innerText=val+' / hour';}if(warn&&warnText){if(val>50){warn.style.display='flex';warn.className='warning-banner danger';warnText.innerHTML='<b>HIGH SPAM RISK!</b> '+val+'/hour is aggressive. Recommended: <b>5-30/hour</b>.';}else if(val>30){warn.style.display='flex';warn.className='warning-banner';warnText.innerHTML='<b>Caution:</b> '+val+'/hour is above recommendation.';}else{warn.style.display='none';}}}
+function checkSendDelayWarning(){var input=$('sendDelayInput');if(!input)return;var val=parseInt(input.value)||0;var warn=$('sendDelayWarning'),txt=$('sendDelayWarningText');var good=$('sendDelayGood');if(!warn)return;if(val<5){warn.style.display='flex';warn.className='warning-banner danger';txt.innerHTML='<b>CRITICAL SPAM RISK!</b> Minimum 15-20s required.';if(good)good.style.display='none';}else if(val<15){warn.style.display='flex';warn.className='warning-banner danger';txt.innerHTML='<b>HIGH SPAM RISK!</b> Use <b>15-20+ seconds</b>.';if(good)good.style.display='none';}else if(val<20){warn.style.display='flex';warn.className='warning-banner';txt.innerHTML='<b>Caution:</b> '+val+'s ok, <b>20+ seconds</b> safer.';if(good)good.style.display='none';}else{warn.style.display='none';if(good)good.style.display='flex';}}
 function scheduleAnalysis(){if(analysisTimer)clearTimeout(analysisTimer);$('aiLiveStatus').innerText='Typing...';analysisTimer=setTimeout(runLiveAnalysis,1500);}
 function runLiveAnalysis(){var subject=$('composerSubject').value.trim();var body=$('composerBody').value.trim();if(!subject&&!body){resetAIAnalysisUI();$('aiLiveStatus').innerText='Waiting';return;}var hash=subject+'|'+body;if(hash===lastAnalyzedHash)return;lastAnalyzedHash=hash;$('aiLiveStatus').innerText='🤖 Analyzing...';api('/api/ai/analyze-live','POST',{subject:subject,body:body}).then(function(r){if(!r.ok){$('aiLiveStatus').innerText='Error';return;}if(r.empty){resetAIAnalysisUI();$('aiLiveStatus').innerText='Waiting';return;}$('aiLiveStatus').innerText=r.aiPowered?'🤖 AI':'⚡ Local';renderAIAnalysis(r);}).catch(function(){$('aiLiveStatus').innerText='Offline';});}
-function runDeepAIAnalysis(){var subject=$('composerSubject').value.trim();var body=$('composerBody').value.trim();if(!subject&&!body){toast('Write something first','err');return;}$('aiLiveStatus').innerText='🤖 Deep...';api('/api/ai/analyze-live','POST',{subject:subject,body:body}).then(function(r){if(!r.ok){$('aiLiveStatus').innerText='Error';return;}if(r.empty){resetAIAnalysisUI();return;}$('aiLiveStatus').innerText=r.aiPowered?'🤖 AI':'⚠️ Local';renderAIAnalysis(r);toast(r.aiPowered?'✅ Deep analysis complete':'⚠️ AI busy, showing local');}).catch(function(){$('aiLiveStatus').innerText='Offline';});}
+function runDeepAIAnalysis(){var subject=$('composerSubject').value.trim();var body=$('composerBody').value.trim();if(!subject&&!body){toast('Write something first','err');return;}$('aiLiveStatus').innerText='🤖 Deep...';api('/api/ai/analyze-live','POST',{subject:subject,body:body}).then(function(r){if(!r.ok){$('aiLiveStatus').innerText='Error';return;}if(r.empty){resetAIAnalysisUI();return;}$('aiLiveStatus').innerText=r.aiPowered?'🤖 AI':'⚠️ Local';renderAIAnalysis(r);toast(r.aiPowered?'✅ Deep analysis complete':'⚠️ AI busy, local shown');}).catch(function(){$('aiLiveStatus').innerText='Offline';});}
 function resetAIAnalysisUI(){$('aiScoreValue').innerText='—';$('aiScoreLabel').innerText='Waiting';$('aiScoreCircle').style.background='conic-gradient(#1e293b 0%, #1e293b 100%)';$('aiScoreValue').style.color='var(--text2)';$('aiProbValue').innerText='—';$('aiProbValue').style.color='var(--text2)';$('aiProbFill').style.width='0%';$('aiIssues').innerHTML='';$('aiSuggestions').innerHTML='';}
 function renderAIAnalysis(r){var score=r.score||0,prob=r.inboxProbability||0;var deg=Math.min(360,(score/100)*360);var color=score<=15?'#22c55e':score<=40?'#38bdf8':score<=70?'#f59e0b':'#ef4444';$('aiScoreCircle').style.background='conic-gradient('+color+' '+deg+'deg, #1e293b '+deg+'deg)';$('aiScoreValue').innerText=score;$('aiScoreLabel').innerText=(r.prediction||'Analyzing').replace('_',' ');$('aiScoreValue').style.color=color;$('aiProbValue').innerText=prob+'%';$('aiProbValue').style.color=prob>=70?'#86efac':prob>=40?'#fcd34d':'#fca5a5';$('aiProbFill').style.width=prob+'%';$('aiProbFill').style.background=prob>=70?'linear-gradient(90deg,#22c55e,#38bdf8)':prob>=40?'linear-gradient(90deg,#f59e0b,#fcd34d)':'linear-gradient(90deg,#ef4444,#f97316)';var ih='';if(r.issues&&r.issues.length)ih=r.issues.map(function(i){var cls=i.severity==='high'?'high':(i.severity==='low'?'low':'');return '<div class="ai-issue '+cls+'">⚠️ '+esc(i.message)+'</div>';}).join('');$('aiIssues').innerHTML=ih;var sh='';if(r.suggestions&&r.suggestions.length)sh=r.suggestions.map(function(s){return '<div class="ai-suggestion">💡 '+esc(s)+'</div>';}).join('');$('aiSuggestions').innerHTML=sh;}
 
 function openAIWriter(){$('aiWriterModal').classList.remove('hidden');}
 function closeAIWriter(){$('aiWriterModal').classList.add('hidden');}
-function runAIWriter(){var ctx=$('aiContext').value.trim();if(!ctx)return toast('Describe the email purpose','err');toast('🤖 AI is writing...');api('/api/ai/write-email','POST',{context:ctx,recipientName:$('aiRecipientName').value.trim(),recipientCompany:$('aiRecipientCompany').value.trim(),tone:$('aiTone').value,length:$('aiLength').value}).then(function(r){if(r.ok){$('composerSubject').value=r.subject||'';$('composerBody').value=r.body||'';closeAIWriter();toast(r.aiPowered?'✅ AI wrote your email!':'✅ Email generated');lastAnalyzedHash='';runLiveAnalysis();}else toast('Error: '+r.error,'err');});}
+function runAIWriter(){var ctx=$('aiContext').value.trim();if(!ctx)return toast('Describe the email purpose','err');toast('🤖 AI is writing...');api('/api/ai/write-email','POST',{context:ctx,recipientName:$('aiRecipientName').value.trim(),recipientCompany:$('aiRecipientCompany').value.trim(),tone:$('aiTone').value,length:$('aiLength').value}).then(function(r){if(r.ok){$('composerSubject').value=r.subject||'';$('composerBody').value=r.body||'';closeAIWriter();toast(r.aiPowered?'✅ AI wrote!':'✅ Generated');lastAnalyzedHash='';runLiveAnalysis();}else toast('Error: '+r.error,'err');});}
 function aiGenerateSubjects(){var ctx=$('composerBody').value.trim().substring(0,200)||'professional outreach';toast('✨ Generating subjects...');api('/api/ai/generate-subjects','POST',{context:ctx}).then(function(r){if(r.ok&&r.subjects){$('aiSubjectList').innerHTML=r.subjects.map(function(s){return '<div class="ai-subject-item" data-subject="'+esc(s)+'">'+esc(s)+'</div>';}).join('');$('aiSubjectList').querySelectorAll('.ai-subject-item').forEach(function(el){el.onclick=function(){pickSubject(this.getAttribute('data-subject'));};});$('aiSubjectSuggestions').style.display='block';}else if(r.error)toast(r.error,'err');});}
 function pickSubject(s){$('composerSubject').value=s;$('aiSubjectSuggestions').style.display='none';lastAnalyzedHash='';scheduleAnalysis();}
-function aiImproveEmail(){var subject=$('composerSubject').value.trim(),body=$('composerBody').value.trim();if(!subject&&!body)return toast('Write something first','err');toast('✨ Improving email...');api('/api/ai/improve-email','POST',{subject:subject,body:body}).then(function(r){if(r.ok){$('composerSubject').value=r.improvedSubject||subject;$('composerBody').value=r.improvedBody||body;toast('✅ Email improved!');lastAnalyzedHash='';runLiveAnalysis();}else toast('Error: '+r.error,'err');});}
+function aiImproveEmail(){var subject=$('composerSubject').value.trim(),body=$('composerBody').value.trim();if(!subject&&!body)return toast('Write something first','err');toast('✨ Improving...');api('/api/ai/improve-email','POST',{subject:subject,body:body}).then(function(r){if(r.ok){$('composerSubject').value=r.improvedSubject||subject;$('composerBody').value=r.improvedBody||body;toast('✅ Improved!');lastAnalyzedHash='';runLiveAnalysis();}else toast('Error: '+r.error,'err');});}
 function saveComposerTemplate(){var name=$('composerName').value.trim(),subject=$('composerSubject').value.trim(),body=$('composerBody').value.trim();if(!name||!subject||!body)return toast('Fill name, subject and body','err');api('/api/templates','POST',{name:name,subject:subject,body:body}).then(function(r){if(r.ok){if(r.renamed)toast('✅ Saved as "'+r.name+'"');else toast('✅ Template saved!');$('composerName').value='';loadTemplates();}else toast('Error: '+r.error,'err');});}
 function clearComposer(){$('composerName').value='';$('composerSubject').value='';$('composerBody').value='';lastAnalyzedHash='';resetAIAnalysisUI();}
 
 function openCVAnalyzer(){$('cvAnalyzerModal').classList.remove('hidden');CV_SELECTED_FILE_ID=null;renderCVFileList();$('cvTextWrap').style.display='none';$('cvText').value='';$('cvUploadStatus').innerText='';$('cvAnalysisResult').style.display='none';}
 function closeCVAnalyzer(){$('cvAnalyzerModal').classList.add('hidden');}
 function renderCVFileList(){var w=$('cvFileList');var cvs=FILES.filter(isCvFile);if(!cvs.length){w.innerHTML='<div style="padding:14px;color:var(--text3);font-size:12px;text-align:center">No CV files uploaded yet.</div>';return;}w.innerHTML=cvs.map(function(f){var sel=CV_SELECTED_FILE_ID===f.id?' selected':'';var icon=fileIcon(f.name,f.mimeType);return '<div class="cv-file-pick'+sel+'" data-id="'+f.id+'"><div class="ico">'+icon+'</div><div style="flex:1;min-width:0"><div class="nm">'+esc(f.name)+'</div><div class="mt">'+fmtSize(f.size)+'</div></div></div>';}).join('');w.querySelectorAll('.cv-file-pick').forEach(function(el){el.onclick=function(){CV_SELECTED_FILE_ID=this.getAttribute('data-id');renderCVFileList();loadCvTextFromFile(CV_SELECTED_FILE_ID);};});}
-function loadCvTextFromFile(fileId){$('cvUploadStatus').innerHTML='<span style="color:#7dd3fc">📄 Extracting CV text...</span>';$('cvTextWrap').style.display='block';$('cvText').value='';api('/api/ai/extract-cv','POST',{fileId:fileId}).then(function(r){if(!r.ok){$('cvUploadStatus').innerHTML='<span style="color:#fca5a5">❌ '+esc(r.error||'Failed')+'</span>';return;}$('cvText').value=r.text||'';$('cvUploadStatus').innerHTML='<span style="color:#86efac">✅ Extracted '+r.chars+' chars.</span>';});}
+function loadCvTextFromFile(fileId){$('cvUploadStatus').innerHTML='<span style="color:#7dd3fc">📄 Extracting...</span>';$('cvTextWrap').style.display='block';$('cvText').value='';api('/api/ai/extract-cv','POST',{fileId:fileId}).then(function(r){if(!r.ok){$('cvUploadStatus').innerHTML='<span style="color:#fca5a5">❌ '+esc(r.error||'Failed')+'</span>';return;}$('cvText').value=r.text||'';$('cvUploadStatus').innerHTML='<span style="color:#86efac">✅ Extracted '+r.chars+' chars.</span>';});}
 document.getElementById('cvFileInput').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;if(f.size>4*1024*1024){toast('Max 4MB','err');return;}$('cvUploadStatus').innerHTML='<span style="color:#7dd3fc">📤 Uploading...</span>';$('cvTextWrap').style.display='block';$('cvText').value='';var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];api('/api/upload-file','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(up){if(!up.ok){$('cvUploadStatus').innerHTML='<span style="color:#fca5a5">❌ Upload failed</span>';return;}CV_SELECTED_FILE_ID=up.file.id;loadFiles();loadCvTextFromFile(up.file.id);});};rd.readAsDataURL(f);e.target.value='';});
-async function runCVAnalysis(){var cvText=$('cvText').value.trim();if(cvText.length<30)return toast('CV text is empty','err');var btn=$('cvAnalyzeBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Analyzing...';$('cvAnalysisResult').style.display='none';try{var r=await api('/api/ai/analyze-cv','POST',{cvText:cvText,targetRole:$('cvTargetRole').value.trim(),jobDescription:$('cvJobDesc').value.trim()});if(r.ok){$('composerSubject').value=r.subject||'';$('composerBody').value=r.body||'';var skills=(r.keySkills||[]).map(function(s){return '<span class="badge sent" style="margin:2px">'+esc(s)+'</span>';}).join('');var scoreColor=(r.score||0)>=80?'#86efac':(r.score||0)>=60?'#7dd3fc':'#fcd34d';$('cvAnalysisResult').innerHTML='<div style="font-weight:700;color:#7dd3fc;margin-bottom:8px">✅ Score: <span style="color:'+scoreColor+'">'+(r.score||0)+'/100</span></div><div style="margin-bottom:8px">'+esc(r.analysis||'')+'</div><div style="font-weight:600;font-size:11px;color:var(--text2);margin-bottom:4px">KEY SKILLS:</div><div>'+skills+'</div>';$('cvAnalysisResult').style.display='block';toast('✅ Email generated!');lastAnalyzedHash='';runLiveAnalysis();setTimeout(function(){closeCVAnalyzer();$('composerBody').scrollIntoView({behavior:'smooth',block:'center'});},1500);} else toast('AI Error: '+r.error,'err');} catch(e){toast('Error: '+e.message,'err');}btn.disabled=false;btn.innerHTML='🤖 Analyze & Generate Email';}
+async function runCVAnalysis(){var cvText=$('cvText').value.trim();if(cvText.length<30)return toast('CV text empty','err');var btn=$('cvAnalyzeBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Analyzing...';$('cvAnalysisResult').style.display='none';try{var r=await api('/api/ai/analyze-cv','POST',{cvText:cvText,targetRole:$('cvTargetRole').value.trim(),jobDescription:$('cvJobDesc').value.trim()});if(r.ok){$('composerSubject').value=r.subject||'';$('composerBody').value=r.body||'';var skills=(r.keySkills||[]).map(function(s){return '<span class="badge sent" style="margin:2px">'+esc(s)+'</span>';}).join('');var scoreColor=(r.score||0)>=80?'#86efac':(r.score||0)>=60?'#7dd3fc':'#fcd34d';$('cvAnalysisResult').innerHTML='<div style="font-weight:700;color:#7dd3fc;margin-bottom:8px">✅ Score: <span style="color:'+scoreColor+'">'+(r.score||0)+'/100</span></div><div style="margin-bottom:8px">'+esc(r.analysis||'')+'</div><div style="font-weight:600;font-size:11px;color:var(--text2);margin-bottom:4px">KEY SKILLS:</div><div>'+skills+'</div>';$('cvAnalysisResult').style.display='block';toast('✅ Email generated!');lastAnalyzedHash='';runLiveAnalysis();setTimeout(function(){closeCVAnalyzer();switchMain('my');setTimeout(function(){$('composerBody').scrollIntoView({behavior:'smooth',block:'center'});},300);},1500);} else toast('AI Error: '+r.error,'err');} catch(e){toast('Error: '+e.message,'err');}btn.disabled=false;btn.innerHTML='🤖 Analyze & Generate Email';}
+
+/* PROFILE */
+function loadProfile(){api('/api/profile').then(function(r){if(!r.ok)return;var p=r.profile;$('profileName').innerText=p.name||'User';$('profileEmail').innerText=p.email||'';$('profileAvatar').src=p.picture||'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';$('profileAppId').innerText=p.appAccountId||'MFP-XXXXXX';if(p.createdAt){try{var d=p.createdAt._seconds?new Date(p.createdAt._seconds*1000):new Date(p.createdAt);$('profileJoined').innerText='Joined: '+d.toLocaleDateString('en-US',{month:'short',year:'numeric'});}catch(e){}}$('editProfileName').value=p.name||'';});}
+function saveProfileName(){var name=$('editProfileName').value.trim();if(!name)return toast('Enter a name','err');api('/api/profile','POST',{name:name}).then(function(r){if(r.ok){toast('✅ Profile updated');$('topName').innerText=name;$('profileName').innerText=name;if(USER)USER.name=name;}else toast('Error: '+r.error,'err');});}
+document.getElementById('profilePicInput').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;if(f.size>2*1024*1024){toast('Max 2MB','err');return;}var ok=['image/png','image/jpeg','image/jpg','image/webp'];if(ok.indexOf(f.type)===-1)return toast('PNG/JPG/WEBP only','err');var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading...');api('/api/profile/picture','POST',{base64:b,mimeType:f.type}).then(function(r){if(r.ok){toast('✅ Picture updated');$('profileAvatar').src=r.url;if($('userAvatar')){$('userAvatar').src=r.url;$('userAvatar').style.display='block';}}else toast('Error: '+r.error,'err');});};rd.readAsDataURL(f);e.target.value='';});
+function loadAIUsage(){api('/api/ai/usage').then(function(r){if(!r.ok)return;$('aiTodayCalls').innerText=(r.today.calls||0);$('aiTodayTokens').innerText=(r.today.totalTokens||0).toLocaleString();$('aiMonthCalls').innerText=(r.month.calls||0);$('aiMonthTokens').innerText=(r.month.totalTokens||0).toLocaleString();$('aiUsagePeriod').innerText=r.monthKey;var prov=(r.month.providers||{});var keys=Object.keys(prov);if(keys.length){var h='<div style="font-size:11px;color:var(--text2);font-weight:700;text-transform:uppercase;margin-bottom:8px">Provider Breakdown (Month)</div>';keys.forEach(function(k){h+='<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;font-size:12px"><span style="color:#cbd5e1;text-transform:capitalize">'+esc(k)+'</span><span style="color:#7dd3fc;font-weight:700">'+prov[k]+' calls</span></div>';});$('aiProvidersBreakdown').innerHTML=h;}else{$('aiProvidersBreakdown').innerHTML='';}});}
 
 function loadAIProfile(){api('/api/ai-profile').then(function(r){if(!r.ok)return;var p=r.profile||{};if($('aipFullName'))$('aipFullName').value=p.fullName||'';if($('aipDesignation'))$('aipDesignation').value=p.designation||'';if($('aipCompany'))$('aipCompany').value=p.company||'';if($('aipIndustry'))$('aipIndustry').value=p.industry||'';if($('aipTone'))$('aipTone').value=p.tone||'professional';if($('aipAboutMe'))$('aipAboutMe').value=p.aboutMe||'';if($('aipCommonPhrases'))$('aipCommonPhrases').value=p.commonPhrases||'';});}
 function saveAIProfile(){var payload={fullName:$('aipFullName').value.trim(),designation:$('aipDesignation').value.trim(),company:$('aipCompany').value.trim(),industry:$('aipIndustry').value.trim(),tone:$('aipTone').value,aboutMe:$('aipAboutMe').value.trim(),commonPhrases:$('aipCommonPhrases').value.trim()};api('/api/ai-profile','POST',payload).then(function(r){if(r.ok)toast('✅ AI Profile saved');else toast('Error: '+r.error,'err');});}
@@ -1157,31 +1145,23 @@ function loadAIPredictions(){api('/api/my-emails?range=all').then(function(r){if
 function loadBestTime(){$('bestTimeContent').innerHTML='<div class="empty">Analyzing...</div>';api('/api/ai/best-time').then(function(r){if(!r.ok){$('bestTimeContent').innerHTML='<div class="empty">Error</div>';return;}var hours=r.bestHours||[9,11,14];var h='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">';hours.forEach(function(hh){var lbl=((hh%12)||12)+':00 '+(hh<12?'AM':'PM');h+='<div class="info-box" style="text-align:center;margin:0"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">Best</div><div style="font-size:18px;font-weight:800;color:var(--cyan);margin-top:4px">'+lbl+'</div></div>';});h+='</div>';if(r.reasoning)h+='<div style="font-size:11px;color:var(--text2);margin-top:12px">💡 '+esc(r.reasoning)+'</div>';$('bestTimeContent').innerHTML=h;});}
 
 function buildSigHtmlFrom(f,logoUrl){var phoneClean=(f.phone||'').replace(/[^0-9+]/g,'');var liUrl=f.linkedin?(f.linkedin.indexOf('http')===0?f.linkedin:'https://'+f.linkedin):'';var h='<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-family:Arial,sans-serif"><tr>';if(logoUrl){h+='<td style="padding-right:18px;border-right:2px solid #d1d5db;vertical-align:middle;text-align:center;width:130px"><img src="'+logoUrl+'" width="100" alt="logo" style="display:block;max-width:100px;height:auto;margin:0 auto;border:0"></td>';}h+='<td style="padding-left:'+(logoUrl?'18px':'0')+';vertical-align:top">';if(f.greeting)h+='<div style="color:#666;margin-bottom:8px;font-size:13px">'+esc(f.greeting)+'</div>';if(f.name)h+='<div style="font-weight:bold;font-size:15px;color:#111;margin-bottom:2px">'+esc(f.name)+'</div>';if(f.pos)h+='<div style="color:#666;font-size:12px">'+esc(f.pos)+'</div>';if(f.company)h+='<div style="color:#666;font-size:12px;margin-bottom:8px">'+esc(f.company)+'</div>';var lines=[];if(f.phone)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">📞 <b>Phone:</b> <a href="tel:'+phoneClean+'" style="color:#1a73e8;text-decoration:none">'+esc(f.phone)+'</a></div>');if(f.email)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">✉️ <b>Email:</b> <a href="mailto:'+esc(f.email)+'" style="color:#1a73e8;text-decoration:none">'+esc(f.email)+'</a></div>');if(liUrl)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">🔗 <b>LinkedIn:</b> <a href="'+liUrl+'" style="color:#1a73e8;text-decoration:none">'+esc(f.linkedin)+'</a></div>');if(f.extra)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">'+esc(f.extra)+'</div>');if(lines.length)h+=lines.join('');h+='</td></tr></table>';return h;}
-function getSigFields(){return {name:$('sbName').value.trim(),pos:$('sbPos').value.trim(),company:$('sbCompany').value.trim(),phone:$('sbPhone').value.trim(),email:$('sbEmail').value.trim(),linkedin:$('sbLinkedin').value.trim(),greeting:$('sbGreeting').value.trim(),extra:$('sbExtra').value.trim()};}
-function previewSig(){var includeLogo=$('previewIncludeLogo')?$('previewIncludeLogo').checked:true;var h=buildSigHtmlFrom(getSigFields(),includeLogo?LOGO_URL:'');if(!h||h.length<20){$('sigPreviewContent').innerHTML='<div style="padding:20px;text-align:center;color:#888;font-size:12px">Fill fields to see preview</div>';$('sigPreviewBox').classList.add('show');return;}$('sigPreviewContent').innerHTML=h;$('sigPreviewBox').classList.add('show');}
+function getSigFields(){return {name:$('sbName').value.trim(),pos:$('sbPos').value.trim(),company:$('sbCompany').value.trim(),phone:$('sbPhone').value.trim(),email:$('sbEmail').value.trim(),linkedin:$('sbLinkedin').value.trim(),greeting:$('sbGreeting')?$('sbGreeting').value.trim():'',extra:$('sbExtra')?$('sbExtra').value.trim():''};}
+function previewSig(){var h=buildSigHtmlFrom(getSigFields(),LOGO_URL);if(!h||h.length<20){$('sigPreviewContent').innerHTML='<div style="padding:20px;text-align:center;color:#888;font-size:12px">Fill fields to see preview</div>';$('sigPreviewBox').classList.add('show');return;}$('sigPreviewContent').innerHTML=h;$('sigPreviewBox').classList.add('show');}
 function saveSig(){var h=buildSigHtmlFrom(getSigFields(),LOGO_URL);if(!h||h.length<20)return toast('Fill some fields','err');api('/api/signature','POST',{signature:h,fields:getSigFields()}).then(function(r){if(!r.ok)return toast('Error: '+r.error,'err');toast('✅ Signature saved');previewSig();});}
-async function resetSig(){var ok=await showConfirm({icon:'🗑',title:'Reset Signature?',message:'All fields will be cleared.',okText:'Reset',primary:false});if(!ok)return;['sbName','sbPos','sbCompany','sbPhone','sbEmail','sbLinkedin','sbGreeting','sbExtra'].forEach(function(id){$(id).value='';});$('sigPreviewContent').innerHTML='';$('sigPreviewBox').classList.remove('show');}
-function loadSignature(){api('/api/signature').then(function(r){if(!r.ok)return;var f=r.fields||{};['name','pos','company','phone','email','linkedin','greeting','extra'].forEach(function(k){var id='sb'+k.charAt(0).toUpperCase()+k.slice(1);if(f[k]&&$(id))$(id).value=f[k];});if(r.signature){$('sigPreviewContent').innerHTML=r.signature;$('sigPreviewBox').classList.add('show');}else{previewSig();}});}
-function getTestSigFields(){return {name:$('testSbName').value.trim(),pos:$('testSbPos').value.trim(),company:$('testSbCompany').value.trim(),phone:$('testSbPhone').value.trim(),email:$('testSbEmail').value.trim(),linkedin:$('testSbLinkedin').value.trim(),greeting:$('testSbGreeting').value.trim(),extra:$('testSbExtra').value.trim()};}
-function updateTestSigPreview(){var useNormal=$('testUseNormalSig').checked;var useTest=$('testUseTestSig').checked;var includeLogo=$('testIncludeLogo').checked;var normFields=getSigFields();var testFields=getTestSigFields();var selectedSig='';if(useNormal && (normFields.name||normFields.phone||normFields.email||normFields.extra||includeLogo)){selectedSig=buildSigHtmlFrom(normFields,includeLogo?LOGO_URL:'');}else if(useTest && (testFields.name||testFields.phone||testFields.email||testFields.extra||includeLogo)){selectedSig=buildSigHtmlFrom(testFields,includeLogo?LOGO_URL:'');}var box=$('testSigPreviewBox'),content=$('testSigPreviewContent');if(selectedSig && selectedSig.length>20){content.innerHTML=selectedSig;box.classList.add('show');}else {content.innerHTML='<div style="padding:20px;text-align:center;color:#666;font-size:12px">No signature content</div>';box.classList.remove('show');}}
-function toggleTestSigPanel(){var p=$('testSigFields');if(!p)return;if(p.classList.contains('hidden')){p.classList.remove('hidden');$('testSigToggleBtn').innerText='✖ Close';}else{p.classList.add('hidden');$('testSigToggleBtn').innerText='✏️ Edit';}}
-function saveTestSignature(){var f=getTestSigFields();if(!f.name&&!f.phone&&!f.email&&!f.extra)return toast('Fill some fields','err');var h=buildSigHtmlFrom(f,LOGO_URL);api('/api/test/signature','POST',{signature:h,fields:f}).then(function(r){if(r.ok){toast('✅ Test signature saved');updateTestSigPreview();}else toast('Error: '+r.error,'err');});}
+async function resetSig(){var ok=await showConfirm({icon:'🗑',title:'Reset Signature?',message:'All fields will be cleared.',okText:'Reset'});if(!ok)return;['sbName','sbPos','sbCompany','sbPhone','sbEmail','sbLinkedin','sbGreeting','sbExtra'].forEach(function(id){if($(id))$(id).value='';});$('sigPreviewContent').innerHTML='';$('sigPreviewBox').classList.remove('show');}
+function loadSignature(){api('/api/signature').then(function(r){if(!r.ok)return;var f=r.fields||{};['name','pos','company','phone','email','linkedin','greeting','extra'].forEach(function(k){var id='sb'+k.charAt(0).toUpperCase()+k.slice(1);if(f[k]&&$(id))$(id).value=f[k];});if(r.signature){$('sigPreviewContent').innerHTML=r.signature;$('sigPreviewBox').classList.add('show');}});}
 function loadLogo(){api('/api/logo').then(function(r){if(r.ok&&r.url){LOGO_URL=r.url;LOGO_URL_ALT=r.urlAlt||'';var img=$('logoImg');var triedAlt=false;img.onerror=function(){if(!triedAlt&&LOGO_URL_ALT&&this.src!==LOGO_URL_ALT){triedAlt=true;this.src=LOGO_URL_ALT;}else{this.style.display='none';$('logoPh').style.display='block';}};img.onload=function(){this.style.display='block';$('logoPh').style.display='none';};img.src=r.url;$('logoTitle').innerText='Logo uploaded';$('logoSub').innerText='Click to change';$('logoActions').style.display='block';}});}
-document.getElementById('logoInput').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;var ok=['image/png','image/jpeg','image/jpg','image/gif','image/svg+xml','image/webp'];if(ok.indexOf(f.type)===-1)return toast('Only PNG/JPG/GIF/SVG/WEBP','err');if(f.size>2*1024*1024)return toast('Max 2MB','err');var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading logo...');api('/api/upload-logo','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){if(!r.ok)return toast('Error: '+r.error,'err');LOGO_URL=r.url;LOGO_URL_ALT=r.urlAlt||'';var img=$('logoImg');var triedAlt=false;img.onerror=function(){if(!triedAlt&&LOGO_URL_ALT&&this.src!==LOGO_URL_ALT){triedAlt=true;this.src=LOGO_URL_ALT;}else{this.style.display='none';$('logoPh').style.display='block';}};img.onload=function(){this.style.display='block';$('logoPh').style.display='none';};img.src=r.url;$('logoTitle').innerText='Logo uploaded';$('logoSub').innerText=f.name;$('logoActions').style.display='block';toast('✅ Logo uploaded');previewSig();});};rd.readAsDataURL(f);});
-async function removeLogo(){var ok=await showConfirm({icon:'🗑',title:'Remove logo?',message:'',okText:'Remove'});if(!ok)return;api('/api/remove-logo','POST',{}).then(function(r){if(r.ok){toast('Logo removed');LOGO_URL='';LOGO_URL_ALT='';$('logoImg').style.display='none';$('logoPh').style.display='block';$('logoTitle').innerText='Click to upload logo';$('logoSub').innerText='PNG · JPG · GIF · SVG · WEBP — max 2MB';$('logoActions').style.display='none';previewSig();}});}
-document.getElementById('fileInput').addEventListener('change',function(e){var files=e.target.files;if(!files.length)return;var up=function(i){if(i>=files.length){loadFiles();toast('✅ All files uploaded');return;}var f=files[i];if(f.size>MAX_UPLOAD_SIZE){toast(f.name+' too large (max 3MB)','err');up(i+1);return;}var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading '+(i+1)+'/'+files.length+'...');api('/api/upload-file','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){if(!r.ok)toast('Error uploading '+f.name,'err');up(i+1);}).catch(function(){up(i+1);});};rd.readAsDataURL(f);};up(0);e.target.value='';});
-document.getElementById('testFileUploadInput').addEventListener('change',function(e){var files=e.target.files;if(!files.length)return;var up=function(i){if(i>=files.length){loadFiles();toast('✅ Uploaded');return;}var f=files[i];if(f.size>MAX_UPLOAD_SIZE){toast(f.name+' too large','err');up(i+1);return;}var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading '+(i+1)+'/'+files.length+'...');api('/api/upload-file','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){if(!r.ok)toast('Error: '+f.name,'err');up(i+1);}).catch(function(){up(i+1);});};rd.readAsDataURL(f);};up(0);e.target.value='';});
-function loadFiles(){api('/api/files').then(function(r){if(!r.ok)return;FILES=r.files||[];renderFilesList();renderTestFiles();if($('cvAnalyzerModal')&&!$('cvAnalyzerModal').classList.contains('hidden'))renderCVFileList();});}
+document.getElementById('logoInput').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;var ok=['image/png','image/jpeg','image/jpg','image/gif','image/svg+xml','image/webp'];if(ok.indexOf(f.type)===-1)return toast('PNG/JPG/GIF/SVG/WEBP only','err');if(f.size>2*1024*1024)return toast('Max 2MB','err');var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading...');api('/api/upload-logo','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){if(!r.ok)return toast('Error: '+r.error,'err');LOGO_URL=r.url;LOGO_URL_ALT=r.urlAlt||'';var img=$('logoImg');var triedAlt=false;img.onerror=function(){if(!triedAlt&&LOGO_URL_ALT&&this.src!==LOGO_URL_ALT){triedAlt=true;this.src=LOGO_URL_ALT;}else{this.style.display='none';$('logoPh').style.display='block';}};img.onload=function(){this.style.display='block';$('logoPh').style.display='none';};img.src=r.url;$('logoTitle').innerText='Logo uploaded';$('logoSub').innerText=f.name;$('logoActions').style.display='block';toast('✅ Uploaded');previewSig();});};rd.readAsDataURL(f);});
+async function removeLogo(){var ok=await showConfirm({icon:'🗑',title:'Remove logo?',message:'',okText:'Remove'});if(!ok)return;api('/api/remove-logo','POST',{}).then(function(r){if(r.ok){toast('Removed');LOGO_URL='';LOGO_URL_ALT='';$('logoImg').style.display='none';$('logoPh').style.display='block';$('logoTitle').innerText='Click to upload logo';$('logoSub').innerText='PNG · JPG · GIF · SVG — max 2MB';$('logoActions').style.display='none';previewSig();}});}
+document.getElementById('fileInput').addEventListener('change',function(e){var files=e.target.files;if(!files.length)return;var up=function(i){if(i>=files.length){loadFiles();toast('✅ All uploaded');return;}var f=files[i];if(f.size>MAX_UPLOAD_SIZE){toast(f.name+' too large (max 3MB)','err');up(i+1);return;}var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading '+(i+1)+'/'+files.length);api('/api/upload-file','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){if(!r.ok)toast('Error: '+f.name,'err');up(i+1);});};rd.readAsDataURL(f);};up(0);e.target.value='';});
+document.getElementById('testFileUploadInput')?.addEventListener('change',function(e){var files=e.target.files;if(!files.length)return;var up=function(i){if(i>=files.length){loadFiles();toast('✅ Uploaded');return;}var f=files[i];if(f.size>MAX_UPLOAD_SIZE){toast(f.name+' too large','err');up(i+1);return;}var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading '+(i+1)+'/'+files.length);api('/api/upload-file','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){if(!r.ok)toast('Error: '+f.name,'err');up(i+1);});};rd.readAsDataURL(f);};up(0);e.target.value='';});
+function loadFiles(){api('/api/files').then(function(r){if(!r.ok)return;FILES=r.files||[];renderFilesList();if($('cvAnalyzerModal')&&!$('cvAnalyzerModal').classList.contains('hidden'))renderCVFileList();});}
 function renderFilesList(){var w=$('filesList');if(!w)return;if(!FILES.length){w.innerHTML='<div class="empty">No files uploaded</div>';updateFileSelectInfo();return;}w.innerHTML=FILES.map(function(f){var sel=SELECTED_FILES[f.id]?' selected':'';var icon=fileIcon(f.name,f.mimeType);return '<div class="file-item'+sel+'" onclick="toggleFile(\''+f.id+'\')"><input type="checkbox" class="cbox" '+(SELECTED_FILES[f.id]?'checked':'')+' onclick="event.stopPropagation();toggleFile(\''+f.id+'\')"><div class="icon">'+icon+'</div><div class="info"><div class="fname">'+esc(f.name)+'</div><div class="fmeta">'+fmtSize(f.size)+'</div></div><div class="actions"><button onclick="event.stopPropagation();delFile(\''+f.id+'\')">Delete</button></div></div>';}).join('');updateFileSelectInfo();}
 function updateFileSelectInfo(){var el=$('fileSelectInfo');if(!el)return;var count=Object.keys(SELECTED_FILES).length;el.innerText=count>0?(count+' selected'):'';}
 function toggleFile(id){if(SELECTED_FILES[id])delete SELECTED_FILES[id];else SELECTED_FILES[id]=true;renderFilesList();}
 function selectAllFiles(){FILES.forEach(function(f){SELECTED_FILES[f.id]=true;});renderFilesList();}
 function unselectAllFiles(){SELECTED_FILES={};renderFilesList();}
 async function delFile(id){var ok=await showConfirm({icon:'🗑',title:'Delete file?',message:'',okText:'Delete'});if(!ok)return;api('/api/files/'+id,'DELETE').then(function(r){if(r.ok){toast('File deleted');delete SELECTED_FILES[id];loadFiles();}});}
-function renderTestFiles(){var w=$('testFilesList');if(!w)return;if(!FILES.length){w.innerHTML='<div style="color:var(--text3);font-size:11px;text-align:center;padding:8px">No files uploaded.</div>';return;}w.innerHTML=FILES.map(function(f){var sel=TEST_SELECTED_FILES[f.id]?' selected':'';var icon=fileIcon(f.name,f.mimeType);return '<div class="file-item'+sel+'" onclick="toggleTestFile(\''+f.id+'\')"><input type="checkbox" class="cbox" '+(TEST_SELECTED_FILES[f.id]?'checked':'')+' onclick="event.stopPropagation();toggleTestFile(\''+f.id+'\')"><div class="icon">'+icon+'</div><div class="info"><div class="fname">'+esc(f.name)+'</div><div class="fmeta">'+fmtSize(f.size)+'</div></div></div>';}).join('');}
-function toggleTestFile(id){if(TEST_SELECTED_FILES[id])delete TEST_SELECTED_FILES[id];else TEST_SELECTED_FILES[id]=true;renderTestFiles();}
-function toggleTestAllFiles(){FILES.forEach(function(f){TEST_SELECTED_FILES[f.id]=true;});renderTestFiles();}
-function clearTestFileSelection(){TEST_SELECTED_FILES={};renderTestFiles();}
 
 function loadTemplates(){api('/api/templates').then(function(r){TEMPLATES=r.templates||[];var w=$('tplList');w.innerHTML='';$('tplCount').innerText=TEMPLATES.length+' saved';if(!TEMPLATES.length)w.innerHTML='<div class="empty"><div class="ico">📝</div>No templates yet</div>';else TEMPLATES.forEach(function(t){var d=document.createElement('div');d.className='tpl-card';d.innerHTML='<div class="info"><div class="name">📄 '+esc(t.name)+'</div><div class="sub">'+esc(t.subject)+'</div></div><button onclick="previewTemplate(\''+t.id+'\')">👁</button><button onclick="loadTemplateToComposer(\''+t.id+'\')">Load</button><button class="danger" onclick="delTpl(\''+t.id+'\')">✕</button>';w.appendChild(d);});var s=$('tplSelect');s.innerHTML='';if(!TEMPLATES.length)s.innerHTML='<option value="">(No templates)</option>';else TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;s.appendChild(o);});var ts=$('testTemplateSelect');if(ts){var cur=ts.value;ts.innerHTML='<option value="">-- Manual entry --</option>';TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;ts.appendChild(o);});ts.value=cur;}});}
 function previewTemplate(id){var t=TEMPLATES.filter(function(x){return x.id===id;})[0];if(!t)return;$('tplPreviewTitle').innerText='📄 '+t.name;$('tplPreviewSubject').innerText=t.subject;$('tplPreviewBody').innerText=t.body;$('tplPreviewBackdrop').classList.remove('hidden');}
@@ -1189,53 +1169,45 @@ function closeTplPreview(){$('tplPreviewBackdrop').classList.add('hidden');}
 function loadTemplateToComposer(id){var t=TEMPLATES.filter(function(x){return x.id===id;})[0];if(!t)return;$('composerName').value=t.name;$('composerSubject').value=t.subject;$('composerBody').value=t.body;lastAnalyzedHash='';runLiveAnalysis();$('composerBody').scrollIntoView({behavior:'smooth',block:'center'});}
 async function delTpl(id){var ok=await showConfirm({icon:'🗑',title:'Delete template?',message:'',okText:'Delete'});if(!ok)return;api('/api/templates/'+id,'DELETE').then(function(r){if(r.ok){toast('Template deleted');loadTemplates();}});}
 function onTestTemplateChange(){var id=$('testTemplateSelect').value;if(!id)return;var t=TEMPLATES.filter(function(x){return x.id===id;})[0];if(!t)return;$('testSubject').value=t.subject||'';$('testBody').value=t.body||'';toast('✅ Template loaded');}
-function openTestSaveTplModal(){var subject=$('testSubject').value.trim();var body=$('testBody').value.trim();if(!subject&&!body)return toast('Fill Subject or Body','err');$('saveTplName').value=subject.substring(0,40)||'Untitled';$('saveTplSubject').value=subject;$('saveTplBodyPreview').value=body.substring(0,200);$('saveTplModal').classList.remove('hidden');}
-function closeSaveTplModal(){$('saveTplModal').classList.add('hidden');}
-function confirmSaveTpl(){var name=$('saveTplName').value.trim();if(!name)return toast('Enter template name','err');var subject=$('saveTplSubject').value.trim()||name;var body=$('testBody').value.trim();if(!body)return toast('Body is empty','err');api('/api/templates','POST',{name:name,subject:subject,body:body}).then(function(r){if(r.ok){toast('✅ Saved as "'+(r.name||name)+'"');closeSaveTplModal();loadTemplates();}else toast('Error: '+r.error,'err');});}
 
 function addRow(){var w=$('recipients'),d=document.createElement('div');d.className='recip-row';d.innerHTML='<input type="text" placeholder="Company (optional)" autocomplete="off"><input type="email" placeholder="email@example.com" autocomplete="off"><button class="del" onclick="this.parentNode.remove()">✕</button>';w.appendChild(d);}
-function submitRecipients(){var rows=$('recipients').querySelectorAll('.recip-row'),list=[];rows.forEach(function(r){var i=r.querySelectorAll('input');if(i[1].value.trim())list.push({company:i[0].value.trim(),email:i[1].value.trim()});});if(!list.length)return toast('No emails entered','err');api('/api/recipients','POST',{list:list,templateId:$('tplSelect').value}).then(function(r){if(r.ok){toast('✅ '+r.added+' recipients added');$('recipients').innerHTML='';addRow();loadAll();}else toast('Error: '+r.error,'err');});}
+function submitRecipients(){var rows=$('recipients').querySelectorAll('.recip-row'),list=[];rows.forEach(function(r){var i=r.querySelectorAll('input');if(i[1].value.trim())list.push({company:i[0].value.trim(),email:i[1].value.trim()});});if(!list.length)return toast('No emails entered','err');api('/api/recipients','POST',{list:list,templateId:$('tplSelect').value}).then(function(r){if(r.ok){toast('✅ '+r.added+' added');$('recipients').innerHTML='';addRow();loadAll();}else toast('Error: '+r.error,'err');});}
 function switchTab(t){if(t==='manual'){$('tabManual').classList.add('active');$('tabBulk').classList.remove('active');$('manualTab').classList.remove('hidden');$('bulkTab').classList.add('hidden');}else{$('tabBulk').classList.add('active');$('tabManual').classList.remove('active');$('bulkTab').classList.remove('hidden');$('manualTab').classList.add('hidden');updateBulk();}}
 function parseBulk(text){var emailRx=/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;var lines=text.split(/\r?\n/);var found={};var seen=new Set();var dup=0;for(var i=0;i<lines.length;i++){var line=lines[i];if(!line.trim())continue;var emails=line.match(emailRx)||[];if(!emails.length)continue;var cleanLine=line;for(var j=0;j<emails.length;j++)cleanLine=cleanLine.replace(emails[j],' ');cleanLine=cleanLine.replace(/[,;|<>"'\(\)\[\]]/g,' ').replace(/\s+/g,' ').trim();var company='';if(cleanLine.length>=2&&cleanLine.length<=80){var compacted=cleanLine.replace(/\s/g,'');var looksLikeDomain=/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(compacted);var isSingleWord=!cleanLine.includes(' ');if(!looksLikeDomain&&!(isSingleWord&&/^[a-z0-9._-]+$/i.test(cleanLine)))company=cleanLine;}for(var k=0;k<emails.length;k++){var em=emails[k].toLowerCase();if(seen.has(em)){dup++;continue;}seen.add(em);found[em]=company;}}var valid=Object.keys(found).map(function(e){return{email:e,company:found[e]};});return{valid:valid,dup:dup};}
 function updateBulk(){var text=$('bulkInput').value;var r=parseBulk(text);var wrap=$('bulkPreviewWrap');var table=$('bulkPreviewTable');$('bulkValidPill').innerText='✅ '+r.valid.length;$('bulkDupPill').innerText='🔁 '+r.dup;if(!text.trim()||r.valid.length===0){wrap.classList.remove('show');return;}wrap.classList.add('show');var h='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3)">#</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3)">Company</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3)">Email</th></tr></thead><tbody>';r.valid.slice(0,50).forEach(function(row,idx){h+='<tr><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:var(--text3);font-size:11px">'+(idx+1)+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#cbd5e1">'+(row.company?esc(row.company):'—')+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#7dd3fc;font-family:Courier New,monospace;font-size:11px;word-break:break-all">'+esc(row.email)+'</td></tr>';});if(r.valid.length>50)h+='<tr><td colspan="3" style="text-align:center;color:var(--text3);font-style:italic;padding:10px">... +'+(r.valid.length-50)+' more</td></tr>';h+='</tbody></table>';table.innerHTML=h;}
 function clearBulk(){$('bulkInput').value='';updateBulk();}
-function submitBulk(){var r=parseBulk($('bulkInput').value);if(!r.valid.length)return toast('No emails found','err');var items=r.valid;var emptyCount=r.valid.filter(function(x){return !x.company;}).length;if(emptyCount>0&&emptyCount<r.valid.length){toast('🤖 AI extracting company names...');api('/api/ai/parse-bulk','POST',{text:$('bulkInput').value}).then(function(aiRes){if(aiRes.ok&&aiRes.items&&aiRes.items.length)items=aiRes.items.map(function(i){return{email:i.email,company:i.company||''};});sendBulkRecipients(items);}).catch(function(){sendBulkRecipients(items);});}else sendBulkRecipients(items);}
-function sendBulkRecipients(items){api('/api/recipients','POST',{list:items,templateId:$('tplSelect').value}).then(function(res){if(res.ok){toast('✅ '+res.added+' recipients added');$('bulkInput').value='';updateBulk();loadAll();switchTab('manual');}else toast('Error: '+res.error,'err');});}
+function submitBulk(){var r=parseBulk($('bulkInput').value);if(!r.valid.length)return toast('No emails found','err');var items=r.valid;var emptyCount=r.valid.filter(function(x){return !x.company;}).length;if(emptyCount>0&&emptyCount<r.valid.length){toast('🤖 AI extracting...');api('/api/ai/parse-bulk','POST',{text:$('bulkInput').value}).then(function(aiRes){if(aiRes.ok&&aiRes.items&&aiRes.items.length)items=aiRes.items.map(function(i){return{email:i.email,company:i.company||''};});sendBulkRecipients(items);}).catch(function(){sendBulkRecipients(items);});}else sendBulkRecipients(items);}
+function sendBulkRecipients(items){api('/api/recipients','POST',{list:items,templateId:$('tplSelect').value}).then(function(res){if(res.ok){toast('✅ '+res.added+' added');$('bulkInput').value='';updateBulk();loadAll();switchTab('manual');}else toast('Error: '+res.error,'err');});}
 function readFileToText(file,callback){var name=file.name.toLowerCase();var reader=new FileReader();if(name.endsWith('.xlsx')||name.endsWith('.xls')){if(typeof XLSX==='undefined'){toast('Excel reader not loaded','err');return;}reader.onload=function(ev){try{var data=new Uint8Array(ev.target.result);var wb=XLSX.read(data,{type:'array'});var text='';wb.SheetNames.forEach(function(sn){var sheet=wb.Sheets[sn];var rows=XLSX.utils.sheet_to_json(sheet,{header:1});rows.forEach(function(row){var parts=row.filter(function(c){return c!==undefined&&c!=='';});if(parts.length)text+=parts.join(', ')+'\n';});});callback(text);}catch(err){toast('Error: '+err.message,'err');}};reader.readAsArrayBuffer(file);}else{reader.onload=function(ev){callback(ev.target.result);};reader.readAsText(file);}}
 document.addEventListener('DOMContentLoaded',function(){var ta=$('bulkInput');if(ta)ta.addEventListener('input',updateBulk);var fi=$('bulkFileInput');if(fi){fi.addEventListener('change',function(e){var file=e.target.files[0];if(!file)return;readFileToText(file,function(text){$('bulkInput').value=text;updateBulk();toast('✅ Loaded: '+file.name);});e.target.value='';});}var tfi=$('testBulkFileInput');if(tfi){tfi.addEventListener('change',function(e){var file=e.target.files[0];if(!file)return;readFileToText(file,function(text){$('testBulkInput').value=text;updateTestBulk();toast('✅ Loaded: '+file.name);});e.target.value='';});}var tbi=$('testBulkInput');if(tbi)tbi.addEventListener('input',updateTestBulk);var sdi=$('sendDelayInput');if(sdi){sdi.addEventListener('input',checkSendDelayWarning);sdi.addEventListener('change',checkSendDelayWarning);}});
 
 function loadAll(isManual){if(isManual)toast('Refreshing...');api('/api/stats').then(function(r){if(!r.ok)return;$('stTotal').innerText=r.stats.total;$('stSent').innerText=r.stats.sent;$('stOpened').innerText=r.stats.opened;$('stPending').innerText=r.stats.pending;$('stTotalSends').innerText=r.stats.totalSends||0;});api('/api/recipients').then(function(r){if(!r.ok)return;CURRENT_ROWS=r.recipients||[];ALL_ROWS=CURRENT_ROWS.slice();renderRecipients();});}
-function renderRecipients(){var w=$('tableWrap');var q=($('recipSearch').value||'').toLowerCase();var stF=$('statusFilter').value;var filtered=CURRENT_ROWS.filter(function(x){if(stF!=='all'&&(x.status||'')!==stF)return false;return !q||(x.company||'').toLowerCase().indexOf(q)!==-1||(x.email||'').toLowerCase().indexOf(q)!==-1;});$('trackCount').innerText=filtered.length+' / '+CURRENT_ROWS.length;if(!CURRENT_ROWS.length){w.innerHTML='<div class="empty"><div class="ico">📭</div>No recipients yet</div>';updateBulkBar();return;}if(!filtered.length){w.innerHTML='<div class="empty"><div class="ico">🔍</div>No matches</div>';updateBulkBar();return;}var h='<table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" class="cbox" onchange="toggleAll(this.checked)"></th><th>Company</th><th>Email</th><th>Status</th><th>Sends</th><th>Last Sent</th><th>Action</th></tr></thead><tbody>';filtered.forEach(function(x){var st=(x.status||'').toLowerCase(),cls='pending',lbl=x.status||'Pending',icon='⏳';if(st.indexOf('opened')!==-1){cls='opened';icon='👁';}else if(st==='sent'){cls='sent';icon='📤';}h+='<tr class="clickable '+(SELECTED[x.id]?'selected':'')+'" onclick="openRecipHistory(\''+x.id+'\')"><td onclick="event.stopPropagation()"><input type="checkbox" class="cbox" '+(SELECTED[x.id]?'checked':'')+' onchange="toggleOne(\''+x.id+'\',this.checked)"></td>';h+='<td>'+esc(x.company||'—')+'</td><td style="word-break:break-all">'+esc(x.email)+'</td><td><span class="badge '+cls+'">'+icon+' '+esc(lbl)+'</span></td>';h+='<td><span class="badge count">'+(x.sendCount||0)+'×</span></td>';h+='<td style="font-size:10px">'+fmtDate(x.lastSentAt||x.sentAt)+'</td>';h+='<td style="white-space:nowrap" onclick="event.stopPropagation()"><button class="btn ghost small" onclick="openRecipHistory(\''+x.id+'\')" title="Full history">📊</button> <button class="btn ghost small" onclick="openSendOptions(\''+x.id+'\')" title="Send">📤</button> <button class="btn danger small" onclick="delRec(\''+x.id+'\')" title="Delete">✕</button></td></tr>';});h+='</tbody></table>';w.innerHTML=h;updateBulkBar();}
+function renderRecipients(){var w=$('tableWrap');var q=($('recipSearch').value||'').toLowerCase();var stF=$('statusFilter').value;var filtered=CURRENT_ROWS.filter(function(x){if(stF!=='all'&&(x.status||'')!==stF)return false;return !q||(x.company||'').toLowerCase().indexOf(q)!==-1||(x.email||'').toLowerCase().indexOf(q)!==-1;});$('trackCount').innerText=filtered.length+' / '+CURRENT_ROWS.length;if(!CURRENT_ROWS.length){w.innerHTML='<div class="empty"><div class="ico">📭</div>No recipients yet</div>';updateBulkBar();return;}if(!filtered.length){w.innerHTML='<div class="empty"><div class="ico">🔍</div>No matches</div>';updateBulkBar();return;}var h='<table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" class="cbox" onchange="toggleAll(this.checked)"></th><th>Company</th><th>Email</th><th>Status</th><th>Sends</th><th>Last Sent</th><th>Action</th></tr></thead><tbody>';filtered.forEach(function(x){var st=(x.status||'').toLowerCase(),cls='pending',lbl=x.status||'Pending',icon='⏳';if(st.indexOf('opened')!==-1){cls='opened';icon='👁';}else if(st==='sent'){cls='sent';icon='📤';}var everOpenedBadge=x.everOpened?' <span class="badge everopened">✓ Ever</span>':'';h+='<tr class="clickable '+(SELECTED[x.id]?'selected':'')+'" onclick="openRecipHistory(\''+x.id+'\')"><td onclick="event.stopPropagation()"><input type="checkbox" class="cbox" '+(SELECTED[x.id]?'checked':'')+' onchange="toggleOne(\''+x.id+'\',this.checked)"></td>';h+='<td>'+esc(x.company||'—')+'</td><td style="word-break:break-all">'+esc(x.email)+'</td><td><span class="badge '+cls+'">'+icon+' '+esc(lbl)+'</span>'+everOpenedBadge+'</td>';h+='<td><span class="badge count">'+(x.sendCount||0)+'×</span></td>';h+='<td style="font-size:10px">'+fmtDate(x.lastSentAt||x.sentAt)+'</td>';h+='<td style="white-space:nowrap" onclick="event.stopPropagation()"><button class="btn ghost small" onclick="openRecipHistory(\''+x.id+'\')" title="Full history">📊</button> <button class="btn ghost small" onclick="openSendOptions(\''+x.id+'\')" title="Send">📤</button> <button class="btn danger small" onclick="delRec(\''+x.id+'\')" title="Delete">✕</button></td></tr>';});h+='</tbody></table>';w.innerHTML=h;updateBulkBar();}
 function toggleOne(id,c){if(c)SELECTED[id]=true;else delete SELECTED[id];renderRecipients();}
 function toggleAll(c){var q=($('recipSearch').value||'').toLowerCase();var stF=$('statusFilter').value;var filtered=CURRENT_ROWS.filter(function(x){if(stF!=='all'&&(x.status||'')!==stF)return false;return !q||(x.company||'').toLowerCase().indexOf(q)!==-1||(x.email||'').toLowerCase().indexOf(q)!==-1;});if(c)filtered.forEach(function(r){SELECTED[r.id]=true;});else SELECTED={};renderRecipients();}
 function selectAll(){CURRENT_ROWS.forEach(function(r){SELECTED[r.id]=true;});renderRecipients();}
 function clearSelection(){SELECTED={};renderRecipients();}
 function updateBulkBar(){var ids=Object.keys(SELECTED);var b=$('bulkActionBar');if(ids.length>0){b.classList.add('show');$('selectedCount').innerText=ids.length+' selected';}else b.classList.remove('show');}
 
+/* Recipient Full History with all-time data + attachment names */
 function openRecipHistory(recipientId){
   var rec=ALL_ROWS.filter(function(x){return x.id===recipientId;})[0]||{};
   $('recipHistoryTitle').innerText='📊 Recipient Full History';
   var info='<div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;word-break:break-all">'+esc(rec.email||'')+'</div>';
   if(rec.company)info+='<div style="font-size:12px;color:var(--text2)">Company: <b style="color:#cbd5e1">'+esc(rec.company)+'</b></div>';
   var statusColor=rec.status==='Opened'?'#86efac':rec.status==='Sent'?'#7dd3fc':'#fcd34d';
-  info+='<div style="font-size:12px;color:var(--text2);margin-top:4px">Status: <b style="color:'+statusColor+'">'+esc(rec.status||'Pending')+'</b></div>';
+  info+='<div style="font-size:12px;color:var(--text2);margin-top:4px">Current Status: <b style="color:'+statusColor+'">'+esc(rec.status||'Pending')+'</b>';
+  if(rec.everOpened)info+=' <span class="badge everopened">✓ Ever Opened</span>';
+  info+='</div>';
   $('recipHistoryInfo').innerHTML=info;
   $('recipHistoryStats').innerHTML='<div class="empty" style="padding:20px">Loading full history...</div>';
   $('recipHistoryList').innerHTML='';
   $('recipHistoryModal').classList.remove('hidden');
   api('/api/my-emails?range=all').then(function(r){
-    if(!r.ok){
-      $('recipHistoryStats').innerHTML='';
-      $('recipHistoryList').innerHTML='<div class="empty">Error loading history</div>';
-      return;
-    }
+    if(!r.ok){$('recipHistoryStats').innerHTML='';$('recipHistoryList').innerHTML='<div class="empty">Error loading history</div>';return;}
     var all=r.emails||[];
     var mine=all.filter(function(e){return e.recipientId===recipientId;});
-    mine.sort(function(a,b){
-      var ta=a.sentAt&&a.sentAt._seconds?a.sentAt._seconds*1000:new Date(a.sentAt||0).getTime();
-      var tb=b.sentAt&&b.sentAt._seconds?b.sentAt._seconds*1000:new Date(b.sentAt||0).getTime();
-      return tb-ta;
-    });
+    mine.sort(function(a,b){var ta=a.sentAt&&a.sentAt._seconds?a.sentAt._seconds*1000:new Date(a.sentAt||0).getTime();var tb=b.sentAt&&b.sentAt._seconds?b.sentAt._seconds*1000:new Date(b.sentAt||0).getTime();return tb-ta;});
     var totalSent=mine.length;
     var totalOpened=mine.filter(function(e){return !!e.openedAt;}).length;
     var totalNotOpened=totalSent-totalOpened;
@@ -1246,86 +1218,84 @@ function openRecipHistory(recipientId){
     stats+='<div class="recipient-stat total"><div class="label">Total Sent</div><div class="value">'+totalSent+'</div></div>';
     stats+='<div class="recipient-stat sent"><div class="label">Opened</div><div class="value">'+totalOpened+'</div></div>';
     stats+='<div class="recipient-stat pending"><div class="label">Not Opened</div><div class="value">'+totalNotOpened+'</div></div>';
-    stats+='<div class="recipient-stat opened"><div class="label">Open Rate</div><div class="value">'+openRate+'%</div></div>';
-    stats+='</div>';
+    stats+='<div class="recipient-stat opened"><div class="label">Open Rate</div><div class="value">'+openRate+'%</div></div></div>';
     stats+='<div class="info-box" style="margin-bottom:14px"><div class="row"><span class="k">First sent:</span><span class="v" style="font-size:12px">'+(firstSent?fmtDate(firstSent):'—')+'</span></div><div class="row"><span class="k">Last sent:</span><span class="v" style="font-size:12px">'+(lastSent?fmtDate(lastSent):'—')+'</span></div></div>';
     $('recipHistoryStats').innerHTML=stats;
-    if(!mine.length){
-      $('recipHistoryList').innerHTML='<div class="empty"><div class="ico">📭</div>No emails sent to this recipient yet</div>';
-      return;
-    }
+    if(!mine.length){$('recipHistoryList').innerHTML='<div class="empty"><div class="ico">📭</div>No emails sent yet</div>';return;}
     var list='<div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:12px">📧 Timeline of all sends ('+mine.length+')</div>';
     mine.forEach(function(e,i){
       var opened=!!e.openedAt;
       var pred=e.aiPrediction||'GOOD';
       var prob=e.aiInboxProb||75;
       var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';
+      var attHtml='';
+      if(e.attachmentsCount&&e.attachmentsCount>0){attHtml='<div class="attachment-list"><span class="attachment-name">📎 '+e.attachmentsCount+' attachment'+(e.attachmentsCount>1?'s':'')+'</span></div>';}
       list+='<div class="send-history-item'+(opened?' opened':'')+'">';
       list+='<div class="top"><div class="subj">#'+(mine.length-i)+' · '+esc(e.subject||'(no subject)')+'</div><span class="badge '+(opened?'opened':'sent')+'">'+(opened?'👁 Opened':'📤 Sent')+'</span></div>';
-      list+='<div class="meta">';
-      list+='<span>📅 Sent: <b>'+fmtDate(e.sentAt)+'</b></span>';
+      list+='<div class="meta"><span>📅 Sent: <b>'+fmtDate(e.sentAt)+'</b></span>';
       if(opened)list+='<span style="color:#86efac">👁 Opened: <b>'+fmtDate(e.openedAt)+'</b></span>';
-      else list+='<span style="color:#fcd34d">⏳ Not opened yet</span>';
-      if(e.attachmentsCount)list+='<span>📎 <b>'+e.attachmentsCount+'</b> attachment'+(e.attachmentsCount>1?'s':'')+'</span>';
-      list+='<span style="color:'+pc+'">🤖 AI: <b>'+pred+'</b> ('+prob+'%)</span>';
-      list+='</div></div>';
+      else list+='<span style="color:#fcd34d">⏳ Not opened</span>';
+      list+='<span style="color:'+pc+'">🤖 '+pred+' ('+prob+'%)</span></div>';
+      list+=attHtml;
+      list+='</div>';
     });
     $('recipHistoryList').innerHTML=list;
-  }).catch(function(err){
-    $('recipHistoryStats').innerHTML='';
-    $('recipHistoryList').innerHTML='<div class="empty">Error: '+esc(err.message)+'</div>';
-  });
+  }).catch(function(err){$('recipHistoryStats').innerHTML='';$('recipHistoryList').innerHTML='<div class="empty">Error: '+esc(err.message)+'</div>';});
 }
 function closeRecipHistory(){$('recipHistoryModal').classList.add('hidden');}
 function openSendOptions(id){_currentSendId=id;var rec=ALL_ROWS.filter(function(x){return x.id===id;})[0]||{};var status=rec.status||'Pending';var info='<div><b style="color:var(--text)">'+esc(rec.email||'')+'</b>'+(rec.company?' — '+esc(rec.company):'')+'</div>';info+='<div style="margin-top:6px">Status: <b style="color:'+(status==='Opened'?'#86efac':status==='Sent'?'#7dd3fc':'#fcd34d')+'">'+status+'</b></div>';var selCount=Object.keys(SELECTED_FILES).length;if(selCount>0)info+='<div style="margin-top:6px;color:var(--cyan)">📎 '+selCount+' file(s) selected</div>';$('sendOptionsInfo').innerHTML=info;$('optSignature').checked=true;$('optLogo').checked=true;$('optAttachments').checked=true;$('sendOptionsBackdrop').classList.remove('hidden');}
 function closeSendOptions(){$('sendOptionsBackdrop').classList.add('hidden');_currentSendId=null;}
-document.getElementById('sendOptionsConfirm').addEventListener('click',function(){if(!_currentSendId)return;var id=_currentSendId;var payload={recipientId:id,includeSignature:$('optSignature').checked,includeLogo:$('optLogo').checked,includeAttachments:$('optAttachments').checked,selectedFileIds:Object.keys(SELECTED_FILES)};var btn=this;btn.disabled=true;btn.innerHTML='<span class="spin"></span> Sending...';toast('Sending email...');api('/api/send','POST',payload).then(function(r){btn.disabled=false;btn.innerText='📤 Send';if(r.ok){toast('✅ Sent to '+r.email);var rr=CURRENT_ROWS.find(function(x){return x.id===id;});if(rr){rr.status='Sent';rr.sendCount=(rr.sendCount||0)+1;rr.lastSentAt=new Date().toISOString();}closeSendOptions();renderRecipients();loadMyEmails();loadQuota();}else if(r.error==='QUIET_HOURS'){closeSendOptions();showConfirm({icon:'🌙',title:'Quiet Hours Active',message:'Quiet hours are active until '+((r.quietEnd%12)||12)+':00 '+(r.quietEnd<12?'AM':'PM')+'. Send anyway?',okText:'Send Anyway',primary:true}).then(function(f){if(!f)return;api('/api/send','POST',Object.assign({force:true},payload)).then(function(r2){if(r2.ok){toast('✅ Sent');loadAll();loadQuota();loadMyEmails();}else toast('Error: '+r2.error,'err');});});}else if(r.error==='DAILY_LIMIT_REACHED'){toast('❌ Daily limit reached ('+r.limit+')','err');}else toast('Error: '+r.error,'err');}).catch(function(){btn.disabled=false;btn.innerText='📤 Send';});});
+document.getElementById('sendOptionsConfirm').addEventListener('click',function(){if(!_currentSendId)return;var id=_currentSendId;var payload={recipientId:id,includeSignature:$('optSignature').checked,includeLogo:$('optLogo').checked,includeAttachments:$('optAttachments').checked,selectedFileIds:Object.keys(SELECTED_FILES)};var btn=this;btn.disabled=true;btn.innerHTML='<span class="spin"></span> Sending...';toast('Sending...');api('/api/send','POST',payload).then(function(r){btn.disabled=false;btn.innerText='📤 Send';if(r.ok){toast('✅ Sent to '+r.email);var rr=CURRENT_ROWS.find(function(x){return x.id===id;});if(rr){rr.status='Sent';rr.sendCount=(rr.sendCount||0)+1;rr.lastSentAt=new Date().toISOString();}closeSendOptions();renderRecipients();loadMyEmails();loadQuota();loadAll();}else if(r.error==='QUIET_HOURS'){closeSendOptions();showConfirm({icon:'🌙',title:'Quiet Hours Active',message:'Until '+((r.quietEnd%12)||12)+':00 '+(r.quietEnd<12?'AM':'PM')+'. Send anyway?',okText:'Send Anyway',primary:true}).then(function(f){if(!f)return;api('/api/send','POST',Object.assign({force:true},payload)).then(function(r2){if(r2.ok){toast('✅ Sent');loadAll();loadQuota();loadMyEmails();}else toast('Error: '+r2.error,'err');});});}else if(r.error==='DAILY_LIMIT_REACHED'){toast('❌ Daily limit reached ('+r.limit+')','err');}else toast('Error: '+r.error,'err');}).catch(function(){btn.disabled=false;btn.innerText='📤 Send';});});
 async function delRec(id){var ok=await showConfirm({icon:'🗑',title:'Delete recipient?',message:'This will remove the recipient permanently.',okText:'Delete'});if(!ok)return;api('/api/recipients/'+id,'DELETE').then(function(r){if(r.ok){toast('Deleted');delete SELECTED[id];loadAll();}});}
-async function resendSelected(){var ids=Object.keys(SELECTED);if(!ids.length)return toast('Select recipients first','err');var ok=await showConfirm({icon:'🔁',title:'Resend to '+ids.length+' recipients?',message:'This will send the email again to all selected.',okText:'Resend',primary:true});if(!ok)return;var done=0,err=0;var selFiles=Object.keys(SELECTED_FILES);toast('Starting resend...');var next=function(i){if(i>=ids.length){toast('✅ '+done+' sent, '+err+' failed');clearSelection();loadAll();loadQuota();loadMyEmails();return;}setTimeout(function(){api('/api/resend','POST',{recipientId:ids[i],selectedFileIds:selFiles}).then(function(r){if(r.ok)done++;else if(r.error==='DAILY_LIMIT_REACHED'){toast('❌ Daily limit reached','err');clearSelection();loadAll();loadQuota();loadMyEmails();return;}else err++;next(i+1);}).catch(function(){err++;next(i+1);});},800);};next(0);}
+async function resendSelected(){var ids=Object.keys(SELECTED);if(!ids.length)return toast('Select recipients first','err');var ok=await showConfirm({icon:'🔁',title:'Resend to '+ids.length+' recipients?',message:'This will send the email again.',okText:'Resend',primary:true});if(!ok)return;var done=0,err=0;var selFiles=Object.keys(SELECTED_FILES);toast('Starting resend...');var next=function(i){if(i>=ids.length){toast('✅ '+done+' sent, '+err+' failed');clearSelection();loadAll();loadQuota();loadMyEmails();return;}setTimeout(function(){api('/api/resend','POST',{recipientId:ids[i],selectedFileIds:selFiles}).then(function(r){if(r.ok)done++;else if(r.error==='DAILY_LIMIT_REACHED'){toast('❌ Daily limit reached','err');clearSelection();loadAll();loadQuota();loadMyEmails();return;}else err++;next(i+1);}).catch(function(){err++;next(i+1);});},800);};next(0);}
 async function deleteSelected(){var ids=Object.keys(SELECTED);if(!ids.length)return toast('Select recipients first','err');var ok=await showConfirm({icon:'⚠️',title:'Delete '+ids.length+' recipients?',message:'This action cannot be undone.',okText:'Delete All'});if(!ok)return;api('/api/recipients/bulk-delete','POST',{ids:ids}).then(function(r){if(r.ok){toast('✅ '+r.deleted+' deleted');clearSelection();loadAll();}});}
 
 function loadMyEmails(){var range=$('myEmailRange')?$('myEmailRange').value:'all';api('/api/my-emails?range='+encodeURIComponent(range)).then(function(r){if(!r.ok)return;MY_EMAILS=r.emails||[];renderMyEmails();});}
-function renderMyEmails(){var w=$('myEmailsWrap');var q=($('myEmailSearch').value||'').toLowerCase();var filtered=MY_EMAILS.filter(function(e){return !q||(e.recipientEmail||'').toLowerCase().indexOf(q)!==-1||(e.subject||'').toLowerCase().indexOf(q)!==-1;});if($('myEmailCount'))$('myEmailCount').innerText=filtered.length+' shown';if(!filtered.length){w.innerHTML='<div class="empty"><div class="ico">📧</div>No email history yet</div>';return;}var h='<table class="data-table"><thead><tr><th>Recipient</th><th>Subject</th><th>Sent</th><th>Status</th><th>Opened</th><th>📎</th></tr></thead><tbody>';filtered.slice(0,300).forEach(function(e){var opened=!!e.openedAt;var stCls=opened?'opened':'sent';var stIcon=opened?'👁':'📤';var stLbl=opened?'Opened':'Sent';h+='<tr><td style="word-break:break-all;font-size:11px">'+esc(e.recipientEmail)+'</td><td style="font-size:11px;max-width:280px">'+esc(e.subject||'—')+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(e.sentAt)+'</td><td><span class="badge '+stCls+'">'+stIcon+' '+stLbl+'</span></td><td style="font-size:10px;white-space:nowrap">'+(opened?fmtDate(e.openedAt):'—')+'</td><td style="text-align:center">'+((e.attachmentsCount||0)>0?'<span class="badge attach">📎 '+e.attachmentsCount+'</span>':'—')+'</td></tr>';});h+='</tbody></table>';w.innerHTML=h;}
+function renderMyEmails(){var w=$('myEmailsWrap');var q=($('myEmailSearch').value||'').toLowerCase();var filtered=MY_EMAILS.filter(function(e){return !q||(e.recipientEmail||'').toLowerCase().indexOf(q)!==-1||(e.subject||'').toLowerCase().indexOf(q)!==-1;});if($('myEmailCount'))$('myEmailCount').innerText=filtered.length+' shown';if(!filtered.length){w.innerHTML='<div class="empty"><div class="ico">📧</div>No email history yet</div>';return;}var h='<table class="data-table"><thead><tr><th>Recipient</th><th>Subject</th><th>Sent</th><th>Status</th><th>Opened</th><th>Attachments</th></tr></thead><tbody>';filtered.slice(0,300).forEach(function(e){var opened=!!e.openedAt;var stCls=opened?'opened':'sent';var stIcon=opened?'👁':'📤';var stLbl=opened?'Opened':'Sent';var attCell='—';if((e.attachmentsCount||0)>0){attCell='<span class="badge attach">📎 '+e.attachmentsCount+' file'+(e.attachmentsCount>1?'s':'')+'</span>';}h+='<tr><td style="word-break:break-all;font-size:11px">'+esc(e.recipientEmail)+'</td><td style="font-size:11px;max-width:280px">'+esc(e.subject||'—')+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(e.sentAt)+'</td><td><span class="badge '+stCls+'">'+stIcon+' '+stLbl+'</span></td><td style="font-size:10px;white-space:nowrap">'+(opened?fmtDate(e.openedAt):'—')+'</td><td style="text-align:center">'+attCell+'</td></tr>';});h+='</tbody></table>';w.innerHTML=h;}
 
-function loadPrefs(){api('/api/prefs').then(function(r){if(!r.ok)return;var p=r.prefs;$('autoSendToggle').checked=p.autoSend;$('quietToggle').checked=p.quietEnabled;$('quietStartSel').value=p.quietStart;$('quietEndSel').value=p.quietEnd;$('quietTimesBox').style.display=p.quietEnabled?'block':'none';$('batchSizeBox').classList.toggle('show',p.autoSend);var bs=p.autoSendBatchSize||5;$('batchSlider').value=bs;$('batchNumber').value=bs;$('batchValue').innerText=bs;$('totalAutoSent').innerText=p.totalAutoSent||0;if($('optAutoSig'))$('optAutoSig').checked=p.autoSendIncludeSignature!==false;if($('optAutoLogo'))$('optAutoLogo').checked=p.autoSendIncludeLogo!==false;if($('sendDelayInput'))$('sendDelayInput').value=p.sendDelay!==undefined?p.sendDelay:20;validateBatchSize();checkSendDelayWarning();});}
+function loadPrefs(){api('/api/prefs').then(function(r){if(!r.ok)return;var p=r.prefs;$('autoSendToggle').checked=p.autoSend;$('quietToggle').checked=p.quietEnabled;$('quietStartSel').value=p.quietStart;$('quietEndSel').value=p.quietEnd;$('quietTimesBox').style.display=p.quietEnabled?'block':'none';$('batchSizeBox').classList.toggle('show',p.autoSend);var bs=p.autoSendBatchSize||5;$('batchSlider').value=bs;$('batchNumber').value=bs;$('batchValue').innerText=bs;$('totalAutoSent').innerText=p.totalAutoSent||0;if($('sendDelayInput'))$('sendDelayInput').value=p.sendDelay!==undefined?p.sendDelay:20;validateBatchSize();checkSendDelayWarning();});}
 document.getElementById('quietToggle').addEventListener('change',function(){$('quietTimesBox').style.display=this.checked?'block':'none';});
 document.getElementById('autoSendToggle').addEventListener('change',function(){$('batchSizeBox').classList.toggle('show',this.checked);});
-function savePrefs(){var bs=parseInt($('batchNumber').value)||5;var sd=parseInt($('sendDelayInput').value);if(isNaN(sd)||sd<0)sd=20;if(sd>120)sd=120;if(bs>MY_QUOTA.remaining){toast('❌ Cannot exceed remaining quota ('+MY_QUOTA.remaining+')','err');return;}var payload={autoSend:$('autoSendToggle').checked,autoSendBatchSize:bs,quietEnabled:$('quietToggle').checked,quietStart:Number($('quietStartSel').value),quietEnd:Number($('quietEndSel').value),sendDelay:sd};if($('optAutoSig'))payload.autoSendIncludeSignature=$('optAutoSig').checked;if($('optAutoLogo'))payload.autoSendIncludeLogo=$('optAutoLogo').checked;api('/api/prefs','POST',payload).then(function(r){if(r.ok)toast('✅ Settings saved');else toast('Error: '+r.error,'err');});}
+function savePrefs(){var bs=parseInt($('batchNumber').value)||5;var sd=parseInt($('sendDelayInput').value);if(isNaN(sd)||sd<0)sd=20;if(sd>120)sd=120;if(bs>MY_QUOTA.remaining){toast('❌ Cannot exceed remaining quota ('+MY_QUOTA.remaining+')','err');return;}var payload={autoSend:$('autoSendToggle').checked,autoSendBatchSize:bs,quietEnabled:$('quietToggle').checked,quietStart:Number($('quietStartSel').value),quietEnd:Number($('quietEndSel').value),sendDelay:sd};api('/api/prefs','POST',payload).then(function(r){if(r.ok)toast('✅ Settings saved');else toast('Error: '+r.error,'err');});}
 
+/* IMAP */
 function checkIMAPStatus(){api('/api/imap/status').then(function(r){if(!r.ok){showIMAPSetup();return;}IMAP_CONNECTED=!!r.connected;if(IMAP_CONNECTED){$('imapSetupPanel').classList.add('hidden');$('imapInboxUI').classList.remove('hidden');if($('imapSyncInfo'))$('imapSyncInfo').innerText='⚡ Total synced: '+(r.totalSynced||0);}else{showIMAPSetup();}}).catch(function(){showIMAPSetup();});}
 function showIMAPSetup(){$('imapSetupPanel').classList.remove('hidden');$('imapInboxUI').classList.add('hidden');}
-async function connectIMAP(){var pass=$('imapAppPassword').value.trim();if(!pass||pass.replace(/\s/g,'').length<16){return toast('App Password must be 16 characters','err');}var btn=$('imapConnectBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Testing connection...';toast('🔌 Testing IMAP connection...');try{var r=await api('/api/imap/connect','POST',{appPassword:pass});if(r.ok){toast('✅ Inbox connected!');$('imapAppPassword').value='';IMAP_CONNECTED=true;$('imapSetupPanel').classList.add('hidden');$('imapInboxUI').classList.remove('hidden');loadIMAPInbox();}else{toast('Error: '+r.error,'err');}}catch(e){toast('Error: '+e.message,'err');}btn.disabled=false;btn.innerHTML='🔌 Connect Inbox';}
+async function connectIMAP(){var pass=$('imapAppPassword').value.trim();if(!pass||pass.replace(/\s/g,'').length<16){return toast('App Password must be 16 characters','err');}var btn=$('imapConnectBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Testing...';toast('🔌 Testing IMAP connection...');try{var r=await api('/api/imap/connect','POST',{appPassword:pass});if(r.ok){toast('✅ Inbox connected!');$('imapAppPassword').value='';IMAP_CONNECTED=true;$('imapSetupPanel').classList.add('hidden');$('imapInboxUI').classList.remove('hidden');loadIMAPInbox();}else{toast('Error: '+r.error,'err');}}catch(e){toast('Error: '+e.message,'err');}btn.disabled=false;btn.innerHTML='🔌 Connect Inbox';}
 async function disconnectIMAP(){var ok=await showConfirm({icon:'🔌',title:'Disconnect Inbox?',message:'Your App Password will be removed.',okText:'Disconnect'});if(!ok)return;api('/api/imap/disconnect','POST').then(function(r){if(r.ok){toast('Disconnected');IMAP_CONNECTED=false;INBOX_EMAILS=[];$('imapSetupPanel').classList.remove('hidden');$('imapInboxUI').classList.add('hidden');}});}
-function loadIMAPInbox(){if(!IMAP_CONNECTED)return toast('Connect inbox first','err');var folder=$('inboxFolder').value;var pageSize=parseInt($('inboxLimit').value)||20;$('inboxList').innerHTML='<div class="empty"><div class="ico">⏳</div>Loading page '+imapPage+'...</div>';$('inboxEmpty').classList.remove('hidden');$('inboxViewerContent').classList.add('hidden');ACTIVE_EMAIL=null;$('imapSyncInfo').innerText='⚡ Syncing...';$('imapPageInfo').innerText='Page '+imapPage;$('imapPrevBtn').disabled=imapPage<=1;$('imapNextBtn').disabled=true;api('/api/imap/inbox','POST',{folder:folder,page:imapPage,pageSize:pageSize}).then(function(r){if(!r.ok){$('inboxList').innerHTML='<div class="empty"><div class="ico">❌</div>'+esc(r.error)+'</div>';$('imapSyncInfo').innerText='❌ Sync failed';return;}INBOX_EMAILS=r.emails||[];imapHasMore=!!r.hasMore;$('imapSyncInfo').innerText='✅ '+INBOX_EMAILS.length+' emails · Total '+r.total;$('imapNextBtn').disabled=!imapHasMore;if(!INBOX_EMAILS.length){$('inboxList').innerHTML='<div class="empty"><div class="ico">📭</div>No emails found</div>';return;}renderInboxList();}).catch(function(){$('inboxList').innerHTML='<div class="empty"><div class="ico">❌</div>Network error</div>';$('imapSyncInfo').innerText='❌ Network error';});}
+function loadIMAPInbox(){if(!IMAP_CONNECTED)return toast('Connect inbox first','err');var folder=$('inboxFolder').value;var pageSize=parseInt($('inboxLimit').value)||20;$('inboxList').innerHTML='<div class="empty"><div class="ico">⏳</div>Loading page '+imapPage+'...</div>';$('inboxEmpty').classList.remove('hidden');$('inboxViewerContent').classList.add('hidden');ACTIVE_EMAIL=null;$('imapSyncInfo').innerText='⚡ Syncing...';$('imapPageInfo').innerText='Page '+imapPage;$('imapPrevBtn').disabled=imapPage<=1;$('imapNextBtn').disabled=true;api('/api/imap/inbox','POST',{folder:folder,page:imapPage,pageSize:pageSize}).then(function(r){if(!r.ok){$('inboxList').innerHTML='<div class="empty"><div class="ico">❌</div>'+esc(r.error)+'</div>';$('imapSyncInfo').innerText='❌ Sync failed';return;}INBOX_EMAILS=r.emails||[];imapHasMore=!!r.hasMore;$('imapSyncInfo').innerText='✅ '+INBOX_EMAILS.length+' emails · Total '+r.total;$('imapNextBtn').disabled=!imapHasMore;if(!INBOX_EMAILS.length){$('inboxList').innerHTML='<div class="empty"><div class="ico">📭</div>No emails found</div>';return;}renderInboxList();}).catch(function(){$('inboxList').innerHTML='<div class="empty"><div class="ico">❌</div>Network error</div>';});}
 function renderInboxList(){var h='';INBOX_EMAILS.forEach(function(e,i){var catClass=(e.category||'other').toLowerCase().replace('_','-');h+='<div class="inbox-item'+(e.isRead?'':' unread')+'" onclick="openIMAPEmail('+i+')" data-idx="'+i+'">';h+='<div class="from"><span class="from-name">'+esc(e.fromName||e.from||'Unknown')+'</span><span class="date">'+esc(fmtTimeAgo(e.date||e.receivedAt))+'</span></div>';h+='<div class="subj">'+esc(e.subject||'(no subject)')+'</div>';h+='<div class="badges">';if(e.category && e.category !== 'OTHER')h+='<span class="badge '+catClass+'">'+esc(e.category.replace('_',' '))+'</span>';if(e.attachments && e.attachments.length)h+='<span class="badge attach">📎</span>';h+='</div></div>';});$('inboxList').innerHTML=h;}
 function openIMAPEmail(i){var e=INBOX_EMAILS[i];if(!e)return;ACTIVE_EMAIL=e;document.querySelectorAll('.inbox-item').forEach(function(el){el.classList.remove('active');if(parseInt(el.getAttribute('data-idx'))===i)el.classList.add('active');});$('inboxEmpty').classList.add('hidden');$('inboxViewerContent').classList.remove('hidden');$('inboxViewerContent').style.display='flex';$('viewSubject').innerText=e.subject||'(no subject)';$('viewFrom').innerText=(e.fromName||'')+' <'+(e.from||'')+'>';$('viewTo').innerText=e.to||'';$('viewDate').innerText=fmtEmailDate(e.date||e.receivedAt);if(e.category && e.category !== 'OTHER'){$('viewCategoryRow').style.display='flex';var catClass=(e.category||'other').toLowerCase().replace('_','-');$('viewCategory').innerHTML='<span class="badge '+catClass+'">'+esc(e.category.replace('_',' '))+'</span>';}else $('viewCategoryRow').style.display='none';var bodyContainer=$('viewBody');bodyContainer.innerHTML='<div class="loading"><div class="spin"></div><span>Loading email body...</span></div>';api('/api/imap/body','POST',{folder:e.folder||'INBOX',uid:e.uid}).then(function(r){if(!r.ok){bodyContainer.innerHTML='<div class="plain-body">Failed: '+esc(r.error||'Unknown')+'</div>';return;}var email=r.email;bodyContainer.innerHTML='';if(email.htmlBody && email.htmlBody.trim().length>0){var iframe=document.createElement('iframe');iframe.style.cssText='width:100%;border:none;background:#fff;display:block;';iframe.setAttribute('sandbox','allow-same-origin allow-popups allow-popups-to-escape-sandbox');bodyContainer.appendChild(iframe);try{var doc=iframe.contentDocument||iframe.contentWindow.document;doc.open();doc.write('<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;color:#222;word-break:break-word;background:#fff}img{max-width:100%;height:auto}a{color:#1a73e8}table{max-width:100%}</style></head><body>'+email.htmlBody+'</body></html>');doc.close();setTimeout(function(){try{var hh=doc.body.scrollHeight;iframe.style.height=Math.max(400,Math.min(hh+60,1500))+'px';}catch(err){iframe.style.height='500px';}},200);}catch(err){bodyContainer.innerHTML='<div class="plain-body">'+esc(email.textBody||email.snippet||'(no content)')+'</div>';}}else bodyContainer.innerHTML='<div class="plain-body">'+esc(email.textBody||email.snippet||'(no content)')+'</div>';}).catch(function(err){bodyContainer.innerHTML='<div class="plain-body">Error: '+esc(err.message||'Network error')+'</div>';});}
 async function deleteIMAPEmail(){if(!ACTIVE_EMAIL)return;var ok=await showConfirm({icon:'🗑',title:'Delete from MailFlow?',message:'This removes the email from MailFlow only (not from Gmail).',okText:'Delete'});if(!ok)return;api('/api/imap/email/'+encodeURIComponent(ACTIVE_EMAIL.id),'DELETE').then(function(r){if(r.ok){toast('Deleted');INBOX_EMAILS=INBOX_EMAILS.filter(function(e){return e.id!==ACTIVE_EMAIL.id;});ACTIVE_EMAIL=null;$('inboxViewerContent').classList.add('hidden');$('inboxEmpty').classList.remove('hidden');renderInboxList();}else toast('Error: '+r.error,'err');});}
-function composeReplyToInbox(){if(!ACTIVE_EMAIL)return;var subj=ACTIVE_EMAIL.subject||'';$('composerSubject').value=/^re:/i.test(subj)?subj:('Re: '+subj);$('composerBody').value='';switchMain('my');setTimeout(function(){$('composerSubject').scrollIntoView({behavior:'smooth',block:'center'});toast('✍️ Compose your reply and add recipient');},300);}
 
+/* TEST LAB */
 function switchTestTab(t){if(t==='manual'){$('testTabManual').classList.add('active');$('testTabBulk').classList.remove('active');$('testManualTab').classList.remove('hidden');$('testBulkTab').classList.add('hidden');}else{$('testTabBulk').classList.add('active');$('testTabManual').classList.remove('active');$('testBulkTab').classList.remove('hidden');$('testManualTab').classList.add('hidden');updateTestBulk();}}
 function addTestRow(){var w=$('testRecipientsRows');if(!w)return;var d=document.createElement('div');d.className='recip-row';d.innerHTML='<input type="text" placeholder="Company (optional)" autocomplete="off"><input type="email" placeholder="test@example.com" autocomplete="off"><button class="del" onclick="this.parentNode.remove()">✕</button>';w.appendChild(d);}
 function submitTestRecipientsManual(){var rows=$('testRecipientsRows').querySelectorAll('.recip-row');var list=[];rows.forEach(function(r){var i=r.querySelectorAll('input');if(i[1].value.trim())list.push({company:i[0].value.trim(),email:i[1].value.trim()});});if(!list.length)return toast('No emails entered','err');api('/api/test/recipients','POST',{list:list}).then(function(res){if(res.ok){toast('✅ '+res.added+' added');$('testRecipientsRows').innerHTML='';addTestRow();loadTestDashboard();}else toast('Error: '+res.error,'err');});}
-function updateTestBulk(){var text=$('testBulkInput').value;var r=parseBulk(text);var wrap=$('testBulkPreviewWrap');var table=$('testBulkPreviewTable');if(!wrap||!table)return;$('testBulkValidPill').innerText='✅ '+r.valid.length;$('testBulkDupPill').innerText='🔁 '+r.dup;if(!text.trim()||r.valid.length===0){wrap.classList.remove('show');return;}wrap.classList.add('show');var h='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3)">#</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3)">Company</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.3)">Email</th></tr></thead><tbody>';r.valid.slice(0,50).forEach(function(row,idx){h+='<tr><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:var(--text3);font-size:11px">'+(idx+1)+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#cbd5e1">'+(row.company?esc(row.company):'—')+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#7dd3fc;font-family:Courier New,monospace;font-size:11px;word-break:break-all">'+esc(row.email)+'</td></tr>';});if(r.valid.length>50)h+='<tr><td colspan="3" style="text-align:center;color:var(--text3);font-style:italic;padding:10px">... +'+(r.valid.length-50)+'</td></tr>';h+='</tbody></table>';table.innerHTML=h;}
+function updateTestBulk(){var text=$('testBulkInput').value;var r=parseBulk(text);var wrap=$('testBulkPreviewWrap');var table=$('testBulkPreviewTable');if(!wrap||!table)return;$('testBulkValidPill').innerText='✅ '+r.valid.length;$('testBulkDupPill').innerText='🔁 '+r.dup;if(!text.trim()||r.valid.length===0){wrap.classList.remove('show');return;}wrap.classList.add('show');var h='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px">#</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px">Company</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px">Email</th></tr></thead><tbody>';r.valid.slice(0,50).forEach(function(row,idx){h+='<tr><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:var(--text3);font-size:11px">'+(idx+1)+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#cbd5e1">'+(row.company?esc(row.company):'—')+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#7dd3fc;font-size:11px;word-break:break-all">'+esc(row.email)+'</td></tr>';});h+='</tbody></table>';table.innerHTML=h;}
 function clearTestBulk(){$('testBulkInput').value='';updateTestBulk();}
 function submitTestBulk(){var r=parseBulk($('testBulkInput').value);if(!r.valid.length)return toast('No emails found','err');api('/api/test/recipients','POST',{list:r.valid}).then(function(res){if(res.ok){toast('✅ '+res.added+' added');$('testBulkInput').value='';updateTestBulk();loadTestDashboard();switchTestTab('manual');}else toast('Error: '+res.error,'err');});}
-function loadTestDashboard(){api('/api/test/stats').then(function(r){if(!r.ok)return;var s=r.stats;$('tstTotal').innerText=s.total;$('tstSent').innerText=s.sent;$('tstOpened').innerText=s.opened;$('tstPending').innerText=s.pending;$('tstLog').innerText=s.totalSends;if($('testPendingCount'))$('testPendingCount').innerText=s.pending;});api('/api/test/recipients').then(function(r){if(!r.ok)return;TEST_RECIPIENTS=r.recipients||[];renderTestRecipients();});api('/api/test/log').then(function(r){if(!r.ok)return;var w=$('testLogWrap');var arr=r.logs||[];if(!arr.length){w.innerHTML='<div class="empty">No test log yet</div>';return;}var h='<table class="data-table"><thead><tr><th>To</th><th>Subject</th><th>Sent</th><th>Status</th><th>Opened</th><th>📎</th></tr></thead><tbody>';arr.slice(0,100).forEach(function(x){var op=!!x.openedAt;var st=op?'opened':'sent';var stIco=op?'👁 Opened':'📤 Sent';h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(x.recipientEmail)+'</td><td style="font-size:11px">'+esc(x.subject||'—')+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(x.sentAt)+'</td><td><span class="badge '+st+'">'+stIco+'</span></td><td style="font-size:10px;white-space:nowrap">'+(op?fmtDate(x.openedAt):'—')+'</td><td style="text-align:center">'+((x.attachmentsCount||0)>0?'<span class="badge attach">📎 '+x.attachmentsCount+'</span>':'—')+'</td></tr>';});h+='</tbody></table>';w.innerHTML=h;});api('/api/test/prefs').then(function(r){if(!r.ok)return;var p=r.prefs;if($('testAutoBatchSize'))$('testAutoBatchSize').value=p.autoSendBatchSize||5;if($('testAutoDelay'))$('testAutoDelay').value=p.sendDelay!==undefined?p.sendDelay:20;if($('testTotalAutoSent'))$('testTotalAutoSent').innerText=p.totalAutoSent||0;if($('testLastAutoRun'))$('testLastAutoRun').innerText=p.lastRun?fmtDate(p.lastRun):'Never';});api('/api/test/signature').then(function(r){if(!r.ok)return;var f=r.fields||{};['name','pos','company','phone','email','linkedin','greeting','extra'].forEach(function(k){var id='testSb'+k.charAt(0).toUpperCase()+k.slice(1);if(f[k]&&$(id))$(id).value=f[k];});updateTestSigPreview();});renderTestFiles();}
-function renderTestRecipients(){var w=$('testRecipientsWrap');if(!w)return;var q=($('testRecipSearch').value||'').toLowerCase();var stF=$('testRecipStatusFilter').value;var filtered=TEST_RECIPIENTS.filter(function(x){if(stF!=='all'&&(x.status||'')!==stF)return false;return !q||(x.email||'').toLowerCase().indexOf(q)!==-1||(x.company||'').toLowerCase().indexOf(q)!==-1;});if($('testRecipCount'))$('testRecipCount').innerText=filtered.length+' / '+TEST_RECIPIENTS.length;if(!TEST_RECIPIENTS.length){w.innerHTML='<div class="empty">No test recipients yet</div>';updateTestBulkBar();return;}if(!filtered.length){w.innerHTML='<div class="empty">No matches</div>';updateTestBulkBar();return;}var h='<table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" class="cbox" onchange="testToggleAll(this.checked)"></th><th>Email</th><th>Company</th><th>Status</th><th>Sent</th><th>Opened</th><th>Action</th></tr></thead><tbody>';filtered.forEach(function(x){var st=(x.status||'').toLowerCase();var cls=st==='opened'?'opened':st==='sent'?'sent':'pending';var icon=st==='opened'?'👁':st==='sent'?'📤':'⏳';h+='<tr class="'+(TEST_SELECTED[x.id]?'selected':'')+'"><td><input type="checkbox" class="cbox" '+(TEST_SELECTED[x.id]?'checked':'')+' onchange="testToggleOne(\''+x.id+'\',this.checked)"></td>';h+='<td style="word-break:break-all">'+esc(x.email)+'</td><td>'+esc(x.company||'—')+'</td><td><span class="badge '+cls+'">'+icon+' '+esc(x.status)+'</span></td><td style="font-size:11px;white-space:nowrap">'+fmtDate(x.sentAt)+'</td><td style="font-size:11px;white-space:nowrap">'+(x.openedAt?fmtDate(x.openedAt):'—')+'</td>';h+='<td style="white-space:nowrap"><button class="btn ghost small" onclick="useTestRecipient(\''+esc(x.email).replace(/'/g,"\\'")+'\')">Use</button> <button class="btn danger small" onclick="delTestRec(\''+x.id+'\')">✕</button></td></tr>';});h+='</tbody></table>';w.innerHTML=h;updateTestBulkBar();}
+function loadTestDashboard(){api('/api/test/stats').then(function(r){if(!r.ok)return;var s=r.stats;$('tstTotal').innerText=s.total;$('tstSent').innerText=s.sent;$('tstOpened').innerText=s.opened;$('tstPending').innerText=s.pending;$('tstLog').innerText=s.totalSends;if($('testPendingCount'))$('testPendingCount').innerText=s.pending;});api('/api/test/recipients').then(function(r){if(!r.ok)return;TEST_RECIPIENTS=r.recipients||[];renderTestRecipients();});api('/api/test/log').then(function(r){if(!r.ok)return;var w=$('testLogWrap');var arr=r.logs||[];if(!arr.length){w.innerHTML='<div class="empty">No test log yet</div>';return;}var h='<table class="data-table"><thead><tr><th>To</th><th>Subject</th><th>Sent</th><th>Status</th><th>Opened</th></tr></thead><tbody>';arr.slice(0,100).forEach(function(x){var op=!!x.openedAt;var st=op?'opened':'sent';var stIco=op?'👁 Opened':'📤 Sent';h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(x.recipientEmail)+'</td><td style="font-size:11px">'+esc(x.subject||'—')+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(x.sentAt)+'</td><td><span class="badge '+st+'">'+stIco+'</span></td><td style="font-size:10px;white-space:nowrap">'+(op?fmtDate(x.openedAt):'—')+'</td></tr>';});h+='</tbody></table>';w.innerHTML=h;});api('/api/test/prefs').then(function(r){if(!r.ok)return;var p=r.prefs;if($('testAutoBatchSize'))$('testAutoBatchSize').value=p.autoSendBatchSize||5;if($('testAutoDelay'))$('testAutoDelay').value=p.sendDelay!==undefined?p.sendDelay:20;if($('testTotalAutoSent'))$('testTotalAutoSent').innerText=p.totalAutoSent||0;if($('testLastAutoRun'))$('testLastAutoRun').innerText=p.lastRun?fmtDate(p.lastRun):'Never';});}
+function renderTestRecipients(){var w=$('testRecipientsWrap');if(!w)return;var q=($('testRecipSearch').value||'').toLowerCase();var stF=$('testRecipStatusFilter').value;var filtered=TEST_RECIPIENTS.filter(function(x){if(stF!=='all'&&(x.status||'')!==stF)return false;return !q||(x.email||'').toLowerCase().indexOf(q)!==-1||(x.company||'').toLowerCase().indexOf(q)!==-1;});if($('testRecipCount'))$('testRecipCount').innerText=filtered.length+' / '+TEST_RECIPIENTS.length;if(!TEST_RECIPIENTS.length){w.innerHTML='<div class="empty">No test recipients yet</div>';updateTestBulkBar();return;}var h='<table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" class="cbox" onchange="testToggleAll(this.checked)"></th><th>Email</th><th>Company</th><th>Status</th><th>Sent</th><th>Opened</th><th>Action</th></tr></thead><tbody>';filtered.forEach(function(x){var st=(x.status||'').toLowerCase();var cls=st==='opened'?'opened':st==='sent'?'sent':'pending';var icon=st==='opened'?'👁':st==='sent'?'📤':'⏳';h+='<tr class="'+(TEST_SELECTED[x.id]?'selected':'')+'"><td><input type="checkbox" class="cbox" '+(TEST_SELECTED[x.id]?'checked':'')+' onchange="testToggleOne(\''+x.id+'\',this.checked)"></td>';h+='<td style="word-break:break-all">'+esc(x.email)+'</td><td>'+esc(x.company||'—')+'</td><td><span class="badge '+cls+'">'+icon+' '+esc(x.status)+'</span></td><td style="font-size:11px;white-space:nowrap">'+fmtDate(x.sentAt)+'</td><td style="font-size:11px;white-space:nowrap">'+(x.openedAt?fmtDate(x.openedAt):'—')+'</td>';h+='<td style="white-space:nowrap"><button class="btn ghost small" onclick="useTestRecipient(\''+esc(x.email).replace(/'/g,"\\'")+'\')">Use</button> <button class="btn danger small" onclick="delTestRec(\''+x.id+'\')">✕</button></td></tr>';});h+='</tbody></table>';w.innerHTML=h;updateTestBulkBar();}
 function useTestRecipient(email){$('testTo').value=email;toast('📋 Email set');}
 function testToggleOne(id,c){if(c)TEST_SELECTED[id]=true;else delete TEST_SELECTED[id];renderTestRecipients();}
-function testToggleAll(c){var q=($('testRecipSearch').value||'').toLowerCase();var stF=$('testRecipStatusFilter').value;var filtered=TEST_RECIPIENTS.filter(function(x){if(stF!=='all'&&(x.status||'')!==stF)return false;return !q||(x.email||'').toLowerCase().indexOf(q)!==-1||(x.company||'').toLowerCase().indexOf(q)!==-1;});if(c)filtered.forEach(function(r){TEST_SELECTED[r.id]=true;});else TEST_SELECTED={};renderTestRecipients();}
+function testToggleAll(c){if(c)TEST_RECIPIENTS.forEach(function(r){TEST_SELECTED[r.id]=true;});else TEST_SELECTED={};renderTestRecipients();}
 function testSelectAll(){TEST_RECIPIENTS.forEach(function(r){TEST_SELECTED[r.id]=true;});renderTestRecipients();}
 function testClearSelection(){TEST_SELECTED={};renderTestRecipients();}
 function updateTestBulkBar(){var ids=Object.keys(TEST_SELECTED);var b=$('testBulkActionBar');if(ids.length>0){b.classList.add('show');$('testSelectedCount').innerText=ids.length+' selected';}else b.classList.remove('show');}
 async function testDeleteSelected(){var ids=Object.keys(TEST_SELECTED);if(!ids.length)return toast('Select recipients first','err');var ok=await showConfirm({icon:'🗑',title:'Delete '+ids.length+' test recipients?',message:'',okText:'Delete'});if(!ok)return;api('/api/test/recipients/bulk-delete','POST',{ids:ids}).then(function(r){if(r.ok){toast('✅ '+r.deleted+' deleted');testClearSelection();loadTestDashboard();}else toast('Error: '+r.error,'err');});}
 async function delTestRec(id){var ok=await showConfirm({icon:'🗑',title:'Delete?',message:'',okText:'Delete'});if(!ok)return;api('/api/test/recipients/'+id,'DELETE').then(function(r){if(r.ok){toast('Deleted');delete TEST_SELECTED[id];loadTestDashboard();}});}
 async function clearTestData(){var ok=await showConfirm({icon:'⚠️',title:'Clear ALL Test Data?',message:'All test recipients AND logs will be permanently deleted.',okText:'Clear All'});if(!ok)return;toast('Clearing...');api('/api/test/clear','POST',{}).then(function(r){if(r.ok){toast('✅ Cleared '+r.deleted+' items');TEST_SELECTED={};setTimeout(loadTestDashboard,500);}else toast('Error: '+r.error,'err');});}
-function sendTestEmail(){var to=$('testTo').value.trim(),subject=$('testSubject').value.trim(),body=$('testBody').value.trim();if(!to||!subject||!body)return toast('Fill To, Subject, and Body','err');var selectedFiles=Object.keys(TEST_SELECTED_FILES);var useTestSig=$('testUseTestSig').checked;var useNormalSig=$('testUseNormalSig').checked;var includeSig=useTestSig||useNormalSig;var payload={to:to,subject:subject,body:body,includeSignature:includeSig,includeLogo:$('testIncludeLogo').checked,selectedFileIds:selectedFiles,useTestSignature:useTestSig};toast('Sending test email...');api('/api/test/send','POST',payload).then(function(r){if(r.ok){toast('✅ Test sent to '+r.email);loadTestDashboard();}else toast('Error: '+r.error,'err');});}
-async function runTestAutomation(){var bs=parseInt($('testAutoBatchSize').value)||5;var delay=parseInt($('testAutoDelay').value)||20;var ok=await showConfirm({icon:'▶️',title:'Run Test Auto-Send?',message:'Will send to '+bs+' pending test recipients with '+delay+'s delay.',okText:'Run Now',primary:true});if(!ok)return;toast('⏳ Running test auto-send...');api('/api/test/automation/run','POST',{batchSize:bs,delay:delay}).then(function(r){if(r.ok){if(r.sent>0)toast('✅ Sent '+r.sent+' test emails'+(r.failed?' ('+r.failed+' failed)':''));else toast(r.message||'No pending test recipients','warn');loadTestDashboard();}else toast('Error: '+r.error,'err');});}
+function sendTestEmail(){var to=$('testTo').value.trim(),subject=$('testSubject').value.trim(),body=$('testBody').value.trim();if(!to||!subject||!body)return toast('Fill To, Subject, and Body','err');var payload={to:to,subject:subject,body:body,includeSignature:true,includeLogo:false,selectedFileIds:[],useTestSignature:false};toast('Sending test...');api('/api/test/send','POST',payload).then(function(r){if(r.ok){toast('✅ Test sent to '+r.email);loadTestDashboard();}else toast('Error: '+r.error,'err');});}
+async function runTestAutomation(){var bs=parseInt($('testAutoBatchSize').value)||5;var delay=parseInt($('testAutoDelay').value)||20;var ok=await showConfirm({icon:'▶️',title:'Run Test Auto-Send?',message:'Will send to '+bs+' pending with '+delay+'s delay.',okText:'Run Now',primary:true});if(!ok)return;toast('⏳ Running...');api('/api/test/automation/run','POST',{batchSize:bs,delay:delay}).then(function(r){if(r.ok){if(r.sent>0)toast('✅ Sent '+r.sent+(r.failed?' ('+r.failed+' failed)':''));else toast(r.message||'No pending','warn');loadTestDashboard();}else toast('Error: '+r.error,'err');});}
 
+/* ADMIN */
 function loadAdmin(){$('adminUsersList').innerHTML='<div class="empty">Loading...</div>';api('/api/admin/dashboard').then(function(r){if(!r.ok){$('adminUsersList').innerHTML='<div class="empty">Error: '+esc(r.error)+'</div>';return;}ADMIN_USERS=r.users||[];$('adTotalUsers').innerText=r.stats.totalUsers;$('adTotalEmails').innerText=r.stats.totalEmails;$('adTotalOpened').innerText=r.stats.totalOpened;$('adTotalPending').innerText=r.stats.totalPending;$('adTotalSends').innerText=r.stats.totalSends||0;renderAdminUsers();});api('/api/admin/all-emails').then(function(r){if(!r.ok)return;ADMIN_ALL_EMAILS=r.emails||[];renderAllEmails();});}
-function renderAdminUsers(){var q=($('adminSearch').value||'').toLowerCase();var filtered=ADMIN_USERS.filter(function(u){return !q||u.email.toLowerCase().indexOf(q)!==-1||(u.name||'').toLowerCase().indexOf(q)!==-1||(u.appAccountId||'').toLowerCase().indexOf(q)!==-1;});if(!filtered.length){$('adminUsersList').innerHTML='<div class="empty">No users found</div>';return;}var h='';filtered.forEach(function(u){h+='<div class="tpl-card" style="flex-direction:column;align-items:stretch;cursor:pointer" data-uid="'+esc(u.id)+'" data-email="'+esc(u.email)+'">';h+='<div class="info"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div class="name">'+esc(u.name||'(no name)')+'</div><span class="app-id-pill">'+esc(u.appAccountId||'N/A')+'</span></div>';h+='<div class="sub" style="white-space:normal;word-break:break-all;margin-top:4px">'+esc(u.email)+'</div>';h+='<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><span class="badge sent">📨 '+u.total+'</span><span class="badge opened">✅ '+u.sent+'</span><span class="badge opened">👁 '+u.opened+'</span><span class="badge pending">⏳ '+u.pending+'</span><span class="badge count">📤 '+u.totalSends+'</span>'+(u.autoSend?'<span class="badge sent">🤖 Auto</span>':'')+'</div>';h+='</div></div>';});$('adminUsersList').innerHTML=h;$('adminUsersList').querySelectorAll('.tpl-card').forEach(function(el){el.onclick=function(){openUserEmails(this.getAttribute('data-uid'),this.getAttribute('data-email'));};});}
+function loadAdminAIUsage(){api('/api/admin/ai-usage').then(function(r){if(!r.ok)return;$('adAIUsers').innerText=r.summary.totalUsers||0;$('adAIActiveUsers').innerText=r.summary.activeAIUsers||0;$('adAITokensToday').innerText=(r.summary.tokensToday||0).toLocaleString();$('adAITokensMonth').innerText=(r.summary.tokensThisMonth||0).toLocaleString();$('adminAIUsageSummary').innerText=r.summary.monthKey||'';var w=$('adminAIUsageTable');if(!r.rows.length){w.innerHTML='<div class="empty">No AI usage yet</div>';return;}var h='<table class="data-table"><thead><tr><th>User</th><th>App ID</th><th>Today Calls</th><th>Today Tokens</th><th>Month Calls</th><th>Month Tokens</th><th>Providers</th></tr></thead><tbody>';r.rows.slice(0,100).forEach(function(row){var prov=Object.keys(row.monthProviders||{}).map(function(k){return '<span class="badge sent" style="font-size:9px;margin:1px">'+esc(k)+' ('+row.monthProviders[k]+')</span>';}).join('');h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(row.email)+'</td><td style="font-size:10px"><span class="app-id-pill">'+esc(row.appAccountId)+'</span></td><td style="font-size:11px;text-align:center"><b>'+row.todayCalls+'</b></td><td style="font-size:11px;text-align:center">'+(row.todayTokens||0).toLocaleString()+'</td><td style="font-size:11px;text-align:center"><b>'+row.monthCalls+'</b></td><td style="font-size:11px;text-align:center">'+(row.monthTokens||0).toLocaleString()+'</td><td>'+prov+'</td></tr>';});h+='</tbody></table>';w.innerHTML=h;});}
+function renderAdminUsers(){var q=($('adminSearch').value||'').toLowerCase();var filtered=ADMIN_USERS.filter(function(u){return !q||u.email.toLowerCase().indexOf(q)!==-1||(u.name||'').toLowerCase().indexOf(q)!==-1||(u.appAccountId||'').toLowerCase().indexOf(q)!==-1;});if(!filtered.length){$('adminUsersList').innerHTML='<div class="empty">No users found</div>';return;}var h='';filtered.forEach(function(u){h+='<div class="user-card"><div class="top"><div><div class="name">'+esc(u.name||'(no name)')+'</div><div class="email">'+esc(u.email)+'</div></div><span class="app-id-pill">'+esc(u.appAccountId||'N/A')+'</span></div>';h+='<div class="stats-row"><span class="badge sent">📨 '+u.total+'</span><span class="badge opened">✅ '+u.sent+'</span><span class="badge opened">👁 '+u.opened+'</span><span class="badge pending">⏳ '+u.pending+'</span><span class="badge count">📤 '+u.totalSends+'</span>'+(u.autoSend?'<span class="badge sent">🤖 Auto</span>':'')+'</div>';h+='<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><button class="btn ghost small" onclick="openUserEmails(\''+esc(u.id)+'\',\''+esc(u.email)+'\')">📧 View Emails</button>';if(u.email.toLowerCase()!==(USER.email||'').toLowerCase()){h+='<button class="btn danger small" onclick="deleteUserAccount(\''+esc(u.id)+'\',\''+esc(u.email)+'\')">🗑 Delete User</button>';}h+='</div></div>';});$('adminUsersList').innerHTML=h;}
+async function deleteUserAccount(uid,email){var ok=await showConfirm({icon:'⚠️',title:'Delete User Account?',message:'This will delete '+email+' and ALL their data (recipients, emails, files, logs). Cannot be undone.',okText:'Delete Account'});if(!ok)return;var ok2=await showConfirm({icon:'🚨',title:'Final Confirmation',message:'Really delete '+email+'? This is permanent.',okText:'Yes, Delete',primary:false});if(!ok2)return;toast('Deleting account...');api('/api/admin/user/'+uid,'DELETE').then(function(r){if(r.ok){toast('✅ User deleted');loadAdmin();loadAdminAIUsage();}else toast('Error: '+r.error,'err');});}
 function renderAllEmails(){var w=$('adminAllEmailsWrap');var q=($('adminEmailSearch').value||'').toLowerCase();var filtered=ADMIN_ALL_EMAILS.filter(function(e){return !q||(e.userEmail||'').toLowerCase().indexOf(q)!==-1||(e.recipientEmail||'').toLowerCase().indexOf(q)!==-1||(e.subject||'').toLowerCase().indexOf(q)!==-1;});if(!filtered.length){w.innerHTML='<div class="empty">No emails</div>';return;}var h='<table class="data-table"><thead><tr><th>User</th><th>Recipient</th><th>Subject</th><th>Sent</th><th>AI</th></tr></thead><tbody>';filtered.slice(0,500).forEach(function(e){var pred=e.aiPrediction||'GOOD';var prob=e.aiInboxProb||75;var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';h+='<tr><td style="font-size:10px;word-break:break-all">'+esc(e.userEmail)+'</td><td style="font-size:11px;word-break:break-all">'+esc(e.recipientEmail)+'</td><td style="font-size:10px">'+esc(e.subject||'—')+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(e.sentAt)+'</td><td><span style="padding:2px 8px;border-radius:12px;font-size:9px;font-weight:700;background:'+pc+'22;color:'+pc+'">'+prob+'%</span></td></tr>';});h+='</tbody></table>';w.innerHTML=h;}
-function openUserEmails(uid,email){$('modalTitle').innerText='History: '+email;$('modalContent').innerHTML='<div class="empty">Loading...</div>';$('modalBackdrop').classList.remove('hidden');api('/api/admin/user/'+uid+'/emails').then(function(r){if(!r.ok){$('modalContent').innerHTML='<div class="empty">Error</div>';return;}if(!r.emails.length){$('modalContent').innerHTML='<div class="empty">No emails</div>';return;}var sent=0,opened=0,spam=0;r.emails.forEach(function(e){if(e.status==='Opened')opened++;if(e.status==='Sent')sent++;if(e.aiPrediction==='SPAM')spam++;});var summary='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px"><div class="info-box" style="margin:0;text-align:center;padding:10px"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">Total</div><div style="font-size:18px;color:var(--cyan);margin-top:3px;font-weight:800">'+r.emails.length+'</div></div><div class="info-box" style="margin:0;text-align:center;padding:10px"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">Sent</div><div style="font-size:18px;color:#7dd3fc;margin-top:3px;font-weight:800">'+sent+'</div></div><div class="info-box" style="margin:0;text-align:center;padding:10px"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">Opened</div><div style="font-size:18px;color:#86efac;margin-top:3px;font-weight:800">'+opened+'</div></div><div class="info-box" style="margin:0;text-align:center;padding:10px"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">Spam</div><div style="font-size:18px;color:#fca5a5;margin-top:3px;font-weight:800">'+spam+'</div></div></div>';var h=summary+'<table class="data-table"><thead><tr><th>Recipient</th><th>Company</th><th>Subject</th><th>Sent</th><th>Status</th></tr></thead><tbody>';r.emails.forEach(function(e){var st=e.status||'Sent';var stCls=st==='Opened'?'opened':st==='Sent'?'sent':'pending';var stIcon=st==='Opened'?'👁':st==='Sent'?'📤':'⏳';h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(e.recipientEmail||'—')+'</td><td style="font-size:11px">'+esc(e.company||'—')+'</td><td style="font-size:11px;max-width:200px">'+esc((e.subject||'—').substring(0,60))+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(e.sentAt)+'</td><td><span class="badge '+stCls+'">'+stIcon+' '+esc(st)+'</span></td></tr>';});h+='</tbody></table>';$('modalContent').innerHTML=h;});}
+function openUserEmails(uid,email){$('modalTitle').innerText='History: '+email;$('modalContent').innerHTML='<div class="empty">Loading...</div>';$('modalBackdrop').classList.remove('hidden');api('/api/admin/user/'+uid+'/emails').then(function(r){if(!r.ok){$('modalContent').innerHTML='<div class="empty">Error</div>';return;}if(!r.emails.length){$('modalContent').innerHTML='<div class="empty">No emails</div>';return;}var h='<table class="data-table"><thead><tr><th>Recipient</th><th>Subject</th><th>Sent</th><th>Status</th></tr></thead><tbody>';r.emails.forEach(function(e){var st=e.status||'Sent';var stCls=st==='Opened'?'opened':st==='Sent'?'sent':'pending';var stIcon=st==='Opened'?'👁':st==='Sent'?'📤':'⏳';h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(e.recipientEmail||'—')+'</td><td style="font-size:11px">'+esc((e.subject||'—').substring(0,60))+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(e.sentAt)+'</td><td><span class="badge '+stCls+'">'+stIcon+' '+esc(st)+'</span></td></tr>';});h+='</tbody></table>';$('modalContent').innerHTML=h;});}
 function closeModal(){$('modalBackdrop').classList.add('hidden');}
 
 var url=new URL(window.location.href);

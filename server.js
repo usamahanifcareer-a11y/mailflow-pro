@@ -119,8 +119,44 @@ function localCategorize(fromEmail, subject, bodyText) {
   return 'OTHER';
 }
 
+/* ============ AI USAGE TRACKING ============ */
+async function logAIUsage(uid, provider, model, usage) {
+  if (!uid || !provider) return;
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const month = today.substring(0, 7);
+    const dayRef = db.collection('users').doc(uid).collection('aiUsage').doc(today);
+    const monthRef = db.collection('users').doc(uid).collection('aiUsage').doc('month_' + month);
+    const pt = (usage && usage.promptTokens) || (usage && usage.prompt_tokens) || 0;
+    const ct = (usage && usage.completionTokens) || (usage && usage.completion_tokens) || 0;
+    const tt = (usage && usage.totalTokens) || (usage && usage.total_tokens) || (pt + ct);
+    const batch = db.batch();
+    const daySnap = await dayRef.get();
+    const dayData = daySnap.exists ? daySnap.data() : { calls: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0, providers: {} };
+    dayData.calls = (dayData.calls || 0) + 1;
+    dayData.promptTokens = (dayData.promptTokens || 0) + pt;
+    dayData.completionTokens = (dayData.completionTokens || 0) + ct;
+    dayData.totalTokens = (dayData.totalTokens || 0) + tt;
+    dayData.providers = dayData.providers || {};
+    dayData.providers[provider] = (dayData.providers[provider] || 0) + 1;
+    dayData.updatedAt = new Date();
+    batch.set(dayRef, dayData, { merge: true });
+    const monthSnap = await monthRef.get();
+    const monthData = monthSnap.exists ? monthSnap.data() : { calls: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0, providers: {} };
+    monthData.calls = (monthData.calls || 0) + 1;
+    monthData.promptTokens = (monthData.promptTokens || 0) + pt;
+    monthData.completionTokens = (monthData.completionTokens || 0) + ct;
+    monthData.totalTokens = (monthData.totalTokens || 0) + tt;
+    monthData.providers = monthData.providers || {};
+    monthData.providers[provider] = (monthData.providers[provider] || 0) + 1;
+    monthData.updatedAt = new Date();
+    batch.set(monthRef, monthData, { merge: true });
+    await batch.commit();
+  } catch (e) {}
+}
+
 /* ============ AI PROVIDERS ============ */
-async function callGroq(prompt) {
+async function callGroq(prompt, uid) {
   if (!GROQ_KEY) throw new Error('No key');
   const models = ['openai/gpt-oss-120b','llama-3.3-70b-versatile','llama-3.1-8b-instant','llama3-70b-8192','mixtral-8x7b-32768','gemma2-9b-it'];
   let lastErr = null;
@@ -134,14 +170,17 @@ async function callGroq(prompt) {
       if (!r.ok) { lastErr = new Error('Groq ' + model + ' HTTP ' + r.status); continue; }
       const d = await r.json();
       const content = (d.choices?.[0]?.message?.content || '').trim();
-      if (content && content.length > 5) return content;
+      if (content && content.length > 5) {
+        logAIUsage(uid, 'groq', model, d.usage || {});
+        return content;
+      }
       lastErr = new Error('Groq ' + model + ' empty');
     } catch (e) { lastErr = e; }
   }
   throw lastErr || new Error('All Groq models failed');
 }
 
-async function callGemini(prompt) {
+async function callGemini(prompt, uid) {
   if (!GEMINI_KEY) throw new Error('No key');
   const models = ['gemini-2.0-flash-exp','gemini-2.0-flash','gemini-1.5-flash','gemini-1.5-flash-latest','gemini-1.5-pro'];
   let lastErr = null;
@@ -151,14 +190,22 @@ async function callGemini(prompt) {
       const model = client.getGenerativeModel({ model: modelName });
       const result = await model.generateContent(prompt);
       const text = result.response.text().trim();
-      if (text && text.length > 5) return text;
+      if (text && text.length > 5) {
+        const um = result.response.usageMetadata || {};
+        logAIUsage(uid, 'gemini', modelName, {
+          promptTokens: um.promptTokenCount || 0,
+          completionTokens: um.candidatesTokenCount || 0,
+          totalTokens: um.totalTokenCount || 0
+        });
+        return text;
+      }
       lastErr = new Error('Gemini ' + modelName + ' empty');
     } catch (e) { lastErr = new Error('Gemini ' + modelName + ': ' + e.message); }
   }
   throw lastErr || new Error('All Gemini models failed');
 }
 
-async function callOpenRouter(prompt) {
+async function callOpenRouter(prompt, uid) {
   if (!OPENROUTER_KEY) throw new Error('No key');
   const models = ['meta-llama/llama-3.3-70b-instruct:free','meta-llama/llama-3.1-8b-instruct:free','google/gemini-flash-1.5-8b:free','mistralai/mistral-7b-instruct:free','qwen/qwen-2.5-7b-instruct:free'];
   let lastErr = null;
@@ -166,20 +213,23 @@ async function callOpenRouter(prompt) {
     try {
       const r = await fetchWithTimeout('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENROUTER_KEY, 'HTTP-Referer': process.env.BACKEND_URL || 'https://mailflow-pro-ten.vercel.app', 'X-Title': 'MailFlow Pro' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENROUTER_KEY, 'HTTP-Referer': process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org', 'X-Title': 'MailFlow Pro' },
         body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt + '\nReturn valid JSON only.' }], temperature: 0.7, max_tokens: 1800 })
       }, 20000);
       if (!r.ok) { lastErr = new Error('OR ' + model + ' HTTP ' + r.status); continue; }
       const d = await r.json();
       const content = (d.choices?.[0]?.message?.content || '').trim();
-      if (content && content.length > 5) return content;
+      if (content && content.length > 5) {
+        logAIUsage(uid, 'openrouter', model, d.usage || {});
+        return content;
+      }
       lastErr = new Error('OR ' + model + ' empty');
     } catch (e) { lastErr = e; }
   }
   throw lastErr || new Error('All OpenRouter models failed');
 }
 
-async function callMistral(prompt) {
+async function callMistral(prompt, uid) {
   if (!MISTRAL_KEY) throw new Error('No key');
   const doFetch = async () => {
     const r = await fetchWithTimeout('https://api.mistral.ai/v1/chat/completions', {
@@ -190,7 +240,9 @@ async function callMistral(prompt) {
     if (r.status === 429) { const e = new Error('Rate limited'); e.retryAfter = parseInt(r.headers.get('retry-after') || '5', 10); throw e; }
     if (!r.ok) throw new Error('Mistral ' + r.status);
     const d = await r.json();
-    return (d.choices?.[0]?.message?.content || '').trim();
+    const content = (d.choices?.[0]?.message?.content || '').trim();
+    if (content) logAIUsage(uid, 'mistral', 'mistral-small-latest', d.usage || {});
+    return content;
   };
   let lastErr;
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -200,14 +252,19 @@ async function callMistral(prompt) {
   throw lastErr;
 }
 
-async function callAI(prompt) {
+async function callAI(prompt, uid) {
   const cached = getCachedResponse(prompt);
   if (cached) return cached;
-  const providers = [{ n: 'groq', f: callGroq },{ n: 'gemini', f: callGemini },{ n: 'openrouter', f: callOpenRouter },{ n: 'mistral', f: callMistral }];
+  const providers = [
+    { n: 'groq', f: callGroq },
+    { n: 'gemini', f: callGemini },
+    { n: 'openrouter', f: callOpenRouter },
+    { n: 'mistral', f: callMistral }
+  ];
   const errs = [];
   for (const p of providers) {
     try {
-      const text = await p.f(prompt);
+      const text = await p.f(prompt, uid);
       if (!text || text.length < 5) continue;
       setCachedResponse(prompt, text);
       return text;
@@ -237,7 +294,7 @@ app.use(cors({
   },
   credentials: true
 }));
-app.use(express.json({ limit: '6mb' }));
+app.use(express.json({ limit: '8mb' }));
 app.use(cookieSession({
   name: 'mf_session',
   keys: [process.env.SESSION_SECRET],
@@ -259,7 +316,6 @@ try {
   if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) serviceAccount = JSON.parse(Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf8'));
   else if (process.env.FIREBASE_SERVICE_ACCOUNT) serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 } catch (e) { console.error('Firebase parse error:', e.message); }
-
 try {
   if (!Object.keys(serviceAccount).length) throw new Error('Firebase service account missing');
   initializeApp({ credential: cert(serviceAccount) });
@@ -492,14 +548,8 @@ async function testImapConnection(email, appPassword) {
     auth: { user: email, pass: appPassword },
     logger: false, tls: { rejectUnauthorized: false }
   });
-  try {
-    await client.connect();
-    await client.logout();
-    return { ok: true };
-  } catch (e) {
-    try { await client.close(); } catch (err) {}
-    return { ok: false, error: e.message };
-  }
+  try { await client.connect(); await client.logout(); return { ok: true }; }
+  catch (e) { try { await client.close(); } catch (err) {} return { ok: false, error: e.message }; }
 }
 
 async function fetchImapEmails(email, appPassword, options = {}) {
@@ -536,21 +586,12 @@ async function fetchImapEmails(email, appPassword, options = {}) {
             const subj = env.subject || '(no subject)';
             const dt = env.date ? new Date(env.date).toISOString() : new Date().toISOString();
             const flags = m.flags || new Set();
-            const category = localCategorize(fromAddr, subj, '');
             emails.push({
-              uid: m.uid,
-              seq: m.seq,
-              messageId: env.messageId || '',
-              from: fromAddr,
-              fromName: fromName || fromAddr,
-              to: toAddr,
-              subject: subj,
-              date: dt,
-              snippet: '',
-              category: category,
-              folder: folder,
-              isRead: flags.has('\\Seen'),
-              attachments: []
+              uid: m.uid, seq: m.seq, messageId: env.messageId || '',
+              from: fromAddr, fromName: fromName || fromAddr, to: toAddr,
+              subject: subj, date: dt, snippet: '',
+              category: localCategorize(fromAddr, subj, ''),
+              folder: folder, isRead: flags.has('\\Seen'), attachments: []
             });
           } catch (pe) {}
         }
@@ -614,12 +655,8 @@ async function updateSenderMemory(userId, email) {
       await ref.set({
         senderEmail: email.from,
         senderName: email.fromName || email.from.split('@')[0],
-        totalEmails: 1,
-        firstEmailAt: new Date(),
-        lastEmailAt: new Date(),
-        lastSubject: email.subject,
-        categories: [category],
-        subjects: [email.subject]
+        totalEmails: 1, firstEmailAt: new Date(), lastEmailAt: new Date(),
+        lastSubject: email.subject, categories: [category], subjects: [email.subject]
       });
     }
   } catch (e) {}
@@ -627,19 +664,6 @@ async function updateSenderMemory(userId, email) {
 
 /* ============ HEALTH ============ */
 app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL }));
-
-app.get('/api/ai/test', async (req, res) => {
-  const results = {};
-  const testPrompt = 'Reply with only this JSON: {"ok":true}';
-  const providers = [['groq', callGroq, !!GROQ_KEY],['gemini', callGemini, !!GEMINI_KEY],['openrouter', callOpenRouter, !!OPENROUTER_KEY],['mistral', callMistral, !!MISTRAL_KEY]];
-  for (const [name, fn, hasKey] of providers) {
-    if (!hasKey) { results[name] = { status: 'NO_KEY' }; continue; }
-    const start = Date.now();
-    try { const t = await fn(testPrompt); results[name] = { status: 'OK', ms: Date.now() - start }; }
-    catch (e) { results[name] = { status: 'FAIL', error: e.message }; }
-  }
-  res.json({ ok: true, results });
-});
 
 /* ============ AUTH ============ */
 app.get('/auth/google', (req, res) => {
@@ -668,6 +692,7 @@ app.get('/auth/google/callback', async (req, res) => {
       data.dailyLimit = DEFAULT_DAILY_LIMIT; data.sendDelay = DEFAULT_SEND_DELAY;
       data.imapEnabled = false; data.imapAppPassword = null;
       data.aiProfile = {};
+      data.profilePicture = picture || '';
     } else {
       const ex = existing.data();
       if (!ex.appAccountId) data.appAccountId = generateAppAccountId();
@@ -723,6 +748,76 @@ app.get('/api/quota', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+/* ============ PROFILE ============ */
+app.get('/api/profile', authRequired, async (req, res) => {
+  try {
+    const d = await getUserData(req.session.user.id);
+    res.json({ ok: true, profile: {
+      name: d.name || '', email: d.email || '',
+      picture: d.profilePicture || d.picture || '',
+      appAccountId: d.appAccountId || '',
+      createdAt: d.createdAt || null
+    }});
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/profile', authRequired, async (req, res) => {
+  try {
+    const { name } = req.body;
+    const update = {};
+    if (name && typeof name === 'string') update.name = name.substring(0, 100);
+    if (Object.keys(update).length) {
+      await db.collection('users').doc(req.session.user.id).update(update);
+      if (req.session.user) req.session.user.name = update.name || req.session.user.name;
+    }
+    res.json({ ok: true });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/profile/picture', authRequired, async (req, res) => {
+  try {
+    const { base64, mimeType } = req.body;
+    if (!base64) return res.json({ ok: false, error: 'No image' });
+    const allowed = ['image/png','image/jpeg','image/jpg','image/webp'];
+    if (allowed.indexOf(mimeType) === -1) return res.json({ ok: false, error: 'Invalid image type' });
+    const buf = Buffer.from(base64, 'base64');
+    if (buf.length > 2 * 1024 * 1024) return res.json({ ok: false, error: 'Max 2MB' });
+    const uid = req.session.user.id;
+    const u = await getUserData(uid);
+    if (!u.tokens) return res.json({ ok: false, error: 'Session expired' });
+    const client = setUserOAuth(u.tokens);
+    const drive = google.drive({ version: 'v3', auth: client });
+    if (u.profilePictureFileId) { try { await drive.files.delete({ fileId: u.profilePictureFileId }); } catch (e) {} }
+    const up = await drive.files.create({
+      requestBody: { name: 'profile_' + uid, mimeType },
+      media: { mimeType, body: Readable.from(buf) },
+      fields: 'id'
+    });
+    const fid = up.data.id;
+    try { await drive.permissions.create({ fileId: fid, requestBody: { role: 'reader', type: 'anyone' } }); } catch (e) {}
+    const url = 'https://lh3.googleusercontent.com/d/' + fid;
+    await db.collection('users').doc(uid).update({ profilePicture: url, profilePictureFileId: fid });
+    if (req.session.user) req.session.user.picture = url;
+    res.json({ ok: true, url });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+/* ============ AI USAGE (USER) ============ */
+app.get('/api/ai/usage', authRequired, async (req, res) => {
+  try {
+    const uid = req.session.user.id;
+    const today = new Date().toISOString().split('T')[0];
+    const month = today.substring(0, 7);
+    const [daySnap, monthSnap] = await Promise.all([
+      db.collection('users').doc(uid).collection('aiUsage').doc(today).get(),
+      db.collection('users').doc(uid).collection('aiUsage').doc('month_' + month).get()
+    ]);
+    const day = daySnap.exists ? daySnap.data() : { calls: 0, totalTokens: 0, promptTokens: 0, completionTokens: 0, providers: {} };
+    const mon = monthSnap.exists ? monthSnap.data() : { calls: 0, totalTokens: 0, promptTokens: 0, completionTokens: 0, providers: {} };
+    res.json({ ok: true, today: day, month: mon, date: today, monthKey: month });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
 /* ============ AI PROFILE ============ */
 app.get('/api/ai-profile', authRequired, async (req, res) => {
   try {
@@ -732,10 +827,8 @@ app.get('/api/ai-profile', authRequired, async (req, res) => {
       fullName: p.fullName || d.name || '',
       designation: p.designation || (d.sigFields?.pos) || '',
       company: p.company || (d.sigFields?.company) || '',
-      industry: p.industry || '',
-      tone: p.tone || 'professional',
-      aboutMe: p.aboutMe || '',
-      commonPhrases: p.commonPhrases || ''
+      industry: p.industry || '', tone: p.tone || 'professional',
+      aboutMe: p.aboutMe || '', commonPhrases: p.commonPhrases || ''
     }});
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
@@ -763,48 +856,32 @@ app.post('/api/ai-profile', authRequired, async (req, res) => {
 app.post('/api/imap/connect', authRequired, async (req, res) => {
   try {
     const { appPassword } = req.body || {};
-    if (!appPassword || appPassword.replace(/\s/g, '').length < 16) {
-      return res.json({ ok: false, error: 'App password must be 16 characters. Please check and try again.' });
-    }
+    if (!appPassword || appPassword.replace(/\s/g, '').length < 16) return res.json({ ok: false, error: 'App password must be 16 characters.' });
     const cleanPass = appPassword.replace(/\s/g, '');
-    const userEmail = req.session.user.email;
-    const test = await testImapConnection(userEmail, cleanPass);
-    if (!test.ok) {
-      return res.json({ ok: false, error: 'Connection failed: ' + test.error + '. Make sure 2-Step Verification is enabled and app password is correct.' });
-    }
-    await db.collection('users').doc(req.session.user.id).update({
-      imapAppPassword: encrypt(cleanPass),
-      imapEnabled: true,
-      imapConnectedAt: new Date()
-    });
+    const test = await testImapConnection(req.session.user.email, cleanPass);
+    if (!test.ok) return res.json({ ok: false, error: 'Connection failed: ' + test.error });
+    await db.collection('users').doc(req.session.user.id).update({ imapAppPassword: encrypt(cleanPass), imapEnabled: true, imapConnectedAt: new Date() });
     res.json({ ok: true, message: 'IMAP connected successfully' });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-
 app.get('/api/imap/status', authRequired, async (req, res) => {
   try {
     const u = await getUserData(req.session.user.id);
     res.json({ ok: true, connected: !!u.imapEnabled, connectedAt: u.imapConnectedAt || null, lastSync: u.imapLastSync || null, totalSynced: u.imapTotalSynced || 0 });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-
 app.post('/api/imap/disconnect', authRequired, async (req, res) => {
-  try {
-    await db.collection('users').doc(req.session.user.id).update({ imapAppPassword: null, imapEnabled: false });
-    res.json({ ok: true });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
+  try { await db.collection('users').doc(req.session.user.id).update({ imapAppPassword: null, imapEnabled: false }); res.json({ ok: true }); }
+  catch (e) { res.json({ ok: false, error: e.message }); }
 });
-
 app.post('/api/imap/inbox', authRequired, async (req, res) => {
   try {
     const u = await getUserData(req.session.user.id);
     if (!u.imapEnabled || !u.imapAppPassword) return res.json({ ok: false, error: 'IMAP not connected' });
-    const appPassword = u.imapAppPassword;
-    if (!appPassword) return res.json({ ok: false, error: 'Cannot decrypt password' });
     const folder = req.body.folder || 'INBOX';
     const page = parseInt(req.body.page) || 1;
     const pageSize = Math.min(parseInt(req.body.pageSize) || 20, 50);
-    const result = await fetchImapEmails(u.email, appPassword, { folder, page, pageSize });
+    const result = await fetchImapEmails(u.email, u.imapAppPassword, { folder, page, pageSize });
     if (!result.ok) return res.json({ ok: false, error: result.error });
     const uid = req.session.user.id;
     const coll = db.collection('users').doc(uid).collection('imapEmails');
@@ -817,7 +894,6 @@ app.post('/api/imap/inbox', authRequired, async (req, res) => {
     res.json({ ok: true, emails: result.emails, total: result.total, hasMore: result.hasMore, page: result.page, pageSize: result.pageSize, folder: folder });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-
 app.post('/api/imap/body', authRequired, async (req, res) => {
   try {
     const u = await getUserData(req.session.user.id);
@@ -828,9 +904,7 @@ app.post('/api/imap/body', authRequired, async (req, res) => {
     const docId = folderKey + '_' + uid;
     const ref = db.collection('users').doc(req.session.user.id).collection('imapEmails').doc(docId);
     const cached = await ref.get();
-    if (cached.exists && cached.data().bodyFetched) {
-      return res.json({ ok: true, email: { id: docId, ...cached.data() } });
-    }
+    if (cached.exists && cached.data().bodyFetched) return res.json({ ok: true, email: { id: docId, ...cached.data() } });
     const result = await fetchImapBody(u.email, u.imapAppPassword, folder || 'INBOX', uid);
     if (!result.ok) return res.json({ ok: false, error: result.error });
     await ref.set({ ...result.body, bodyFetched: true, isRead: true }, { merge: true });
@@ -838,12 +912,9 @@ app.post('/api/imap/body', authRequired, async (req, res) => {
     res.json({ ok: true, email: { id: docId, ...fresh.data() } });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-
 app.delete('/api/imap/email/:id', authRequired, async (req, res) => {
-  try {
-    await db.collection('users').doc(req.session.user.id).collection('imapEmails').doc(req.params.id).delete();
-    res.json({ ok: true });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
+  try { await db.collection('users').doc(req.session.user.id).collection('imapEmails').doc(req.params.id).delete(); res.json({ ok: true }); }
+  catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
 /* ============ SENDER MEMORY ============ */
@@ -864,7 +935,7 @@ app.post('/api/ai/analyze-live', authRequired, async (req, res) => {
     try {
       const cleanBody = (body || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 1200);
       const prompt = `Analyze this email for spam score. Return ONLY JSON.\nSubject: "${(subject || '').substring(0, 200)}"\nBody: "${cleanBody}"\nReturn: {"score":0-100,"prediction":"EXCELLENT"|"GOOD"|"RISKY"|"SPAM","inboxProbability":0-100,"issues":[{"severity":"low"|"medium"|"high","message":"string"}],"suggestions":["string"],"tone":"string"}`;
-      const text = await callAI(prompt);
+      const text = await callAI(prompt, req.session.user.id);
       const parsed = safeParseJSON(text);
       if (parsed && typeof parsed.score === 'number') return res.json({ ok: true, ...parsed, aiPowered: true });
     } catch (aiErr) {}
@@ -895,7 +966,7 @@ Length: ${LM[length] || LM.medium}
 STRICT: No signature, no name, no contact info at end.
 Return: {"subject":"under 60 chars","body":"with \\n\\n breaks"}`;
     try {
-      const text = await callAI(prompt);
+      const text = await callAI(prompt, req.session.user.id);
       const parsed = safeParseJSON(text);
       if (parsed && parsed.subject && parsed.body) return res.json({ ok: true, subject: parsed.subject, body: stripSignature(parsed.body), aiPowered: true });
     } catch (e) {}
@@ -948,7 +1019,7 @@ app.post('/api/ai/analyze-cv', authRequired, async (req, res) => {
     if (looksLikeBinaryCv(text)) return res.json({ ok: false, error: 'CV not readable. Upload PDF/DOCX/TXT.' });
     if (!text || text.replace(/\s/g, '').length < 30) return res.json({ ok: false, error: 'CV too short' });
     const prompt = `You are an expert career coach. Analyze CV and write job application email.\n\nCV:\n"""${text.substring(0, 3500)}"""\n\nTarget Role: ${targetRole || 'Not specified'}\nJob Description: ${jobDescription ? jobDescription.substring(0, 600) : 'Not provided'}\n\nReturn ONLY JSON: {"subject":"under 65 chars","body":"email body with \\n\\n, NO signature","keySkills":["s1","s2","s3","s4"],"analysis":"2-3 sentences","score":0-100}`;
-    const aiText = await callAI(prompt);
+    const aiText = await callAI(prompt, req.session.user.id);
     const parsed = safeParseJSON(aiText);
     if (parsed && parsed.subject && parsed.body) return res.json({ ok: true, subject: parsed.subject, body: stripSignature(parsed.body), keySkills: parsed.keySkills || [], analysis: parsed.analysis || '', score: parsed.score || 70, aiPowered: true });
     res.json({ ok: false, error: 'AI could not parse CV' });
@@ -960,7 +1031,7 @@ app.post('/api/ai/generate-subjects', authRequired, async (req, res) => {
     const { context } = req.body;
     const prompt = `Generate 5 email subject lines (max 60 chars). Return ONLY JSON.\nContext: ${context || 'professional outreach'}\nReturn: {"subjects":["s1","s2","s3","s4","s5"]}`;
     try {
-      const text = await callAI(prompt);
+      const text = await callAI(prompt, req.session.user.id);
       const parsed = safeParseJSON(text);
       if (parsed && parsed.subjects && parsed.subjects.length >= 3) return res.json({ ok: true, subjects: parsed.subjects, aiPowered: true });
     } catch (e) {}
@@ -974,7 +1045,7 @@ app.post('/api/ai/improve-email', authRequired, async (req, res) => {
     const { subject, body } = req.body;
     const prompt = `Improve this email for inbox placement. Return ONLY JSON.\nSubject: "${subject || ''}"\nBody: "${(body || '').substring(0, 800)}"\nSTRICT: No signature, sign-off.\nReturn: {"improvedSubject":"...","improvedBody":"...","beforeScore":50,"afterScore":85}`;
     try {
-      const text = await callAI(prompt);
+      const text = await callAI(prompt, req.session.user.id);
       const parsed = safeParseJSON(text);
       if (parsed && parsed.improvedSubject) return res.json({ ok: true, improvedSubject: parsed.improvedSubject, improvedBody: stripSignature(parsed.improvedBody || ''), beforeScore: parsed.beforeScore || 50, afterScore: parsed.afterScore || 85, aiPowered: true });
     } catch (e) {}
@@ -1024,7 +1095,7 @@ app.get('/api/ai/best-time', authRequired, async (req, res) => {
     try {
       const hist = Object.entries(hs).map(([h, s]) => `Hour ${h}: sent=${s.sent}`).join('\n');
       const prompt = `Recommend 3 best hours (0-23). Return ONLY JSON.\nHistory:\n${hist || 'No data'}\nReturn: {"bestHours":[h1,h2,h3],"reasoning":"short"}`;
-      const text = await callAI(prompt);
+      const text = await callAI(prompt, uid);
       const parsed = safeParseJSON(text);
       if (parsed && parsed.bestHours) return res.json({ ok: true, ...parsed, aiPowered: true });
     } catch (e) {}
@@ -1062,15 +1133,10 @@ app.delete('/api/templates/:id', authRequired, async (req, res) => {
 app.get('/api/recipients', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
-    const { status, search } = req.query;
-    let q = db.collection('users').doc(uid).collection('recipients');
-    if (status && status !== 'all') q = q.where('status', '==', status);
-    q = q.orderBy('createdAt', 'desc').limit(1000);
-    const s = await q.get();
+    const s = await db.collection('users').doc(uid).collection('recipients').orderBy('createdAt', 'desc').limit(1000).get();
     const ls = await db.collection('users').doc(uid).collection('emailLog').get();
     const c = {}; ls.forEach(d => { const r = d.data().recipientId; c[r] = (c[r] || 0) + 1; });
     let l = []; s.forEach(d => { const da = d.data(); l.push({ id: d.id, ...da, sendCount: c[d.id] || 0 }); });
-    if (search) { const sq = search.toLowerCase(); l = l.filter(r => (r.email || '').toLowerCase().includes(sq) || (r.company || '').toLowerCase().includes(sq)); }
     res.json({ ok: true, recipients: l });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
@@ -1084,7 +1150,7 @@ app.post('/api/recipients', authRequired, async (req, res) => {
     for (const r of list) {
       if (!r.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email)) continue;
       const doc = ref.doc();
-      batch.set(doc, { company: (r.company || '').trim(), email: r.email.toLowerCase(), templateId: templateId || '', status: 'Pending', sentAt: null, openedAt: null, createdAt: new Date() });
+      batch.set(doc, { company: (r.company || '').trim(), email: r.email.toLowerCase(), templateId: templateId || '', status: 'Pending', sentAt: null, openedAt: null, everOpened: false, createdAt: new Date() });
       a++;
     }
     await batch.commit();
@@ -1184,7 +1250,6 @@ app.post('/api/signature', authRequired, async (req, res) => {
   try { const u = { signature: req.body.signature || '' }; if (req.body.fields) u.sigFields = req.body.fields; await db.collection('users').doc(req.session.user.id).update(u); res.json({ ok: true }); }
   catch (e) { res.json({ ok: false, error: e.message }); }
 });
-
 app.get('/api/prefs', authRequired, async (req, res) => {
   try {
     const d = await getUserData(req.session.user.id);
@@ -1210,7 +1275,9 @@ app.get('/api/stats', authRequired, async (req, res) => {
     const uid = req.session.user.id;
     const t = await db.collection('users').doc(uid).collection('recipients').count().get();
     const s = await db.collection('users').doc(uid).collection('recipients').where('status', 'in', ['Sent', 'Opened']).count().get();
-    const o = await db.collection('users').doc(uid).collection('recipients').where('status', '==', 'Opened').count().get();
+    // PERMANENT opened count (everOpened flag)
+    const oSnap = await db.collection('users').doc(uid).collection('recipients').where('everOpened', '==', true).get();
+    const o = { data: () => ({ count: oSnap.size }) };
     const p = await db.collection('users').doc(uid).collection('recipients').where('status', '==', 'Pending').count().get();
     const ts = await db.collection('users').doc(uid).collection('emailLog').count().get();
     res.json({ ok: true, stats: { total: t.data().count, sent: s.data().count, opened: o.data().count, pending: p.data().count, totalSends: ts.data().count } });
@@ -1258,6 +1325,8 @@ async function sendOne(userId, userEmail, recipientId, options) {
   const r = await db.collection('users').doc(userId).collection('recipients').doc(recipientId).get();
   if (!r.exists) throw new Error('Not found');
   const rec = r.data();
+
+  // Delay only if NOT skipped
   if (u.lastSendTime && !options.skipDelay) {
     const l = u.lastSendTime._seconds ? u.lastSendTime._seconds * 1000 : new Date(u.lastSendTime).getTime();
     const delaySec = u.sendDelay !== undefined ? Number(u.sendDelay) : DEFAULT_SEND_DELAY;
@@ -1267,6 +1336,7 @@ async function sendOne(userId, userEmail, recipientId, options) {
     const mg = delayMs + jitter;
     if (el < mg) await sleep(mg - el);
   }
+
   const c = setUserOAuth(u.tokens);
   const g = google.gmail({ version: 'v1', auth: c });
   let t;
@@ -1305,15 +1375,16 @@ async function sendOne(userId, userEmail, recipientId, options) {
   }
   const logRef = await db.collection('users').doc(userId).collection('emailLog').add({ recipientId, recipientEmail: rec.email, company: rec.company || '', subject, sentAt: new Date(), attachmentsCount: atts.length, aiPrediction: lp.prediction, aiScore: lp.score, aiInboxProb: lp.inboxProbability, sendTrackToken, openedAt: null });
   const logId = logRef.id;
-  const trackUrl = (process.env.BACKEND_URL || 'https://mailflow-pro-ten.vercel.app') + '/track/' + logId + '?u=' + userId + '&t=' + sendTrackToken;
+  const trackUrl = (process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org') + '/track/' + logId + '?u=' + userId + '&t=' + sendTrackToken;
   const pix = '<img src="' + trackUrl + '" width="1" height="1" alt="" style="border:0;display:block;width:1px;height:1px">';
   const raw = buildMime(u.name || 'MailFlow User', userEmail, rec.email, subject, full + pix, atts, { isBulk: true });
   await g.users.messages.send({ userId: 'me', requestBody: { raw } });
-  const currentStatus = rec.status || 'Pending';
-  const newStatus = (currentStatus === 'Opened') ? 'Opened' : 'Sent';
-  const updateData = { status: newStatus, lastSentAt: new Date() };
-  if (currentStatus !== 'Opened') updateData.sentAt = new Date();
+
+  // FIX: Status = LATEST email ka status (resend pe Sent hoga). everOpened permanent.
+  const everOpenedFlag = rec.everOpened === true || rec.status === 'Opened';
+  const updateData = { status: 'Sent', lastSentAt: new Date(), sentAt: new Date(), everOpened: everOpenedFlag };
   await db.collection('users').doc(userId).collection('recipients').doc(recipientId).update(updateData);
+
   await db.collection('users').doc(userId).update({ lastSendTime: new Date() });
   const todayKey = new Date().toISOString().split('T')[0];
   const sr = db.collection('users').doc(userId).collection('stats').doc(todayKey);
@@ -1351,7 +1422,7 @@ app.get('/track/:id', async (req, res) => {
       if (type === 'test') {
         const r = await db.collection('users').doc(u).collection('testRecipients').doc(req.params.id).get();
         if (r.exists && r.data().trackToken === t) {
-          if (r.data().status !== 'Opened') await db.collection('users').doc(u).collection('testRecipients').doc(req.params.id).update({ status: 'Opened', openedAt: new Date() });
+          await db.collection('users').doc(u).collection('testRecipients').doc(req.params.id).update({ status: 'Opened', openedAt: new Date(), everOpened: true });
         }
       } else {
         const r = await db.collection('users').doc(u).collection('emailLog').doc(req.params.id).get();
@@ -1361,7 +1432,9 @@ app.get('/track/:id', async (req, res) => {
             const recId = r.data().recipientId;
             if (recId) {
               const rec = await db.collection('users').doc(u).collection('recipients').doc(recId).get();
-              if (rec.exists && rec.data().status !== 'Opened') await db.collection('users').doc(u).collection('recipients').doc(recId).update({ status: 'Opened', openedAt: new Date() });
+              if (rec.exists) {
+                await db.collection('users').doc(u).collection('recipients').doc(recId).update({ status: 'Opened', openedAt: new Date(), everOpened: true });
+              }
             }
           }
         }
@@ -1372,13 +1445,14 @@ app.get('/track/:id', async (req, res) => {
   res.set('Content-Type', 'image/gif'); res.send(px);
 });
 
-/* ============ TEST LAB (admin only) ============ */
+/* ============ TEST LAB ============ */
 app.get('/api/test/stats', adminRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
     const t = await db.collection('users').doc(uid).collection('testRecipients').count().get();
     const s = await db.collection('users').doc(uid).collection('testRecipients').where('status', 'in', ['Sent', 'Opened']).count().get();
-    const o = await db.collection('users').doc(uid).collection('testRecipients').where('status', '==', 'Opened').count().get();
+    const oSnap = await db.collection('users').doc(uid).collection('testRecipients').where('everOpened', '==', true).get();
+    const o = { data: () => ({ count: oSnap.size }) };
     const p = await db.collection('users').doc(uid).collection('testRecipients').where('status', '==', 'Pending').count().get();
     const ts = await db.collection('users').doc(uid).collection('testLog').count().get();
     res.json({ ok: true, stats: { total: t.data().count, sent: s.data().count, opened: o.data().count, pending: p.data().count, totalSends: ts.data().count } });
@@ -1398,7 +1472,7 @@ app.post('/api/test/recipients', adminRequired, async (req, res) => {
     for (const r of list) {
       if (!r.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email)) continue;
       const doc = ref.doc();
-      batch.set(doc, { company: (r.company || '').trim(), email: r.email.toLowerCase(), status: 'Pending', sentAt: null, openedAt: null, createdAt: new Date() });
+      batch.set(doc, { company: (r.company || '').trim(), email: r.email.toLowerCase(), status: 'Pending', sentAt: null, openedAt: null, everOpened: false, createdAt: new Date() });
       a++;
     }
     await batch.commit();
@@ -1482,13 +1556,14 @@ app.post('/api/test/automation/run', adminRequired, async (req, res) => {
         const sigHtml = sig ? '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>' : '';
         const tok = crypto.randomBytes(16).toString('hex');
         await db.collection('users').doc(uid).collection('testRecipients').doc(r.id).update({ trackToken: tok });
-        const tu = (process.env.BACKEND_URL || 'https://mailflow-pro-ten.vercel.app') + '/track/' + r.id + '?u=' + uid + '&t=' + tok + '&type=test';
+        const tu = (process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org') + '/track/' + r.id + '?u=' + uid + '&t=' + tok + '&type=test';
         const pix = '<img src="' + tu + '" width="1" height="1" alt="" style="border:0;display:block;width:1px;height:1px">';
         const full = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">' + bodyHtml + sigHtml + pix + '</div>';
         const raw = buildMime(u.name || 'User', u.email, rec.email, subject, full, [], { isBulk: false });
         await gmail.users.messages.send({ userId: 'me', requestBody: { raw } });
         await db.collection('users').doc(uid).collection('testLog').add({ recipientEmail: rec.email, subject, body: bodyText, sentAt: new Date(), recipientId: r.id, attachmentsCount: 0 });
-        await db.collection('users').doc(uid).collection('testRecipients').doc(r.id).update({ status: 'Sent', sentAt: new Date() });
+        const wasOpened = rec.everOpened === true;
+        await db.collection('users').doc(uid).collection('testRecipients').doc(r.id).update({ status: 'Sent', sentAt: new Date(), everOpened: wasOpened });
         sent++;
         if (delay > 0 && sent < batchSize) await sleep(delay * 1000);
       } catch (e) { failed++; }
@@ -1525,7 +1600,7 @@ app.post('/api/test/send', adminRequired, async (req, res) => {
     if (recId) {
       const trackTok = crypto.randomBytes(16).toString('hex');
       await db.collection('users').doc(uid).collection('testRecipients').doc(recId).update({ trackToken: trackTok });
-      const tu = (process.env.BACKEND_URL || 'https://mailflow-pro-ten.vercel.app') + '/track/' + recId + '?u=' + uid + '&t=' + trackTok + '&type=test';
+      const tu = (process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org') + '/track/' + recId + '?u=' + uid + '&t=' + trackTok + '&type=test';
       pix = '<img src="' + tu + '" width="1" height="1" alt="" style="border:0;display:block;width:1px;height:1px">';
     }
     const bodyHtml = body.replace(/\n/g, '<br>');
@@ -1545,8 +1620,8 @@ app.post('/api/test/send', adminRequired, async (req, res) => {
     await db.collection('users').doc(uid).collection('testLog').add({ recipientEmail: targetEmail, subject, body, sentAt: new Date(), recipientId: recId || '', attachmentsCount: atts.length });
     if (recId) {
       const rec = await db.collection('users').doc(uid).collection('testRecipients').doc(recId).get();
-      const prev = rec.exists ? (rec.data().status || '') : '';
-      await db.collection('users').doc(uid).collection('testRecipients').doc(recId).update({ status: prev === 'Opened' ? 'Opened' : 'Sent', lastSentAt: new Date(), sentAt: prev === 'Opened' && rec.data().sentAt ? rec.data().sentAt : new Date() });
+      const wasOpened = rec.exists && rec.data().everOpened === true;
+      await db.collection('users').doc(uid).collection('testRecipients').doc(recId).update({ status: 'Sent', lastSentAt: new Date(), sentAt: new Date(), everOpened: wasOpened });
     }
     res.json({ ok: true, email: targetEmail });
   } catch (e) { res.json({ ok: false, error: e.message }); }
@@ -1580,9 +1655,9 @@ async function runAutoSend(uid, ue, ud) {
   const delaySec = ud.sendDelay !== undefined ? Number(ud.sendDelay) : DEFAULT_SEND_DELAY;
   for (const r of ps.docs) {
     try {
-      await sendOne(uid, ue, r.id, { force: true, includeSignature: ud.autoSendIncludeSignature !== false, includeLogo: ud.autoSendIncludeLogo !== false, includeAttachments: true });
+      await sendOne(uid, ue, r.id, { force: true, skipDelay: true, includeSignature: ud.autoSendIncludeSignature !== false, includeLogo: ud.autoSendIncludeLogo !== false, includeAttachments: true });
       s++;
-      await sleep(delaySec * 1000 + Math.floor(Math.random() * 1000));
+      if (delaySec > 0) await sleep(delaySec * 1000 + Math.floor(Math.random() * 1000));
     } catch (e) { f++; if (e.code === 'QUIET_HOURS' || e.code === 'DAILY_LIMIT_REACHED') break; }
   }
   if (s > 0) await db.collection('users').doc(uid).update({ totalAutoSent: (ud.totalAutoSent || 0) + s, lastAutoSendRun: new Date() });
@@ -1627,21 +1702,22 @@ app.get('/api/admin/dashboard', adminRequired, async (req, res) => {
     let tE = 0, tS = 0, tO = 0, tP = 0, tSd = 0;
     for (const u of us.docs) {
       const d = u.data();
-      const [t, s, o, p, sd] = await Promise.all([
+      const [t, s, oSnap, p, sd] = await Promise.all([
         db.collection('users').doc(u.id).collection('recipients').count().get(),
         db.collection('users').doc(u.id).collection('recipients').where('status', 'in', ['Sent', 'Opened']).count().get(),
-        db.collection('users').doc(u.id).collection('recipients').where('status', '==', 'Opened').count().get(),
+        db.collection('users').doc(u.id).collection('recipients').where('everOpened', '==', true).get(),
         db.collection('users').doc(u.id).collection('recipients').where('status', '==', 'Pending').count().get(),
         db.collection('users').doc(u.id).collection('emailLog').count().get()
       ]);
-      const tc = t.data().count, sc = s.data().count, oc = o.data().count, pc = p.data().count, sdc = sd.data().count;
+      const tc = t.data().count, sc = s.data().count, oc = oSnap.size, pc = p.data().count, sdc = sd.data().count;
       tE += tc; tS += sc; tO += oc; tP += pc; tSd += sdc;
-      users.push({ id: u.id, email: d.email, name: d.name, picture: d.picture || '', appAccountId: d.appAccountId || 'N/A', autoSend: !!d.autoSend, totalAutoSent: d.totalAutoSent || 0, createdAt: d.createdAt ? d.createdAt.toDate().toISOString() : '', total: tc, sent: sc, opened: oc, pending: pc, totalSends: sdc });
+      users.push({ id: u.id, email: d.email, name: d.name, picture: d.profilePicture || d.picture || '', appAccountId: d.appAccountId || 'N/A', autoSend: !!d.autoSend, totalAutoSent: d.totalAutoSent || 0, createdAt: d.createdAt ? d.createdAt.toDate().toISOString() : '', total: tc, sent: sc, opened: oc, pending: pc, totalSends: sdc });
     }
     users.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
     res.json({ ok: true, users, stats: { totalUsers: users.length, totalEmails: tE, totalSent: tS, totalOpened: tO, totalPending: tP, totalSends: tSd } });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
+
 app.get('/api/admin/user/:id/emails', adminRequired, async (req, res) => {
   try {
     const uid = req.params.id;
@@ -1659,6 +1735,7 @@ app.get('/api/admin/user/:id/emails', adminRequired, async (req, res) => {
     res.json({ ok: true, emails });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
+
 app.get('/api/admin/all-emails', adminRequired, async (req, res) => {
   try {
     const us = await db.collection('users').get();
@@ -1673,6 +1750,66 @@ app.get('/api/admin/all-emails', adminRequired, async (req, res) => {
     }
     all.sort((a, b) => { const ta = a.sentAt?._seconds || 0; const tb = b.sentAt?._seconds || 0; return tb - ta; });
     res.json({ ok: true, emails: all.slice(0, 1000) });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/admin/ai-usage', adminRequired, async (req, res) => {
+  try {
+    const us = await db.collection('users').get();
+    const today = new Date().toISOString().split('T')[0];
+    const month = today.substring(0, 7);
+    const rows = [];
+    let totalToday = 0, totalMonth = 0, totalUsersWithAI = 0;
+    for (const u of us.docs) {
+      const d = u.data();
+      const [dSnap, mSnap] = await Promise.all([
+        db.collection('users').doc(u.id).collection('aiUsage').doc(today).get(),
+        db.collection('users').doc(u.id).collection('aiUsage').doc('month_' + month).get()
+      ]);
+      const day = dSnap.exists ? dSnap.data() : { calls: 0, totalTokens: 0, providers: {} };
+      const mon = mSnap.exists ? mSnap.data() : { calls: 0, totalTokens: 0, providers: {} };
+      if ((mon.calls || 0) > 0) totalUsersWithAI++;
+      totalToday += day.totalTokens || 0;
+      totalMonth += mon.totalTokens || 0;
+      rows.push({
+        id: u.id, email: d.email, name: d.name,
+        appAccountId: d.appAccountId || 'N/A',
+        todayCalls: day.calls || 0, todayTokens: day.totalTokens || 0, todayProviders: day.providers || {},
+        monthCalls: mon.calls || 0, monthTokens: mon.totalTokens || 0, monthProviders: mon.providers || {}
+      });
+    }
+    rows.sort((a, b) => (b.monthTokens || 0) - (a.monthTokens || 0));
+    res.json({ ok: true, rows, summary: { totalUsers: us.size, activeAIUsers: totalUsersWithAI, tokensToday: totalToday, tokensThisMonth: totalMonth, monthKey: month, date: today } });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.delete('/api/admin/user/:id', adminRequired, async (req, res) => {
+  try {
+    const uid = req.params.id;
+    if (!uid) return res.json({ ok: false, error: 'Missing user id' });
+    const target = await db.collection('users').doc(uid).get();
+    if (!target.exists) return res.json({ ok: false, error: 'User not found' });
+    const email = (target.data().email || '').toLowerCase();
+    if (email === ADMIN_EMAIL) return res.json({ ok: false, error: 'Cannot delete admin account' });
+    const subcollections = ['recipients', 'templates', 'emailLog', 'files', 'stats', 'senderMemory', 'imapEmails', 'testRecipients', 'testLog', 'aiUsage'];
+    for (const coll of subcollections) {
+      let more = true;
+      while (more) {
+        const snap = await db.collection('users').doc(uid).collection(coll).limit(400).get();
+        if (snap.empty) { more = false; break; }
+        const b = db.batch();
+        snap.forEach(d => b.delete(d.ref));
+        await b.commit();
+        if (snap.size < 400) more = false;
+      }
+    }
+    await db.collection('users').doc(uid).delete();
+    try {
+      const tokens = target.data().tokens;
+      const dec = typeof tokens === 'string' ? decrypt(tokens) : tokens;
+      if (dec && dec.access_token) await fetch('https://oauth2.googleapis.com/revoke?token=' + dec.access_token, { method: 'POST' }).catch(() => {});
+    } catch (e) {}
+    res.json({ ok: true, deleted: true, email });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
