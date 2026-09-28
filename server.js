@@ -119,19 +119,20 @@ function localCategorize(fromEmail, subject, bodyText) {
   return 'OTHER';
 }
 
-/* ============ AI USAGE TRACKING ============ */
+/* ============ AI USAGE TRACKING (daily + monthly + TOTAL) ============ */
 async function logAIUsage(uid, provider, model, usage) {
   if (!uid || !provider) return;
   try {
     const today = new Date().toISOString().split('T')[0];
     const month = today.substring(0, 7);
-    const dayRef = db.collection('users').doc(uid).collection('aiUsage').doc(today);
-    const monthRef = db.collection('users').doc(uid).collection('aiUsage').doc('month_' + month);
     const pt = (usage && usage.promptTokens) || (usage && usage.prompt_tokens) || 0;
     const ct = (usage && usage.completionTokens) || (usage && usage.completion_tokens) || 0;
     const tt = (usage && usage.totalTokens) || (usage && usage.total_tokens) || (pt + ct);
+    const dayRef = db.collection('users').doc(uid).collection('aiUsage').doc(today);
+    const monthRef = db.collection('users').doc(uid).collection('aiUsage').doc('month_' + month);
+    const totalRef = db.collection('users').doc(uid).collection('aiUsage').doc('total');
     const batch = db.batch();
-    const daySnap = await dayRef.get();
+    const [daySnap, monthSnap, totalSnap] = await Promise.all([dayRef.get(), monthRef.get(), totalRef.get()]);
     const dayData = daySnap.exists ? daySnap.data() : { calls: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0, providers: {} };
     dayData.calls = (dayData.calls || 0) + 1;
     dayData.promptTokens = (dayData.promptTokens || 0) + pt;
@@ -141,7 +142,6 @@ async function logAIUsage(uid, provider, model, usage) {
     dayData.providers[provider] = (dayData.providers[provider] || 0) + 1;
     dayData.updatedAt = new Date();
     batch.set(dayRef, dayData, { merge: true });
-    const monthSnap = await monthRef.get();
     const monthData = monthSnap.exists ? monthSnap.data() : { calls: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0, providers: {} };
     monthData.calls = (monthData.calls || 0) + 1;
     monthData.promptTokens = (monthData.promptTokens || 0) + pt;
@@ -151,6 +151,16 @@ async function logAIUsage(uid, provider, model, usage) {
     monthData.providers[provider] = (monthData.providers[provider] || 0) + 1;
     monthData.updatedAt = new Date();
     batch.set(monthRef, monthData, { merge: true });
+    const totalData = totalSnap.exists ? totalSnap.data() : { calls: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0, providers: {} };
+    totalData.calls = (totalData.calls || 0) + 1;
+    totalData.promptTokens = (totalData.promptTokens || 0) + pt;
+    totalData.completionTokens = (totalData.completionTokens || 0) + ct;
+    totalData.totalTokens = (totalData.totalTokens || 0) + tt;
+    totalData.providers = totalData.providers || {};
+    totalData.providers[provider] = (totalData.providers[provider] || 0) + 1;
+    totalData.updatedAt = new Date();
+    totalData.firstUsed = totalData.firstUsed || new Date();
+    batch.set(totalRef, totalData, { merge: true });
     await batch.commit();
   } catch (e) {}
 }
@@ -170,10 +180,7 @@ async function callGroq(prompt, uid) {
       if (!r.ok) { lastErr = new Error('Groq ' + model + ' HTTP ' + r.status); continue; }
       const d = await r.json();
       const content = (d.choices?.[0]?.message?.content || '').trim();
-      if (content && content.length > 5) {
-        logAIUsage(uid, 'groq', model, d.usage || {});
-        return content;
-      }
+      if (content && content.length > 5) { logAIUsage(uid, 'groq', model, d.usage || {}); return content; }
       lastErr = new Error('Groq ' + model + ' empty');
     } catch (e) { lastErr = e; }
   }
@@ -192,11 +199,7 @@ async function callGemini(prompt, uid) {
       const text = result.response.text().trim();
       if (text && text.length > 5) {
         const um = result.response.usageMetadata || {};
-        logAIUsage(uid, 'gemini', modelName, {
-          promptTokens: um.promptTokenCount || 0,
-          completionTokens: um.candidatesTokenCount || 0,
-          totalTokens: um.totalTokenCount || 0
-        });
+        logAIUsage(uid, 'gemini', modelName, { promptTokens: um.promptTokenCount || 0, completionTokens: um.candidatesTokenCount || 0, totalTokens: um.totalTokenCount || 0 });
         return text;
       }
       lastErr = new Error('Gemini ' + modelName + ' empty');
@@ -219,10 +222,7 @@ async function callOpenRouter(prompt, uid) {
       if (!r.ok) { lastErr = new Error('OR ' + model + ' HTTP ' + r.status); continue; }
       const d = await r.json();
       const content = (d.choices?.[0]?.message?.content || '').trim();
-      if (content && content.length > 5) {
-        logAIUsage(uid, 'openrouter', model, d.usage || {});
-        return content;
-      }
+      if (content && content.length > 5) { logAIUsage(uid, 'openrouter', model, d.usage || {}); return content; }
       lastErr = new Error('OR ' + model + ' empty');
     } catch (e) { lastErr = e; }
   }
@@ -255,12 +255,7 @@ async function callMistral(prompt, uid) {
 async function callAI(prompt, uid) {
   const cached = getCachedResponse(prompt);
   if (cached) return cached;
-  const providers = [
-    { n: 'groq', f: callGroq },
-    { n: 'gemini', f: callGemini },
-    { n: 'openrouter', f: callOpenRouter },
-    { n: 'mistral', f: callMistral }
-  ];
+  const providers = [{ n: 'groq', f: callGroq },{ n: 'gemini', f: callGemini },{ n: 'openrouter', f: callOpenRouter },{ n: 'mistral', f: callMistral }];
   const errs = [];
   for (const p of providers) {
     try {
@@ -296,14 +291,8 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '8mb' }));
 app.use(cookieSession({
-  name: 'mf_session',
-  keys: [process.env.SESSION_SECRET],
-  maxAge: 72 * 60 * 60 * 1000,
-  secure: IS_VERCEL,
-  sameSite: IS_VERCEL ? 'none' : 'lax',
-  httpOnly: true,
-  signed: true,
-  overwrite: true
+  name: 'mf_session', keys: [process.env.SESSION_SECRET], maxAge: 72 * 60 * 60 * 1000,
+  secure: IS_VERCEL, sameSite: IS_VERCEL ? 'none' : 'lax', httpOnly: true, signed: true, overwrite: true
 }));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -325,9 +314,7 @@ const db = getFirestore();
 /* ============ OAUTH ============ */
 const SCOPES = ['https://www.googleapis.com/auth/gmail.send','https://www.googleapis.com/auth/userinfo.email','https://www.googleapis.com/auth/userinfo.profile','https://www.googleapis.com/auth/drive.file'];
 
-function createOAuthClient() {
-  return new google.auth.OAuth2(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, process.env.GOOGLE_REDIRECT_URI);
-}
+function createOAuthClient() { return new google.auth.OAuth2(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, process.env.GOOGLE_REDIRECT_URI); }
 function setUserOAuth(t) { const c = createOAuthClient(); c.setCredentials(t); return c; }
 
 function authRequired(req, res, next) {
@@ -377,6 +364,20 @@ function htmlToPlain(h) {
     .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\n\s*\n\s*\n/g, '\n\n').trim();
 }
 
+/* ============ MIGRATION HELPER ============ */
+async function migrateEverOpened(uid) {
+  try {
+    const snap = await db.collection('users').doc(uid).collection('recipients').where('status', '==', 'Opened').limit(500).get();
+    const batch = db.batch();
+    let n = 0;
+    snap.forEach(d => {
+      const da = d.data();
+      if (da.everOpened !== true) { batch.update(d.ref, { everOpened: true }); n++; }
+    });
+    if (n > 0) await batch.commit();
+  } catch (e) {}
+}
+
 /* ============ CV EXTRACTION ============ */
 function looksLikeBinaryCv(text) {
   if (!text) return true;
@@ -384,15 +385,11 @@ function looksLikeBinaryCv(text) {
   if (t.startsWith('%PDF') || t.startsWith('PK\x03\x04') || t.indexOf('%PDF-') === 0) return true;
   const sample = t.substring(0, 800);
   let bad = 0;
-  for (let i = 0; i < sample.length; i++) {
-    const c = sample.charCodeAt(i);
-    if (c === 0 || (c < 9) || (c > 13 && c < 32)) bad++;
-  }
+  for (let i = 0; i < sample.length; i++) { const c = sample.charCodeAt(i); if (c === 0 || (c < 9) || (c > 13 && c < 32)) bad++; }
   return bad > 12;
 }
 function decodePdfString(s) {
-  return s.replace(/\\n/g, '\n').replace(/\\r/g, '\n').replace(/\\t/g, '\t')
-    .replace(/\\\(/g, '(').replace(/\\\)/g, ')').replace(/\\\\/g, '\\')
+  return s.replace(/\\n/g, '\n').replace(/\\r/g, '\n').replace(/\\t/g, '\t').replace(/\\\(/g, '(').replace(/\\\)/g, ')').replace(/\\\\/g, '\\')
     .replace(/\\(\d{1,3})/g, function (_, oct) { return String.fromCharCode(parseInt(oct, 8)); });
 }
 function naivePdfExtract(buf) {
@@ -401,28 +398,15 @@ function naivePdfExtract(buf) {
     if (raw.indexOf('%PDF') === -1) return '';
     const chunks = [];
     const tj = raw.match(/\((?:\\.|[^\\)]){2,}\)(?:\s*Tj)?/g) || [];
-    for (const x of tj) {
-      const inner = x.replace(/\)\s*Tj\s*$/, '').replace(/^\(/, '').replace(/\)$/, '');
-      const d = decodePdfString(inner);
-      if (/[A-Za-z]{3,}/.test(d)) chunks.push(d);
-    }
+    for (const x of tj) { const inner = x.replace(/\)\s*Tj\s*$/, '').replace(/^\(/, '').replace(/\)$/, ''); const d = decodePdfString(inner); if (/[A-Za-z]{3,}/.test(d)) chunks.push(d); }
     const tjArr = raw.match(/\[(?:[^\]]{4,1200})\]\s*TJ/g) || [];
-    for (const x of tjArr) {
-      const parts = x.match(/\((?:\\.|[^\\)])+\)/g) || [];
-      const line = parts.map(p => decodePdfString(p.slice(1, -1))).join('');
-      if (/[A-Za-z]{3,}/.test(line)) chunks.push(line);
-    }
+    for (const x of tjArr) { const parts = x.match(/\((?:\\.|[^\\)])+\)/g) || []; const line = parts.map(p => decodePdfString(p.slice(1, -1))).join(''); if (/[A-Za-z]{3,}/.test(line)) chunks.push(line); }
     const text = chunks.join('\n').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').replace(/[^\S\n]+/g, ' ').trim();
     return text.length > 40 ? text : '';
   } catch (e) { return ''; }
 }
 async function extractPdfText(buf) {
-  try {
-    const pdfParse = require('pdf-parse');
-    const data = await pdfParse(buf);
-    const t = (data && data.text ? data.text : '').replace(/\u0000/g, '').trim();
-    if (t.replace(/\s/g, '').length > 30) return t;
-  } catch (e) {}
+  try { const pdfParse = require('pdf-parse'); const data = await pdfParse(buf); const t = (data && data.text ? data.text : '').replace(/\u0000/g, '').trim(); if (t.replace(/\s/g, '').length > 30) return t; } catch (e) {}
   return naivePdfExtract(buf);
 }
 function extractDocxText(buf) {
@@ -432,9 +416,7 @@ function extractDocxText(buf) {
     let pos = zip.indexOf(Buffer.from(name));
     if (pos < 0) return '';
     let local = -1;
-    for (let i = Math.max(0, pos - 80); i < pos; i++) {
-      if (zip[i] === 0x50 && zip[i + 1] === 0x4b && zip[i + 2] === 0x03 && zip[i + 3] === 0x04) { local = i; break; }
-    }
+    for (let i = Math.max(0, pos - 80); i < pos; i++) { if (zip[i] === 0x50 && zip[i + 1] === 0x4b && zip[i + 2] === 0x03 && zip[i + 3] === 0x04) { local = i; break; } }
     if (local < 0) return '';
     const compression = zip.readUInt16LE(local + 8);
     const compSize = zip.readUInt32LE(local + 18);
@@ -458,8 +440,7 @@ async function extractCvFromBuffer(buf, filename, mimeType) {
   if (mime.includes('pdf') || name.endsWith('.pdf') || buf.slice(0, 5).toString() === '%PDF-') return extractPdfText(buf);
   if (mime.includes('wordprocessingml') || name.endsWith('.docx')) return extractDocxText(buf);
   if (mime.startsWith('text/') || name.endsWith('.txt') || name.endsWith('.md') || name.endsWith('.rtf')) {
-    let t = buf.toString('utf8');
-    if (t.charCodeAt(0) === 0xFEFF) t = t.slice(1);
+    let t = buf.toString('utf8'); if (t.charCodeAt(0) === 0xFEFF) t = t.slice(1);
     return t.replace(/\u0000/g, '').trim();
   }
   const asText = buf.toString('utf8');
@@ -478,7 +459,7 @@ function buildMime(fromName, fromEmail, to, subject, htmlBody, attachments, opti
   const mB = 'mixed_' + crypto.randomBytes(8).toString('hex');
   const aB = 'alt_' + crypto.randomBytes(8).toString('hex');
   const dom = fromEmail.split('@')[1] || 'gmail.com';
-  const msgId = '<' + crypto.randomBytes(16).toString('hex') + '.' + Date.now() + '.mailflow@' + dom + '>';
+  const msgId = options.messageId || ('<' + crypto.randomBytes(16).toString('hex') + '.' + Date.now() + '.mailflow@' + dom + '>');
   const plainText = htmlToPlain(htmlBody);
   const cleanSubject = sanitizeSubject(subject);
   const encodedSubject = /^[\x00-\x7F]*$/.test(cleanSubject) ? cleanSubject : '=?UTF-8?B?' + Buffer.from(cleanSubject, 'utf8').toString('base64') + '?=';
@@ -491,6 +472,8 @@ function buildMime(fromName, fromEmail, to, subject, htmlBody, attachments, opti
     'List-Unsubscribe-Post: List-Unsubscribe=One-Click',
     'X-Priority: 3', 'Importance: Normal'
   ];
+  if (options.inReplyTo) headers.push('In-Reply-To: ' + options.inReplyTo);
+  if (options.references) headers.push('References: ' + options.references);
   if (isBulk) headers.push('Precedence: bulk');
   const hasAtt = attachments && attachments.length > 0;
   if (hasAtt) {
@@ -541,23 +524,15 @@ function localAnalysis(subject, body) {
   return { score, prediction, inboxProbability, issues, suggestions, tone: 'professional', readability: 75, emotionalTone: 'neutral' };
 }
 
-/* ============ IMAP HELPERS ============ */
+/* ============ IMAP ============ */
 async function testImapConnection(email, appPassword) {
-  const client = new ImapFlow({
-    host: 'imap.gmail.com', port: 993, secure: true,
-    auth: { user: email, pass: appPassword },
-    logger: false, tls: { rejectUnauthorized: false }
-  });
+  const client = new ImapFlow({ host: 'imap.gmail.com', port: 993, secure: true, auth: { user: email, pass: appPassword }, logger: false, tls: { rejectUnauthorized: false } });
   try { await client.connect(); await client.logout(); return { ok: true }; }
   catch (e) { try { await client.close(); } catch (err) {} return { ok: false, error: e.message }; }
 }
 
 async function fetchImapEmails(email, appPassword, options = {}) {
-  const client = new ImapFlow({
-    host: 'imap.gmail.com', port: 993, secure: true,
-    auth: { user: email, pass: appPassword },
-    logger: false, tls: { rejectUnauthorized: false }
-  });
+  const client = new ImapFlow({ host: 'imap.gmail.com', port: 993, secure: true, auth: { user: email, pass: appPassword }, logger: false, tls: { rejectUnauthorized: false } });
   const emails = [];
   try {
     await client.connect();
@@ -573,9 +548,7 @@ async function fetchImapEmails(email, appPassword, options = {}) {
       if (end >= 1) {
         hasMore = start > 1;
         const raws = [];
-        for await (const message of client.fetch(`${start}:${end}`, { envelope: true, uid: true, flags: true })) {
-          raws.push(message);
-        }
+        for await (const message of client.fetch(`${start}:${end}`, { envelope: true, uid: true, flags: true })) { raws.push(message); }
         raws.reverse();
         for (const m of raws) {
           try {
@@ -586,31 +559,18 @@ async function fetchImapEmails(email, appPassword, options = {}) {
             const subj = env.subject || '(no subject)';
             const dt = env.date ? new Date(env.date).toISOString() : new Date().toISOString();
             const flags = m.flags || new Set();
-            emails.push({
-              uid: m.uid, seq: m.seq, messageId: env.messageId || '',
-              from: fromAddr, fromName: fromName || fromAddr, to: toAddr,
-              subject: subj, date: dt, snippet: '',
-              category: localCategorize(fromAddr, subj, ''),
-              folder: folder, isRead: flags.has('\\Seen'), attachments: []
-            });
+            emails.push({ uid: m.uid, seq: m.seq, messageId: env.messageId || '', from: fromAddr, fromName: fromName || fromAddr, to: toAddr, subject: subj, date: dt, snippet: '', category: localCategorize(fromAddr, subj, ''), folder: folder, isRead: flags.has('\\Seen'), attachments: [] });
           } catch (pe) {}
         }
       }
     }
     await client.logout();
     return { ok: true, emails: emails, total: total, hasMore: hasMore, page: page, pageSize: pageSize, folder: folder };
-  } catch (e) {
-    try { await client.close(); } catch (err) {}
-    return { ok: false, error: e.message };
-  }
+  } catch (e) { try { await client.close(); } catch (err) {} return { ok: false, error: e.message }; }
 }
 
 async function fetchImapBody(email, appPassword, folder, uid) {
-  const client = new ImapFlow({
-    host: 'imap.gmail.com', port: 993, secure: true,
-    auth: { user: email, pass: appPassword },
-    logger: false, tls: { rejectUnauthorized: false }
-  });
+  const client = new ImapFlow({ host: 'imap.gmail.com', port: 993, secure: true, auth: { user: email, pass: appPassword }, logger: false, tls: { rejectUnauthorized: false } });
   try {
     await client.connect();
     await client.mailboxOpen(folder || 'INBOX');
@@ -621,18 +581,14 @@ async function fetchImapBody(email, appPassword, folder, uid) {
       textBody: (parsed.text || '').substring(0, 10000),
       htmlBody: (parsed.html || '').substring(0, 30000),
       snippet: (parsed.text || '').substring(0, 200).replace(/\s+/g, ' '),
-      attachments: (parsed.attachments || []).map(a => ({
-        filename: a.filename || 'attachment',
-        size: a.size || 0,
-        contentType: a.contentType || 'application/octet-stream'
-      }))
+      messageId: parsed.messageId || '',
+      inReplyTo: parsed.inReplyTo || '',
+      references: parsed.references || '',
+      attachments: (parsed.attachments || []).map(a => ({ filename: a.filename || 'attachment', size: a.size || 0, contentType: a.contentType || 'application/octet-stream' }))
     };
     await client.logout();
     return { ok: true, body: body };
-  } catch (e) {
-    try { await client.close(); } catch (err) {}
-    return { ok: false, error: e.message };
-  }
+  } catch (e) { try { await client.close(); } catch (err) {} return { ok: false, error: e.message }; }
 }
 
 async function updateSenderMemory(userId, email) {
@@ -644,20 +600,9 @@ async function updateSenderMemory(userId, email) {
     const category = localCategorize(email.from, email.subject, email.textBody || '');
     if (existing.exists) {
       const data = existing.data();
-      await ref.update({
-        totalEmails: (data.totalEmails || 0) + 1,
-        lastEmailAt: new Date(),
-        lastSubject: email.subject,
-        categories: Array.from(new Set([...(data.categories || []), category])),
-        subjects: [...(data.subjects || []).slice(-9), email.subject]
-      });
+      await ref.update({ totalEmails: (data.totalEmails || 0) + 1, lastEmailAt: new Date(), lastSubject: email.subject, categories: Array.from(new Set([...(data.categories || []), category])), subjects: [...(data.subjects || []).slice(-9), email.subject] });
     } else {
-      await ref.set({
-        senderEmail: email.from,
-        senderName: email.fromName || email.from.split('@')[0],
-        totalEmails: 1, firstEmailAt: new Date(), lastEmailAt: new Date(),
-        lastSubject: email.subject, categories: [category], subjects: [email.subject]
-      });
+      await ref.set({ senderEmail: email.from, senderName: email.fromName || email.from.split('@')[0], totalEmails: 1, firstEmailAt: new Date(), lastEmailAt: new Date(), lastSubject: email.subject, categories: [category], subjects: [email.subject] });
     }
   } catch (e) {}
 }
@@ -702,17 +647,12 @@ app.get('/auth/google/callback', async (req, res) => {
     const fresh = await db.collection('users').doc(uid).get();
     req.session.user = { id: uid, email, name, picture, appAccountId: fresh.data().appAccountId, isAdmin: email.toLowerCase() === ADMIN_EMAIL };
     res.redirect((process.env.FRONTEND_URL || 'http://localhost:3000') + '?login=success');
-  } catch (err) {
-    res.redirect((process.env.FRONTEND_URL || 'http://localhost:3000') + '?login=error');
-  }
+  } catch (err) { res.redirect((process.env.FRONTEND_URL || 'http://localhost:3000') + '?login=error'); }
 });
 
 app.get('/api/me', async (req, res) => {
   if (req.session && req.session.user) {
-    if (!req.session.user.appAccountId) {
-      const d = await getUserData(req.session.user.id);
-      if (d && d.appAccountId) req.session.user.appAccountId = d.appAccountId;
-    }
+    if (!req.session.user.appAccountId) { const d = await getUserData(req.session.user.id); if (d && d.appAccountId) req.session.user.appAccountId = d.appAccountId; }
     res.json({ ok: true, user: req.session.user });
   } else res.json({ ok: false });
 });
@@ -752,15 +692,9 @@ app.get('/api/quota', authRequired, async (req, res) => {
 app.get('/api/profile', authRequired, async (req, res) => {
   try {
     const d = await getUserData(req.session.user.id);
-    res.json({ ok: true, profile: {
-      name: d.name || '', email: d.email || '',
-      picture: d.profilePicture || d.picture || '',
-      appAccountId: d.appAccountId || '',
-      createdAt: d.createdAt || null
-    }});
+    res.json({ ok: true, profile: { name: d.name || '', email: d.email || '', picture: d.profilePicture || d.picture || '', appAccountId: d.appAccountId || '', createdAt: d.createdAt || null } });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-
 app.post('/api/profile', authRequired, async (req, res) => {
   try {
     const { name } = req.body;
@@ -773,7 +707,6 @@ app.post('/api/profile', authRequired, async (req, res) => {
     res.json({ ok: true });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-
 app.post('/api/profile/picture', authRequired, async (req, res) => {
   try {
     const { base64, mimeType } = req.body;
@@ -788,11 +721,7 @@ app.post('/api/profile/picture', authRequired, async (req, res) => {
     const client = setUserOAuth(u.tokens);
     const drive = google.drive({ version: 'v3', auth: client });
     if (u.profilePictureFileId) { try { await drive.files.delete({ fileId: u.profilePictureFileId }); } catch (e) {} }
-    const up = await drive.files.create({
-      requestBody: { name: 'profile_' + uid, mimeType },
-      media: { mimeType, body: Readable.from(buf) },
-      fields: 'id'
-    });
+    const up = await drive.files.create({ requestBody: { name: 'profile_' + uid, mimeType }, media: { mimeType, body: Readable.from(buf) }, fields: 'id' });
     const fid = up.data.id;
     try { await drive.permissions.create({ fileId: fid, requestBody: { role: 'reader', type: 'anyone' } }); } catch (e) {}
     const url = 'https://lh3.googleusercontent.com/d/' + fid;
@@ -808,13 +737,15 @@ app.get('/api/ai/usage', authRequired, async (req, res) => {
     const uid = req.session.user.id;
     const today = new Date().toISOString().split('T')[0];
     const month = today.substring(0, 7);
-    const [daySnap, monthSnap] = await Promise.all([
+    const [daySnap, monthSnap, totalSnap] = await Promise.all([
       db.collection('users').doc(uid).collection('aiUsage').doc(today).get(),
-      db.collection('users').doc(uid).collection('aiUsage').doc('month_' + month).get()
+      db.collection('users').doc(uid).collection('aiUsage').doc('month_' + month).get(),
+      db.collection('users').doc(uid).collection('aiUsage').doc('total').get()
     ]);
     const day = daySnap.exists ? daySnap.data() : { calls: 0, totalTokens: 0, promptTokens: 0, completionTokens: 0, providers: {} };
     const mon = monthSnap.exists ? monthSnap.data() : { calls: 0, totalTokens: 0, promptTokens: 0, completionTokens: 0, providers: {} };
-    res.json({ ok: true, today: day, month: mon, date: today, monthKey: month });
+    const tot = totalSnap.exists ? totalSnap.data() : { calls: 0, totalTokens: 0, promptTokens: 0, completionTokens: 0, providers: {} };
+    res.json({ ok: true, today: day, month: mon, total: tot, date: today, monthKey: month });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -823,28 +754,18 @@ app.get('/api/ai-profile', authRequired, async (req, res) => {
   try {
     const d = await getUserData(req.session.user.id);
     const p = d.aiProfile || {};
-    res.json({ ok: true, profile: {
-      fullName: p.fullName || d.name || '',
-      designation: p.designation || (d.sigFields?.pos) || '',
-      company: p.company || (d.sigFields?.company) || '',
-      industry: p.industry || '', tone: p.tone || 'professional',
-      aboutMe: p.aboutMe || '', commonPhrases: p.commonPhrases || ''
-    }});
+    res.json({ ok: true, profile: { fullName: p.fullName || d.name || '', designation: p.designation || (d.sigFields?.pos) || '', company: p.company || (d.sigFields?.company) || '', industry: p.industry || '', tone: p.tone || 'professional', aboutMe: p.aboutMe || '', commonPhrases: p.commonPhrases || '' } });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-
 app.post('/api/ai-profile', authRequired, async (req, res) => {
   try {
     const { fullName, designation, company, industry, tone, aboutMe, commonPhrases } = req.body;
     await db.collection('users').doc(req.session.user.id).update({
       aiProfile: {
-        fullName: String(fullName || '').substring(0, 100),
-        designation: String(designation || '').substring(0, 150),
-        company: String(company || '').substring(0, 150),
-        industry: String(industry || '').substring(0, 100),
+        fullName: String(fullName || '').substring(0, 100), designation: String(designation || '').substring(0, 150),
+        company: String(company || '').substring(0, 150), industry: String(industry || '').substring(0, 100),
         tone: ['professional','friendly','casual','confident'].includes(tone) ? tone : 'professional',
-        aboutMe: String(aboutMe || '').substring(0, 500),
-        commonPhrases: String(commonPhrases || '').substring(0, 300),
+        aboutMe: String(aboutMe || '').substring(0, 500), commonPhrases: String(commonPhrases || '').substring(0, 300),
         updatedAt: new Date()
       }
     });
@@ -865,10 +786,8 @@ app.post('/api/imap/connect', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.get('/api/imap/status', authRequired, async (req, res) => {
-  try {
-    const u = await getUserData(req.session.user.id);
-    res.json({ ok: true, connected: !!u.imapEnabled, connectedAt: u.imapConnectedAt || null, lastSync: u.imapLastSync || null, totalSynced: u.imapTotalSynced || 0 });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
+  try { const u = await getUserData(req.session.user.id); res.json({ ok: true, connected: !!u.imapEnabled, connectedAt: u.imapConnectedAt || null, lastSync: u.imapLastSync || null, totalSynced: u.imapTotalSynced || 0 }); }
+  catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.post('/api/imap/disconnect', authRequired, async (req, res) => {
   try { await db.collection('users').doc(req.session.user.id).update({ imapAppPassword: null, imapEnabled: false }); res.json({ ok: true }); }
@@ -917,14 +836,31 @@ app.delete('/api/imap/email/:id', authRequired, async (req, res) => {
   catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+/* ============ REPLY FROM INBOX ============ */
+app.post('/api/inbox/reply', authRequired, async (req, res) => {
+  try {
+    const { to, subject, body, inReplyTo, references } = req.body;
+    if (!to || !subject || !body) return res.json({ ok: false, error: 'Missing fields' });
+    const uid = req.session.user.id;
+    const u = await getUserData(uid);
+    if (!u.tokens) return res.json({ ok: false, error: 'Session expired' });
+    const client = setUserOAuth(u.tokens);
+    const gmail = google.gmail({ version: 'v1', auth: client });
+    let sigHtml = '';
+    if (u.signature) sigHtml = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + u.signature + '</div>';
+    const bodyHtml = body.replace(/\n/g, '<br>');
+    const full = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">' + bodyHtml + sigHtml + '</div>';
+    const raw = buildMime(u.name || 'User', req.session.user.email, to, subject, full, [], { isBulk: false, inReplyTo: inReplyTo, references: references });
+    const r = await gmail.users.messages.send({ userId: 'me', requestBody: { raw } });
+    await db.collection('users').doc(uid).collection('replyLog').add({ to, subject, body, sentAt: new Date(), gmailId: r.data.id || '', inReplyTo: inReplyTo || '' });
+    res.json({ ok: true, id: r.data.id });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
 /* ============ SENDER MEMORY ============ */
 app.get('/api/memory/senders', authRequired, async (req, res) => {
-  try {
-    const snap = await db.collection('users').doc(req.session.user.id).collection('senderMemory').orderBy('lastEmailAt', 'desc').limit(200).get();
-    const senders = [];
-    snap.forEach(d => senders.push({ id: d.id, ...d.data() }));
-    res.json({ ok: true, senders });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
+  try { const snap = await db.collection('users').doc(req.session.user.id).collection('senderMemory').orderBy('lastEmailAt', 'desc').limit(200).get(); const senders = []; snap.forEach(d => senders.push({ id: d.id, ...d.data() })); res.json({ ok: true, senders }); }
+  catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
 /* ============ AI ROUTES ============ */
@@ -943,6 +879,54 @@ app.post('/api/ai/analyze-live', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+app.post('/api/ai/smart-reply', authRequired, async (req, res) => {
+  try {
+    const { originalSubject, originalBody, originalFrom, instruction } = req.body;
+    if (!originalBody) return res.json({ ok: false, error: 'No original body' });
+    const u = await getUserData(req.session.user.id);
+    const aiProfile = u.aiProfile || {};
+    const userName = aiProfile.fullName || u.name || u.email.split('@')[0];
+    const userCompany = aiProfile.company || (u.sigFields?.company) || '';
+    const userPos = aiProfile.designation || (u.sigFields?.pos) || '';
+    const userTone = aiProfile.tone || 'professional';
+    const userAbout = aiProfile.aboutMe || '';
+    const prompt = `You are an expert email assistant writing AS ${userName}. Write a thoughtful, professional reply to this incoming email.
+
+SENDER PROFILE:
+Name: ${userName}
+${userPos ? 'Position: ' + userPos : ''}
+${userCompany ? 'Company: ' + userCompany : ''}
+${userAbout ? 'About: ' + userAbout : ''}
+Preferred Tone: ${userTone}
+
+INCOMING EMAIL:
+From: ${originalFrom || 'Unknown'}
+Subject: ${originalSubject || '(no subject)'}
+Body: """${(originalBody || '').substring(0, 4000)}"""
+
+${instruction ? 'EXTRA INSTRUCTION: ' + instruction : ''}
+
+RULES:
+- Write in FIRST PERSON as ${userName}
+- Match tone: ${userTone}
+- Address EVERY point in the incoming email
+- 2-4 paragraphs, professional and clear
+- NO sign-off (no "Best regards", "Regards", "Thanks", "Sincerely")
+- NO name at end
+- Do NOT invent facts
+
+Return ONLY JSON: {"subject":"Re: ...","body":"complete reply with \\n\\n"}`;
+    try {
+      const text = await callAI(prompt, req.session.user.id);
+      const parsed = safeParseJSON(text);
+      if (parsed && parsed.body && parsed.body.length > 20) return res.json({ ok: true, subject: parsed.subject || ('Re: ' + originalSubject), body: stripSignature(parsed.body), aiPowered: true });
+    } catch (e) {}
+    const firstName = (originalFrom || '').match(/^([A-Za-z]+)/);
+    const greetName = firstName ? firstName[1] : 'there';
+    res.json({ ok: true, subject: 'Re: ' + (originalSubject || ''), body: `Dear ${greetName},\n\nThank you for your email. I will review it carefully and get back to you shortly.`, aiPowered: false });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
 app.post('/api/ai/write-email', authRequired, async (req, res) => {
   try {
     const { context, recipientName, recipientCompany, tone, length } = req.body;
@@ -955,16 +939,7 @@ app.post('/api/ai/write-email', authRequired, async (req, res) => {
     const writerAbout = aiProfile.aboutMe || '';
     const TM = { formal: 'professional', friendly: 'warm', casual: 'casual', persuasive: 'confident' };
     const LM = { short: 'under 80 words', medium: '100-150 words', long: '200-250 words' };
-    const prompt = `Write a professional email MESSAGE BODY ONLY. Return ONLY JSON.
-Writer: ${writerName}${writerDesig ? ', ' + writerDesig : ''}${writerCompany ? ' at ' + writerCompany : ''}
-${writerAbout ? 'About writer: ' + writerAbout : ''}
-Context: ${context}
-Recipient: ${recipientName || 'unknown'}
-Recipient Company: ${recipientCompany || 'unknown'}
-Tone: ${TM[tone] || TM.formal}
-Length: ${LM[length] || LM.medium}
-STRICT: No signature, no name, no contact info at end.
-Return: {"subject":"under 60 chars","body":"with \\n\\n breaks"}`;
+    const prompt = `Write a professional email MESSAGE BODY ONLY. Return ONLY JSON.\nWriter: ${writerName}${writerDesig ? ', ' + writerDesig : ''}${writerCompany ? ' at ' + writerCompany : ''}\n${writerAbout ? 'About writer: ' + writerAbout : ''}\nContext: ${context}\nRecipient: ${recipientName || 'unknown'}\nRecipient Company: ${recipientCompany || 'unknown'}\nTone: ${TM[tone] || TM.formal}\nLength: ${LM[length] || LM.medium}\nSTRICT: No signature, no name, no contact info at end.\nReturn: {"subject":"under 60 chars","body":"with \\n\\n breaks"}`;
     try {
       const text = await callAI(prompt, req.session.user.id);
       const parsed = safeParseJSON(text);
@@ -1059,8 +1034,7 @@ app.post('/api/ai/parse-bulk', authRequired, async (req, res) => {
     if (!text || !text.trim()) return res.json({ ok: false, error: 'No text' });
     const emailRx = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
     const lines = text.split(/\r?\n/).filter(l => l.trim());
-    const foundEmails = {};
-    const seenEmails = new Set();
+    const foundEmails = {}; const seenEmails = new Set();
     for (const line of lines) {
       const emails = line.match(emailRx) || [];
       if (!emails.length) continue;
@@ -1074,12 +1048,7 @@ app.post('/api/ai/parse-bulk', authRequired, async (req, res) => {
         const isSingleWord = !cleanLine.includes(' ');
         if (!looksLikeDomain && !(isSingleWord && /^[a-z0-9._-]+$/i.test(cleanLine))) company = cleanLine;
       }
-      for (const e of emails) {
-        const lower = e.toLowerCase();
-        if (seenEmails.has(lower)) continue;
-        seenEmails.add(lower);
-        foundEmails[lower] = company;
-      }
+      for (const e of emails) { const lower = e.toLowerCase(); if (seenEmails.has(lower)) continue; seenEmails.add(lower); foundEmails[lower] = company; }
     }
     const items = Object.keys(foundEmails).map(e => ({ email: e, company: foundEmails[e] }));
     res.json({ ok: true, items });
@@ -1133,6 +1102,7 @@ app.delete('/api/templates/:id', authRequired, async (req, res) => {
 app.get('/api/recipients', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
+    migrateEverOpened(uid).catch(() => {});
     const s = await db.collection('users').doc(uid).collection('recipients').orderBy('createdAt', 'desc').limit(1000).get();
     const ls = await db.collection('users').doc(uid).collection('emailLog').get();
     const c = {}; ls.forEach(d => { const r = d.data().recipientId; c[r] = (c[r] || 0) + 1; });
@@ -1269,18 +1239,20 @@ app.post('/api/prefs', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ STATS ============ */
+/* ============ STATS (FIXED: count both everOpened + status=Opened) ============ */
 app.get('/api/stats', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
     const t = await db.collection('users').doc(uid).collection('recipients').count().get();
     const s = await db.collection('users').doc(uid).collection('recipients').where('status', 'in', ['Sent', 'Opened']).count().get();
-    // PERMANENT opened count (everOpened flag)
-    const oSnap = await db.collection('users').doc(uid).collection('recipients').where('everOpened', '==', true).get();
-    const o = { data: () => ({ count: oSnap.size }) };
+    const [oSnap1, oSnap2] = await Promise.all([
+      db.collection('users').doc(uid).collection('recipients').where('everOpened', '==', true).get(),
+      db.collection('users').doc(uid).collection('recipients').where('status', '==', 'Opened').get()
+    ]);
+    const openedSet = new Set([...oSnap1.docs.map(d => d.id), ...oSnap2.docs.map(d => d.id)]);
     const p = await db.collection('users').doc(uid).collection('recipients').where('status', '==', 'Pending').count().get();
     const ts = await db.collection('users').doc(uid).collection('emailLog').count().get();
-    res.json({ ok: true, stats: { total: t.data().count, sent: s.data().count, opened: o.data().count, pending: p.data().count, totalSends: ts.data().count } });
+    res.json({ ok: true, stats: { total: t.data().count, sent: s.data().count, opened: openedSet.size, pending: p.data().count, totalSends: ts.data().count } });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -1302,10 +1274,7 @@ app.get('/api/my-emails', authRequired, async (req, res) => {
     let l = []; s.forEach(d => l.push({ id: d.id, ...d.data() }));
     const recSnap = await db.collection('users').doc(req.session.user.id).collection('recipients').get();
     const recMap = {}; recSnap.forEach(d => { recMap[d.id] = d.data(); });
-    l = l.map(e => {
-      const rec = recMap[e.recipientId];
-      return { ...e, recipientStatus: rec ? rec.status : 'Unknown', recipientOpenedAt: rec ? rec.openedAt : null, perSendOpened: !!e.openedAt };
-    });
+    l = l.map(e => { const rec = recMap[e.recipientId]; return { ...e, recipientStatus: rec ? rec.status : 'Unknown', recipientOpenedAt: rec ? rec.openedAt : null, perSendOpened: !!e.openedAt }; });
     if (search) { const sq = search.toLowerCase(); l = l.filter(e => (e.recipientEmail || '').toLowerCase().includes(sq) || (e.subject || '').toLowerCase().includes(sq)); }
     res.json({ ok: true, emails: l });
   } catch (e) { res.json({ ok: false, error: e.message }); }
@@ -1325,8 +1294,6 @@ async function sendOne(userId, userEmail, recipientId, options) {
   const r = await db.collection('users').doc(userId).collection('recipients').doc(recipientId).get();
   if (!r.exists) throw new Error('Not found');
   const rec = r.data();
-
-  // Delay only if NOT skipped
   if (u.lastSendTime && !options.skipDelay) {
     const l = u.lastSendTime._seconds ? u.lastSendTime._seconds * 1000 : new Date(u.lastSendTime).getTime();
     const delaySec = u.sendDelay !== undefined ? Number(u.sendDelay) : DEFAULT_SEND_DELAY;
@@ -1336,7 +1303,6 @@ async function sendOne(userId, userEmail, recipientId, options) {
     const mg = delayMs + jitter;
     if (el < mg) await sleep(mg - el);
   }
-
   const c = setUserOAuth(u.tokens);
   const g = google.gmail({ version: 'v1', auth: c });
   let t;
@@ -1353,9 +1319,7 @@ async function sendOne(userId, userEmail, recipientId, options) {
   let sigHtml = '';
   if (u.signature && options.includeSignature !== false) {
     let sig = u.signature;
-    if (options.includeLogo === false) {
-      sig = sig.replace(/<td[^>]*>\s*<img[\s\S]*?<\/td>/gi, '').replace(/<img[^>]*>/gi, '').replace(/<td[^>]*>\s*<\/td>/gi, '');
-    }
+    if (options.includeLogo === false) sig = sig.replace(/<td[^>]*>\s*<img[\s\S]*?<\/td>/gi, '').replace(/<img[^>]*>/gi, '').replace(/<td[^>]*>\s*<\/td>/gi, '');
     sigHtml = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>';
   }
   const bodyHtml = body.replace(/\n/g, '<br>');
@@ -1363,6 +1327,7 @@ async function sendOne(userId, userEmail, recipientId, options) {
   const lp = localAnalysis(subject, full);
   const sendTrackToken = crypto.randomBytes(16).toString('hex');
   const atts = [];
+  const attNames = [];
   if (options.includeAttachments !== false) {
     const fs = await db.collection('users').doc(userId).collection('files').get();
     const dr = google.drive({ version: 'v3', auth: c });
@@ -1370,21 +1335,17 @@ async function sendOne(userId, userEmail, recipientId, options) {
     for (const fd of fs.docs) {
       if (selectedIds && selectedIds.length > 0 && selectedIds.indexOf(fd.id) === -1) continue;
       const f = fd.data();
-      try { const r2 = await dr.files.get({ fileId: f.driveId, alt: 'media' }, { responseType: 'arraybuffer' }); atts.push({ filename: f.name, mimeType: f.mimeType || 'application/octet-stream', data: Buffer.from(r2.data).toString('base64') }); } catch (e) {}
+      try { const r2 = await dr.files.get({ fileId: f.driveId, alt: 'media' }, { responseType: 'arraybuffer' }); atts.push({ filename: f.name, mimeType: f.mimeType || 'application/octet-stream', data: Buffer.from(r2.data).toString('base64') }); attNames.push(f.name); } catch (e) {}
     }
   }
-  const logRef = await db.collection('users').doc(userId).collection('emailLog').add({ recipientId, recipientEmail: rec.email, company: rec.company || '', subject, sentAt: new Date(), attachmentsCount: atts.length, aiPrediction: lp.prediction, aiScore: lp.score, aiInboxProb: lp.inboxProbability, sendTrackToken, openedAt: null });
+  const logRef = await db.collection('users').doc(userId).collection('emailLog').add({ recipientId, recipientEmail: rec.email, company: rec.company || '', subject, sentAt: new Date(), attachmentsCount: atts.length, attachmentNames: attNames, aiPrediction: lp.prediction, aiScore: lp.score, aiInboxProb: lp.inboxProbability, sendTrackToken, openedAt: null });
   const logId = logRef.id;
   const trackUrl = (process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org') + '/track/' + logId + '?u=' + userId + '&t=' + sendTrackToken;
   const pix = '<img src="' + trackUrl + '" width="1" height="1" alt="" style="border:0;display:block;width:1px;height:1px">';
   const raw = buildMime(u.name || 'MailFlow User', userEmail, rec.email, subject, full + pix, atts, { isBulk: true });
   await g.users.messages.send({ userId: 'me', requestBody: { raw } });
-
-  // FIX: Status = LATEST email ka status (resend pe Sent hoga). everOpened permanent.
   const everOpenedFlag = rec.everOpened === true || rec.status === 'Opened';
-  const updateData = { status: 'Sent', lastSentAt: new Date(), sentAt: new Date(), everOpened: everOpenedFlag };
-  await db.collection('users').doc(userId).collection('recipients').doc(recipientId).update(updateData);
-
+  await db.collection('users').doc(userId).collection('recipients').doc(recipientId).update({ status: 'Sent', lastSentAt: new Date(), sentAt: new Date(), everOpened: everOpenedFlag });
   await db.collection('users').doc(userId).update({ lastSendTime: new Date() });
   const todayKey = new Date().toISOString().split('T')[0];
   const sr = db.collection('users').doc(userId).collection('stats').doc(todayKey);
@@ -1421,9 +1382,7 @@ app.get('/track/:id', async (req, res) => {
     if (u && t) {
       if (type === 'test') {
         const r = await db.collection('users').doc(u).collection('testRecipients').doc(req.params.id).get();
-        if (r.exists && r.data().trackToken === t) {
-          await db.collection('users').doc(u).collection('testRecipients').doc(req.params.id).update({ status: 'Opened', openedAt: new Date(), everOpened: true });
-        }
+        if (r.exists && r.data().trackToken === t) await db.collection('users').doc(u).collection('testRecipients').doc(req.params.id).update({ status: 'Opened', openedAt: new Date(), everOpened: true });
       } else {
         const r = await db.collection('users').doc(u).collection('emailLog').doc(req.params.id).get();
         if (r.exists && r.data().sendTrackToken === t) {
@@ -1432,9 +1391,7 @@ app.get('/track/:id', async (req, res) => {
             const recId = r.data().recipientId;
             if (recId) {
               const rec = await db.collection('users').doc(u).collection('recipients').doc(recId).get();
-              if (rec.exists) {
-                await db.collection('users').doc(u).collection('recipients').doc(recId).update({ status: 'Opened', openedAt: new Date(), everOpened: true });
-              }
+              if (rec.exists) await db.collection('users').doc(u).collection('recipients').doc(recId).update({ status: 'Opened', openedAt: new Date(), everOpened: true });
             }
           }
         }
@@ -1451,11 +1408,14 @@ app.get('/api/test/stats', adminRequired, async (req, res) => {
     const uid = req.session.user.id;
     const t = await db.collection('users').doc(uid).collection('testRecipients').count().get();
     const s = await db.collection('users').doc(uid).collection('testRecipients').where('status', 'in', ['Sent', 'Opened']).count().get();
-    const oSnap = await db.collection('users').doc(uid).collection('testRecipients').where('everOpened', '==', true).get();
-    const o = { data: () => ({ count: oSnap.size }) };
+    const [oSnap1, oSnap2] = await Promise.all([
+      db.collection('users').doc(uid).collection('testRecipients').where('everOpened', '==', true).get(),
+      db.collection('users').doc(uid).collection('testRecipients').where('status', '==', 'Opened').get()
+    ]);
+    const openedSet = new Set([...oSnap1.docs.map(d => d.id), ...oSnap2.docs.map(d => d.id)]);
     const p = await db.collection('users').doc(uid).collection('testRecipients').where('status', '==', 'Pending').count().get();
     const ts = await db.collection('users').doc(uid).collection('testLog').count().get();
-    res.json({ ok: true, stats: { total: t.data().count, sent: s.data().count, opened: o.data().count, pending: p.data().count, totalSends: ts.data().count } });
+    res.json({ ok: true, stats: { total: t.data().count, sent: s.data().count, opened: openedSet.size, pending: p.data().count, totalSends: ts.data().count } });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.get('/api/test/recipients', adminRequired, async (req, res) => {
@@ -1525,14 +1485,6 @@ app.post('/api/test/prefs', adminRequired, async (req, res) => {
     await db.collection('users').doc(req.session.user.id).update({ testSendDelay: sd, testAutoSend: !!autoSend, testAutoSendBatchSize: bs });
     res.json({ ok: true });
   } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-app.get('/api/test/signature', adminRequired, async (req, res) => {
-  try { const d = await getUserData(req.session.user.id); res.json({ ok: true, signature: d.testSignature || d.signature || '', fields: d.testSigFields || d.sigFields || {} }); }
-  catch (e) { res.json({ ok: false, error: e.message }); }
-});
-app.post('/api/test/signature', adminRequired, async (req, res) => {
-  try { const u = { testSignature: req.body.signature || '' }; if (req.body.fields) u.testSigFields = req.body.fields; await db.collection('users').doc(req.session.user.id).update(u); res.json({ ok: true }); }
-  catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.post('/api/test/automation/run', adminRequired, async (req, res) => {
   try {
@@ -1606,18 +1558,19 @@ app.post('/api/test/send', adminRequired, async (req, res) => {
     const bodyHtml = body.replace(/\n/g, '<br>');
     const full = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">' + bodyHtml + sigHtml + pix + '</div>';
     const atts = [];
+    const attNames = [];
     if (selectedFileIds && selectedFileIds.length > 0) {
       const fs = await db.collection('users').doc(uid).collection('files').get();
       const dr = google.drive({ version: 'v3', auth: client });
       for (const fd of fs.docs) {
         if (selectedFileIds.indexOf(fd.id) === -1) continue;
         const f = fd.data();
-        try { const r2 = await dr.files.get({ fileId: f.driveId, alt: 'media' }, { responseType: 'arraybuffer' }); atts.push({ filename: f.name, mimeType: f.mimeType || 'application/octet-stream', data: Buffer.from(r2.data).toString('base64') }); } catch (e) {}
+        try { const r2 = await dr.files.get({ fileId: f.driveId, alt: 'media' }, { responseType: 'arraybuffer' }); atts.push({ filename: f.name, mimeType: f.mimeType || 'application/octet-stream', data: Buffer.from(r2.data).toString('base64') }); attNames.push(f.name); } catch (e) {}
       }
     }
     const raw = buildMime(u.name || 'User', u.email, targetEmail, subject, full, atts, { isBulk: false });
     await gmail.users.messages.send({ userId: 'me', requestBody: { raw } });
-    await db.collection('users').doc(uid).collection('testLog').add({ recipientEmail: targetEmail, subject, body, sentAt: new Date(), recipientId: recId || '', attachmentsCount: atts.length });
+    await db.collection('users').doc(uid).collection('testLog').add({ recipientEmail: targetEmail, subject, body, sentAt: new Date(), recipientId: recId || '', attachmentsCount: atts.length, attachmentNames: attNames });
     if (recId) {
       const rec = await db.collection('users').doc(uid).collection('testRecipients').doc(recId).get();
       const wasOpened = rec.exists && rec.data().everOpened === true;
@@ -1702,14 +1655,16 @@ app.get('/api/admin/dashboard', adminRequired, async (req, res) => {
     let tE = 0, tS = 0, tO = 0, tP = 0, tSd = 0;
     for (const u of us.docs) {
       const d = u.data();
-      const [t, s, oSnap, p, sd] = await Promise.all([
+      const [t, s, oSnap1, oSnap2, p, sd] = await Promise.all([
         db.collection('users').doc(u.id).collection('recipients').count().get(),
         db.collection('users').doc(u.id).collection('recipients').where('status', 'in', ['Sent', 'Opened']).count().get(),
         db.collection('users').doc(u.id).collection('recipients').where('everOpened', '==', true).get(),
+        db.collection('users').doc(u.id).collection('recipients').where('status', '==', 'Opened').get(),
         db.collection('users').doc(u.id).collection('recipients').where('status', '==', 'Pending').count().get(),
         db.collection('users').doc(u.id).collection('emailLog').count().get()
       ]);
-      const tc = t.data().count, sc = s.data().count, oc = oSnap.size, pc = p.data().count, sdc = sd.data().count;
+      const openedSet = new Set([...oSnap1.docs.map(x => x.id), ...oSnap2.docs.map(x => x.id)]);
+      const tc = t.data().count, sc = s.data().count, oc = openedSet.size, pc = p.data().count, sdc = sd.data().count;
       tE += tc; tS += sc; tO += oc; tP += pc; tSd += sdc;
       users.push({ id: u.id, email: d.email, name: d.name, picture: d.profilePicture || d.picture || '', appAccountId: d.appAccountId || 'N/A', autoSend: !!d.autoSend, totalAutoSent: d.totalAutoSent || 0, createdAt: d.createdAt ? d.createdAt.toDate().toISOString() : '', total: tc, sent: sc, opened: oc, pending: pc, totalSends: sdc });
     }
@@ -1730,7 +1685,7 @@ app.get('/api/admin/user/:id/emails', adminRequired, async (req, res) => {
     emailSnap.forEach(d => {
       const dd = d.data();
       const rec = recMap[dd.recipientId] || {};
-      emails.push({ id: d.id, recipientEmail: dd.recipientEmail || '', company: dd.company || '', subject: dd.subject || '', sentAt: dd.sentAt, attachmentsCount: dd.attachmentsCount || 0, aiPrediction: dd.aiPrediction || 'GOOD', aiInboxProb: dd.aiInboxProb || 75, status: rec.status || 'Sent', openedAt: dd.openedAt || rec.openedAt || null, recipientId: dd.recipientId || '' });
+      emails.push({ id: d.id, recipientEmail: dd.recipientEmail || '', company: dd.company || '', subject: dd.subject || '', sentAt: dd.sentAt, attachmentsCount: dd.attachmentsCount || 0, attachmentNames: dd.attachmentNames || [], aiPrediction: dd.aiPrediction || 'GOOD', aiInboxProb: dd.aiInboxProb || 75, status: rec.status || 'Sent', openedAt: dd.openedAt || rec.openedAt || null, recipientId: dd.recipientId || '' });
     });
     res.json({ ok: true, emails });
   } catch (e) { res.json({ ok: false, error: e.message }); }
@@ -1753,33 +1708,39 @@ app.get('/api/admin/all-emails', adminRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+/* ADMIN: AI USAGE (with TOTAL lifetime) */
 app.get('/api/admin/ai-usage', adminRequired, async (req, res) => {
   try {
     const us = await db.collection('users').get();
     const today = new Date().toISOString().split('T')[0];
     const month = today.substring(0, 7);
     const rows = [];
-    let totalToday = 0, totalMonth = 0, totalUsersWithAI = 0;
+    let totalToday = 0, totalMonth = 0, totalLifetime = 0, totalUsersWithAI = 0;
     for (const u of us.docs) {
       const d = u.data();
-      const [dSnap, mSnap] = await Promise.all([
+      const [dSnap, mSnap, tSnap] = await Promise.all([
         db.collection('users').doc(u.id).collection('aiUsage').doc(today).get(),
-        db.collection('users').doc(u.id).collection('aiUsage').doc('month_' + month).get()
+        db.collection('users').doc(u.id).collection('aiUsage').doc('month_' + month).get(),
+        db.collection('users').doc(u.id).collection('aiUsage').doc('total').get()
       ]);
       const day = dSnap.exists ? dSnap.data() : { calls: 0, totalTokens: 0, providers: {} };
       const mon = mSnap.exists ? mSnap.data() : { calls: 0, totalTokens: 0, providers: {} };
-      if ((mon.calls || 0) > 0) totalUsersWithAI++;
+      const tot = tSnap.exists ? tSnap.data() : { calls: 0, totalTokens: 0, providers: {} };
+      if ((tot.calls || 0) > 0) totalUsersWithAI++;
       totalToday += day.totalTokens || 0;
       totalMonth += mon.totalTokens || 0;
+      totalLifetime += tot.totalTokens || 0;
       rows.push({
         id: u.id, email: d.email, name: d.name,
         appAccountId: d.appAccountId || 'N/A',
         todayCalls: day.calls || 0, todayTokens: day.totalTokens || 0, todayProviders: day.providers || {},
-        monthCalls: mon.calls || 0, monthTokens: mon.totalTokens || 0, monthProviders: mon.providers || {}
+        monthCalls: mon.calls || 0, monthTokens: mon.totalTokens || 0, monthProviders: mon.providers || {},
+        totalCalls: tot.calls || 0, totalTokens: tot.totalTokens || 0, totalProviders: tot.providers || {},
+        firstUsed: tot.firstUsed || null
       });
     }
-    rows.sort((a, b) => (b.monthTokens || 0) - (a.monthTokens || 0));
-    res.json({ ok: true, rows, summary: { totalUsers: us.size, activeAIUsers: totalUsersWithAI, tokensToday: totalToday, tokensThisMonth: totalMonth, monthKey: month, date: today } });
+    rows.sort((a, b) => (b.totalTokens || 0) - (a.totalTokens || 0));
+    res.json({ ok: true, rows, summary: { totalUsers: us.size, activeAIUsers: totalUsersWithAI, tokensToday: totalToday, tokensThisMonth: totalMonth, tokensLifetime: totalLifetime, monthKey: month, date: today } });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -1791,7 +1752,7 @@ app.delete('/api/admin/user/:id', adminRequired, async (req, res) => {
     if (!target.exists) return res.json({ ok: false, error: 'User not found' });
     const email = (target.data().email || '').toLowerCase();
     if (email === ADMIN_EMAIL) return res.json({ ok: false, error: 'Cannot delete admin account' });
-    const subcollections = ['recipients', 'templates', 'emailLog', 'files', 'stats', 'senderMemory', 'imapEmails', 'testRecipients', 'testLog', 'aiUsage'];
+    const subcollections = ['recipients', 'templates', 'emailLog', 'files', 'stats', 'senderMemory', 'imapEmails', 'testRecipients', 'testLog', 'aiUsage', 'replyLog'];
     for (const coll of subcollections) {
       let more = true;
       while (more) {
@@ -1819,7 +1780,6 @@ app.use((err, req, res, next) => {
   if (res.headersSent) return next(err);
   res.status(500).json({ ok: false, error: 'Internal error' });
 });
-
 app.use((req, res, next) => {
   if (req.method === 'GET' && !req.path.startsWith('/api') && !req.path.startsWith('/auth') && !req.path.startsWith('/track')) {
     return res.sendFile(path.join(__dirname, 'public', 'index.html'));
