@@ -29,7 +29,6 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 @keyframes spin{to{transform:rotate(360deg)}}
-@keyframes pulse-opened{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.4)}50%{box-shadow:0 0 0 4px rgba(34,197,94,0)}}
 .auth-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;position:relative;overflow:hidden;z-index:1}
 .auth-card{background:rgba(15,23,42,.75);backdrop-filter:blur(30px);padding:48px 36px;border-radius:24px;width:100%;max-width:440px;box-shadow:0 32px 100px rgba(0,0,0,.8);border:1px solid rgba(51,65,85,.6);text-align:center;position:relative;z-index:1}
 @media(max-width:480px){.auth-card{padding:36px 24px}}
@@ -40,6 +39,17 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .google-btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;background:#fff;color:#1f2937;border:none;padding:15px;border-radius:14px;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;transition:.25s}
 .google-btn:hover{transform:translateY(-2px)}
 .google-btn img{width:20px;height:20px}
+.auth-divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:var(--text3);font-size:11px;text-transform:uppercase;letter-spacing:1px}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.auth-toggle{display:flex;gap:6px;margin-bottom:16px;background:var(--bg2);padding:5px;border-radius:12px;border:1px solid var(--border)}
+.auth-toggle .tab{padding:9px 16px;text-align:center;font-size:12px;color:var(--text2);cursor:pointer;border-radius:8px;font-weight:600;flex:1}
+.auth-toggle .tab.active{background:var(--grad);color:white}
+.auth-form{text-align:left}
+.auth-form .field{margin-bottom:12px}
+.auth-form .field label{display:block;font-size:10px;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+.auth-form .field input{width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:15px;outline:none}
+.auth-form .field input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.15)}
+.auth-error{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5;padding:10px 12px;border-radius:8px;font-size:12px;margin-bottom:12px;text-align:left}
 .auth-features{margin-top:28px;padding-top:24px;border-top:1px solid var(--border);text-align:left}
 .auth-features .feat{display:flex;align-items:center;gap:12px;padding:9px 0;font-size:13px;color:#cbd5e1}
 .auth-features .feat .ico{font-size:16px;width:32px;height:32px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -365,6 +375,7 @@ table.data-table tr.clickable{cursor:pointer}
 .ban-banner .txt .ttl{font-size:15px;font-weight:800;color:#fca5a5;margin-bottom:4px}
 .ban-banner .txt .dsc{font-size:12px;color:#fecaca;line-height:1.6}
 .request-form{background:linear-gradient(135deg,rgba(56,189,248,.06),rgba(168,85,247,.06));border:1px solid rgba(56,189,248,.3);border-radius:14px;padding:20px;margin-top:16px}
+.notice-banner{background:linear-gradient(135deg,rgba(56,189,248,.1),rgba(168,85,247,.08));border:1px solid rgba(56,189,248,.3);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#7dd3fc;line-height:1.6}
 @media(max-width:768px){
 .maintabs{position:fixed;bottom:0;top:auto;left:0;right:0;padding:6px 8px;z-index:200;border-top:1px solid var(--border);border-bottom:none;justify-content:space-around;box-shadow:0 -10px 30px rgba(0,0,0,.3);padding-bottom:calc(6px + env(safe-area-inset-bottom));background:rgba(10,14,26,.98)}
 .maintab{flex:1;text-align:center;font-size:10px;padding:8px 4px}
@@ -404,6 +415,27 @@ input,textarea,select{min-height:44px}
 <h1>MailFlow Pro</h1>
 <p class="sub">AI-powered email automation.<br>Send smart. Land in inbox.</p>
 <a href="/auth/google" class="google-btn"><img src="https://www.google.com/favicon.ico" alt="Google">Continue with Google</a>
+<div class="auth-divider">or</div>
+<div class="auth-toggle">
+<div class="tab active" id="loginTab" onclick="switchAuthTab('login')">Login</div>
+<div class="tab" id="registerTab" onclick="switchAuthTab('register')">Register</div>
+</div>
+<div id="loginForm" class="auth-form">
+<div id="loginError" class="auth-error hidden"></div>
+<div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email"></div>
+<div class="field"><label>Password</label><input type="password" id="loginPassword" placeholder="Your password" autocomplete="current-password"></div>
+<button class="btn" onclick="doEmailLogin()" style="width:100%">🔓 Login</button>
+</div>
+<div id="registerForm" class="auth-form hidden">
+<div id="registerError" class="auth-error hidden"></div>
+<div class="field"><label>Full Name</label><input type="text" id="registerName" placeholder="Your name" autocomplete="name"></div>
+<div class="field"><label>Email</label><input type="email" id="registerEmail" placeholder="you@example.com" autocomplete="email"></div>
+<div class="field"><label>Password (min 8 chars)</label><input type="password" id="registerPassword" placeholder="Create password" autocomplete="new-password"></div>
+<button class="btn save-btn" onclick="doEmailRegister()">✨ Create Account</button>
+</div>
+<div class="notice-banner" style="margin-top:16px">
+💡 <b>Note:</b> Email login gives access to AI features. Connect Google from Settings to send emails.
+</div>
 <div class="auth-features">
 <div class="feat"><span class="ico">🤖</span> AI writes & improves emails</div>
 <div class="feat"><span class="ico">📄</span> AI CV Analyzer (PDF/DOCX)</div>
@@ -434,10 +466,10 @@ input,textarea,select{min-height:44px}
 <div class="field"><label>New Email *</label><input type="email" id="reqEmail" placeholder="your.new@email.com"></div>
 <div class="field"><label>Company (Optional)</label><input type="text" id="reqCompany" placeholder="Company name"></div>
 <div class="field"><label>Phone (Optional)</label><input type="text" id="reqPhone" placeholder="+92..."></div>
-<div class="field"><label>Reason for Access *</label><textarea id="reqReason" class="bulk-area" placeholder="Why should we grant you access? What will you use MailFlow Pro for?" style="min-height:100px;font-size:13px"></textarea></div>
+<div class="field"><label>Reason for Access *</label><textarea id="reqReason" class="bulk-area" placeholder="Why should we grant you access?" style="min-height:100px;font-size:13px"></textarea></div>
 <button class="btn save-btn" onclick="submitAccessRequest()">📩 Submit Request</button>
 <div style="margin-top:12px;font-size:11px;color:var(--text3);line-height:1.6;text-align:center">
-Admin will review your request within 24-48 hours. You'll receive access once approved.
+Admin will review your request within 24-48 hours.
 </div>
 </div>
 <button class="btn ghost" onclick="location.reload()" style="width:100%;margin-top:16px">← Back to Login</button>
@@ -492,6 +524,9 @@ Admin will review your request within 24-48 hours. You'll receive access once ap
 </div>
 </aside>
 <main class="main-area">
+<div id="googleBanner" class="notice-banner hidden" style="background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(239,68,68,.1));border:1px solid rgba(245,158,11,.4);color:#fcd34d">
+🔗 <b>Google not connected.</b> <a href="/auth/google" style="color:var(--cyan);text-decoration:underline;cursor:pointer">Connect Google</a> to send emails, track opens, and use Drive.
+</div>
 <div class="quiet-banner" id="quietBanner"><span class="icn">🌙</span><div class="info"><div class="ttl">Quiet Hours Active</div><div class="dsc">Auto-send is paused. <span id="quietMsg"></span></div></div></div>
 <div class="stats">
 <div class="stat s1"><div class="label">Recipients</div><div class="value" id="stTotal">0</div></div>
@@ -601,7 +636,7 @@ Admin will review your request within 24-48 hours. You'll receive access once ap
 <div class="panel">
 <h2>📊 Tracking <span id="trackCount"></span></h2>
 <div style="font-size:11px;color:var(--text2);margin-bottom:12px;padding:10px;background:rgba(56,189,248,.06);border-radius:8px;border-left:3px solid var(--cyan)">
-💡 <b>Click row</b> for full history with attachment names
+💡 <b>Click any row</b> for full all-time history (from server, 5000+ emails supported)
 </div>
 <div class="filter-bar">
 <input type="text" class="search-bar" id="recipSearch" placeholder="Search..." oninput="renderRecipients()">
@@ -860,8 +895,6 @@ Admin will review your request within 24-48 hours. You'll receive access once ap
 </div>
 
 <!-- MODALS -->
-
-<!-- Profile Modal -->
 <div id="profileModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeProfileModal()">
 <div class="modal" style="max-width:560px">
 <button class="close-btn" onclick="closeProfileModal()">✕</button>
@@ -897,7 +930,6 @@ Admin will review your request within 24-48 hours. You'll receive access once ap
 </div>
 </div>
 
-<!-- Settings Modal -->
 <div id="settingsModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeSettingsModal()">
 <div class="modal" style="max-width:900px">
 <button class="close-btn" onclick="closeSettingsModal()">✕</button>
@@ -965,7 +997,7 @@ Admin will review your request within 24-48 hours. You'll receive access once ap
 <button class="btn ghost" onclick="resetSig()">🗑 Reset</button>
 </div>
 <div class="sig-preview-outer" id="sigPreviewBox">
-<div class="preview-label"><span>📧 Preview</span></div>
+<div style="font-size:11px;color:var(--text2);margin-bottom:8px">📧 Preview</div>
 <div class="sig-preview-canvas" id="sigPreviewContent"></div>
 </div>
 </div>
@@ -984,7 +1016,6 @@ Admin will review your request within 24-48 hours. You'll receive access once ap
 </div>
 </div>
 
-<!-- Reply Modal -->
 <div id="replyModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeReplyModal()">
 <div class="modal" style="max-width:640px">
 <button class="close-btn" onclick="closeReplyModal()">✕</button>
@@ -997,7 +1028,6 @@ Admin will review your request within 24-48 hours. You'll receive access once ap
 </div>
 </div>
 
-<!-- AI Writer Modal -->
 <div id="aiWriterModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeAIWriter()">
 <div class="modal" style="max-width:560px">
 <button class="close-btn" onclick="closeAIWriter()">✕</button>
@@ -1013,7 +1043,6 @@ Admin will review your request within 24-48 hours. You'll receive access once ap
 </div>
 </div>
 
-<!-- CV Analyzer Modal -->
 <div id="cvAnalyzerModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeCVAnalyzer()">
 <div class="modal" style="max-width:700px">
 <button class="close-btn" onclick="closeCVAnalyzer()">✕</button>
@@ -1041,7 +1070,6 @@ Admin will review your request within 24-48 hours. You'll receive access once ap
 </div>
 </div>
 
-<!-- Recipient History Modal -->
 <div id="recipHistoryModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeRecipHistory()">
 <div class="modal" style="max-width:800px">
 <button class="close-btn" onclick="closeRecipHistory()">✕</button>
@@ -1052,7 +1080,6 @@ Admin will review your request within 24-48 hours. You'll receive access once ap
 </div>
 </div>
 
-<!-- Admin User Detail Modal -->
 <div id="adminUserModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeAdminUser()">
 <div class="modal" style="max-width:640px">
 <button class="close-btn" onclick="closeAdminUser()">✕</button>
@@ -1061,7 +1088,6 @@ Admin will review your request within 24-48 hours. You'll receive access once ap
 </div>
 </div>
 
-<!-- Send Options Modal -->
 <div id="sendOptionsBackdrop" class="modal-backdrop hidden" onclick="if(event.target===this)closeSendOptions()">
 <div class="modal" style="max-width:500px">
 <button class="close-btn" onclick="closeSendOptions()">✕</button>
@@ -1076,7 +1102,6 @@ Admin will review your request within 24-48 hours. You'll receive access once ap
 </div>
 </div>
 
-<!-- Template Preview -->
 <div id="tplPreviewBackdrop" class="modal-backdrop hidden" onclick="if(event.target===this)closeTplPreview()">
 <div class="modal" style="max-width:680px">
 <button class="close-btn" onclick="closeTplPreview()">✕</button>
@@ -1088,7 +1113,6 @@ Admin will review your request within 24-48 hours. You'll receive access once ap
 </div>
 </div>
 
-<!-- Confirm Dialog -->
 <div id="confirmBackdrop" class="confirm-backdrop hidden">
 <div class="confirm-box">
 <div class="icon" id="confirmIcon">⚠️</div>
@@ -1105,10 +1129,9 @@ var USER=null,TEMPLATES=[],SELECTED={},CURRENT_ROWS=[],ALL_ROWS=[],FILES=[],SELE
 var LOGO_URL='',LOGO_URL_ALT='',ADMIN_USERS=[],ADMIN_ALL_EMAILS=[],MY_EMAILS=[],ADMIN_BANNED=[],ADMIN_REQUESTS=[];
 var INBOX_EMAILS=[],ACTIVE_EMAIL=null,MY_QUOTA={sent:0,limit:500,remaining:500};
 var SENDERS=[],IMAP_CONNECTED=false,imapPage=1,imapHasMore=false;
-var POLL_TIMER=null,HOURLY_TIMER=null,analysisTimer=null,lastAnalyzedHash='',TRACK_TIMER=null,ADMIN_TIMER=null,INBOX_TIMER=null;
+var POLL_TIMER=null,HOURLY_TIMER=null,analysisTimer=null,lastAnalyzedHash='';
 var MAX_UPLOAD_SIZE=3*1024*1024;
-var _currentSendId=null;
-var CV_SELECTED_FILE_ID=null;
+var _currentSendId=null,CV_SELECTED_FILE_ID=null;
 var _useAIReply=false;
 var BANNED_USER_EMAIL='';
 
@@ -1125,6 +1148,57 @@ function fileIcon(name,mime){mime=mime||'';name=(name||'').toLowerCase();if(mime
 function isCvFile(f){var n=(f.name||'').toLowerCase();var m=(f.mimeType||'').toLowerCase();return n.endsWith('.pdf')||n.endsWith('.docx')||n.endsWith('.doc')||n.endsWith('.txt')||n.endsWith('.rtf')||m.includes('pdf')||m.includes('word')||m.includes('text');}
 function buildHourSelects(){var s=$('quietStartSel'),e=$('quietEndSel');if(!s||!e)return;s.innerHTML='';e.innerHTML='';for(var h=0;h<24;h++){var lbl=((h%12)||12)+':00 '+(h<12?'AM':'PM');var o1=document.createElement('option');o1.value=h;o1.text=lbl;s.appendChild(o1);var o2=document.createElement('option');o2.value=h;o2.text=lbl;e.appendChild(o2);}}
 function showConfirm(opts){return new Promise(function(resolve){$('confirmIcon').innerText=opts.icon||'⚠️';$('confirmTitle').innerText=opts.title||'Are you sure?';$('confirmMessage').innerText=opts.message||'';var ok=$('confirmOk'),cancel=$('confirmCancel');ok.innerText=opts.okText||'Confirm';ok.className='confirm-btn'+(opts.primary?' primary':'');$('confirmBackdrop').classList.remove('hidden');var cleanup=function(){$('confirmBackdrop').classList.add('hidden');ok.onclick=null;cancel.onclick=null;};ok.onclick=function(){cleanup();resolve(true);};cancel.onclick=function(){cleanup();resolve(false);};});}
+
+/* ============ EMAIL/PASSWORD AUTH ============ */
+function switchAuthTab(t){
+  if(t==='login'){
+    $('loginTab').classList.add('active');$('registerTab').classList.remove('active');
+    $('loginForm').classList.remove('hidden');$('registerForm').classList.add('hidden');
+  } else {
+    $('registerTab').classList.add('active');$('loginTab').classList.remove('active');
+    $('registerForm').classList.remove('hidden');$('loginForm').classList.add('hidden');
+  }
+  $('loginError').classList.add('hidden');$('registerError').classList.add('hidden');
+}
+async function doEmailLogin(){
+  var email=$('loginEmail').value.trim(),password=$('loginPassword').value;
+  if(!email||!password){$('loginError').innerText='Email and password required';$('loginError').classList.remove('hidden');return;}
+  $('loginError').classList.add('hidden');
+  var btn=event.target;btn.disabled=true;btn.innerHTML='<span class="spin"></span> Logging in...';
+  try{
+    var r=await api('/api/auth/login','POST',{email:email,password:password});
+    if(r.ok){USER=r.user;enterApp();}
+    else if(r.banned){
+      BANNED_USER_EMAIL=email;
+      $('loginView').classList.add('hidden');
+      $('bannedView').classList.remove('hidden');
+      if(r.reason)$('banReasonText').innerText=r.reason;
+    } else {
+      $('loginError').innerText=r.error||'Login failed';
+      $('loginError').classList.remove('hidden');
+    }
+  } catch(e){
+    $('loginError').innerText='Error: '+e.message;
+    $('loginError').classList.remove('hidden');
+  }
+  btn.disabled=false;btn.innerHTML='🔓 Login';
+}
+async function doEmailRegister(){
+  var name=$('registerName').value.trim(),email=$('registerEmail').value.trim(),password=$('registerPassword').value;
+  if(!name||!email||!password){$('registerError').innerText='All fields required';$('registerError').classList.remove('hidden');return;}
+  if(password.length<8){$('registerError').innerText='Password must be 8+ characters';$('registerError').classList.remove('hidden');return;}
+  $('registerError').classList.add('hidden');
+  var btn=event.target;btn.disabled=true;btn.innerHTML='<span class="spin"></span> Creating...';
+  try{
+    var r=await api('/api/auth/register','POST',{name:name,email:email,password:password});
+    if(r.ok){USER=r.user;enterApp();}
+    else{$('registerError').innerText=r.error||'Registration failed';$('registerError').classList.remove('hidden');}
+  } catch(e){
+    $('registerError').innerText='Error: '+e.message;
+    $('registerError').classList.remove('hidden');
+  }
+  btn.disabled=false;btn.innerHTML='✨ Create Account';
+}
 
 /* ============ INIT ============ */
 var urlParams = new URLSearchParams(window.location.search);
@@ -1156,9 +1230,17 @@ if(USER.picture){var av=$('userAvatar');av.src=USER.picture;av.style.display='bl
 if(USER.appAccountId){$('myAppId').innerText=USER.appAccountId;$('myAppId').classList.remove('hidden');}
 if(USER.isAdmin){$('adminBadge').classList.remove('hidden');$('tabAdmin').classList.remove('hidden');$('tabTestDash').classList.remove('hidden');}
 buildHourSelects();addRow();addTestRow();
-loadAll();loadLogo();loadSignature();loadFiles();loadTemplates();loadPrefs();loadQuota();loadMyEmails();loadAIProfile();loadProfile();checkQuietStatus();checkIMAPStatus();startHourlyAutoSend();startAutoRefresh();
+loadAll();loadLogo();loadSignature();loadFiles();loadTemplates();loadPrefs();loadQuota();loadMyEmails();loadAIProfile();loadProfile();checkQuietStatus();checkIMAPStatus();checkGoogleStatus();startHourlyAutoSend();startAutoRefresh();
 }
 function logout(){api('/api/logout','POST').then(function(){location.reload();});}
+
+function checkGoogleStatus(){
+  api('/api/profile').then(function(r){
+    if(!r.ok)return;
+    if(!r.profile.hasGoogle){$('googleBanner').classList.remove('hidden');}
+    else{$('googleBanner').classList.add('hidden');}
+  });
+}
 
 function startAutoRefresh(){
   if(POLL_TIMER)clearInterval(POLL_TIMER);
@@ -1168,7 +1250,7 @@ function startAutoRefresh(){
     if(!$('inboxView').classList.contains('hidden')&&IMAP_CONNECTED){loadIMAPInbox(true);}
     if(!$('adminView').classList.contains('hidden')){loadAdmin();loadAdminAIUsage();loadAdminBanned();loadAdminRequests();}
     if(!$('testDashView').classList.contains('hidden')){loadTestDashboard();}
-  },15000);
+  },60000);
 }
 
 function switchMain(t){
@@ -1275,7 +1357,7 @@ function sendBulkRecipients(items){api('/api/recipients','POST',{list:items,temp
 function readFileToText(file,callback){var name=file.name.toLowerCase();var reader=new FileReader();if(name.endsWith('.xlsx')||name.endsWith('.xls')){if(typeof XLSX==='undefined'){toast('Excel reader not loaded','err');return;}reader.onload=function(ev){try{var data=new Uint8Array(ev.target.result);var wb=XLSX.read(data,{type:'array'});var text='';wb.SheetNames.forEach(function(sn){var sheet=wb.Sheets[sn];var rows=XLSX.utils.sheet_to_json(sheet,{header:1});rows.forEach(function(row){var parts=row.filter(function(c){return c!==undefined&&c!=='';});if(parts.length)text+=parts.join(', ')+'\n';});});callback(text);}catch(err){toast('Error','err');}};reader.readAsArrayBuffer(file);}else{reader.onload=function(ev){callback(ev.target.result);};reader.readAsText(file);}}
 document.addEventListener('DOMContentLoaded',function(){var ta=$('bulkInput');if(ta)ta.addEventListener('input',updateBulk);var fi=$('bulkFileInput');if(fi){fi.addEventListener('change',function(e){var file=e.target.files[0];if(!file)return;readFileToText(file,function(text){$('bulkInput').value=text;updateBulk();toast('✅ Loaded');});e.target.value='';});}var tfi=$('testBulkFileInput');if(tfi){tfi.addEventListener('change',function(e){var file=e.target.files[0];if(!file)return;readFileToText(file,function(text){$('testBulkInput').value=text;updateTestBulk();toast('✅ Loaded');});e.target.value='';});}var tbi=$('testBulkInput');if(tbi)tbi.addEventListener('input',updateTestBulk);var sdi=$('sendDelayInput');if(sdi){sdi.addEventListener('input',checkSendDelayWarning);sdi.addEventListener('change',checkSendDelayWarning);}});
 
-function loadAll(isManual){if(isManual)toast('Refreshing...');api('/api/stats').then(function(r){if(!r.ok)return;$('stTotal').innerText=r.stats.total;$('stSent').innerText=r.stats.sent;$('stOpened').innerText=r.stats.opened;$('stPending').innerText=r.stats.pending;$('stTotalSends').innerText=r.stats.totalSends||0;});api('/api/recipients').then(function(r){if(!r.ok)return;CURRENT_ROWS=r.recipients||[];ALL_ROWS=CURRENT_ROWS.slice();renderRecipients();});}
+function loadAll(isManual){if(isManual)toast('🔄 Refreshing...');api('/api/stats').then(function(r){if(!r.ok)return;$('stTotal').innerText=r.stats.total;$('stSent').innerText=r.stats.sent;$('stOpened').innerText=r.stats.opened;$('stPending').innerText=r.stats.pending;$('stTotalSends').innerText=r.stats.totalSends||0;});api('/api/recipients').then(function(r){if(!r.ok)return;CURRENT_ROWS=r.recipients||[];ALL_ROWS=CURRENT_ROWS.slice();renderRecipients();});}
 function renderRecipients(){var w=$('tableWrap');var q=($('recipSearch').value||'').toLowerCase();var stF=$('statusFilter').value;var filtered=CURRENT_ROWS.filter(function(x){if(stF!=='all'&&(x.status||'')!==stF)return false;return !q||(x.company||'').toLowerCase().indexOf(q)!==-1||(x.email||'').toLowerCase().indexOf(q)!==-1;});$('trackCount').innerText=filtered.length+' / '+CURRENT_ROWS.length;if(!CURRENT_ROWS.length){w.innerHTML='<div class="empty"><div class="ico">📭</div>No recipients</div>';updateBulkBar();return;}if(!filtered.length){w.innerHTML='<div class="empty"><div class="ico">🔍</div>No matches</div>';updateBulkBar();return;}var h='<table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" class="cbox" onchange="toggleAll(this.checked)"></th><th>Company</th><th>Email</th><th>Last Status</th><th>Sends</th><th>Last Sent</th><th>Action</th></tr></thead><tbody>';filtered.forEach(function(x){var st=(x.status||'').toLowerCase();var cls='pending',lbl='Pending',icon='⏳';if(st.indexOf('opened')!==-1){cls='opened';lbl='Opened';icon='👁';}else if(st==='sent'){cls='sent';lbl='Sent';icon='📤';}h+='<tr class="clickable '+(SELECTED[x.id]?'selected':'')+'" onclick="openRecipHistory(\''+x.id+'\')"><td onclick="event.stopPropagation()"><input type="checkbox" class="cbox" '+(SELECTED[x.id]?'checked':'')+' onchange="toggleOne(\''+x.id+'\',this.checked)"></td>';h+='<td>'+esc(x.company||'—')+'</td><td style="word-break:break-all">'+esc(x.email)+'</td>';h+='<td><span class="badge '+cls+'">'+icon+' '+lbl+'</span></td>';h+='<td><span class="badge count">'+(x.sendCount||0)+'×</span></td>';h+='<td style="font-size:10px">'+fmtDate(x.lastSentAt||x.sentAt)+'</td>';h+='<td style="white-space:nowrap" onclick="event.stopPropagation()"><button class="btn ghost small" onclick="openRecipHistory(\''+x.id+'\')" title="Full history">📊</button> <button class="btn ghost small" onclick="openSendOptions(\''+x.id+'\')" title="Send">📤</button> <button class="btn danger small" onclick="delRec(\''+x.id+'\')" title="Delete">✕</button></td></tr>';});h+='</tbody></table>';w.innerHTML=h;updateBulkBar();}
 function toggleOne(id,c){if(c)SELECTED[id]=true;else delete SELECTED[id];renderRecipients();}
 function toggleAll(c){var q=($('recipSearch').value||'').toLowerCase();var stF=$('statusFilter').value;var filtered=CURRENT_ROWS.filter(function(x){if(stF!=='all'&&(x.status||'')!==stF)return false;return !q||(x.company||'').toLowerCase().indexOf(q)!==-1||(x.email||'').toLowerCase().indexOf(q)!==-1;});if(c)filtered.forEach(function(r){SELECTED[r.id]=true;});else SELECTED={};renderRecipients();}
@@ -1284,48 +1366,45 @@ function clearSelection(){SELECTED={};renderRecipients();}
 function updateBulkBar(){var ids=Object.keys(SELECTED);var b=$('bulkActionBar');if(ids.length>0){b.classList.add('show');$('selectedCount').innerText=ids.length+' selected';}else b.classList.remove('show');}
 
 function openRecipHistory(recipientId){
-  var rec=ALL_ROWS.filter(function(x){return x.id===recipientId;})[0]||{};
   $('recipHistoryTitle').innerText='📊 Recipient History';
-  var info='<div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;word-break:break-all">'+esc(rec.email||'')+'</div>';
-  if(rec.company)info+='<div style="font-size:12px;color:var(--text2)">Company: <b style="color:#cbd5e1">'+esc(rec.company)+'</b></div>';
-  var statusColor=rec.status==='Opened'?'#86efac':rec.status==='Sent'?'#7dd3fc':'#fcd34d';
-  info+='<div style="font-size:12px;color:var(--text2);margin-top:4px">Last Status: <b style="color:'+statusColor+'">'+esc(rec.status||'Pending')+'</b>';
-  if(rec.everOpened)info+=' <span class="badge everopened">✓ Ever Opened</span>';
-  info+='</div>';
-  $('recipHistoryInfo').innerHTML=info;
-  $('recipHistoryStats').innerHTML='<div class="empty" style="padding:20px">Loading...</div>';
+  $('recipHistoryInfo').innerHTML='<div class="empty" style="padding:20px">Loading full history...</div>';
+  $('recipHistoryStats').innerHTML='';
   $('recipHistoryList').innerHTML='';
   $('recipHistoryModal').classList.remove('hidden');
-  api('/api/my-emails?range=all').then(function(r){
-    if(!r.ok){$('recipHistoryStats').innerHTML='';$('recipHistoryList').innerHTML='<div class="empty">Error</div>';return;}
-    var all=r.emails||[];
-    var mine=all.filter(function(e){return e.recipientId===recipientId;});
-    mine.sort(function(a,b){var ta=a.sentAt&&a.sentAt._seconds?a.sentAt._seconds*1000:new Date(a.sentAt||0).getTime();var tb=b.sentAt&&b.sentAt._seconds?b.sentAt._seconds*1000:new Date(b.sentAt||0).getTime();return tb-ta;});
-    var totalSent=mine.length;
-    var totalOpened=mine.filter(function(e){return !!e.openedAt;}).length;
-    var totalNotOpened=totalSent-totalOpened;
-    var openRate=totalSent>0?Math.round((totalOpened/totalSent)*100):0;
-    var firstSent=mine.length?mine[mine.length-1].sentAt:null;
-    var lastSent=mine.length?mine[0].sentAt:null;
-    var stats='<div class="recipient-stat-grid">';
-    stats+='<div class="recipient-stat total"><div class="label">Total</div><div class="value">'+totalSent+'</div></div>';
-    stats+='<div class="recipient-stat sent"><div class="label">Opened</div><div class="value">'+totalOpened+'</div></div>';
-    stats+='<div class="recipient-stat pending"><div class="label">Not Opened</div><div class="value">'+totalNotOpened+'</div></div>';
-    stats+='<div class="recipient-stat opened"><div class="label">Rate</div><div class="value">'+openRate+'%</div></div></div>';
-    stats+='<div class="info-box" style="margin-bottom:14px"><div class="row"><span class="k">First sent:</span><span class="v" style="font-size:12px">'+(firstSent?fmtDate(firstSent):'—')+'</span></div><div class="row"><span class="k">Last sent:</span><span class="v" style="font-size:12px">'+(lastSent?fmtDate(lastSent):'—')+'</span></div></div>';
-    $('recipHistoryStats').innerHTML=stats;
-    if(!mine.length){$('recipHistoryList').innerHTML='<div class="empty"><div class="ico">📭</div>No emails sent</div>';return;}
-    var list='<div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:12px">📧 All sends ('+mine.length+')</div>';
-    mine.forEach(function(e,i){
+  api('/api/recipient/'+recipientId+'/history').then(function(r){
+    if(!r.ok){$('recipHistoryInfo').innerHTML='<div class="empty">Error: '+esc(r.error||'Failed')+'</div>';return;}
+    var rec=r.recipient||{};
+    var stats=r.stats||{};
+    var emails=r.emails||[];
+    var info='<div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;word-break:break-all">'+esc(rec.email||'')+'</div>';
+    if(rec.company)info+='<div style="font-size:12px;color:var(--text2)">Company: <b style="color:#cbd5e1">'+esc(rec.company)+'</b></div>';
+    var statusColor=rec.status==='Opened'?'#86efac':rec.status==='Sent'?'#7dd3fc':'#fcd34d';
+    info+='<div style="font-size:12px;color:var(--text2);margin-top:4px">Last Status: <b style="color:'+statusColor+'">'+esc(rec.status||'Pending')+'</b>';
+    if(rec.everOpened)info+=' <span class="badge everopened">✓ Ever Opened</span>';
+    info+='</div>';
+    $('recipHistoryInfo').innerHTML=info;
+    var s='<div class="recipient-stat-grid">';
+    s+='<div class="recipient-stat total"><div class="label">Total Sends</div><div class="value">'+(stats.totalSent||0)+'</div></div>';
+    s+='<div class="recipient-stat sent"><div class="label">Opened</div><div class="value">'+(stats.totalOpened||0)+'</div></div>';
+    s+='<div class="recipient-stat pending"><div class="label">Not Opened</div><div class="value">'+(stats.totalNotOpened||0)+'</div></div>';
+    s+='<div class="recipient-stat opened"><div class="label">Open Rate</div><div class="value">'+(stats.openRate||0)+'%</div></div></div>';
+    s+='<div class="info-box" style="margin-bottom:14px"><div class="row"><span class="k">First sent:</span><span class="v" style="font-size:12px">'+(stats.firstSent?fmtDate(stats.firstSent):'—')+'</span></div><div class="row"><span class="k">Last sent:</span><span class="v" style="font-size:12px">'+(stats.lastSent?fmtDate(stats.lastSent):'—')+'</span></div></div>';
+    $('recipHistoryStats').innerHTML=s;
+    if(!emails.length){$('recipHistoryList').innerHTML='<div class="empty"><div class="ico">📭</div>No emails sent yet</div>';return;}
+    var list='<div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:12px">📧 All sends ('+emails.length+')</div>';
+    emails.forEach(function(e,i){
       var opened=!!e.openedAt;
       var pred=e.aiPrediction||'GOOD';
       var prob=e.aiInboxProb||75;
       var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';
       var attHtml='';
-      if(e.attachmentNames&&e.attachmentNames.length>0){attHtml='<div class="attachment-list">'+e.attachmentNames.map(function(n){return '<span class="attachment-name">📎 '+esc(n)+'</span>';}).join('')+'</div>';}
-      else if(e.attachmentsCount&&e.attachmentsCount>0){attHtml='<div class="attachment-list"><span class="attachment-name">📎 '+e.attachmentsCount+' file'+(e.attachmentsCount>1?'s':'')+'</span></div>';}
+      if(e.attachmentNames&&e.attachmentNames.length>0){
+        attHtml='<div class="attachment-list">'+e.attachmentNames.map(function(n){return '<span class="attachment-name">📎 '+esc(n)+'</span>';}).join('')+'</div>';
+      } else if(e.attachmentsCount&&e.attachmentsCount>0){
+        attHtml='<div class="attachment-list"><span class="attachment-name">📎 '+e.attachmentsCount+' file'+(e.attachmentsCount>1?'s':'')+'</span></div>';
+      }
       list+='<div class="send-history-item'+(opened?' opened':'')+'">';
-      list+='<div class="top"><div class="subj">#'+(mine.length-i)+' · '+esc(e.subject||'(no subject)')+'</div><span class="badge '+(opened?'opened':'sent')+'">'+(opened?'👁 Opened':'📤 Sent')+'</span></div>';
+      list+='<div class="top"><div class="subj">#'+(emails.length-i)+' · '+esc(e.subject||'(no subject)')+'</div><span class="badge '+(opened?'opened':'sent')+'">'+(opened?'👁 Opened':'📤 Sent')+'</span></div>';
       list+='<div class="meta"><span>📅 '+fmtDate(e.sentAt)+'</span>';
       if(opened)list+='<span style="color:#86efac">👁 '+fmtDate(e.openedAt)+'</span>';
       else list+='<span style="color:#fcd34d">⏳ Not opened</span>';
@@ -1400,7 +1479,7 @@ async function unbanUser(id){var ok=await showConfirm({icon:'✓',title:'Unban t
 function renderAdminUsers(){var q=($('adminSearch').value||'').toLowerCase();var filtered=ADMIN_USERS.filter(function(u){return !q||u.email.toLowerCase().indexOf(q)!==-1||(u.name||'').toLowerCase().indexOf(q)!==-1||(u.appAccountId||'').toLowerCase().indexOf(q)!==-1;});if(!filtered.length){$('adminUsersList').innerHTML='<div class="empty">No users</div>';return;}var h='';filtered.forEach(function(u){h+='<div class="user-card '+(u.banned?'banned':'')+'"><div class="top"><div><div class="name">'+esc(u.name||'(no name)')+(u.banned?' <span class="badge banned">BANNED</span>':'')+'</div><div class="email">'+esc(u.email)+'</div></div><span class="app-id-pill">'+esc(u.appAccountId||'N/A')+'</span></div>';h+='<div class="stats-row"><span class="badge sent">📨 '+u.total+'</span><span class="badge opened">✅ '+u.sent+'</span><span class="badge opened">👁 '+u.opened+'</span><span class="badge pending">⏳ '+u.pending+'</span><span class="badge count">📤 '+u.totalSends+'</span>'+(u.autoSend?'<span class="badge sent">🤖 Auto</span>':'')+'</div>';h+='<div style="font-size:10px;color:var(--text3);margin-top:6px">Reg: '+fmtDate(u.createdAt)+' · IP: '+esc(u.lastIP||'unknown')+'</div>';h+='<div class="actions-row"><button class="btn ghost small" onclick="viewAdminUser(\''+esc(u.id)+'\')">👁 Details</button><button class="btn ghost small" onclick="openUserEmails(\''+esc(u.id)+'\',\''+esc(u.email)+'\')">📧 Emails</button>';if(u.email.toLowerCase()!==(USER.email||'').toLowerCase()){if(u.banned){h+='<button class="btn success small" onclick="unbanUser(\''+esc(u.id)+'\')">✓ Unban</button>';}else{h+='<button class="btn warn small" onclick="banUser(\''+esc(u.id)+'\',\''+esc(u.email)+'\')">🚫 Ban</button>';}h+='<button class="btn danger small" onclick="deleteUserAccount(\''+esc(u.id)+'\',\''+esc(u.email)+'\')">🗑 Delete</button>';}h+='</div></div>';});$('adminUsersList').innerHTML=h;}
 async function banUser(uid,email){var reason=prompt('Reason for banning '+email+':')||'Violation of terms';var banIP=confirm('Also ban IP? (Recommended to prevent re-signup)');var ok=await showConfirm({icon:'🚫',title:'Ban '+email+'?',message:'They will not be able to login. '+(banIP?'IP will also be banned.':''),okText:'Ban',primary:false});if(!ok)return;api('/api/admin/user/'+uid+'/ban','POST',{reason:reason,banIP:banIP}).then(function(r){if(r.ok){toast('✅ User banned');loadAdmin();loadAdminBanned();}else toast('Error: '+r.error,'err');});}
 async function deleteUserAccount(uid,email){var ok=await showConfirm({icon:'⚠️',title:'Delete User?',message:'Delete '+email+' and ALL data? Cannot be undone.',okText:'Delete'});if(!ok)return;var ok2=await showConfirm({icon:'🚨',title:'FINAL Confirmation',message:'Really delete '+email+'?',okText:'Yes, Delete'});if(!ok2)return;toast('Deleting...');api('/api/admin/user/'+uid,'DELETE').then(function(r){if(r.ok){toast('✅ Deleted');loadAdmin();loadAdminAIUsage();loadAdminBanned();}else toast('Error','err');});}
-function viewAdminUser(uid){$('adminUserContent').innerHTML='<div class="empty">Loading...</div>';$('adminUserModal').classList.remove('hidden');api('/api/admin/user/'+uid+'/details').then(function(r){if(!r.ok){$('adminUserContent').innerHTML='<div class="empty">Error</div>';return;}var u=r.user;var h='<div class="info-box" style="margin:0"><div class="row"><span class="k">Name:</span><span class="v">'+esc(u.name||'—')+'</span></div>';h+='<div class="row"><span class="k">Email:</span><span class="v" style="font-size:12px">'+esc(u.email)+'</span></div>';h+='<div class="row"><span class="k">App ID:</span><span class="v"><span class="app-id-pill">'+esc(u.appAccountId)+'</span></span></div>';h+='<div class="row"><span class="k">Registered:</span><span class="v" style="font-size:12px">'+fmtDate(u.createdAt)+'</span></div>';h+='<div class="row"><span class="k">Last Login:</span><span class="v" style="font-size:12px">'+fmtDate(u.lastLogin)+'</span></div>';h+='<div class="row"><span class="k">First IP:</span><span class="v" style="font-size:12px">'+esc(u.firstIP)+'</span></div>';h+='<div class="row"><span class="k">Last IP:</span><span class="v" style="font-size:12px">'+esc(u.lastIP)+'</span></div>';h+='<div class="row"><span class="k">Status:</span><span class="v">'+(u.banned?'<span class="badge banned">🚫 BANNED</span>':'<span class="badge opened">✅ Active</span>')+'</span></div>';if(u.banned)h+='<div class="row"><span class="k">Ban Reason:</span><span class="v" style="font-size:12px">'+esc(u.banReason||'—')+'</span></div>';h+='</div>';var s=u.stats;h+='<div class="recipient-stat-grid" style="margin-top:16px"><div class="recipient-stat total"><div class="label">Recipients</div><div class="value">'+s.total+'</div></div><div class="recipient-stat sent"><div class="label">Sent</div><div class="value">'+s.sent+'</div></div><div class="recipient-stat opened"><div class="label">Opened</div><div class="value">'+s.opened+'</div></div><div class="recipient-stat pending"><div class="label">Pending</div><div class="value">'+s.pending+'</div></div></div>';h+='<div class="info-box" style="margin-top:12px"><div class="row"><span class="k">Total Sends:</span><span class="v">'+s.totalSends+'</span></div></div>';$('adminUserContent').innerHTML=h;});}
+function viewAdminUser(uid){$('adminUserContent').innerHTML='<div class="empty">Loading...</div>';$('adminUserModal').classList.remove('hidden');api('/api/admin/user/'+uid+'/details').then(function(r){if(!r.ok){$('adminUserContent').innerHTML='<div class="empty">Error</div>';return;}var u=r.user;var h='<div class="info-box" style="margin:0"><div class="row"><span class="k">Name:</span><span class="v">'+esc(u.name||'—')+'</span></div>';h+='<div class="row"><span class="k">Email:</span><span class="v" style="font-size:12px">'+esc(u.email)+'</span></div>';h+='<div class="row"><span class="k">App ID:</span><span class="v"><span class="app-id-pill">'+esc(u.appAccountId)+'</span></span></div>';h+='<div class="row"><span class="k">Auth Type:</span><span class="v">'+esc(u.authType||'google')+'</span></div>';h+='<div class="row"><span class="k">Registered:</span><span class="v" style="font-size:12px">'+fmtDate(u.createdAt)+'</span></div>';h+='<div class="row"><span class="k">Last Login:</span><span class="v" style="font-size:12px">'+fmtDate(u.lastLogin)+'</span></div>';h+='<div class="row"><span class="k">First IP:</span><span class="v" style="font-size:12px">'+esc(u.firstIP)+'</span></div>';h+='<div class="row"><span class="k">Last IP:</span><span class="v" style="font-size:12px">'+esc(u.lastIP)+'</span></div>';h+='<div class="row"><span class="k">Status:</span><span class="v">'+(u.banned?'<span class="badge banned">🚫 BANNED</span>':'<span class="badge opened">✅ Active</span>')+'</span></div>';if(u.banned)h+='<div class="row"><span class="k">Ban Reason:</span><span class="v" style="font-size:12px">'+esc(u.banReason||'—')+'</span></div>';h+='</div>';var s=u.stats;h+='<div class="recipient-stat-grid" style="margin-top:16px"><div class="recipient-stat total"><div class="label">Recipients</div><div class="value">'+s.total+'</div></div><div class="recipient-stat sent"><div class="label">Sent</div><div class="value">'+s.sent+'</div></div><div class="recipient-stat opened"><div class="label">Opened</div><div class="value">'+s.opened+'</div></div><div class="recipient-stat pending"><div class="label">Pending</div><div class="value">'+s.pending+'</div></div></div>';h+='<div class="info-box" style="margin-top:12px"><div class="row"><span class="k">Total Sends:</span><span class="v">'+s.totalSends+'</span></div></div>';$('adminUserContent').innerHTML=h;});}
 function closeAdminUser(){$('adminUserModal').classList.add('hidden');}
 function renderAllEmails(){var w=$('adminAllEmailsWrap');var q=($('adminEmailSearch').value||'').toLowerCase();var filtered=ADMIN_ALL_EMAILS.filter(function(e){return !q||(e.userEmail||'').toLowerCase().indexOf(q)!==-1||(e.recipientEmail||'').toLowerCase().indexOf(q)!==-1||(e.subject||'').toLowerCase().indexOf(q)!==-1;});if(!filtered.length){w.innerHTML='<div class="empty">No emails</div>';return;}var h='<table class="data-table"><thead><tr><th>User</th><th>Recipient</th><th>Subject</th><th>Sent</th><th>AI</th></tr></thead><tbody>';filtered.slice(0,500).forEach(function(e){var pred=e.aiPrediction||'GOOD';var prob=e.aiInboxProb||75;var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';h+='<tr><td style="font-size:10px;word-break:break-all">'+esc(e.userEmail)+'</td><td style="font-size:11px;word-break:break-all">'+esc(e.recipientEmail)+'</td><td style="font-size:10px">'+esc(e.subject||'—')+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(e.sentAt)+'</td><td><span style="padding:2px 8px;border-radius:12px;font-size:9px;font-weight:700;background:'+pc+'22;color:'+pc+'">'+prob+'%</span></td></tr>';});h+='</tbody></table>';w.innerHTML=h;}
 function openUserEmails(uid,email){$('recipHistoryTitle').innerText='Emails: '+email;$('recipHistoryInfo').innerHTML='';$('recipHistoryStats').innerHTML='<div class="empty">Loading...</div>';$('recipHistoryList').innerHTML='';$('recipHistoryModal').classList.remove('hidden');api('/api/admin/user/'+uid+'/emails').then(function(r){if(!r.ok){$('recipHistoryStats').innerHTML='';$('recipHistoryList').innerHTML='<div class="empty">Error</div>';return;}if(!r.emails.length){$('recipHistoryStats').innerHTML='';$('recipHistoryList').innerHTML='<div class="empty">No emails</div>';return;}var h='<table class="data-table"><thead><tr><th>Recipient</th><th>Subject</th><th>Sent</th><th>Status</th></tr></thead><tbody>';r.emails.forEach(function(e){var st=e.status||'Sent';var stCls=st==='Opened'?'opened':st==='Sent'?'sent':'pending';var stIcon=st==='Opened'?'👁':st==='Sent'?'📤':'⏳';h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(e.recipientEmail||'—')+'</td><td style="font-size:11px">'+esc((e.subject||'—').substring(0,60))+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(e.sentAt)+'</td><td><span class="badge '+stCls+'">'+stIcon+' '+esc(st)+'</span></td></tr>';});h+='</tbody></table>';$('recipHistoryStats').innerHTML='';$('recipHistoryList').innerHTML=h;});}
