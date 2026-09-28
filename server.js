@@ -119,7 +119,7 @@ function localCategorize(fromEmail, subject, bodyText) {
   return 'OTHER';
 }
 
-/* ============ AI USAGE TRACKING (daily + monthly + TOTAL) ============ */
+/* ============ AI USAGE TRACKING ============ */
 async function logAIUsage(uid, provider, model, usage) {
   if (!uid || !provider) return;
   try {
@@ -252,10 +252,33 @@ async function callMistral(prompt, uid) {
   throw lastErr;
 }
 
+async function callOmniRoute(prompt, uid) {
+  const OMNIROUTE_URL = process.env.OMNIROUTE_URL || '';
+  const OMNIROUTE_KEY = process.env.OMNIROUTE_KEY || '';
+  if (!OMNIROUTE_URL || !OMNIROUTE_KEY) throw new Error('No OmniRoute config');
+  const r = await fetchWithTimeout(OMNIROUTE_URL.replace(/\/$/, '') + '/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OMNIROUTE_KEY },
+    body: JSON.stringify({ model: 'auto', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 1800 })
+  }, 25000);
+  if (!r.ok) throw new Error('OmniRoute HTTP ' + r.status);
+  const d = await r.json();
+  const content = (d.choices?.[0]?.message?.content || '').trim();
+  if (!content || content.length < 5) throw new Error('OmniRoute empty');
+  logAIUsage(uid, 'omniroute', d.model || 'auto', d.usage || {});
+  return content;
+}
+
 async function callAI(prompt, uid) {
   const cached = getCachedResponse(prompt);
   if (cached) return cached;
-  const providers = [{ n: 'groq', f: callGroq },{ n: 'gemini', f: callGemini },{ n: 'openrouter', f: callOpenRouter },{ n: 'mistral', f: callMistral }];
+  const providers = [
+    { n: 'omniroute', f: callOmniRoute },
+    { n: 'groq', f: callGroq },
+    { n: 'gemini', f: callGemini },
+    { n: 'openrouter', f: callOpenRouter },
+    { n: 'mistral', f: callMistral }
+  ];
   const errs = [];
   for (const p of providers) {
     try {
@@ -311,17 +334,32 @@ try {
 } catch (e) { console.error('Firebase init error:', e.message); }
 const db = getFirestore();
 
+/* ============ HELPERS ============ */
+function getClientIP(req) {
+  const fwd = req.headers['x-forwarded-for'];
+  if (fwd) return String(fwd).split(',')[0].trim();
+  return req.headers['x-real-ip'] || req.connection?.remoteAddress || req.socket?.remoteAddress || 'unknown';
+}
+
 /* ============ OAUTH ============ */
 const SCOPES = ['https://www.googleapis.com/auth/gmail.send','https://www.googleapis.com/auth/userinfo.email','https://www.googleapis.com/auth/userinfo.profile','https://www.googleapis.com/auth/drive.file'];
 
 function createOAuthClient() { return new google.auth.OAuth2(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, process.env.GOOGLE_REDIRECT_URI); }
 function setUserOAuth(t) { const c = createOAuthClient(); c.setCredentials(t); return c; }
 
-function authRequired(req, res, next) {
+async function authRequired(req, res, next) {
   if (!req.session || !req.session.user) return res.status(401).json({ ok: false, error: 'Session expired.' });
+  // Check if banned
+  try {
+    const banned = await db.collection('bannedUsers').doc(req.session.user.id).get();
+    if (banned.exists) {
+      req.session = null;
+      return res.status(403).json({ ok: false, error: 'BANNED', reason: banned.data().reason || 'Account suspended', bannedAt: banned.data().bannedAt });
+    }
+  } catch (e) {}
   next();
 }
-function adminRequired(req, res, next) {
+async function adminRequired(req, res, next) {
   if (!req.session || !req.session.user) return res.status(401).json({ ok: false, error: 'Session expired.' });
   if (req.session.user.email.toLowerCase() !== ADMIN_EMAIL) return res.status(403).json({ ok: false, error: 'Admin required' });
   next();
@@ -364,18 +402,23 @@ function htmlToPlain(h) {
     .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\n\s*\n\s*\n/g, '\n\n').trim();
 }
 
-/* ============ MIGRATION HELPER ============ */
-async function migrateEverOpened(uid) {
+/* ============ MIGRATION (GLOBAL everOpened) ============ */
+async function globalEverOpenedMigration() {
   try {
-    const snap = await db.collection('users').doc(uid).collection('recipients').where('status', '==', 'Opened').limit(500).get();
-    const batch = db.batch();
-    let n = 0;
-    snap.forEach(d => {
-      const da = d.data();
-      if (da.everOpened !== true) { batch.update(d.ref, { everOpened: true }); n++; }
-    });
-    if (n > 0) await batch.commit();
-  } catch (e) {}
+    const usersSnap = await db.collection('users').get();
+    let total = 0;
+    for (const u of usersSnap.docs) {
+      const snap = await db.collection('users').doc(u.id).collection('recipients').where('status', '==', 'Opened').limit(500).get();
+      if (snap.empty) continue;
+      const batch = db.batch();
+      let n = 0;
+      snap.forEach(d => {
+        if (d.data().everOpened !== true) { batch.update(d.ref, { everOpened: true }); n++; }
+      });
+      if (n > 0) { await batch.commit(); total += n; }
+    }
+    if (total > 0) console.log('Migration: ' + total + ' recipients updated with everOpened');
+  } catch (e) { console.error('Migration error:', e.message); }
 }
 
 /* ============ CV EXTRACTION ============ */
@@ -610,6 +653,61 @@ async function updateSenderMemory(userId, email) {
 /* ============ HEALTH ============ */
 app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL }));
 
+/* ============ BAN CHECK (PUBLIC) ============ */
+app.post('/api/check-banned', async (req, res) => {
+  try {
+    const { email, ip } = req.body || {};
+    const result = { banned: false, reason: '', canRequest: false };
+    if (email) {
+      const emailLower = String(email).toLowerCase();
+      const uid = crypto.createHash('md5').update(emailLower).digest('hex');
+      const snap = await db.collection('bannedUsers').doc(uid).get();
+      if (snap.exists) {
+        result.banned = true;
+        result.reason = snap.data().reason || 'Account suspended';
+        result.bannedAt = snap.data().bannedAt;
+        result.canRequest = true;
+      }
+    }
+    if (!result.banned && ip) {
+      const snap = await db.collection('bannedUsers').where('ip', '==', ip).limit(1).get();
+      if (!snap.empty) {
+        result.banned = true;
+        result.reason = snap.docs[0].data().reason || 'IP suspended';
+        result.canRequest = true;
+      }
+    }
+    res.json({ ok: true, ...result });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+/* ============ ACCESS REQUEST (PUBLIC) ============ */
+app.post('/api/request-access', async (req, res) => {
+  try {
+    const { name, email, company, phone, reason, oldEmail } = req.body || {};
+    if (!name || !email || !reason) return res.json({ ok: false, error: 'Name, email, and reason required' });
+    const ip = getClientIP(req);
+    const uid = crypto.createHash('md5').update(String(email).toLowerCase()).digest('hex');
+    const ref = db.collection('accessRequests').doc(uid);
+    const existing = await ref.get();
+    if (existing.exists && existing.data().status === 'pending') {
+      return res.json({ ok: false, error: 'You already have a pending request' });
+    }
+    await ref.set({
+      name: String(name).substring(0, 100),
+      email: String(email).toLowerCase().substring(0, 200),
+      company: String(company || '').substring(0, 150),
+      phone: String(phone || '').substring(0, 50),
+      reason: String(reason).substring(0, 1000),
+      oldEmail: String(oldEmail || '').toLowerCase(),
+      ip: ip,
+      status: 'pending',
+      requestedAt: new Date()
+    });
+    res.json({ ok: true, message: 'Request submitted. Admin will review it.' });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
 /* ============ AUTH ============ */
 app.get('/auth/google', (req, res) => {
   const client = createOAuthClient();
@@ -625,8 +723,20 @@ app.get('/auth/google/callback', async (req, res) => {
     const info = await google.oauth2({ version: 'v2', auth: client }).userinfo.get();
     const email = info.data.email, name = info.data.name, picture = info.data.picture || '';
     const uid = crypto.createHash('md5').update(email).digest('hex');
+    const ip = getClientIP(req);
+
+    // Check if banned
+    const bannedSnap = await db.collection('bannedUsers').doc(uid).get();
+    if (bannedSnap.exists) {
+      return res.redirect((process.env.FRONTEND_URL || 'http://localhost:3000') + '/?banned=1');
+    }
+    const ipBanned = await db.collection('bannedUsers').where('ip', '==', ip).limit(1).get();
+    if (!ipBanned.empty) {
+      return res.redirect((process.env.FRONTEND_URL || 'http://localhost:3000') + '/?banned=1');
+    }
+
     const existing = await db.collection('users').doc(uid).get();
-    const data = { email, name, picture, tokens: encrypt(tokens), updatedAt: new Date() };
+    const data = { email, name, picture, tokens: encrypt(tokens), updatedAt: new Date(), lastIP: ip, lastLogin: new Date() };
     if (!existing.exists) {
       data.createdAt = new Date();
       data.quietEnabled = false; data.quietStart = 22; data.quietEnd = 7;
@@ -638,10 +748,12 @@ app.get('/auth/google/callback', async (req, res) => {
       data.imapEnabled = false; data.imapAppPassword = null;
       data.aiProfile = {};
       data.profilePicture = picture || '';
+      data.firstIP = ip;
     } else {
       const ex = existing.data();
       if (!ex.appAccountId) data.appAccountId = generateAppAccountId();
       if (ex.sendDelay === undefined) data.sendDelay = DEFAULT_SEND_DELAY;
+      if (!ex.firstIP) data.firstIP = ip;
     }
     await db.collection('users').doc(uid).set(data, { merge: true });
     const fresh = await db.collection('users').doc(uid).get();
@@ -692,7 +804,7 @@ app.get('/api/quota', authRequired, async (req, res) => {
 app.get('/api/profile', authRequired, async (req, res) => {
   try {
     const d = await getUserData(req.session.user.id);
-    res.json({ ok: true, profile: { name: d.name || '', email: d.email || '', picture: d.profilePicture || d.picture || '', appAccountId: d.appAccountId || '', createdAt: d.createdAt || null } });
+    res.json({ ok: true, profile: { name: d.name || '', email: d.email || '', picture: d.profilePicture || d.picture || '', appAccountId: d.appAccountId || '', createdAt: d.createdAt || null, lastLogin: d.lastLogin || null } });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.post('/api/profile', authRequired, async (req, res) => {
@@ -731,7 +843,7 @@ app.post('/api/profile/picture', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ AI USAGE (USER) ============ */
+/* ============ AI USAGE ============ */
 app.get('/api/ai/usage', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -836,7 +948,7 @@ app.delete('/api/imap/email/:id', authRequired, async (req, res) => {
   catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ REPLY FROM INBOX ============ */
+/* ============ INBOX REPLY ============ */
 app.post('/api/inbox/reply', authRequired, async (req, res) => {
   try {
     const { to, subject, body, inReplyTo, references } = req.body;
@@ -890,32 +1002,7 @@ app.post('/api/ai/smart-reply', authRequired, async (req, res) => {
     const userPos = aiProfile.designation || (u.sigFields?.pos) || '';
     const userTone = aiProfile.tone || 'professional';
     const userAbout = aiProfile.aboutMe || '';
-    const prompt = `You are an expert email assistant writing AS ${userName}. Write a thoughtful, professional reply to this incoming email.
-
-SENDER PROFILE:
-Name: ${userName}
-${userPos ? 'Position: ' + userPos : ''}
-${userCompany ? 'Company: ' + userCompany : ''}
-${userAbout ? 'About: ' + userAbout : ''}
-Preferred Tone: ${userTone}
-
-INCOMING EMAIL:
-From: ${originalFrom || 'Unknown'}
-Subject: ${originalSubject || '(no subject)'}
-Body: """${(originalBody || '').substring(0, 4000)}"""
-
-${instruction ? 'EXTRA INSTRUCTION: ' + instruction : ''}
-
-RULES:
-- Write in FIRST PERSON as ${userName}
-- Match tone: ${userTone}
-- Address EVERY point in the incoming email
-- 2-4 paragraphs, professional and clear
-- NO sign-off (no "Best regards", "Regards", "Thanks", "Sincerely")
-- NO name at end
-- Do NOT invent facts
-
-Return ONLY JSON: {"subject":"Re: ...","body":"complete reply with \\n\\n"}`;
+    const prompt = `You are an expert email assistant writing AS ${userName}. Write a thoughtful, professional reply to this incoming email.\n\nSENDER PROFILE:\nName: ${userName}\n${userPos ? 'Position: ' + userPos : ''}\n${userCompany ? 'Company: ' + userCompany : ''}\n${userAbout ? 'About: ' + userAbout : ''}\nPreferred Tone: ${userTone}\n\nINCOMING EMAIL:\nFrom: ${originalFrom || 'Unknown'}\nSubject: ${originalSubject || '(no subject)'}\nBody: """${(originalBody || '').substring(0, 4000)}"""\n\n${instruction ? 'EXTRA INSTRUCTION: ' + instruction : ''}\n\nRULES:\n- Write in FIRST PERSON as ${userName}\n- Match tone: ${userTone}\n- Address EVERY point in the incoming email\n- 2-4 paragraphs, professional and clear\n- NO sign-off (no "Best regards", "Regards", "Thanks", "Sincerely")\n- NO name at end\n- Do NOT invent facts\n\nReturn ONLY JSON: {"subject":"Re: ...","body":"complete reply with \\n\\n"}`;
     try {
       const text = await callAI(prompt, req.session.user.id);
       const parsed = safeParseJSON(text);
@@ -1102,7 +1189,6 @@ app.delete('/api/templates/:id', authRequired, async (req, res) => {
 app.get('/api/recipients', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
-    migrateEverOpened(uid).catch(() => {});
     const s = await db.collection('users').doc(uid).collection('recipients').orderBy('createdAt', 'desc').limit(1000).get();
     const ls = await db.collection('users').doc(uid).collection('emailLog').get();
     const c = {}; ls.forEach(d => { const r = d.data().recipientId; c[r] = (c[r] || 0) + 1; });
@@ -1239,7 +1325,7 @@ app.post('/api/prefs', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ STATS (FIXED: count both everOpened + status=Opened) ============ */
+/* ============ STATS (FIXED) ============ */
 app.get('/api/stats', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -1344,6 +1430,7 @@ async function sendOne(userId, userEmail, recipientId, options) {
   const pix = '<img src="' + trackUrl + '" width="1" height="1" alt="" style="border:0;display:block;width:1px;height:1px">';
   const raw = buildMime(u.name || 'MailFlow User', userEmail, rec.email, subject, full + pix, atts, { isBulk: true });
   await g.users.messages.send({ userId: 'me', requestBody: { raw } });
+  // IMPORTANT: Preserve everOpened. Status becomes Sent (latest), but everOpened stays true if was ever opened.
   const everOpenedFlag = rec.everOpened === true || rec.status === 'Opened';
   await db.collection('users').doc(userId).collection('recipients').doc(recipientId).update({ status: 'Sent', lastSentAt: new Date(), sentAt: new Date(), everOpened: everOpenedFlag });
   await db.collection('users').doc(userId).update({ lastSendTime: new Date() });
@@ -1651,6 +1738,8 @@ app.post('/api/auto-send-check', authRequired, async (req, res) => {
 app.get('/api/admin/dashboard', adminRequired, async (req, res) => {
   try {
     const us = await db.collection('users').get();
+    const bannedSnap = await db.collection('bannedUsers').get();
+    const bannedSet = new Set(bannedSnap.docs.map(d => d.id));
     const users = [];
     let tE = 0, tS = 0, tO = 0, tP = 0, tSd = 0;
     for (const u of us.docs) {
@@ -1666,7 +1755,7 @@ app.get('/api/admin/dashboard', adminRequired, async (req, res) => {
       const openedSet = new Set([...oSnap1.docs.map(x => x.id), ...oSnap2.docs.map(x => x.id)]);
       const tc = t.data().count, sc = s.data().count, oc = openedSet.size, pc = p.data().count, sdc = sd.data().count;
       tE += tc; tS += sc; tO += oc; tP += pc; tSd += sdc;
-      users.push({ id: u.id, email: d.email, name: d.name, picture: d.profilePicture || d.picture || '', appAccountId: d.appAccountId || 'N/A', autoSend: !!d.autoSend, totalAutoSent: d.totalAutoSent || 0, createdAt: d.createdAt ? d.createdAt.toDate().toISOString() : '', total: tc, sent: sc, opened: oc, pending: pc, totalSends: sdc });
+      users.push({ id: u.id, email: d.email, name: d.name, picture: d.profilePicture || d.picture || '', appAccountId: d.appAccountId || 'N/A', autoSend: !!d.autoSend, totalAutoSent: d.totalAutoSent || 0, createdAt: d.createdAt ? d.createdAt.toDate().toISOString() : '', lastLogin: d.lastLogin || null, lastIP: d.lastIP || 'unknown', firstIP: d.firstIP || 'unknown', banned: bannedSet.has(u.id), total: tc, sent: sc, opened: oc, pending: pc, totalSends: sdc });
     }
     users.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
     res.json({ ok: true, users, stats: { totalUsers: users.length, totalEmails: tE, totalSent: tS, totalOpened: tO, totalPending: tP, totalSends: tSd } });
@@ -1708,7 +1797,6 @@ app.get('/api/admin/all-emails', adminRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ADMIN: AI USAGE (with TOTAL lifetime) */
 app.get('/api/admin/ai-usage', adminRequired, async (req, res) => {
   try {
     const us = await db.collection('users').get();
@@ -1730,17 +1818,121 @@ app.get('/api/admin/ai-usage', adminRequired, async (req, res) => {
       totalToday += day.totalTokens || 0;
       totalMonth += mon.totalTokens || 0;
       totalLifetime += tot.totalTokens || 0;
-      rows.push({
-        id: u.id, email: d.email, name: d.name,
-        appAccountId: d.appAccountId || 'N/A',
-        todayCalls: day.calls || 0, todayTokens: day.totalTokens || 0, todayProviders: day.providers || {},
-        monthCalls: mon.calls || 0, monthTokens: mon.totalTokens || 0, monthProviders: mon.providers || {},
-        totalCalls: tot.calls || 0, totalTokens: tot.totalTokens || 0, totalProviders: tot.providers || {},
-        firstUsed: tot.firstUsed || null
-      });
+      rows.push({ id: u.id, email: d.email, name: d.name, appAccountId: d.appAccountId || 'N/A', todayCalls: day.calls || 0, todayTokens: day.totalTokens || 0, monthCalls: mon.calls || 0, monthTokens: mon.totalTokens || 0, totalCalls: tot.calls || 0, totalTokens: tot.totalTokens || 0, totalProviders: tot.providers || {} });
     }
     rows.sort((a, b) => (b.totalTokens || 0) - (a.totalTokens || 0));
     res.json({ ok: true, rows, summary: { totalUsers: us.size, activeAIUsers: totalUsersWithAI, tokensToday: totalToday, tokensThisMonth: totalMonth, tokensLifetime: totalLifetime, monthKey: month, date: today } });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+/* ============ ADMIN: BAN SYSTEM ============ */
+app.post('/api/admin/user/:id/ban', adminRequired, async (req, res) => {
+  try {
+    const uid = req.params.id;
+    const { reason, banIP } = req.body || {};
+    const target = await db.collection('users').doc(uid).get();
+    if (!target.exists) return res.json({ ok: false, error: 'User not found' });
+    const data = target.data();
+    if ((data.email || '').toLowerCase() === ADMIN_EMAIL) return res.json({ ok: false, error: 'Cannot ban admin' });
+    await db.collection('bannedUsers').doc(uid).set({
+      uid: uid,
+      email: data.email || '',
+      name: data.name || '',
+      appAccountId: data.appAccountId || '',
+      reason: String(reason || 'Violation of terms').substring(0, 500),
+      ip: banIP ? (data.lastIP || data.firstIP || 'unknown') : '',
+      bannedAt: new Date(),
+      bannedBy: req.session.user.email
+    });
+    res.json({ ok: true, banned: true });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/admin/user/:id/unban', adminRequired, async (req, res) => {
+  try {
+    await db.collection('bannedUsers').doc(req.params.id).delete();
+    res.json({ ok: true, unbanned: true });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/admin/banned-users', adminRequired, async (req, res) => {
+  try {
+    const snap = await db.collection('bannedUsers').orderBy('bannedAt', 'desc').get();
+    const banned = [];
+    snap.forEach(d => banned.push({ id: d.id, ...d.data() }));
+    res.json({ ok: true, banned });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+/* ============ ADMIN: ACCESS REQUESTS ============ */
+app.get('/api/admin/access-requests', adminRequired, async (req, res) => {
+  try {
+    const snap = await db.collection('accessRequests').orderBy('requestedAt', 'desc').limit(200).get();
+    const requests = [];
+    snap.forEach(d => requests.push({ id: d.id, ...d.data() }));
+    res.json({ ok: true, requests });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/admin/access-requests/:id/approve', adminRequired, async (req, res) => {
+  try {
+    const requestId = req.params.id;
+    const ref = db.collection('accessRequests').doc(requestId);
+    const snap = await ref.get();
+    if (!snap.exists) return res.json({ ok: false, error: 'Request not found' });
+    const reqData = snap.data();
+    // If the requesting email is different from banned email, unban old and let them sign up with new email
+    if (reqData.oldEmail && reqData.oldEmail !== reqData.email) {
+      const oldUid = crypto.createHash('md5').update(reqData.oldEmail).digest('hex');
+      await db.collection('bannedUsers').doc(oldUid).delete().catch(() => {});
+    }
+    // Unban the requested email
+    const newUid = crypto.createHash('md5').update(reqData.email).digest('hex');
+    await db.collection('bannedUsers').doc(newUid).delete().catch(() => {});
+    // Mark request as approved
+    await ref.update({ status: 'approved', approvedAt: new Date(), approvedBy: req.session.user.email });
+    res.json({ ok: true });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/admin/access-requests/:id/reject', adminRequired, async (req, res) => {
+  try {
+    const { reason } = req.body || {};
+    await db.collection('accessRequests').doc(req.params.id).update({ status: 'rejected', rejectReason: String(reason || '').substring(0, 500), rejectedAt: new Date(), rejectedBy: req.session.user.email });
+    res.json({ ok: true });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+/* ============ ADMIN: USER DETAILS ============ */
+app.get('/api/admin/user/:id/details', adminRequired, async (req, res) => {
+  try {
+    const uid = req.params.id;
+    const d = await db.collection('users').doc(uid).get();
+    if (!d.exists) return res.json({ ok: false, error: 'Not found' });
+    const data = d.data();
+    const banned = await db.collection('bannedUsers').doc(uid).get();
+    const [t, s, oSnap1, oSnap2, p, sd] = await Promise.all([
+      db.collection('users').doc(uid).collection('recipients').count().get(),
+      db.collection('users').doc(uid).collection('recipients').where('status', 'in', ['Sent', 'Opened']).count().get(),
+      db.collection('users').doc(uid).collection('recipients').where('everOpened', '==', true).get(),
+      db.collection('users').doc(uid).collection('recipients').where('status', '==', 'Opened').get(),
+      db.collection('users').doc(uid).collection('recipients').where('status', '==', 'Pending').count().get(),
+      db.collection('users').doc(uid).collection('emailLog').count().get()
+    ]);
+    const openedSet = new Set([...oSnap1.docs.map(x => x.id), ...oSnap2.docs.map(x => x.id)]);
+    res.json({ ok: true, user: {
+      id: uid,
+      email: data.email, name: data.name, picture: data.profilePicture || data.picture || '',
+      appAccountId: data.appAccountId || 'N/A',
+      createdAt: data.createdAt ? (data.createdAt.toDate ? data.createdAt.toDate().toISOString() : data.createdAt) : null,
+      lastLogin: data.lastLogin ? (data.lastLogin.toDate ? data.lastLogin.toDate().toISOString() : data.lastLogin) : null,
+      firstIP: data.firstIP || 'unknown',
+      lastIP: data.lastIP || 'unknown',
+      autoSend: !!data.autoSend,
+      banned: banned.exists,
+      banReason: banned.exists ? banned.data().reason : '',
+      stats: { total: t.data().count, sent: s.data().count, opened: openedSet.size, pending: p.data().count, totalSends: sd.data().count }
+    }});
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -1751,7 +1943,7 @@ app.delete('/api/admin/user/:id', adminRequired, async (req, res) => {
     const target = await db.collection('users').doc(uid).get();
     if (!target.exists) return res.json({ ok: false, error: 'User not found' });
     const email = (target.data().email || '').toLowerCase();
-    if (email === ADMIN_EMAIL) return res.json({ ok: false, error: 'Cannot delete admin account' });
+    if (email === ADMIN_EMAIL) return res.json({ ok: false, error: 'Cannot delete admin' });
     const subcollections = ['recipients', 'templates', 'emailLog', 'files', 'stats', 'senderMemory', 'imapEmails', 'testRecipients', 'testLog', 'aiUsage', 'replyLog'];
     for (const coll of subcollections) {
       let more = true;
@@ -1765,6 +1957,7 @@ app.delete('/api/admin/user/:id', adminRequired, async (req, res) => {
       }
     }
     await db.collection('users').doc(uid).delete();
+    await db.collection('bannedUsers').doc(uid).delete().catch(() => {});
     try {
       const tokens = target.data().tokens;
       const dec = typeof tokens === 'string' ? decrypt(tokens) : tokens;
@@ -1787,5 +1980,10 @@ app.use((req, res, next) => {
   next();
 });
 
-if (process.env.VERCEL) module.exports = app;
-else app.listen(PORT, () => console.log('✅ MailFlow Pro running on port ' + PORT));
+if (process.env.VERCEL) {
+  globalEverOpenedMigration().catch(() => {});
+  module.exports = app;
+} else {
+  globalEverOpenedMigration().catch(() => {});
+  app.listen(PORT, () => console.log('✅ MailFlow Pro running on port ' + PORT));
+}
