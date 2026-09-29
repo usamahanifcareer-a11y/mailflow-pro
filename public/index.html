@@ -21,6 +21,14 @@ button,input,textarea,select{font-family:inherit;font-size:16px}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes slideIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+/* GLOBAL DARK SELECT */
+select,option{background-color:#0a0e1a!important;color:#e2e8f0!important}
+select option{background-color:#0a0e1a!important;color:#e2e8f0!important}
+select:focus{outline:none;border-color:#38bdf8!important}
+
+/* AUTH */
 .auth-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;position:relative;z-index:1}
 .auth-card{background:rgba(15,23,42,.75);backdrop-filter:blur(30px);padding:44px 34px;border-radius:24px;width:100%;max-width:440px;box-shadow:0 32px 100px rgba(0,0,0,.8);border:1px solid rgba(51,65,85,.6);text-align:center}
 @media(max-width:480px){.auth-card{padding:32px 22px}}
@@ -34,8 +42,15 @@ button,input,textarea,select{font-family:inherit;font-size:16px}
 .auth-form{text-align:left}
 .auth-form .field{margin-bottom:12px}
 .auth-form .field label{display:block;font-size:10px;color:var(--text2);margin-bottom:6px;text-transform:uppercase;font-weight:700}
-.auth-form .field input{width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:15px;outline:none}
+.auth-form .field input{width:100%;background:#0a0e1a!important;color:#e2e8f0!important;border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:15px;outline:none;transition:.2s}
 .auth-form .field input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.15)}
+.auth-form .field input:-webkit-autofill{-webkit-box-shadow:0 0 0 30px #0a0e1a inset!important;-webkit-text-fill-color:#e2e8f0!important;transition:background-color 9999s}
+.pw-wrap{position:relative;display:flex;align-items:stretch}
+.pw-wrap input{flex:1;padding-right:48px!important}
+.pw-toggle{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:#94a3b8;font-size:18px;cursor:pointer;padding:8px 10px;border-radius:8px;transition:.2s;line-height:1;display:flex;align-items:center;justify-content:center;height:38px;width:38px}
+.pw-toggle:hover{background:rgba(56,189,248,.1);color:#38bdf8}
+.remember-me{display:flex;align-items:center;gap:8px;font-size:12px;color:#94a3b8;cursor:pointer;user-select:none;margin-bottom:14px;padding-left:4px}
+.remember-me input{width:16px;height:16px;accent-color:#38bdf8;cursor:pointer}
 .auth-error{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5;padding:10px;border-radius:8px;font-size:12px;margin-bottom:12px}
 .auth-features{margin-top:24px;padding-top:22px;border-top:1px solid var(--border);text-align:left}
 .auth-features .feat{display:flex;align-items:center;gap:12px;padding:8px 0;font-size:13px;color:#cbd5e1}
@@ -44,6 +59,7 @@ button,input,textarea,select{font-family:inherit;font-size:16px}
 .auth-legal a{color:var(--cyan);text-decoration:none}
 .notice-banner{background:linear-gradient(135deg,rgba(56,189,248,.1),rgba(168,85,247,.08));border:1px solid rgba(56,189,248,.3);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#7dd3fc;line-height:1.6}
 
+/* TOPBAR */
 .topbar{background:rgba(10,14,26,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1000;gap:8px;flex-wrap:wrap}
 .logo-top{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:800;white-space:nowrap}
 .logo-top .mini-logo{width:34px;height:34px;filter:drop-shadow(0 4px 10px rgba(56,189,248,.5))}
@@ -63,7 +79,7 @@ button,input,textarea,select{font-family:inherit;font-size:16px}
 .container{max-width:1400px;margin:0 auto;padding:16px;position:relative;z-index:1}
 @media(max-width:640px){.container{padding:12px}}
 .page-layout{display:flex;gap:16px;align-items:flex-start}
-.sidebar{width:280px;flex-shrink:0;position:sticky;top:140px}
+.sidebar{width:300px;flex-shrink:0;position:sticky;top:140px}
 .main-area{flex:1;min-width:0}
 @media(max-width:1000px){.page-layout{flex-direction:column}.sidebar{width:100%;position:static;order:2}.main-area{order:1}}
 .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
@@ -82,7 +98,7 @@ button,input,textarea,select{font-family:inherit;font-size:16px}
 .field>input,.field>textarea,.field>select{width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:12px 13px;font-size:15px;outline:none;-webkit-appearance:none;appearance:none}
 .field>select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
 .field>input:focus,.field>textarea:focus,.field>select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.15)}
-.btn{background:var(--grad);color:white;border:none;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;justify-content:center;white-space:nowrap}
+.btn{background:var(--grad);color:white;border:none;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;justify-content:center;white-space:nowrap;transition:.2s}
 .btn:hover{transform:translateY(-1px)}
 .btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
 .btn.ghost{background:transparent;border:1px solid var(--border2);color:#cbd5e1}
@@ -107,6 +123,7 @@ input:checked+.slider:before{transform:translateX(20px);background:#fff}
 .tab{padding:9px 16px;text-align:center;font-size:12px;color:var(--text2);cursor:pointer;border-radius:8px;font-weight:600;flex:1;min-width:80px}
 .tab.active{background:var(--grad);color:white}
 .filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.filter-bar select{background:var(--bg2)!important;color:var(--text)!important;border:1px solid var(--border)!important;border-radius:10px;padding:10px 34px 10px 12px;font-size:13px;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E")!important;background-repeat:no-repeat!important;background-position:right 12px center!important}
 .search-bar{width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:11px 14px 11px 42px;font-size:14px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:14px center;outline:none}
 .search-bar:focus{border-color:var(--cyan)}
 .filter-bar .search-bar{flex:1;min-width:200px;margin:0}
@@ -124,6 +141,7 @@ table.data-table tr.clickable{cursor:pointer}
 .badge.attach{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3)}
 .badge.everopened{background:rgba(168,85,247,.15);color:#c4b5fd;border:1px solid rgba(168,85,247,.3);font-size:9px}
 .badge.banned{background:rgba(239,68,68,.2);color:#fca5a5;border:1px solid rgba(239,68,68,.4)}
+.badge.gmail{background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.3);font-size:9px}
 .cbox{appearance:none;width:18px!important;height:18px!important;border:2px solid #475569;border-radius:5px;cursor:pointer;position:relative;background:var(--bg2);padding:0!important;margin:0}
 .cbox:checked{background:var(--cyan);border-color:var(--cyan)}
 .cbox:checked::after{content:'✓';position:absolute;color:white;font-size:13px;font-weight:700;top:50%;left:50%;transform:translate(-50%,-50%)}
@@ -256,7 +274,6 @@ table.data-table tr.clickable{cursor:pointer}
 .inbox-item .from-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
 .inbox-item .date{font-size:10px;color:var(--text3);white-space:nowrap}
 .inbox-item .subj{font-size:12px;color:#cbd5e1;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.inbox-item .badges{margin-top:8px;display:flex;gap:4px;flex-wrap:wrap}
 .inbox-viewer{display:flex;flex-direction:column;background:var(--bg);min-height:700px;position:relative}
 .email-head{padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(10,14,26,.6)}
 .email-head h4{font-size:17px;font-weight:700;margin-bottom:12px;word-break:break-word}
@@ -307,6 +324,7 @@ table.data-table tr.clickable{cursor:pointer}
 .send-history-item .subj{font-size:13px;font-weight:600;word-break:break-word;flex:1}
 .send-history-item .meta{display:flex;gap:12px;font-size:11px;color:var(--text3);flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)}
 .send-history-item.opened{border-color:rgba(34,197,94,.4);background:linear-gradient(135deg,rgba(34,197,94,.05),rgba(10,14,26,.6))}
+.send-history-item.gmail{border-color:rgba(239,68,68,.4);background:linear-gradient(135deg,rgba(239,68,68,.05),rgba(10,14,26,.6))}
 .attachment-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .attachment-name{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:12px;font-size:10px;color:#fcd34d;font-weight:600;word-break:break-all;max-width:100%}
 .user-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
@@ -322,6 +340,7 @@ table.data-table tr.clickable{cursor:pointer}
 .ai-usage-card .lbl{font-size:10px;color:var(--text2);text-transform:uppercase;font-weight:700;margin-bottom:6px}
 .ai-usage-card .val{font-size:22px;font-weight:800;color:var(--cyan)}
 .ai-usage-card.highlight .val{color:#fbbf24}
+.ai-usage-card.green .val{color:#86efac}
 .profile-avatar{width:120px;height:120px;border-radius:50%;border:4px solid var(--cyan);object-fit:cover;background:var(--bg2);box-shadow:0 8px 24px rgba(56,189,248,.35)}
 .ban-banner{background:linear-gradient(135deg,rgba(239,68,68,.15),rgba(220,38,38,.1));border:1px solid rgba(239,68,68,.5);border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;gap:12px}
 .ban-banner .icn{font-size:28px}
@@ -349,6 +368,16 @@ table.data-table tr.clickable{cursor:pointer}
 .ocr-progress{margin-top:12px;background:#1e293b;border-radius:8px;height:8px;overflow:hidden;display:none}
 .ocr-progress.show{display:block}
 .ocr-progress-fill{height:100%;background:var(--grad);width:0%;transition:.3s}
+.ocr-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px}
+.ocr-card .head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.ocr-card .head .num{font-size:12px;font-weight:800;color:#7dd3fc;background:rgba(56,189,248,.12);padding:4px 10px;border-radius:8px;font-family:monospace}
+.ocr-card .head .fname{font-size:11px;color:var(--text2);flex:1;min-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ocr-card .head .st{font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px}
+.ocr-card .head .st.done{background:rgba(34,197,94,.15);color:#86efac}
+.ocr-card .head .st.processing{background:rgba(245,158,11,.15);color:#fcd34d}
+.ocr-card .head .st.failed{background:rgba(239,68,68,.15);color:#fca5a5}
+.ocr-card textarea{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:12px;font-family:monospace;min-height:80px;resize:vertical;outline:none}
+.ocr-card textarea:focus{border-color:var(--cyan)}
 .pagination{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap;padding:12px;background:var(--bg2);border:1px solid var(--border);border-radius:12px}
 .pagination button{padding:8px 14px;font-size:12px;font-weight:600;border-radius:8px;border:1px solid var(--border2);background:var(--bg2);color:#cbd5e1;cursor:pointer}
 .pagination button:disabled{opacity:.4;cursor:not-allowed}
@@ -358,6 +387,10 @@ table.data-table tr.clickable{cursor:pointer}
 .ban-ip-toggle{display:flex;align-items:center;gap:8px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:12px;margin-top:10px;cursor:pointer}
 .ban-ip-toggle input[type=checkbox]{accent-color:var(--amber);width:18px;height:18px;cursor:pointer}
 .ban-ip-toggle .txt{font-size:12px;color:#fcd34d;line-height:1.5}
+.lang-hint{background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25);border-radius:10px;padding:10px 12px;font-size:12px;color:#7dd3fc;margin-bottom:12px;line-height:1.6}
+.imap-same-pass{display:flex;align-items:center;gap:8px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:10px 12px;margin:10px 0;cursor:pointer}
+.imap-same-pass input{accent-color:var(--green);width:16px;height:16px;cursor:pointer}
+.imap-same-pass .txt{font-size:12px;color:#86efac;line-height:1.5}
 @media(max-width:768px){
 .maintabs{position:fixed;bottom:0;top:auto;left:0;right:0;padding:6px 8px;z-index:2000;border-top:1px solid var(--border);border-bottom:none;justify-content:space-around;box-shadow:0 -10px 30px rgba(0,0,0,.3);padding-bottom:calc(6px + env(safe-area-inset-bottom));background:rgba(10,14,26,.98)}
 .maintab{flex:1;text-align:center;font-size:10px;padding:8px 4px}
@@ -389,18 +422,29 @@ input,textarea,select{min-height:44px;font-size:16px}
 </div>
 <div id="loginForm" class="auth-form">
 <div id="loginError" class="auth-error hidden"></div>
-<div class="field"><label>Email Address</label><input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email"></div>
-<div class="field"><label>Password</label><input type="password" id="loginPassword" placeholder="Enter your password" autocomplete="current-password"></div>
-<button class="btn" onclick="doEmailLogin()" style="width:100%">🔓 Login</button>
+<div class="field"><label>Email Address</label><input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email" autofocus></div>
+<div class="field"><label>Password</label>
+<div class="pw-wrap">
+<input type="password" id="loginPassword" placeholder="Enter your password" autocomplete="current-password" onkeydown="if(event.key==='Enter'){event.preventDefault();doEmailLogin();}">
+<button type="button" class="pw-toggle" onclick="togglePw('loginPassword', this)" title="Show/Hide" aria-label="Toggle password">👁</button>
+</div>
+</div>
+<label class="remember-me"><input type="checkbox" id="rememberMe"> <span>Remember me for 30 days</span></label>
+<button class="btn" onclick="doEmailLogin()" style="width:100%;padding:13px;font-weight:700">🔓 Login</button>
 </div>
 <div id="registerForm" class="auth-form hidden">
 <div id="registerError" class="auth-error hidden"></div>
 <div class="field"><label>Full Name</label><input type="text" id="registerName" placeholder="Enter your full name" autocomplete="name"></div>
 <div class="field"><label>Email Address</label><input type="email" id="registerEmail" placeholder="you@example.com" autocomplete="email"></div>
-<div class="field"><label>Password (min 8 characters)</label><input type="password" id="registerPassword" placeholder="Create a strong password" autocomplete="new-password"></div>
+<div class="field"><label>Password (min 8 characters)</label>
+<div class="pw-wrap">
+<input type="password" id="registerPassword" placeholder="Create a strong password" autocomplete="new-password" onkeydown="if(event.key==='Enter'){event.preventDefault();doEmailRegister();}">
+<button type="button" class="pw-toggle" onclick="togglePw('registerPassword', this)" title="Show/Hide" aria-label="Toggle password">👁</button>
+</div>
+</div>
 <button class="btn save-btn" onclick="doEmailRegister()">✨ Create Account</button>
 </div>
-<div class="notice-banner" style="margin-top:16px">💡 <b>Note:</b> After signup, connect your Gmail App Password to start sending emails.</div>
+<div class="notice-banner" style="margin-top:16px">💡 <b>Note:</b> After signup, connect your Gmail App Password from Settings to start sending emails.</div>
 <div class="auth-features">
 <div class="feat"><span class="ico">🤖</span> AI writes & improves emails</div>
 <div class="feat"><span class="ico">📸</span> Screenshot → Text extractor</div>
@@ -445,7 +489,7 @@ input,textarea,select{min-height:44px;font-size:16px}
 <svg viewBox="0 0 64 64"><defs><linearGradient id="mfGradM" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset=".5" stop-color="#6366f1"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="14" fill="url(#mfGradM)"/><path d="M14 22 L32 34 L50 22 L50 46 Q50 48 48 48 L16 48 Q14 48 14 46 Z" fill="#fff" opacity=".97"/><path d="M14 22 L32 34 L50 22" stroke="url(#mfGradM)" stroke-width="1.8" fill="none" stroke-linejoin="round"/><circle cx="49" cy="15" r="5.5" fill="#fbbf24"/></svg>
 </div>
 <span class="brand-text">MailFlow Pro</span>
-<span style="font-size:9px;color:var(--text3);font-weight:500;padding:2px 6px;background:rgba(56,189,248,.1);border-radius:6px;margin-left:4px">v4.1.0</span>
+<span style="font-size:9px;color:var(--text3);font-weight:500;padding:2px 6px;background:rgba(56,189,248,.1);border-radius:6px;margin-left:4px">v4.3.0</span>
 </div>
 <div class="user-chip">
 <img id="userAvatar" class="user-avatar" src="" style="display:none" alt="" onclick="openProfileModal()">
@@ -469,18 +513,48 @@ input,textarea,select{min-height:44px;font-size:16px}
 <div class="container" id="myView">
 <div class="page-layout">
 <aside class="sidebar">
-<div class="panel" style="background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(239,68,68,.05));border-color:rgba(245,158,11,.3)">
-<h2 style="color:#fcd34d">🛡️ Sending Best Practices</h2>
+<div class="panel" style="background:linear-gradient(135deg,rgba(56,189,248,.08),rgba(168,85,247,.06));border-color:rgba(56,189,248,.3)">
+<h2 style="color:#7dd3fc">💡 Getting Started</h2>
 <div style="display:flex;flex-direction:column;gap:8px">
-<div style="display:flex;gap:10px;padding:9px 11px;background:rgba(10,14,26,.5);border-radius:10px;border:1px solid var(--border)"><span style="font-size:16px">📧</span><div><b style="display:block;font-size:12px">Use your own Gmail</b><span style="font-size:11px;color:var(--text2)">Emails send from your address</span></div></div>
-<div style="display:flex;gap:10px;padding:9px 11px;background:rgba(10,14,26,.5);border-radius:10px;border:1px solid var(--border)"><span style="font-size:16px">✍️</span><div><b style="display:block;font-size:12px">Personalize content</b><span style="font-size:11px;color:var(--text2)">Use {name} & {company}</span></div></div>
-<div style="display:flex;gap:10px;padding:9px 11px;background:rgba(10,14,26,.5);border-radius:10px;border:1px solid var(--border)"><span style="font-size:16px">🎯</span><div><b style="display:block;font-size:12px">Reach real contacts</b><span style="font-size:11px;color:var(--text2)">Only email people you know</span></div></div>
+<div style="padding:12px;background:rgba(10,14,26,.5);border-radius:10px;border:1px solid var(--border)">
+<div style="display:flex;gap:10px;margin-bottom:8px"><span style="font-size:18px">1️⃣</span><b style="font-size:12px;color:#7dd3fc">Connect Gmail</b></div>
+<ol style="font-size:11px;color:#cbd5e1;line-height:1.7;padding-left:20px;margin:0">
+<li>Gmail → Settings → See all settings</li>
+<li>Security → Turn ON 2-Step Verification</li>
+<li>Visit <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color:#38bdf8">myaccount.google.com/apppasswords</a></li>
+<li>App name: <code style="background:rgba(56,189,248,.15);padding:1px 5px;border-radius:3px;color:#7dd3fc">MailFlow Pro</code></li>
+<li>Copy 16-char password</li>
+<li>Click "Connect Gmail" on dashboard</li>
+<li>Tick "Also enable Inbox" for reading sent emails</li>
+</ol>
+</div>
+<div style="padding:12px;background:rgba(10,14,26,.5);border-radius:10px;border:1px solid var(--border)">
+<div style="display:flex;gap:10px;margin-bottom:8px"><span style="font-size:18px">2️⃣</span><b style="font-size:12px;color:#7dd3fc">Create Template</b></div>
+<p style="font-size:11px;color:#cbd5e1;line-height:1.7;margin:0">Use AI to write or paste your own. Personalize with <b>{name}</b> and <b>{company}</b>.</p>
+</div>
+<div style="padding:12px;background:rgba(10,14,26,.5);border-radius:10px;border:1px solid var(--border)">
+<div style="display:flex;gap:10px;margin-bottom:8px"><span style="font-size:18px">3️⃣</span><b style="font-size:12px;color:#7dd3fc">Add Recipients</b></div>
+<p style="font-size:11px;color:#cbd5e1;line-height:1.7;margin:0">Manual, bulk paste, or screenshot OCR. All formats supported.</p>
+</div>
+<div style="padding:12px;background:rgba(10,14,26,.5);border-radius:10px;border:1px solid var(--border)">
+<div style="display:flex;gap:10px;margin-bottom:8px"><span style="font-size:18px">4️⃣</span><b style="font-size:12px;color:#86efac">Send & Track</b></div>
+<p style="font-size:11px;color:#cbd5e1;line-height:1.7;margin:0">Click 📤 to send. Real-time open tracking with all-time history.</p>
+</div>
+<div style="padding:12px;background:rgba(10,14,26,.5);border-radius:10px;border:1px solid var(--border)">
+<div style="display:flex;gap:10px;margin-bottom:8px"><span style="font-size:18px">⚡</span><b style="font-size:12px;color:#86efac">Pro Tips</b></div>
+<ul style="font-size:11px;color:#cbd5e1;line-height:1.7;padding-left:20px;margin:0">
+<li>Send only to people you know</li>
+<li>Personalize every email</li>
+<li>Enable Auto-Send for scheduled batches</li>
+<li>Connect Inbox for reply tracking</li>
+</ul>
+</div>
 </div>
 </div>
 </aside>
 <main class="main-area">
 <div id="gmailBanner" class="notice-banner hidden" style="background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(239,68,68,.1));border-color:rgba(245,158,11,.4);color:#fcd34d;cursor:pointer" onclick="openGmailConnectModal()">
-📧 <b>Gmail not connected.</b> Click here to connect your Gmail App Password to start sending emails.
+📧 <b>Gmail not connected.</b> Click here to connect your Gmail App Password and start sending emails.
 </div>
 <div class="quiet-banner" id="quietBanner"><span class="icn">🌙</span><div class="info"><div class="ttl">Quiet Hours Active</div><div class="dsc">Auto-send is paused. <span id="quietMsg"></span></div></div></div>
 
@@ -499,8 +573,8 @@ input,textarea,select{min-height:44px;font-size:16px}
 <label class="switch"><input type="checkbox" id="qAutoSend" onchange="onQuickAutoToggle(this.checked)"><span class="slider"></span></label>
 </div>
 <div id="qAutoConfig" style="margin-top:12px;display:none">
-<div class="field" style="margin-bottom:10px"><label>Batch Size (per hour)</label><input type="number" id="qBatchSize" min="1" max="500" value="5" placeholder="e.g. 5"></div>
-<div class="field" style="margin-bottom:10px"><label>Delay Between Sends (seconds)</label><input type="number" id="qDelay" min="0" max="120" value="20" placeholder="e.g. 20"></div>
+<div class="field" style="margin-bottom:10px"><label>Batch Size (per hour)</label><input type="number" id="qBatchSize" min="1" max="500" value="5"></div>
+<div class="field" style="margin-bottom:10px"><label>Delay Between Sends (seconds)</label><input type="number" id="qDelay" min="0" max="120" value="20"></div>
 <button class="btn success small" onclick="saveQuickAuto()" style="width:100%">💾 Save Automation Settings</button>
 </div>
 <div style="margin-top:10px">
@@ -511,26 +585,27 @@ input,textarea,select{min-height:44px;font-size:16px}
 </div>
 
 <div class="panel">
-<h2>📊 Gmail Quota <span class="quota-live"><span class="dot"></span>Live</span></h2>
+<h2>📊 Gmail Daily Sending Quota <span class="quota-live"><span class="dot"></span>Live</span></h2>
 <div class="info-box">
 <div class="row"><span class="k">Sent today:</span><span class="v" id="quotaSent">—</span></div>
 <div class="row"><span class="k">Daily limit:</span><span class="v" id="quotaLimit">500</span></div>
-<div class="row"><span class="k">Remaining:</span><span class="v" id="quotaRemaining">—</span></div>
+<div class="row"><span class="k">Remaining today:</span><span class="v" id="quotaRemaining">—</span></div>
 </div>
 <div class="quota-bar"><div class="quota-fill" id="quotaFill"></div></div>
+<div style="font-size:10px;color:var(--text3);margin-top:8px">⚠️ This reflects MailFlow sends only. Gmail may have additional limits.</div>
 </div>
 
 <div class="panel">
 <h2>✉️ AI Email Composer <span>Multi-provider AI</span></h2>
 <div class="composer-layout">
 <div class="composer-main">
-<div class="field"><label>Template Name</label><input type="text" id="composerName" placeholder="e.g. Job Application Template"></div>
+<div class="field"><label>Template Name</label><input type="text" id="composerName" placeholder="e.g. Job Application"></div>
 <div class="field">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px;flex-wrap:wrap">
 <label style="margin:0">Subject</label>
 <button class="btn ghost small" onclick="aiGenerateSubjects()" style="font-size:11px;padding:4px 10px">✨ AI Suggest</button>
 </div>
-<input type="text" id="composerSubject" placeholder="Enter email subject line" oninput="scheduleAnalysis()">
+<input type="text" id="composerSubject" placeholder="Enter email subject" oninput="scheduleAnalysis()">
 <div id="aiSubjectSuggestions" style="display:none;margin-top:8px;padding:10px;background:var(--bg2);border:1px solid var(--cyan);border-radius:10px">
 <div style="font-size:11px;color:#7dd3fc;font-weight:700;margin-bottom:8px">✨ AI Suggestions</div>
 <div id="aiSubjectList"></div>
@@ -541,11 +616,11 @@ input,textarea,select{min-height:44px;font-size:16px}
 <label style="margin:0">Body</label>
 <div style="display:flex;gap:6px;flex-wrap:wrap">
 <button class="btn ghost small" onclick="openAIWriter()" style="font-size:11px;padding:4px 10px">🤖 AI Write</button>
-<button class="btn ghost small" onclick="openCVAnalyzer()" style="font-size:11px;padding:4px 10px;border-color:var(--purple);color:#c4b5fd">📄 CV Analyzer</button>
-<button class="btn ghost small" onclick="aiImproveEmail()" style="font-size:11px;padding:4px 10px">✨ AI Fix</button>
+<button class="btn ghost small" onclick="openCVAnalyzer()" style="font-size:11px;padding:4px 10px;border-color:var(--purple);color:#c4b5fd">📄 CV</button>
+<button class="btn ghost small" onclick="aiImproveEmail()" style="font-size:11px;padding:4px 10px">✨ Fix</button>
 </div>
 </div>
-<textarea id="composerBody" class="bulk-area" placeholder="Write your email... Use {name} and {company}" oninput="scheduleAnalysis()" style="min-height:280px;font-size:14px"></textarea>
+<textarea id="composerBody" class="bulk-area" placeholder="Write your email..." oninput="scheduleAnalysis()" style="min-height:280px;font-size:14px"></textarea>
 <div style="font-size:11px;color:var(--text3);margin-top:6px">💡 Use {name} and {company} for personalization</div>
 </div>
 <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -587,7 +662,7 @@ input,textarea,select{min-height:44px;font-size:16px}
 <button class="btn" onclick="submitRecipients()" style="margin-left:6px;margin-top:10px">💾 Save</button>
 </div>
 <div id="bulkTab" class="hidden">
-<div class="bulk-help">📋 Paste emails — any format</div>
+<div class="bulk-help">📋 Paste emails in any format</div>
 <textarea class="bulk-area" id="bulkInput" placeholder="Paste emails here..."></textarea>
 <div class="bulk-preview-wrap" id="bulkPreviewWrap">
 <div class="bulk-preview-head"><div class="lbl">🔍 Preview</div><div style="display:flex;gap:8px"><span class="stat-pill ok" id="bulkValidPill">✅ 0</span><span class="stat-pill dup" id="bulkDupPill">🔁 0</span></div></div>
@@ -599,20 +674,24 @@ input,textarea,select{min-height:44px;font-size:16px}
 </div>
 </div>
 <div id="ocrTab" class="hidden">
-<div class="bulk-help" style="background:linear-gradient(135deg,rgba(168,85,247,.1),rgba(236,72,153,.08));border-color:rgba(168,85,247,.35);color:#c4b5fd">📸 Multiple screenshots — text extract hoga</div>
+<div class="bulk-help" style="background:linear-gradient(135deg,rgba(168,85,247,.1),rgba(236,72,153,.08));border-color:rgba(168,85,247,.35);color:#c4b5fd">📸 Upload screenshots — each labeled separately with its own text box</div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
 <input type="file" id="ocrInput" accept="image/*" multiple style="display:none">
-<button class="btn ghost" onclick="document.getElementById('ocrInput').click()" style="border:1px dashed var(--cyan);color:#7dd3fc;flex:1">📁 Choose (multi)</button>
+<button class="btn ghost" onclick="document.getElementById('ocrInput').click()" style="border:1px dashed var(--cyan);color:#7dd3fc;flex:1">📁 Choose</button>
 <button class="btn ghost" onclick="openCameraCapture()" style="border:1px dashed var(--cyan);color:#7dd3fc;flex:1">📷 Camera</button>
 </div>
-<div class="ocr-drop" onclick="document.getElementById('ocrInput').click()"><span class="ico">📸</span><div class="t">Click ya paste karo (Ctrl+V)</div><div class="s">PNG, JPG, WEBP — max 5MB each</div></div>
+<div class="ocr-drop" onclick="document.getElementById('ocrInput').click()"><span class="ico">📸</span><div class="t">Click or paste (Ctrl+V)</div><div class="s">PNG, JPG — max 5MB each</div></div>
 <div class="ocr-multi-grid" id="ocrThumbs"></div>
 <div id="ocrProgress" class="ocr-progress"><div class="ocr-progress-fill" id="ocrProgressFill"></div></div>
 <div id="ocrStatus" style="font-size:11px;color:var(--text2);margin-top:10px;text-align:center"></div>
-<div id="ocrResultWrap" style="display:none;margin-top:12px">
-<div class="field"><label>📝 Extracted Text</label><textarea id="ocrText" class="bulk-area" style="min-height:180px;font-size:13px"></textarea></div>
-<div style="display:flex;gap:8px;flex-wrap:wrap">
-<button class="btn success" onclick="sendOCRToBulk()" style="flex:1">📋 Send to Bulk</button>
+<div id="ocrResultWrap" style="display:none;margin-top:14px">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+<div style="font-size:12px;font-weight:700;color:#7dd3fc">📝 Extracted Text (per screenshot — editable)</div>
+<span id="ocrCardCount" style="font-size:11px;color:var(--text3)"></span>
+</div>
+<div id="ocrResultCards"></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+<button class="btn success" onclick="sendOCRToBulk()" style="flex:1">📋 Send All to Bulk</button>
 <button class="btn ghost" onclick="copyOCRText()">📋 Copy</button>
 <button class="btn ghost" onclick="clearOCR()">🗑 Clear</button>
 </div>
@@ -622,9 +701,9 @@ input,textarea,select{min-height:44px;font-size:16px}
 
 <div class="panel">
 <h2>📊 Recipient Tracking <span id="trackCount"></span></h2>
-<div style="font-size:11px;color:var(--text2);margin-bottom:12px;padding:10px;background:rgba(56,189,248,.06);border-radius:8px;border-left:3px solid var(--cyan)">💡 Click row for full history</div>
+<div style="font-size:11px;color:var(--text2);margin-bottom:12px;padding:10px;background:rgba(56,189,248,.06);border-radius:8px;border-left:3px solid var(--cyan)">💡 Click row for full all-time history (MailFlow sends + Gmail Sent folder)</div>
 <div class="filter-bar">
-<input type="text" class="search-bar" id="recipSearch" placeholder="Search..." oninput="renderRecipients()">
+<input type="text" class="search-bar" id="recipSearch" placeholder="Search email or company..." oninput="renderRecipients()">
 <select id="statusFilter" onchange="renderRecipients()"><option value="all">All Status</option><option value="Pending">Pending</option><option value="Sent">Sent</option><option value="Opened">Opened</option></select>
 </div>
 <div class="bulk-action-bar" id="bulkActionBar">
@@ -643,7 +722,7 @@ input,textarea,select{min-height:44px;font-size:16px}
 <div class="panel">
 <h2>📧 Email History <span id="myEmailCount"></span></h2>
 <div class="filter-bar">
-<input type="text" class="search-bar" id="myEmailSearch" placeholder="Search..." oninput="renderMyEmails()">
+<input type="text" class="search-bar" id="myEmailSearch" placeholder="Search recipient or subject..." oninput="renderMyEmails()">
 <select id="myEmailRange" onchange="loadMyEmails()"><option value="all">All Time</option><option value="today">Today</option><option value="7d">7 Days</option><option value="30d">30 Days</option></select>
 </div>
 <div id="myEmailsWrap" class="tbl-wrap"></div>
@@ -658,14 +737,14 @@ input,textarea,select{min-height:44px;font-size:16px}
 <div class="setup-card">
 <span class="setup-icon">📥</span>
 <h3>Connect Your Inbox</h3>
-<p>Use Gmail App Password — same password works for both sending and reading emails.</p>
+<p>Use the same Gmail App Password as your sender. One click to connect both.</p>
 <div class="setup-steps">
 <ol>
-<li>Go to Gmail → Settings → See all settings</li>
+<li>Gmail → Settings → See all settings</li>
 <li>Security → Enable 2-Step Verification</li>
-<li>Open <a href="https://myaccount.google.com/apppasswords" target="_blank">myaccount.google.com/apppasswords</a></li>
+<li><a href="https://myaccount.google.com/apppasswords" target="_blank">myaccount.google.com/apppasswords</a></li>
 <li>App name: <code>MailFlow Pro</code> → Create</li>
-<li>Copy the 16-character password</li>
+<li>Copy 16-character password</li>
 </ol>
 </div>
 <div class="field" style="text-align:left;max-width:420px;margin:0 auto 12px">
@@ -673,6 +752,8 @@ input,textarea,select{min-height:44px;font-size:16px}
 <input type="text" id="imapAppPassword" placeholder="xxxx xxxx xxxx xxxx" maxlength="20">
 </div>
 <button class="btn" onclick="connectIMAP()" style="padding:12px 28px" id="imapConnectBtn">🔌 Connect Inbox</button>
+<button class="btn ghost" onclick="connectIMAPWithStored()" style="padding:12px 20px;margin-left:8px" id="imapSamePassBtn">🔗 Use Saved Gmail Password</button>
+<div style="margin-top:14px;font-size:11px;color:var(--text3)">🔒 AES-256 encrypted</div>
 </div>
 </div>
 <div id="imapInboxUI" class="hidden">
@@ -682,7 +763,7 @@ input,textarea,select{min-height:44px;font-size:16px}
 <select id="inboxLimit" onchange="imapPage=1;loadIMAPInbox()"><option value="20" selected>20</option><option value="30">30</option><option value="50">50</option></select>
 <button class="btn small" onclick="loadIMAPInbox()">🔄 Sync</button>
 <button class="btn ghost small" onclick="disconnectIMAP()">🔌</button>
-<span id="imapSyncInfo" style="margin-left:auto;font-size:11px"><span class="live-dot"></span><span style="color:var(--green)">LIVE</span></span>
+<span id="imapSyncInfo" style="margin-left:auto;font-size:11px"><span class="live-dot"></span><span style="color:var(--green)">LIVE • 3s</span></span>
 </div>
 <div class="inbox-layout">
 <div class="inbox-list" id="inboxList"><div class="empty"><div class="ico">⏳</div>Loading...</div></div>
@@ -719,16 +800,14 @@ input,textarea,select{min-height:44px;font-size:16px}
 <div class="container hidden" id="aiprofileView">
 <div class="panel">
 <h2>🧠 AI Profile <span>AI writes as YOU</span></h2>
-<div class="ai-profile-banner"><div class="ico">✨</div><div class="txt">Ye information AI use karega tumhare tone se emails likhne ke liye.</div></div>
+<div class="ai-profile-banner"><div class="ico">✨</div><div class="txt">This information helps AI match your tone and style. Company & designation are synced from your Signature settings.</div></div>
 <div class="sig-fields">
 <div class="field" style="margin:0"><label>Full Name</label><input type="text" id="aipFullName" placeholder="Your name"></div>
-<div class="field" style="margin:0"><label>Designation</label><input type="text" id="aipDesignation" placeholder="Designation"></div>
-<div class="field" style="margin:0"><label>Company</label><input type="text" id="aipCompany" placeholder="Company"></div>
 <div class="field" style="margin:0"><label>Industry</label><input type="text" id="aipIndustry" placeholder="Industry"></div>
-<div class="field" style="margin:0"><label>Tone</label><select id="aipTone"><option value="professional">Professional</option><option value="friendly">Friendly</option><option value="casual">Casual</option><option value="confident">Confident</option></select></div>
+<div class="field" style="margin:0"><label>Preferred Tone</label><select id="aipTone"><option value="professional">Professional</option><option value="friendly">Friendly</option><option value="casual">Casual</option><option value="confident">Confident</option></select></div>
 </div>
-<div class="field" style="margin-top:12px"><label>About Me</label><textarea id="aipAboutMe" class="bulk-area" style="min-height:100px;font-size:13px"></textarea></div>
-<div class="field"><label>Common Phrases</label><textarea id="aipCommonPhrases" class="bulk-area" style="min-height:80px;font-size:13px"></textarea></div>
+<div class="field" style="margin-top:12px"><label>About Me</label><textarea id="aipAboutMe" class="bulk-area" style="min-height:100px;font-size:13px" placeholder="Brief about you — helps AI write better"></textarea></div>
+<div class="field"><label>Common Phrases</label><textarea id="aipCommonPhrases" class="bulk-area" style="min-height:80px;font-size:13px" placeholder="Phrases you commonly use"></textarea></div>
 <button class="btn save-btn" onclick="saveAIProfile()">💾 Save AI Profile</button>
 </div>
 </div>
@@ -740,7 +819,7 @@ input,textarea,select{min-height:44px;font-size:16px}
 <div class="panel"><h2>📊 Email Predictions</h2><div id="aiPredictionsWrap" class="tbl-wrap"></div></div>
 <div class="panel">
 <h2>🧠 Sender Memory <span id="sendersCount"></span></h2>
-<input type="text" class="search-bar" id="senderSearch" placeholder="Search..." oninput="renderSenders()" style="margin-bottom:12px">
+<input type="text" class="search-bar" id="senderSearch" placeholder="Search senders..." oninput="renderSenders()" style="margin-bottom:12px">
 <div id="sendersList"><div class="empty">No sender memory yet</div></div>
 </div>
 </div>
@@ -775,8 +854,8 @@ input,textarea,select{min-height:44px;font-size:16px}
 <div class="panel">
 <h2>🤖 Automation Test</h2>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-<div class="field" style="margin:0"><label>Batch</label><input type="number" id="testAutoBatchSize" min="1" max="50" value="5"></div>
-<div class="field" style="margin:0"><label>Delay (s)</label><input type="number" id="testAutoDelay" min="0" max="60" value="20"></div>
+<div class="field" style="margin:0"><label>Batch Size</label><input type="number" id="testAutoBatchSize" min="1" max="50" value="5"></div>
+<div class="field" style="margin:0"><label>Delay (seconds)</label><input type="number" id="testAutoDelay" min="0" max="60" value="20"></div>
 </div>
 <div class="info-box" style="margin-bottom:12px">
 <div class="row"><span class="k">Total auto-sent:</span><span class="v" id="testTotalAutoSent">0</span></div>
@@ -789,7 +868,7 @@ input,textarea,select{min-height:44px;font-size:16px}
 <h2>📋 Test Recipients <span id="testRecipCount"></span></h2>
 <div class="filter-bar">
 <input type="text" class="search-bar" id="testRecipSearch" placeholder="Search..." oninput="renderTestRecipients()">
-<select id="testRecipStatusFilter" onchange="renderTestRecipients()"><option value="all">All</option><option value="Pending">Pending</option><option value="Sent">Sent</option><option value="Opened">Opened</option></select>
+<select id="testRecipStatusFilter" onchange="renderTestRecipients()"><option value="all">All Status</option><option value="Pending">Pending</option><option value="Sent">Sent</option><option value="Opened">Opened</option></select>
 </div>
 <div class="bulk-action-bar" id="testBulkActionBar">
 <span id="testSelectedCount" style="color:#7dd3fc;font-weight:700;font-size:12px;margin-right:auto">0</span>
@@ -817,17 +896,20 @@ input,textarea,select{min-height:44px;font-size:16px}
 <div class="ai-usage-grid">
 <div class="ai-usage-card"><div class="lbl">Total Users</div><div class="val" id="adAIUsers">0</div></div>
 <div class="ai-usage-card"><div class="lbl">AI Active</div><div class="val" id="adAIActiveUsers">0</div></div>
-<div class="ai-usage-card"><div class="lbl">Today</div><div class="val" id="adAITokensToday">0</div></div>
-<div class="ai-usage-card"><div class="lbl">Month</div><div class="val" id="adAITokensMonth">0</div></div>
+<div class="ai-usage-card"><div class="lbl">Today Tokens</div><div class="val" id="adAITokensToday">0</div></div>
+<div class="ai-usage-card"><div class="lbl">Month Tokens</div><div class="val" id="adAITokensMonth">0</div></div>
 <div class="ai-usage-card highlight"><div class="lbl">Lifetime</div><div class="val" id="adAITokensTotal">0</div></div>
+<div class="ai-usage-card green"><div class="lbl">AI Remaining</div><div class="val" id="adAIRemaining">0</div></div>
+<div class="ai-usage-card green"><div class="lbl">~Calls Left</div><div class="val" id="adAICallsLeft">0</div></div>
+<div class="ai-usage-card"><div class="lbl">Total Calls</div><div class="val" id="adAITotalCalls">0</div></div>
 </div>
 <div id="adminAIUsageTable" class="tbl-wrap" style="margin-top:14px"></div>
 </div>
 <div class="panel"><h2>🚫 Banned Users <span id="adminBannedCount"></span></h2><div id="adminBannedList"></div></div>
 <div class="panel"><h2>📩 Access Requests <span id="adminReqCount"></span></h2><div id="adminRequestList"></div></div>
 <div class="panel">
-<h2>👥 All Users</h2>
-<input type="text" class="search-bar" id="adminSearch" placeholder="Search by email, name, or App ID..." oninput="onAdminSearchChange()">
+<h2>👥 All Users <span id="adminUsersLiveIndicator" style="color:var(--green);font-size:11px">● Live</span></h2>
+<input type="text" class="search-bar" id="adminSearch" placeholder="Search email, name, or App ID..." oninput="onAdminSearchChange()">
 <div id="adminUsersList" style="margin-top:14px"><div class="empty">Loading...</div></div>
 <div class="pagination" id="adminPagination" style="display:none">
 <button id="adminPrevBtn" onclick="loadAdminUsersPage(adminPage-1)">← Prev</button>
@@ -836,14 +918,40 @@ input,textarea,select{min-height:44px;font-size:16px}
 </div>
 </div>
 <div class="panel">
-<h2>📨 All Sent Emails</h2>
-<input type="text" class="search-bar" id="adminEmailSearch" placeholder="Search..." oninput="renderAllEmails()" style="margin-bottom:14px">
+<h2>📨 All Sent Emails <span id="adminEmailsLiveIndicator" style="color:var(--green);font-size:11px">● Live</span></h2>
+<input type="text" class="search-bar" id="adminEmailSearch" placeholder="Search by user, recipient, or subject..." oninput="onAdminEmailSearchChange()" style="margin-bottom:14px">
 <div id="adminAllEmailsWrap" class="tbl-wrap"></div>
+<div class="pagination" id="adminEmailsPagination" style="display:none">
+<button id="adminEmailsPrevBtn" onclick="loadAdminEmailsPage(adminEmailsPage-1)">← Prev</button>
+<span class="page-info" id="adminEmailsPageInfo">Page 1 of 1</span>
+<button id="adminEmailsNextBtn" onclick="loadAdminEmailsPage(adminEmailsPage+1)">Next →</button>
+</div>
 </div>
 </div>
 </div>
 
 <!-- MODALS -->
+<div id="gmailConnectModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeGmailConnectModal()">
+<div class="modal" style="max-width:560px">
+<button class="close-btn" onclick="closeGmailConnectModal()">✕</button>
+<h3>📧 Connect Your Gmail</h3>
+<div class="notice-banner">💡 <b>Why App Password?</b> Send from your own Gmail without Google verification. Free & unlimited.</div>
+<div class="setup-steps">
+<ol>
+<li>Gmail → Settings → See all settings</li>
+<li>Security → Enable <b>2-Step Verification</b></li>
+<li><a href="https://myaccount.google.com/apppasswords" target="_blank">myaccount.google.com/apppasswords</a></li>
+<li>App name: <code>MailFlow Pro</code> → Create</li>
+<li>Copy 16-character password</li>
+</ol>
+</div>
+<div class="field"><label>🔑 Gmail App Password</label><input type="text" id="smtpAppPassword" placeholder="xxxx xxxx xxxx xxxx" maxlength="20"></div>
+<label class="imap-same-pass"><input type="checkbox" id="alsoEnableImap" checked><div class="txt"><b>Also enable Inbox (IMAP)</b> — read your Gmail Inbox & Sent from within MailFlow Pro</div></label>
+<button class="btn success" onclick="connectGmail()" style="width:100%;padding:14px;font-weight:700" id="gmailConnectBtn">🔌 Connect Gmail</button>
+<div style="margin-top:12px;font-size:11px;color:var(--text3);text-align:center">🔒 AES-256-GCM encrypted</div>
+</div>
+</div>
+
 <div id="profileModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeProfileModal()">
 <div class="modal" style="max-width:560px">
 <button class="close-btn" onclick="closeProfileModal()">✕</button>
@@ -866,34 +974,15 @@ input,textarea,select{min-height:44px;font-size:16px}
 </div>
 <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">
 <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--cyan)">🤖 My AI Usage</div>
-<div class="ai-usage-grid">
+<div class="ai-usage-grid" style="grid-template-columns:repeat(2,1fr)">
 <div class="ai-usage-card"><div class="lbl">Today</div><div class="val" id="profileAIToday">0</div></div>
 <div class="ai-usage-card"><div class="lbl">Month</div><div class="val" id="profileAIMonth">0</div></div>
 <div class="ai-usage-card highlight"><div class="lbl">Lifetime</div><div class="val" id="profileAITotal">0</div></div>
 <div class="ai-usage-card"><div class="lbl">Calls</div><div class="val" id="profileAICalls">0</div></div>
+<div class="ai-usage-card green"><div class="lbl">Remaining Tokens</div><div class="val" id="profileAIRemaining">—</div></div>
+<div class="ai-usage-card green"><div class="lbl">~Calls Left</div><div class="val" id="profileAICallsLeft">—</div></div>
 </div>
 </div>
-</div>
-</div>
-
-<!-- GMAIL CONNECT MODAL (NEW) -->
-<div id="gmailConnectModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeGmailConnectModal()">
-<div class="modal" style="max-width:560px">
-<button class="close-btn" onclick="closeGmailConnectModal()">✕</button>
-<h3>📧 Connect Your Gmail</h3>
-<div class="notice-banner">💡 <b>Why App Password?</b> This lets you send emails from your own Gmail address without any Google verification. Free & unlimited.</div>
-<div class="setup-steps">
-<ol>
-<li>Go to <b>Gmail</b> → Settings → See all settings</li>
-<li>Navigate to <b>Security</b> → Enable <b>2-Step Verification</b></li>
-<li>Open <a href="https://myaccount.google.com/apppasswords" target="_blank">myaccount.google.com/apppasswords</a></li>
-<li>App name: <code>MailFlow Pro</code> → Click <b>Create</b></li>
-<li>Copy the <b>16-character password</b> (remove spaces)</li>
-</ol>
-</div>
-<div class="field"><label>🔑 Gmail App Password (16 characters)</label><input type="text" id="smtpAppPassword" placeholder="xxxx xxxx xxxx xxxx" maxlength="20"></div>
-<button class="btn success" onclick="connectGmail()" style="width:100%;padding:14px;font-weight:700" id="gmailConnectBtn">🔌 Connect Gmail</button>
-<div style="margin-top:12px;font-size:11px;color:var(--text3);text-align:center;line-height:1.6">🔒 Your App Password is encrypted with AES-256-GCM</div>
 </div>
 </div>
 
@@ -912,27 +1001,24 @@ input,textarea,select{min-height:44px;font-size:16px}
 </div>
 <div id="logoActions" style="display:none;margin-bottom:12px"><button class="btn danger small" onclick="removeLogo()">🗑 Remove Logo</button></div>
 <div class="sig-fields">
-<div class="field" style="margin:0"><label>Name</label><input type="text" id="sbName" placeholder="Your name" oninput="previewSig()"></div>
-<div class="field" style="margin:0"><label>Designation</label><input type="text" id="sbPos" placeholder="Designation" oninput="previewSig()"></div>
-<div class="field" style="margin:0"><label>Company</label><input type="text" id="sbCompany" placeholder="Company" oninput="previewSig()"></div>
-<div class="field" style="margin:0"><label>📞 Phone</label><input type="text" id="sbPhone" placeholder="Phone" oninput="previewSig()"></div>
-<div class="field" style="margin:0"><label>✉️ Email</label><input type="text" id="sbEmail" placeholder="Email" oninput="previewSig()"></div>
-<div class="field" style="margin:0"><label>🔗 LinkedIn</label><input type="text" id="sbLinkedin" placeholder="URL" oninput="previewSig()"></div>
+<div class="field" style="margin:0"><label>Name</label><input type="text" id="sbName" oninput="previewSig()"></div>
+<div class="field" style="margin:0"><label>Designation</label><input type="text" id="sbPos" oninput="previewSig()"></div>
+<div class="field" style="margin:0"><label>Company</label><input type="text" id="sbCompany" oninput="previewSig()"></div>
+<div class="field" style="margin:0"><label>📞 Phone</label><input type="text" id="sbPhone" oninput="previewSig()"></div>
+<div class="field" style="margin:0"><label>✉️ Email</label><input type="text" id="sbEmail" oninput="previewSig()"></div>
+<div class="field" style="margin:0"><label>🔗 LinkedIn</label><input type="text" id="sbLinkedin" oninput="previewSig()"></div>
 </div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
 <button class="btn ghost" onclick="previewSig()">👁 Preview</button>
 <button class="btn" onclick="saveSig()">💾 Save</button>
 <button class="btn ghost" onclick="resetSig()">🗑 Reset</button>
 </div>
-<div class="sig-preview-outer" id="sigPreviewBox">
-<div style="font-size:11px;color:var(--text2);margin-bottom:8px">📧 Signature Preview</div>
-<div class="sig-preview-canvas" id="sigPreviewContent"></div>
-</div>
+<div class="sig-preview-outer" id="sigPreviewBox"><div style="font-size:11px;color:var(--text2);margin-bottom:8px">📧 Preview</div><div class="sig-preview-canvas" id="sigPreviewContent"></div></div>
 </div>
 <div id="setAttachmentsTab" class="hidden">
 <div class="upload-area">
 <input type="file" id="fileInput" multiple>
-<label for="fileInput"><div class="preview-box"><div class="ph">📎</div></div><div class="upload-info"><div class="t">Upload files (max 700KB each)</div><div class="s">Stored securely in Firestore</div></div></label>
+<label for="fileInput"><div class="preview-box"><div class="ph">📎</div></div><div class="upload-info"><div class="t">Upload files</div><div class="s">Max 900KB each</div></div></label>
 </div>
 <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
 <button class="btn ghost small" onclick="selectAllFiles()">☑️ All</button>
@@ -948,7 +1034,7 @@ input,textarea,select{min-height:44px;font-size:16px}
 <div class="modal" style="max-width:640px">
 <button class="close-btn" onclick="closeReplyModal()">✕</button>
 <h3 id="replyModalTitle">↩️ Reply</h3>
-<div id="replyAIHint" style="display:none;font-size:11px;color:#7dd3fc;margin-bottom:10px;padding:8px 10px;background:rgba(56,189,248,.08);border-radius:8px"><span id="replyAIStatus">🤖 AI analyzing...</span></div>
+<div id="replyAIHint" style="display:none;font-size:11px;color:#7dd3fc;margin-bottom:10px;padding:8px 10px;background:rgba(56,189,248,.08);border-radius:8px;border:1px solid rgba(56,189,248,.2)"><span id="replyAIStatus">🤖 Analyzing...</span></div>
 <div class="field"><label>To</label><input type="text" id="replyTo"></div>
 <div class="field"><label>Subject</label><input type="text" id="replySubject"></div>
 <div class="field"><label>Message</label><textarea id="replyBody" class="bulk-area" style="min-height:240px;font-size:14px"></textarea></div>
@@ -960,7 +1046,8 @@ input,textarea,select{min-height:44px;font-size:16px}
 <div class="modal" style="max-width:560px">
 <button class="close-btn" onclick="closeAIWriter()">✕</button>
 <h3>🤖 AI Email Writer</h3>
-<div class="field"><label>Context</label><textarea id="aiContext" rows="3" placeholder="Describe purpose..."></textarea></div>
+<div class="lang-hint">🌐 Write context in any language (Urdu, Roman-Urdu, Hindi, Arabic, etc.) — AI will produce professional English.</div>
+<div class="field"><label>Context / Purpose</label><textarea id="aiContext" rows="3" placeholder="Write context in any language..."></textarea></div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
 <div class="field"><label>Recipient Name</label><input type="text" id="aiRecipientName"></div>
 <div class="field"><label>Company</label><input type="text" id="aiRecipientCompany"></div>
@@ -975,6 +1062,7 @@ input,textarea,select{min-height:44px;font-size:16px}
 <div class="modal" style="max-width:700px">
 <button class="close-btn" onclick="closeCVAnalyzer()">✕</button>
 <h3>📄 AI CV Analyzer</h3>
+<div class="lang-hint">🌐 CV kisi bhi language mein ho (Urdu, Hindi, Arabic, Roman-Urdu) — AI samjhega aur <b>professional English</b> email banayega.</div>
 <div class="field"><label>📁 Select CV File</label>
 <div id="cvFileList" style="max-height:220px;overflow-y:auto;padding:6px;background:rgba(0,0,0,.2);border-radius:10px;min-height:60px">
 <div style="padding:14px;color:var(--text3);font-size:12px;text-align:center">No files</div>
@@ -983,15 +1071,15 @@ input,textarea,select{min-height:44px;font-size:16px}
 <div class="field"><label>📤 Upload New CV</label>
 <div style="display:flex;gap:8px;flex-wrap:wrap">
 <input type="file" id="cvFileInput" accept=".pdf,.docx,.txt,.doc,.rtf" style="display:none">
-<button class="btn ghost" onclick="document.getElementById('cvFileInput').click()" style="border:1px dashed var(--cyan);color:#7dd3fc;flex:1">📁 Choose</button>
+<button class="btn ghost" onclick="document.getElementById('cvFileInput').click()" style="border:1px dashed var(--cyan);color:#7dd3fc;flex:1">📁 Choose File</button>
 </div>
 <div id="cvUploadStatus" style="font-size:11px;color:var(--text3);margin-top:8px"></div>
 </div>
-<div id="cvTextWrap" style="display:none;margin-top:10px"><label style="font-size:10px;color:var(--text2);text-transform:uppercase;font-weight:700;display:block;margin-bottom:6px">📝 Extracted CV</label><textarea id="cvText" class="bulk-area" style="min-height:160px;font-size:12px"></textarea></div>
-<div class="field" style="margin-top:12px"><label>🎯 Target Role</label><input type="text" id="cvTargetRole"></div>
-<div class="field"><label>📋 Job Description</label><textarea id="cvJobDesc" class="bulk-area" style="min-height:80px;font-size:13px"></textarea></div>
+<div id="cvTextWrap" style="display:none;margin-top:10px"><label style="font-size:10px;color:var(--text2);text-transform:uppercase;font-weight:700;display:block;margin-bottom:6px">📝 Extracted CV (editable — fix if needed)</label><textarea id="cvText" class="bulk-area" style="min-height:160px;font-size:12px"></textarea></div>
+<div class="field" style="margin-top:12px"><label>🎯 Target Role</label><input type="text" id="cvTargetRole" placeholder="e.g. Senior Manager"></div>
+<div class="field"><label>📋 Job Description</label><textarea id="cvJobDesc" class="bulk-area" style="min-height:80px;font-size:13px" placeholder="Optional — paste job description"></textarea></div>
 <div id="cvAnalysisResult" style="display:none;margin-top:14px;padding:12px;background:var(--bg2);border:1px solid var(--cyan);border-radius:10px;font-size:12px;line-height:1.6"></div>
-<button class="btn" onclick="runCVAnalysis()" style="width:100%;margin-top:12px" id="cvAnalyzeBtn">🤖 Analyze & Generate</button>
+<button class="btn" onclick="runCVAnalysis()" style="width:100%;margin-top:12px" id="cvAnalyzeBtn">🤖 Analyze & Generate Email</button>
 </div>
 </div>
 
@@ -1018,8 +1106,8 @@ input,textarea,select{min-height:44px;font-size:16px}
 <button class="close-btn" onclick="closeBanModal()">✕</button>
 <h3>🚫 Ban User</h3>
 <div id="banUserInfo" style="padding:12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;font-size:13px"></div>
-<div class="field"><label>Reason for Banning</label><textarea id="banReason" class="ban-reason-input" placeholder="e.g. Violation of terms"></textarea></div>
-<label class="ban-ip-toggle"><input type="checkbox" id="banIP"><div class="txt"><b>Also ban IP address</b><br>Prevents re-signup from same network</div></label>
+<div class="field"><label>Reason</label><textarea id="banReason" class="ban-reason-input" placeholder="e.g. Violation of terms"></textarea></div>
+<label class="ban-ip-toggle"><input type="checkbox" id="banIP"><div class="txt"><b>Also ban IP address</b></div></label>
 <div style="display:flex;gap:8px;margin-top:16px">
 <button class="btn danger" onclick="confirmBanUser()" style="flex:1">🚫 Ban User</button>
 <button class="btn ghost" onclick="closeBanModal()">Cancel</button>
@@ -1069,10 +1157,12 @@ var LOGO_URL='',LOGO_URL_ALT='',ADMIN_ALL_EMAILS=[],MY_EMAILS=[],ADMIN_BANNED=[]
 var INBOX_EMAILS=[],ACTIVE_EMAIL=null,MY_QUOTA={sent:0,limit:500,remaining:500};
 var SENDERS=[],IMAP_CONNECTED=false,imapPage=1;
 var POLL_TIMER=null,HOURLY_TIMER=null,analysisTimer=null,lastAnalyzedHash='',LIVE_INBOX_TIMER=null,lastInboxHash='';
-var MAX_UPLOAD_SIZE=700*1024;
+var ADMIN_LIVE_TIMER=null,ADMIN_EMAIL_LIVE_TIMER=null;
+var MAX_UPLOAD_SIZE=900*1024;
 var _currentSendId=null,CV_SELECTED_FILE_ID=null;
 var BANNED_USER_EMAIL='',_banTargetUid=null,_banTargetEmail='';
 var adminPage=1,adminSearchQuery='',adminSearchTimer=null;
+var adminEmailsPage=1,adminEmailsSearchQuery='',adminEmailsSearchTimer=null;
 var OCR_FILES=[];
 
 function $(id){return document.getElementById(id);}
@@ -1084,29 +1174,92 @@ function fmtNum(n){if(!n||n===0)return '0';if(n<1000)return String(n);if(n<10000
 function fmtDate(d){if(!d)return '—';try{var t=d._seconds?d._seconds*1000:(d.seconds?d.seconds*1000:new Date(d).getTime());var dt=new Date(t);return dt.toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'})+' · '+dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});}catch(e){return '—';}}
 function fmtEmailDate(dateISO){if(!dateISO)return '—';try{var d=new Date(dateISO);if(isNaN(d.getTime()))return '—';var now=new Date();var timeStr=d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});var dateStr=d.toLocaleDateString('en-US',{day:'numeric',month:'short'});if(d.toDateString()===now.toDateString())return timeStr;return dateStr+' · '+timeStr;}catch(e){return '—';}}
 function fmtTimeAgo(dateISO){if(!dateISO)return '—';try{var d=new Date(dateISO);var diff=Date.now()-d.getTime();var min=Math.floor(diff/60000);if(min<1)return 'Just now';if(min<60)return min+'m ago';var hr=Math.floor(min/60);if(hr<24)return hr+'h ago';return Math.floor(hr/24)+'d ago';}catch(e){return '—';}}
-function fileIcon(name,mime){mime=mime||'';name=(name||'').toLowerCase();if(mime.startsWith('image/'))return '🖼️';if(mime.includes('pdf')||name.endsWith('.pdf'))return '📄';if(mime.includes('word')||/\.(doc|docx)$/i.test(name))return '📝';if(mime.includes('sheet')||/\.(xls|xlsx|csv)$/i.test(name))return '📊';return '📎';}
+function fileIcon(name,mime){mime=mime||'';name=(name||'').toLowerCase();if(mime.startsWith('image/'))return '🖼️';if(mime.includes('pdf')||name.endsWith('.pdf'))return '📄';if(mime.includes('word')||/\.(doc|docx)$/i.test(name))return '📝';return '📎';}
 function isCvFile(f){var n=(f.name||'').toLowerCase();var m=(f.mimeType||'').toLowerCase();return n.endsWith('.pdf')||n.endsWith('.docx')||n.endsWith('.doc')||n.endsWith('.txt')||n.endsWith('.rtf')||m.includes('pdf')||m.includes('word')||m.includes('text');}
 function showConfirm(opts){return new Promise(function(resolve){$('confirmIcon').innerText=opts.icon||'⚠️';$('confirmTitle').innerText=opts.title||'Are you sure?';$('confirmMessage').innerText=opts.message||'';var ok=$('confirmOk'),cancel=$('confirmCancel');ok.innerText=opts.okText||'Confirm';ok.className='confirm-btn'+(opts.primary?' primary':'');$('confirmBackdrop').classList.remove('hidden');var cleanup=function(){$('confirmBackdrop').classList.add('hidden');ok.onclick=null;cancel.onclick=null;};ok.onclick=function(){cleanup();resolve(true);};cancel.onclick=function(){cleanup();resolve(false);};});}
 
+/* PASSWORD TOGGLE & REMEMBER ME */
+function togglePw(id, btn){
+  var inp = $(id);
+  if(!inp) return;
+  if(inp.type === 'password'){ inp.type = 'text'; btn.innerText = '🙈'; }
+  else { inp.type = 'password'; btn.innerText = '👁'; }
+}
+function getRememberedEmail(){ try { return localStorage.getItem('mf_remember_email') || ''; } catch(e) { return ''; } }
+function setRememberedEmail(email){ try { if(email) localStorage.setItem('mf_remember_email', email); else localStorage.removeItem('mf_remember_email'); } catch(e){} }
+
 /* AUTH */
 function switchAuthTab(t){if(t==='login'){$('loginTab').classList.add('active');$('registerTab').classList.remove('active');$('loginForm').classList.remove('hidden');$('registerForm').classList.add('hidden');}else{$('registerTab').classList.add('active');$('loginTab').classList.remove('active');$('registerForm').classList.remove('hidden');$('loginForm').classList.add('hidden');}$('loginError').classList.add('hidden');$('registerError').classList.add('hidden');}
-async function doEmailLogin(){var email=$('loginEmail').value.trim(),password=$('loginPassword').value;if(!email||!password){$('loginError').innerText='Email and password required';$('loginError').classList.remove('hidden');return;}$('loginError').classList.add('hidden');var btn=event.target;btn.disabled=true;btn.innerHTML='<span class="spin"></span> Logging in...';try{var r=await api('/api/auth/login','POST',{email:email,password:password});if(r.ok){USER=r.user;enterApp();}else if(r.banned){BANNED_USER_EMAIL=email;$('loginView').classList.add('hidden');$('bannedView').classList.remove('hidden');if(r.reason)$('banReasonText').innerText=r.reason;}else{$('loginError').innerText=r.error||'Login failed';$('loginError').classList.remove('hidden');}}catch(e){$('loginError').innerText='Error: '+e.message;$('loginError').classList.remove('hidden');}btn.disabled=false;btn.innerHTML='🔓 Login';}
-async function doEmailRegister(){var name=$('registerName').value.trim(),email=$('registerEmail').value.trim(),password=$('registerPassword').value;if(!name||!email||!password){$('registerError').innerText='All fields required';$('registerError').classList.remove('hidden');return;}if(password.length<8){$('registerError').innerText='Password must be 8+ chars';$('registerError').classList.remove('hidden');return;}$('registerError').classList.add('hidden');var btn=event.target;btn.disabled=true;btn.innerHTML='<span class="spin"></span> Creating...';try{var r=await api('/api/auth/register','POST',{name:name,email:email,password:password});if(r.ok){USER=r.user;enterApp();}else{$('registerError').innerText=r.error||'Registration failed';$('registerError').classList.remove('hidden');}}catch(e){$('registerError').innerText='Error: '+e.message;$('registerError').classList.remove('hidden');}btn.disabled=false;btn.innerHTML='✨ Create Account';}
+async function doEmailLogin(){
+  var email=$('loginEmail').value.trim(),password=$('loginPassword').value;
+  var remember = $('rememberMe') && $('rememberMe').checked;
+  if(!email||!password){$('loginError').innerText='Email and password required';$('loginError').classList.remove('hidden');return;}
+  $('loginError').classList.add('hidden');
+  var btn=event.target;btn.disabled=true;btn.innerHTML='<span class="spin"></span> Logging in...';
+  try{
+    var r=await api('/api/auth/login','POST',{email:email,password:password,remember:remember});
+    if(r.ok){ if(remember) setRememberedEmail(email); else setRememberedEmail(null); USER=r.user;enterApp(); }
+    else if(r.banned){BANNED_USER_EMAIL=email;$('loginView').classList.add('hidden');$('bannedView').classList.remove('hidden');if(r.reason)$('banReasonText').innerText=r.reason;}
+    else{$('loginError').innerText=r.error||'Login failed';$('loginError').classList.remove('hidden');}
+  }catch(e){$('loginError').innerText='Error: '+e.message;$('loginError').classList.remove('hidden');}
+  btn.disabled=false;btn.innerHTML='🔓 Login';
+}
+async function doEmailRegister(){
+  var name=$('registerName').value.trim(),email=$('registerEmail').value.trim(),password=$('registerPassword').value;
+  if(!name||!email||!password){$('registerError').innerText='All fields required';$('registerError').classList.remove('hidden');return;}
+  if(password.length<8){$('registerError').innerText='Password 8+ chars';$('registerError').classList.remove('hidden');return;}
+  $('registerError').classList.add('hidden');
+  var btn=event.target;btn.disabled=true;btn.innerHTML='<span class="spin"></span> Creating...';
+  try{
+    var r=await api('/api/auth/register','POST',{name:name,email:email,password:password});
+    if(r.ok){USER=r.user;enterApp();}
+    else{$('registerError').innerText=r.error||'Registration failed';$('registerError').classList.remove('hidden');}
+  }catch(e){$('registerError').innerText='Error: '+e.message;$('registerError').classList.remove('hidden');}
+  btn.disabled=false;btn.innerHTML='✨ Create Account';
+}
 var urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('banned') === '1') {$('loginView').classList.add('hidden');$('bannedView').classList.remove('hidden');}
 else {fetch('/api/me',{credentials:'include'}).then(function(r){return r.json();}).then(function(d){if(d&&d.ok&&d.user){USER=d.user;enterApp();}else{$('loginView').classList.remove('hidden');}}).catch(function(){$('loginView').classList.remove('hidden');});}
-function submitAccessRequest(){var name=$('reqName').value.trim(),email=$('reqEmail').value.trim(),company=$('reqCompany').value.trim(),phone=$('reqPhone').value.trim(),reason=$('reqReason').value.trim();if(!name||!email||!reason)return toast('Fill name, email, reason','err');api('/api/request-access','POST',{name:name,email:email,company:company,phone:phone,reason:reason,oldEmail:BANNED_USER_EMAIL}).then(function(r){if(r.ok){toast('✅ Request submitted');$('reqName').value='';$('reqEmail').value='';$('reqCompany').value='';$('reqPhone').value='';$('reqReason').value='';}else toast('Error: '+r.error,'err');});}
+
+document.addEventListener('DOMContentLoaded',function(){
+  var rem = getRememberedEmail();
+  if(rem){
+    var inp = $('loginEmail'), chk = $('rememberMe');
+    if(inp) inp.value = rem;
+    if(chk) chk.checked = true;
+    setTimeout(function(){ var pw = $('loginPassword'); if(pw) pw.focus(); }, 200);
+  }
+});
+
+function submitAccessRequest(){var name=$('reqName').value.trim(),email=$('reqEmail').value.trim(),company=$('reqCompany').value.trim(),phone=$('reqPhone').value.trim(),reason=$('reqReason').value.trim();if(!name||!email||!reason)return toast('Fill name, email, reason','err');api('/api/request-access','POST',{name:name,email:email,company:company,phone:phone,reason:reason,oldEmail:BANNED_USER_EMAIL}).then(function(r){if(r.ok){toast('✅ Submitted');$('reqName').value='';$('reqEmail').value='';$('reqCompany').value='';$('reqPhone').value='';$('reqReason').value='';}else toast('Error','err');});}
 function enterApp(){$('loginView').classList.add('hidden');$('appView').classList.remove('hidden');$('topName').innerText=USER.name||USER.email;if(USER.picture){var av=$('userAvatar');av.src=USER.picture;av.style.display='block';}if(USER.appAccountId){$('myAppId').innerText=USER.appAccountId;$('myAppId').classList.remove('hidden');}if(USER.isAdmin){$('adminBadge').classList.remove('hidden');$('tabAdmin').classList.remove('hidden');$('tabTestDash').classList.remove('hidden');}addRow();addTestRow();loadAll();loadLogo();loadSignature();loadFiles();loadTemplates();loadPrefs();loadQuota();loadMyEmails();loadAIProfile();loadProfile();checkQuietStatus();checkIMAPStatus();checkGmailStatus();startHourlyAutoSend();startAutoRefresh();loadQuickAuto();}
 function logout(){api('/api/logout','POST').then(function(){location.reload();});}
-
 function checkGmailStatus(){api('/api/smtp/status').then(function(r){if(!r.ok)return;if(!r.connected){$('gmailBanner').classList.remove('hidden');}else{$('gmailBanner').classList.add('hidden');}});}
 function openGmailConnectModal(){$('gmailConnectModal').classList.remove('hidden');}
 function closeGmailConnectModal(){$('gmailConnectModal').classList.add('hidden');}
-async function connectGmail(){var pass=$('smtpAppPassword').value.trim();if(!pass||pass.replace(/\s/g,'').length<16){return toast('App password must be 16 characters','err');}var btn=$('gmailConnectBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Testing connection...';try{var r=await api('/api/smtp/connect','POST',{appPassword:pass});if(r.ok){toast('✅ Gmail connected');$('smtpAppPassword').value='';closeGmailConnectModal();checkGmailStatus();}else{toast('Error: '+r.error,'err');}}catch(e){toast('Connection failed','err');}btn.disabled=false;btn.innerHTML='🔌 Connect Gmail';}
+async function connectGmail(){var pass=$('smtpAppPassword').value.trim();if(!pass||pass.replace(/\s/g,'').length<16){return toast('16 characters required','err');}var btn=$('gmailConnectBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Testing...';try{var alsoImap=$('alsoEnableImap')?$('alsoEnableImap').checked:false;var r=await api('/api/smtp/connect','POST',{appPassword:pass,alsoEnableImap:alsoImap});if(r.ok){toast('✅ Connected'+(r.imapEnabled?' + Inbox':''));$('smtpAppPassword').value='';closeGmailConnectModal();checkGmailStatus();loadQuota();checkIMAPStatus();}else{toast('Error: '+r.error,'err');}}catch(e){toast('Failed','err');}btn.disabled=false;btn.innerHTML='🔌 Connect Gmail';}
 
-function startAutoRefresh(){if(POLL_TIMER)clearInterval(POLL_TIMER);POLL_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('myView').classList.contains('hidden')){loadQuota();loadAll();loadMyEmails();}if(!$('adminView').classList.contains('hidden')){loadAdmin();loadAdminAIUsage();loadAdminBanned();loadAdminRequests();}if(!$('testDashView').classList.contains('hidden')){loadTestDashboard();}},60000);}
-function startLiveInbox(){if(LIVE_INBOX_TIMER)clearInterval(LIVE_INBOX_TIMER);LIVE_INBOX_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('inboxView').classList.contains('hidden')&&IMAP_CONNECTED){loadIMAPInbox(true);}},10000);}
-function switchMain(t){['myView','inboxView','aiprofileView','testView','testDashView','adminView'].forEach(function(v){$(v).classList.add('hidden');});document.querySelectorAll('.maintab').forEach(function(el){el.classList.remove('active');});if(t==='my'){$('myView').classList.remove('hidden');$('tabMy').classList.add('active');loadAll();loadQuota();loadMyEmails();loadQuickAuto();}else if(t==='inbox'){$('inboxView').classList.remove('hidden');$('tabInbox').classList.add('active');checkIMAPStatus();}else if(t==='aiprofile'){$('aiprofileView').classList.remove('hidden');$('tabAIP').classList.add('active');loadAIProfile();}else if(t==='test'){$('testView').classList.remove('hidden');$('tabTest').classList.add('active');loadAIPredictions();loadSenders();}else if(t==='testdash'){$('testDashView').classList.remove('hidden');$('tabTestDash').classList.add('active');loadTestDashboard();}else if(t==='admin'){$('adminView').classList.remove('hidden');$('tabAdmin').classList.add('active');loadAdmin();loadAdminAIUsage();loadAdminBanned();loadAdminRequests();loadAdminUsersPage(1);}}
+function startAutoRefresh(){if(POLL_TIMER)clearInterval(POLL_TIMER);POLL_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('myView').classList.contains('hidden')){loadQuota();loadAll();loadMyEmails();}},30000);}
+function startLiveInbox(){if(LIVE_INBOX_TIMER)clearInterval(LIVE_INBOX_TIMER);LIVE_INBOX_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('inboxView').classList.contains('hidden')&&IMAP_CONNECTED){loadIMAPInbox(true);}},3000);}
+function switchMain(t){['myView','inboxView','aiprofileView','testView','testDashView','adminView'].forEach(function(v){$(v).classList.add('hidden');});document.querySelectorAll('.maintab').forEach(function(el){el.classList.remove('active');});if(t==='my'){$('myView').classList.remove('hidden');$('tabMy').classList.add('active');loadAll();loadQuota();loadMyEmails();loadQuickAuto();}else if(t==='inbox'){$('inboxView').classList.remove('hidden');$('tabInbox').classList.add('active');checkIMAPStatus();}else if(t==='aiprofile'){$('aiprofileView').classList.remove('hidden');$('tabAIP').classList.add('active');loadAIProfile();}else if(t==='test'){$('testView').classList.remove('hidden');$('tabTest').classList.add('active');loadAIPredictions();loadSenders();}else if(t==='testdash'){$('testDashView').classList.remove('hidden');$('tabTestDash').classList.add('active');loadTestDashboard();}else if(t==='admin'){$('adminView').classList.remove('hidden');$('tabAdmin').classList.add('active');loadAdmin();loadAdminAIUsage();loadAdminBanned();loadAdminRequests();loadAdminUsersPage(1);loadAdminEmailsPage(1);startAdminLive();}}
+
+function startAdminLive(){
+  if(ADMIN_LIVE_TIMER)clearInterval(ADMIN_LIVE_TIMER);
+  ADMIN_LIVE_TIMER=setInterval(function(){
+    if(document.visibilityState!=='visible')return;
+    if(!$('adminView').classList.contains('hidden')){
+      loadAdminUsersPage(adminPage,true);
+      loadAdminAIUsage();
+      loadAdminBanned();
+      loadAdminRequests();
+    }
+  },15000);
+  if(ADMIN_EMAIL_LIVE_TIMER)clearInterval(ADMIN_EMAIL_LIVE_TIMER);
+  ADMIN_EMAIL_LIVE_TIMER=setInterval(function(){
+    if(document.visibilityState!=='visible')return;
+    if(!$('adminView').classList.contains('hidden')){ loadAdminEmailsPage(adminEmailsPage,true); }
+  },20000);
+}
 
 function loadQuickAuto(){api('/api/prefs').then(function(r){if(!r.ok)return;var p=r.prefs;$('qAutoSend').checked=p.autoSend;$('qAutoConfig').style.display=p.autoSend?'block':'none';$('qBatchSize').value=p.autoSendBatchSize||5;$('qDelay').value=p.sendDelay!==undefined?p.sendDelay:20;$('qTotalSent').innerText=p.totalAutoSent||0;$('qLastRun').innerText=p.lastAutoSendRun?fmtTimeAgo(p.lastAutoSendRun):'Never';});api('/api/stats').then(function(r){if(!r.ok)return;$('qPending').innerText=r.stats.pending||0;});}
 function onQuickAutoToggle(v){$('qAutoConfig').style.display=v?'block':'none';}
@@ -1114,20 +1267,20 @@ function saveQuickAuto(){var bs=parseInt($('qBatchSize').value)||5;var sd=parseI
 
 function openProfileModal(){$('profileModal').classList.remove('hidden');loadProfile();}
 function closeProfileModal(){$('profileModal').classList.add('hidden');}
-function loadProfile(){api('/api/profile').then(function(r){if(!r.ok)return;var p=r.profile;$('profileNameDisplay').innerText=p.name||'User';$('profileEmailDisplay').innerText=p.email||'';$('profileAvatar').src=p.picture||'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';$('profileAppId').innerText=p.appAccountId||'MFP-XXXXXX';if(p.createdAt){try{var d=p.createdAt._seconds?new Date(p.createdAt._seconds*1000):new Date(p.createdAt);$('profileJoined').innerText=d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}catch(e){}}$('editProfileName').value=p.name||'';});api('/api/ai/usage').then(function(r){if(!r.ok)return;$('profileAIToday').innerText=fmtNum(r.today.totalTokens||0);$('profileAIMonth').innerText=fmtNum(r.month.totalTokens||0);$('profileAITotal').innerText=fmtNum(r.total.totalTokens||0);$('profileAICalls').innerText=fmtNum(r.total.calls||0);});}
+function loadProfile(){api('/api/profile').then(function(r){if(!r.ok)return;var p=r.profile;$('profileNameDisplay').innerText=p.name||'User';$('profileEmailDisplay').innerText=p.email||'';$('profileAvatar').src=p.picture||'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';$('profileAppId').innerText=p.appAccountId||'MFP-XXXXXX';if(p.createdAt){try{var d=p.createdAt._seconds?new Date(p.createdAt._seconds*1000):new Date(p.createdAt);$('profileJoined').innerText=d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}catch(e){}}$('editProfileName').value=p.name||'';});api('/api/ai/usage').then(function(r){if(!r.ok)return;$('profileAIToday').innerText=fmtNum(r.today.totalTokens||0);$('profileAIMonth').innerText=fmtNum(r.month.totalTokens||0);$('profileAITotal').innerText=fmtNum(r.total.totalTokens||0);$('profileAICalls').innerText=fmtNum(r.total.calls||0);$('profileAIRemaining').innerText=r.remainingTokens!==null&&r.remainingTokens!==undefined?fmtNum(r.remainingTokens):'—';$('profileAICallsLeft').innerText=r.estimatedRemainingCalls!==null&&r.estimatedRemainingCalls!==undefined?fmtNum(r.estimatedRemainingCalls):'—';});}
 function saveProfileName(){var name=$('editProfileName').value.trim();if(!name)return toast('Enter name','err');api('/api/profile','POST',{name:name}).then(function(r){if(r.ok){toast('✅ Updated');$('topName').innerText=name;$('profileNameDisplay').innerText=name;if(USER)USER.name=name;}else toast('Error','err');});}
-document.getElementById('profilePicInput').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;if(f.size>500*1024){toast('Max 500KB','err');return;}var ok=['image/png','image/jpeg','image/jpg','image/webp'];if(ok.indexOf(f.type)===-1)return toast('PNG/JPG/WEBP only','err');var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading...');api('/api/profile/picture','POST',{base64:b,mimeType:f.type}).then(function(r){if(r.ok){toast('✅ Updated');$('profileAvatar').src=r.url;if($('userAvatar')){$('userAvatar').src=r.url;$('userAvatar').style.display='block';}}else toast('Error: '+r.error,'err');});};rd.readAsDataURL(f);e.target.value='';});
+document.getElementById('profilePicInput').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;if(f.size>500*1024){toast('Max 500KB','err');return;}var ok=['image/png','image/jpeg','image/jpg','image/webp'];if(ok.indexOf(f.type)===-1)return toast('PNG/JPG/WEBP only','err');var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading...');api('/api/profile/picture','POST',{base64:b,mimeType:f.type}).then(function(r){if(r.ok){toast('✅ Updated');$('profileAvatar').src=r.url;if($('userAvatar')){$('userAvatar').src=r.url;$('userAvatar').style.display='block';}}else toast('Error','err');});};rd.readAsDataURL(f);e.target.value='';});
 
 function openSettingsModal(){$('settingsModal').classList.remove('hidden');loadSignature();loadFiles();loadLogo();}
 function closeSettingsModal(){$('settingsModal').classList.add('hidden');}
 function switchSettingsTab(t){['Signature','Attachments'].forEach(function(x){var el=$('setTab'+x);if(el)el.classList.remove('active');var tab=$('set'+x+'Tab');if(tab)tab.classList.add('hidden');});var map={'signature':'Signature','attachments':'Attachments'};$('setTab'+map[t]).classList.add('active');$('set'+map[t]+'Tab').classList.remove('hidden');}
 function checkQuietStatus(){api('/api/quiet-status').then(function(r){if(!r.ok)return;var b=$('quietBanner');if(r.inQuiet){b.classList.add('show');$('quietMsg').innerText='Until '+((r.quietEnd%12)||12)+':00 '+(r.quietEnd<12?'AM':'PM')+'.';}else{b.classList.remove('show');}});}
 function startHourlyAutoSend(){setTimeout(function(){runAutoCheck();},8000);if(HOURLY_TIMER)clearInterval(HOURLY_TIMER);HOURLY_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;runAutoCheck();},60*60*1000);}
-function runAutoCheck(){api('/api/auto-send-check','POST').then(function(r){if(r.ok&&r.sent>0){toast('🤖 Auto-send: '+r.sent);loadAll();loadQuota();loadMyEmails();loadQuickAuto();}}).catch(function(){});}
+function runAutoCheck(){api('/api/auto-send-check','POST').then(function(r){if(r.ok&&r.sent>0){toast('🤖 Auto-sent: '+r.sent);loadAll();loadQuota();loadMyEmails();loadQuickAuto();}}).catch(function(){});}
 function loadQuota(){api('/api/quota').then(function(r){if(!r.ok)return;MY_QUOTA={sent:r.sent,limit:r.limit,remaining:r.remaining};$('quotaSent').innerText=r.sent;$('quotaLimit').innerText=r.limit;$('quotaRemaining').innerText=r.remaining;var pct=(r.sent/r.limit)*100;$('quotaFill').style.width=Math.min(100,pct)+'%';$('quotaFill').className='quota-fill'+(pct>90?' crit':(pct>70?' warn':''));});}
 function scheduleAnalysis(){if(analysisTimer)clearTimeout(analysisTimer);$('aiLiveStatus').innerText='Typing...';analysisTimer=setTimeout(runLiveAnalysis,1500);}
 function runLiveAnalysis(){var subject=$('composerSubject').value.trim();var body=$('composerBody').value.trim();if(!subject&&!body){resetAIAnalysisUI();$('aiLiveStatus').innerText='Waiting';return;}var hash=subject+'|'+body;if(hash===lastAnalyzedHash)return;lastAnalyzedHash=hash;$('aiLiveStatus').innerText='🤖 ...';api('/api/ai/analyze-live','POST',{subject:subject,body:body}).then(function(r){if(!r.ok){$('aiLiveStatus').innerText='Error';return;}if(r.empty){resetAIAnalysisUI();return;}$('aiLiveStatus').innerText=r.aiPowered?'🤖 AI':'⚡ Local';renderAIAnalysis(r);});}
-function runDeepAIAnalysis(){var subject=$('composerSubject').value.trim();var body=$('composerBody').value.trim();if(!subject&&!body){toast('Write something','err');return;}$('aiLiveStatus').innerText='🤖 Deep...';api('/api/ai/analyze-live','POST',{subject:subject,body:body}).then(function(r){if(!r.ok)return;$('aiLiveStatus').innerText=r.aiPowered?'🤖 AI':'⚠️';renderAIAnalysis(r);toast(r.aiPowered?'✅ Deep complete':'⚠️ AI busy');});}
+function runDeepAIAnalysis(){var subject=$('composerSubject').value.trim();var body=$('composerBody').value.trim();if(!subject&&!body){toast('Write something','err');return;}$('aiLiveStatus').innerText='🤖 Deep...';api('/api/ai/analyze-live','POST',{subject:subject,body:body}).then(function(r){if(!r.ok)return;$('aiLiveStatus').innerText=r.aiPowered?'🤖 AI':'⚠️';renderAIAnalysis(r);toast(r.aiPowered?'✅ Done':'⚠️');});}
 function resetAIAnalysisUI(){$('aiScoreValue').innerText='—';$('aiScoreLabel').innerText='Waiting';$('aiScoreCircle').style.background='conic-gradient(#1e293b 0%, #1e293b 100%)';$('aiScoreValue').style.color='var(--text2)';$('aiProbValue').innerText='—';$('aiProbValue').style.color='var(--text2)';$('aiProbFill').style.width='0%';$('aiIssues').innerHTML='';$('aiSuggestions').innerHTML='';}
 function renderAIAnalysis(r){var score=r.score||0,prob=r.inboxProbability||0;var deg=Math.min(360,(score/100)*360);var color=score<=15?'#22c55e':score<=40?'#38bdf8':score<=70?'#f59e0b':'#ef4444';$('aiScoreCircle').style.background='conic-gradient('+color+' '+deg+'deg, #1e293b '+deg+'deg)';$('aiScoreValue').innerText=score;$('aiScoreLabel').innerText=(r.prediction||'Analyzing').replace('_',' ');$('aiScoreValue').style.color=color;$('aiProbValue').innerText=prob+'%';$('aiProbValue').style.color=prob>=70?'#86efac':prob>=40?'#fcd34d':'#fca5a5';$('aiProbFill').style.width=prob+'%';var ih='';if(r.issues&&r.issues.length)ih=r.issues.map(function(i){var cls=i.severity==='high'?'high':(i.severity==='low'?'low':'');return '<div class="ai-issue '+cls+'">⚠️ '+esc(i.message)+'</div>';}).join('');$('aiIssues').innerHTML=ih;var sh='';if(r.suggestions&&r.suggestions.length)sh=r.suggestions.map(function(s){return '<div class="ai-suggestion">💡 '+esc(s)+'</div>';}).join('');$('aiSuggestions').innerHTML=sh;}
 
@@ -1137,48 +1290,48 @@ function runAIWriter(){var ctx=$('aiContext').value.trim();if(!ctx)return toast(
 function aiGenerateSubjects(){var ctx=$('composerBody').value.trim().substring(0,200)||'professional outreach';toast('✨ Generating...');api('/api/ai/generate-subjects','POST',{context:ctx}).then(function(r){if(r.ok&&r.subjects){$('aiSubjectList').innerHTML=r.subjects.map(function(s){return '<div class="ai-subject-item" data-subject="'+esc(s)+'">'+esc(s)+'</div>';}).join('');$('aiSubjectList').querySelectorAll('.ai-subject-item').forEach(function(el){el.onclick=function(){pickSubject(this.getAttribute('data-subject'));};});$('aiSubjectSuggestions').style.display='block';}});}
 function pickSubject(s){$('composerSubject').value=s;$('aiSubjectSuggestions').style.display='none';lastAnalyzedHash='';scheduleAnalysis();}
 function aiImproveEmail(){var subject=$('composerSubject').value.trim(),body=$('composerBody').value.trim();if(!subject&&!body)return toast('Write first','err');toast('✨ Improving...');api('/api/ai/improve-email','POST',{subject:subject,body:body}).then(function(r){if(r.ok){$('composerSubject').value=r.improvedSubject||subject;$('composerBody').value=r.improvedBody||body;toast('✅ Improved');lastAnalyzedHash='';runLiveAnalysis();}});}
-function saveComposerTemplate(){var name=$('composerName').value.trim(),subject=$('composerSubject').value.trim(),body=$('composerBody').value.trim();if(!name||!subject||!body)return toast('Fill name, subject, body','err');api('/api/templates','POST',{name:name,subject:subject,body:body}).then(function(r){if(r.ok){toast('✅ Saved');$('composerName').value='';loadTemplates();}else toast('Error','err');});}
+function saveComposerTemplate(){var name=$('composerName').value.trim(),subject=$('composerSubject').value.trim(),body=$('composerBody').value.trim();if(!name||!subject||!body)return toast('Fill all','err');api('/api/templates','POST',{name:name,subject:subject,body:body}).then(function(r){if(r.ok){toast('✅ Saved');$('composerName').value='';loadTemplates();}else toast('Error','err');});}
 function clearComposer(){$('composerName').value='';$('composerSubject').value='';$('composerBody').value='';lastAnalyzedHash='';resetAIAnalysisUI();}
 
 function openCVAnalyzer(){$('cvAnalyzerModal').classList.remove('hidden');CV_SELECTED_FILE_ID=null;renderCVFileList();$('cvTextWrap').style.display='none';$('cvText').value='';$('cvUploadStatus').innerText='';$('cvAnalysisResult').style.display='none';}
 function closeCVAnalyzer(){$('cvAnalyzerModal').classList.add('hidden');}
 function renderCVFileList(){var w=$('cvFileList');var cvs=FILES.filter(isCvFile);if(!cvs.length){w.innerHTML='<div style="padding:14px;color:var(--text3);font-size:12px;text-align:center">No CV files</div>';return;}w.innerHTML=cvs.map(function(f){var sel=CV_SELECTED_FILE_ID===f.id?' selected':'';var icon=fileIcon(f.name,f.mimeType);return '<div class="cv-file-pick'+sel+'" data-id="'+f.id+'"><div class="ico">'+icon+'</div><div style="flex:1;min-width:0"><div class="nm">'+esc(f.name)+'</div><div class="mt">'+fmtSize(f.size)+'</div></div></div>';}).join('');w.querySelectorAll('.cv-file-pick').forEach(function(el){el.onclick=function(){CV_SELECTED_FILE_ID=this.getAttribute('data-id');renderCVFileList();loadCvTextFromFile(CV_SELECTED_FILE_ID);};});}
 function loadCvTextFromFile(fileId){$('cvUploadStatus').innerHTML='<span style="color:#7dd3fc">📄 Extracting...</span>';$('cvTextWrap').style.display='block';$('cvText').value='';api('/api/ai/extract-cv','POST',{fileId:fileId}).then(function(r){if(!r.ok){$('cvUploadStatus').innerHTML='<span style="color:#fca5a5">❌ '+esc(r.error||'Failed')+'</span>';return;}$('cvText').value=r.text||'';$('cvUploadStatus').innerHTML='<span style="color:#86efac">✅ '+r.chars+' chars</span>';});}
-document.getElementById('cvFileInput').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;if(f.size>700*1024){toast('Max 700KB','err');return;}$('cvUploadStatus').innerHTML='<span style="color:#7dd3fc">📤 Uploading...</span>';$('cvTextWrap').style.display='block';$('cvText').value='';var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];api('/api/upload-file','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(up){if(!up.ok){$('cvUploadStatus').innerHTML='<span style="color:#fca5a5">❌ Failed</span>';return;}CV_SELECTED_FILE_ID=up.file.id;loadFiles();loadCvTextFromFile(up.file.id);});};rd.readAsDataURL(f);e.target.value='';});
-async function runCVAnalysis(){var cvText=$('cvText').value.trim();if(cvText.length<30)return toast('CV empty','err');var btn=$('cvAnalyzeBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Analyzing...';$('cvAnalysisResult').style.display='none';try{var r=await api('/api/ai/analyze-cv','POST',{cvText:cvText,targetRole:$('cvTargetRole').value.trim(),jobDescription:$('cvJobDesc').value.trim()});if(r.ok){$('composerSubject').value=r.subject||'';$('composerBody').value=r.body||'';var skills=(r.keySkills||[]).map(function(s){return '<span class="badge sent" style="margin:2px">'+esc(s)+'</span>';}).join('');var scoreColor=(r.score||0)>=80?'#86efac':(r.score||0)>=60?'#7dd3fc':'#fcd34d';$('cvAnalysisResult').innerHTML='<div style="font-weight:700;color:#7dd3fc;margin-bottom:8px">✅ Score: <span style="color:'+scoreColor+'">'+(r.score||0)+'/100</span></div><div style="margin-bottom:8px">'+esc(r.analysis||'')+'</div><div><b>Skills:</b> '+skills+'</div>';$('cvAnalysisResult').style.display='block';toast('✅ Generated');lastAnalyzedHash='';runLiveAnalysis();setTimeout(function(){closeCVAnalyzer();switchMain('my');},1500);} else toast('Error: '+r.error,'err');}catch(e){toast('Error','err');}btn.disabled=false;btn.innerHTML='🤖 Analyze & Generate';}
+document.getElementById('cvFileInput').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;if(f.size>MAX_UPLOAD_SIZE){toast('Max 900KB','err');return;}$('cvUploadStatus').innerHTML='<span style="color:#7dd3fc">📤 Uploading...</span>';$('cvTextWrap').style.display='block';$('cvText').value='';var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];api('/api/upload-file','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(up){if(!up.ok){$('cvUploadStatus').innerHTML='<span style="color:#fca5a5">❌ '+esc(up.error||'Failed')+'</span>';return;}CV_SELECTED_FILE_ID=up.file.id;loadFiles();loadCvTextFromFile(up.file.id);});};rd.readAsDataURL(f);e.target.value='';});
+async function runCVAnalysis(){var cvText=$('cvText').value.trim();if(cvText.length<30)return toast('CV empty or too short','err');var btn=$('cvAnalyzeBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Analyzing...';$('cvAnalysisResult').style.display='none';try{var r=await api('/api/ai/analyze-cv','POST',{cvText:cvText,targetRole:$('cvTargetRole').value.trim(),jobDescription:$('cvJobDesc').value.trim(),fileId:CV_SELECTED_FILE_ID});if(r.ok){$('composerSubject').value=r.subject||'';$('composerBody').value=r.body||'';var skills=(r.keySkills||[]).map(function(s){return '<span class="badge sent" style="margin:2px">'+esc(s)+'</span>';}).join('');var scoreColor=(r.score||0)>=80?'#86efac':(r.score||0)>=60?'#7dd3fc':'#fcd34d';$('cvAnalysisResult').innerHTML='<div style="font-weight:700;color:#7dd3fc;margin-bottom:8px">✅ Match Score: <span style="color:'+scoreColor+'">'+(r.score||0)+'/100</span></div><div style="margin-bottom:8px">'+esc(r.analysis||'')+'</div><div><b>Key Skills:</b> '+skills+'</div>';$('cvAnalysisResult').style.display='block';toast('✅ Generated');lastAnalyzedHash='';runLiveAnalysis();setTimeout(function(){closeCVAnalyzer();switchMain('my');},1500);} else toast('Error: '+r.error,'err');}catch(e){toast('Error','err');}btn.disabled=false;btn.innerHTML='🤖 Analyze & Generate Email';}
 
-function loadAIProfile(){api('/api/ai-profile').then(function(r){if(!r.ok)return;var p=r.profile||{};if($('aipFullName'))$('aipFullName').value=p.fullName||'';if($('aipDesignation'))$('aipDesignation').value=p.designation||'';if($('aipCompany'))$('aipCompany').value=p.company||'';if($('aipIndustry'))$('aipIndustry').value=p.industry||'';if($('aipTone'))$('aipTone').value=p.tone||'professional';if($('aipAboutMe'))$('aipAboutMe').value=p.aboutMe||'';if($('aipCommonPhrases'))$('aipCommonPhrases').value=p.commonPhrases||'';});}
-function saveAIProfile(){var payload={fullName:$('aipFullName').value.trim(),designation:$('aipDesignation').value.trim(),company:$('aipCompany').value.trim(),industry:$('aipIndustry').value.trim(),tone:$('aipTone').value,aboutMe:$('aipAboutMe').value.trim(),commonPhrases:$('aipCommonPhrases').value.trim()};api('/api/ai-profile','POST',payload).then(function(r){if(r.ok)toast('✅ Saved');else toast('Error','err');});}
+function loadAIProfile(){api('/api/ai-profile').then(function(r){if(!r.ok)return;var p=r.profile||{};if($('aipFullName'))$('aipFullName').value=p.fullName||'';if($('aipIndustry'))$('aipIndustry').value=p.industry||'';if($('aipTone'))$('aipTone').value=p.tone||'professional';if($('aipAboutMe'))$('aipAboutMe').value=p.aboutMe||'';if($('aipCommonPhrases'))$('aipCommonPhrases').value=p.commonPhrases||'';});}
+function saveAIProfile(){var payload={fullName:$('aipFullName').value.trim(),industry:$('aipIndustry').value.trim(),tone:$('aipTone').value,aboutMe:$('aipAboutMe').value.trim(),commonPhrases:$('aipCommonPhrases').value.trim()};api('/api/ai-profile','POST',payload).then(function(r){if(r.ok)toast('✅ Saved');else toast('Error','err');});}
 
 function loadSenders(){api('/api/memory/senders').then(function(r){if(!r.ok)return;SENDERS=r.senders||[];renderSenders();});}
 function renderSenders(){var w=$('sendersList');if(!w)return;var q=($('senderSearch').value||'').toLowerCase();var filtered=SENDERS.filter(function(s){return !q||(s.senderEmail||'').toLowerCase().indexOf(q)!==-1||(s.senderName||'').toLowerCase().indexOf(q)!==-1;});if($('sendersCount'))$('sendersCount').innerText=filtered.length+'/'+SENDERS.length;if(!filtered.length){w.innerHTML='<div class="empty"><div class="ico">🧠</div>No sender memory</div>';return;}w.innerHTML=filtered.slice(0,100).map(function(s){return '<div class="memory-item"><div class="top"><div class="sender">'+esc(s.senderName||s.senderEmail)+'</div><span class="count">'+s.totalEmails+'</span></div><div style="font-size:11px;color:var(--text3);word-break:break-all">'+esc(s.senderEmail)+'</div><div style="font-size:11px;color:var(--text2);margin-top:4px">Last: '+esc((s.lastSubject||'').substring(0,60))+'</div></div>';}).join('');}
 
-function loadAIPredictions(){api('/api/my-emails?range=all').then(function(r){if(!r.ok)return;var emails=r.emails||[];var w=$('aiPredictionsWrap');if(!emails.length){w.innerHTML='<div class="empty"><div class="ico">📭</div>No emails</div>';return;}var ex=0,good=0,risky=0,spam=0;emails.forEach(function(e){var p=e.aiPrediction||'GOOD';if(p==='EXCELLENT')ex++;else if(p==='GOOD')good++;else if(p==='RISKY')risky++;else spam++;});var s='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">';s+='<div class="info-box" style="text-align:center;margin:0"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">✅ Excellent</div><div style="font-size:22px;color:#86efac;margin-top:4px;font-weight:800">'+ex+'</div></div>';s+='<div class="info-box" style="text-align:center;margin:0"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">👍 Good</div><div style="font-size:22px;color:#7dd3fc;margin-top:4px;font-weight:800">'+good+'</div></div>';s+='<div class="info-box" style="text-align:center;margin:0"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">⚠️ Risky</div><div style="font-size:22px;color:#fcd34d;margin-top:4px;font-weight:800">'+risky+'</div></div>';s+='<div class="info-box" style="text-align:center;margin:0"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">❌ Spam</div><div style="font-size:22px;color:#fca5a5;margin-top:4px;font-weight:800">'+spam+'</div></div></div>';var h=s+'<table class="data-table"><thead><tr><th>Recipient</th><th>Subject</th><th>Sent</th><th>Prediction</th></tr></thead><tbody>';emails.slice(0,100).forEach(function(e){var pred=e.aiPrediction||'GOOD';var prob=e.aiInboxProb||75;var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';h+='<tr><td style="word-break:break-all;font-size:11px">'+esc(e.recipientEmail)+'</td><td style="font-size:11px">'+esc(e.subject||'—')+'</td><td style="font-size:10px">'+fmtDate(e.sentAt)+'</td><td><span style="padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:'+pc+'22;color:'+pc+'">'+pred+' '+prob+'%</span></td></tr>';});h+='</tbody></table>';w.innerHTML=h;});}
-function loadBestTime(){$('bestTimeContent').innerHTML='<div class="empty">Analyzing...</div>';api('/api/ai/best-time').then(function(r){if(!r.ok)return;var hours=r.bestHours||[9,11,14];var h='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">';hours.forEach(function(hh){var lbl=((hh%12)||12)+':00 '+(hh<12?'AM':'PM');h+='<div class="info-box" style="text-align:center;margin:0"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">Best</div><div style="font-size:18px;font-weight:800;color:var(--cyan);margin-top:4px">'+lbl+'</div></div>';});h+='</div>';$('bestTimeContent').innerHTML=h;});}
+function loadAIPredictions(){api('/api/my-emails?range=all').then(function(r){if(!r.ok)return;var emails=r.emails||[];var w=$('aiPredictionsWrap');if(!emails.length){w.innerHTML='<div class="empty">No emails</div>';return;}var ex=0,good=0,risky=0,spam=0;emails.forEach(function(e){var p=e.aiPrediction||'GOOD';if(p==='EXCELLENT')ex++;else if(p==='GOOD')good++;else if(p==='RISKY')risky++;else spam++;});var s='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">';s+='<div class="info-box" style="text-align:center;margin:0"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">✅ Excellent</div><div style="font-size:22px;color:#86efac;font-weight:800">'+ex+'</div></div>';s+='<div class="info-box" style="text-align:center;margin:0"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">👍 Good</div><div style="font-size:22px;color:#7dd3fc;font-weight:800">'+good+'</div></div>';s+='<div class="info-box" style="text-align:center;margin:0"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">⚠️ Risky</div><div style="font-size:22px;color:#fcd34d;font-weight:800">'+risky+'</div></div>';s+='<div class="info-box" style="text-align:center;margin:0"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">❌ Spam</div><div style="font-size:22px;color:#fca5a5;font-weight:800">'+spam+'</div></div></div>';var h=s+'<table class="data-table"><thead><tr><th>Recipient</th><th>Subject</th><th>Sent</th><th>AI</th></tr></thead><tbody>';emails.slice(0,100).forEach(function(e){var pred=e.aiPrediction||'GOOD';var prob=e.aiInboxProb||75;var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';h+='<tr><td style="word-break:break-all;font-size:11px">'+esc(e.recipientEmail)+'</td><td style="font-size:11px">'+esc(e.subject||'—')+'</td><td style="font-size:10px">'+fmtDate(e.sentAt)+'</td><td><span style="padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:'+pc+'22;color:'+pc+'">'+pred+' '+prob+'%</span></td></tr>';});h+='</tbody></table>';w.innerHTML=h;});}
+function loadBestTime(){$('bestTimeContent').innerHTML='<div class="empty">Analyzing...</div>';api('/api/ai/best-time').then(function(r){if(!r.ok)return;var hours=r.bestHours||[9,11,14];var h='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">';hours.forEach(function(hh){var lbl=((hh%12)||12)+':00 '+(hh<12?'AM':'PM');h+='<div class="info-box" style="text-align:center;margin:0"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">Best</div><div style="font-size:18px;font-weight:800;color:var(--cyan)">'+lbl+'</div></div>';});h+='</div>';$('bestTimeContent').innerHTML=h;});}
 
 function buildSigHtmlFrom(f,logoUrl){var phoneClean=(f.phone||'').replace(/[^0-9+]/g,'');var liUrl=f.linkedin?(f.linkedin.indexOf('http')===0?f.linkedin:'https://'+f.linkedin):'';var h='<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-family:Arial,sans-serif"><tr>';if(logoUrl){h+='<td style="padding-right:18px;border-right:2px solid #d1d5db;vertical-align:middle;text-align:center;width:130px"><img src="'+logoUrl+'" width="100" style="display:block;max-width:100px;height:auto;margin:0 auto;border:0"></td>';}h+='<td style="padding-left:'+(logoUrl?'18px':'0')+';vertical-align:top">';if(f.name)h+='<div style="font-weight:bold;font-size:15px;color:#111;margin-bottom:2px">'+esc(f.name)+'</div>';if(f.pos)h+='<div style="color:#666;font-size:12px">'+esc(f.pos)+'</div>';if(f.company)h+='<div style="color:#666;font-size:12px;margin-bottom:8px">'+esc(f.company)+'</div>';var lines=[];if(f.phone)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">📞 <a href="tel:'+phoneClean+'" style="color:#1a73e8;text-decoration:none">'+esc(f.phone)+'</a></div>');if(f.email)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">✉️ <a href="mailto:'+esc(f.email)+'" style="color:#1a73e8;text-decoration:none">'+esc(f.email)+'</a></div>');if(liUrl)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">🔗 <a href="'+liUrl+'" style="color:#1a73e8;text-decoration:none">'+esc(f.linkedin)+'</a></div>');if(lines.length)h+=lines.join('');h+='</td></tr></table>';return h;}
 function getSigFields(){return {name:$('sbName').value.trim(),pos:$('sbPos').value.trim(),company:$('sbCompany').value.trim(),phone:$('sbPhone').value.trim(),email:$('sbEmail').value.trim(),linkedin:$('sbLinkedin').value.trim()};}
-function previewSig(){var h=buildSigHtmlFrom(getSigFields(),LOGO_URL);if(!h||h.length<20){$('sigPreviewContent').innerHTML='<div style="padding:20px;text-align:center;color:#888;font-size:12px">Fill fields to preview</div>';$('sigPreviewBox').classList.add('show');return;}$('sigPreviewContent').innerHTML=h;$('sigPreviewBox').classList.add('show');}
+function previewSig(){var h=buildSigHtmlFrom(getSigFields(),LOGO_URL);if(!h||h.length<20){$('sigPreviewContent').innerHTML='<div style="padding:20px;text-align:center;color:#888;font-size:12px">Fill fields</div>';$('sigPreviewBox').classList.add('show');return;}$('sigPreviewContent').innerHTML=h;$('sigPreviewBox').classList.add('show');}
 function saveSig(){var h=buildSigHtmlFrom(getSigFields(),LOGO_URL);if(!h||h.length<20)return toast('Fill fields','err');api('/api/signature','POST',{signature:h,fields:getSigFields()}).then(function(r){if(!r.ok)return toast('Error','err');toast('✅ Saved');previewSig();});}
-async function resetSig(){var ok=await showConfirm({icon:'🗑',title:'Reset Signature?',message:'',okText:'Reset'});if(!ok)return;['sbName','sbPos','sbCompany','sbPhone','sbEmail','sbLinkedin'].forEach(function(id){if($(id))$(id).value='';});$('sigPreviewContent').innerHTML='';$('sigPreviewBox').classList.remove('show');}
+async function resetSig(){var ok=await showConfirm({icon:'🗑',title:'Reset?',message:'',okText:'Reset'});if(!ok)return;['sbName','sbPos','sbCompany','sbPhone','sbEmail','sbLinkedin'].forEach(function(id){if($(id))$(id).value='';});$('sigPreviewContent').innerHTML='';$('sigPreviewBox').classList.remove('show');}
 function loadSignature(){api('/api/signature').then(function(r){if(!r.ok)return;var f=r.fields||{};['name','pos','company','phone','email','linkedin'].forEach(function(k){var id='sb'+k.charAt(0).toUpperCase()+k.slice(1);if(f[k]&&$(id))$(id).value=f[k];});if(r.signature){$('sigPreviewContent').innerHTML=r.signature;$('sigPreviewBox').classList.add('show');}});}
 function loadLogo(){api('/api/logo').then(function(r){if(r.ok&&r.url){LOGO_URL=r.url;LOGO_URL_ALT=r.urlAlt||'';var img=$('logoImg');img.onerror=function(){this.style.display='none';$('logoPh').style.display='block';};img.onload=function(){this.style.display='block';$('logoPh').style.display='none';};img.src=r.url;$('logoTitle').innerText='Logo uploaded';$('logoActions').style.display='block';}});}
-document.getElementById('logoInput').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;var ok=['image/png','image/jpeg','image/jpg','image/gif','image/svg+xml','image/webp'];if(ok.indexOf(f.type)===-1)return toast('PNG/JPG/GIF/SVG/WEBP','err');if(f.size>500*1024)return toast('Max 500KB','err');var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading...');api('/api/upload-logo','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){if(!r.ok)return toast('Error','err');LOGO_URL=r.url;var img=$('logoImg');img.src=r.url;img.style.display='block';$('logoPh').style.display='none';$('logoTitle').innerText='Uploaded';$('logoActions').style.display='block';toast('✅ Uploaded');previewSig();});};rd.readAsDataURL(f);});
+document.getElementById('logoInput').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;var ok=['image/png','image/jpeg','image/jpg','image/gif','image/svg+xml','image/webp'];if(ok.indexOf(f.type)===-1)return toast('Invalid type','err');if(f.size>500*1024)return toast('Max 500KB','err');var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading...');api('/api/upload-logo','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){if(!r.ok)return toast('Error','err');LOGO_URL=r.url;var img=$('logoImg');img.src=r.url;img.style.display='block';$('logoPh').style.display='none';$('logoTitle').innerText='Uploaded';$('logoActions').style.display='block';toast('✅');previewSig();});};rd.readAsDataURL(f);});
 async function removeLogo(){var ok=await showConfirm({icon:'🗑',title:'Remove logo?',message:'',okText:'Remove'});if(!ok)return;api('/api/remove-logo','POST',{}).then(function(r){if(r.ok){toast('Removed');LOGO_URL='';$('logoImg').style.display='none';$('logoPh').style.display='block';$('logoTitle').innerText='Click to upload';$('logoActions').style.display='none';previewSig();}});}
-document.getElementById('fileInput').addEventListener('change',function(e){var files=e.target.files;if(!files.length)return;var up=function(i){if(i>=files.length){loadFiles();toast('✅ Uploaded');return;}var f=files[i];if(f.size>MAX_UPLOAD_SIZE){toast(f.name+' > 700KB','err');up(i+1);return;}var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];api('/api/upload-file','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){if(!r.ok)toast('Error '+f.name,'err');up(i+1);});};rd.readAsDataURL(f);};up(0);e.target.value='';});
+document.getElementById('fileInput').addEventListener('change',function(e){var files=e.target.files;if(!files.length)return;var up=function(i){if(i>=files.length){loadFiles();toast('✅ Uploaded');return;}var f=files[i];if(f.size>MAX_UPLOAD_SIZE){toast(f.name+' too big (900KB max)','err');up(i+1);return;}var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];api('/api/upload-file','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){if(!r.ok)toast('Error '+f.name,'err');up(i+1);});};rd.readAsDataURL(f);};up(0);e.target.value='';});
 function loadFiles(){api('/api/files').then(function(r){if(!r.ok)return;FILES=r.files||[];renderFilesList();if($('cvAnalyzerModal')&&!$('cvAnalyzerModal').classList.contains('hidden'))renderCVFileList();});}
 function renderFilesList(){var w=$('filesList');if(!w)return;if(!FILES.length){w.innerHTML='<div class="empty">No files</div>';updateFileSelectInfo();return;}w.innerHTML=FILES.map(function(f){var sel=SELECTED_FILES[f.id]?' selected':'';var icon=fileIcon(f.name,f.mimeType);return '<div class="file-item'+sel+'" onclick="toggleFile(\''+f.id+'\')"><input type="checkbox" class="cbox" '+(SELECTED_FILES[f.id]?'checked':'')+' onclick="event.stopPropagation();toggleFile(\''+f.id+'\')"><div class="icon">'+icon+'</div><div class="info"><div class="fname">'+esc(f.name)+'</div><div class="fmeta">'+fmtSize(f.size)+'</div></div><div class="actions"><button onclick="event.stopPropagation();delFile(\''+f.id+'\')">Del</button></div></div>';}).join('');updateFileSelectInfo();}
 function updateFileSelectInfo(){var el=$('fileSelectInfo');if(!el)return;var count=Object.keys(SELECTED_FILES).length;el.innerText=count>0?(count+' selected'):'';}
 function toggleFile(id){if(SELECTED_FILES[id])delete SELECTED_FILES[id];else SELECTED_FILES[id]=true;renderFilesList();}
 function selectAllFiles(){FILES.forEach(function(f){SELECTED_FILES[f.id]=true;});renderFilesList();}
 function unselectAllFiles(){SELECTED_FILES={};renderFilesList();}
-async function delFile(id){var ok=await showConfirm({icon:'🗑',title:'Delete file?',message:'',okText:'Delete'});if(!ok)return;api('/api/files/'+id,'DELETE').then(function(r){if(r.ok){toast('Deleted');delete SELECTED_FILES[id];loadFiles();}});}
+async function delFile(id){var ok=await showConfirm({icon:'🗑',title:'Delete?',message:'',okText:'Delete'});if(!ok)return;api('/api/files/'+id,'DELETE').then(function(r){if(r.ok){toast('Deleted');delete SELECTED_FILES[id];loadFiles();}});}
 
 function loadTemplates(){api('/api/templates').then(function(r){TEMPLATES=r.templates||[];var w=$('tplList');w.innerHTML='';$('tplCount').innerText=TEMPLATES.length+' saved';if(!TEMPLATES.length)w.innerHTML='<div class="empty"><div class="ico">📝</div>No templates</div>';else TEMPLATES.forEach(function(t){var d=document.createElement('div');d.className='tpl-card';d.innerHTML='<div class="info"><div class="name">📄 '+esc(t.name)+'</div><div class="sub">'+esc(t.subject)+'</div></div><button onclick="previewTemplate(\''+t.id+'\')">👁</button><button onclick="loadTemplateToComposer(\''+t.id+'\')">Load</button><button class="danger" onclick="delTpl(\''+t.id+'\')">✕</button>';w.appendChild(d);});var s=$('tplSelect');s.innerHTML='';if(!TEMPLATES.length)s.innerHTML='<option value="">(None)</option>';else TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;s.appendChild(o);});var ts=$('testTemplateSelect');if(ts){ts.innerHTML='<option value="">-- Manual --</option>';TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;ts.appendChild(o);});}});}
 function previewTemplate(id){var t=TEMPLATES.filter(function(x){return x.id===id;})[0];if(!t)return;$('tplPreviewTitle').innerText='📄 '+t.name;$('tplPreviewSubject').innerText=t.subject;$('tplPreviewBody').innerText=t.body;$('tplPreviewBackdrop').classList.remove('hidden');}
 function closeTplPreview(){$('tplPreviewBackdrop').classList.add('hidden');}
 function loadTemplateToComposer(id){var t=TEMPLATES.filter(function(x){return x.id===id;})[0];if(!t)return;$('composerName').value=t.name;$('composerSubject').value=t.subject;$('composerBody').value=t.body;lastAnalyzedHash='';runLiveAnalysis();closeSettingsModal();$('composerBody').scrollIntoView({behavior:'smooth',block:'center'});}
-async function delTpl(id){var ok=await showConfirm({icon:'🗑',title:'Delete template?',message:'',okText:'Delete'});if(!ok)return;api('/api/templates/'+id,'DELETE').then(function(r){if(r.ok){toast('Deleted');loadTemplates();}});}
+async function delTpl(id){var ok=await showConfirm({icon:'🗑',title:'Delete?',message:'',okText:'Delete'});if(!ok)return;api('/api/templates/'+id,'DELETE').then(function(r){if(r.ok){toast('Deleted');loadTemplates();}});}
 function onTestTemplateChange(){var id=$('testTemplateSelect').value;if(!id)return;var t=TEMPLATES.filter(function(x){return x.id===id;})[0];if(!t)return;$('testSubject').value=t.subject||'';$('testBody').value=t.body||'';toast('✅ Loaded');}
 
 function addRow(){var w=$('recipients'),d=document.createElement('div');d.className='recip-row';d.innerHTML='<input type="text" placeholder="Company (optional)"><input type="email" placeholder="email@example.com"><button class="del" onclick="this.parentNode.remove()">✕</button>';w.appendChild(d);}
@@ -1189,47 +1342,154 @@ function updateBulk(){var text=$('bulkInput').value;var r=parseBulk(text);var wr
 function clearBulk(){$('bulkInput').value='';updateBulk();}
 function submitBulk(){var r=parseBulk($('bulkInput').value);if(!r.valid.length)return toast('No emails','err');sendBulkRecipients(r.valid);}
 function sendBulkRecipients(items){api('/api/recipients','POST',{list:items,templateId:$('tplSelect').value}).then(function(res){if(res.ok){toast('✅ '+res.added+' added');$('bulkInput').value='';updateBulk();loadAll();loadQuickAuto();switchTab('manual');}else toast('Error','err');});}
-function readFileToText(file,callback){var name=file.name.toLowerCase();var reader=new FileReader();if(name.endsWith('.xlsx')||name.endsWith('.xls')){if(typeof XLSX==='undefined'){toast('Excel reader not loaded','err');return;}reader.onload=function(ev){try{var data=new Uint8Array(ev.target.result);var wb=XLSX.read(data,{type:'array'});var text='';wb.SheetNames.forEach(function(sn){var sheet=wb.Sheets[sn];var rows=XLSX.utils.sheet_to_json(sheet,{header:1});rows.forEach(function(row){var parts=row.filter(function(c){return c!==undefined&&c!=='';});if(parts.length)text+=parts.join(', ')+'\n';});});callback(text);}catch(err){toast('Error','err');}};reader.readAsArrayBuffer(file);}else{reader.onload=function(ev){callback(ev.target.result);};reader.readAsText(file);}}
 
 document.getElementById('ocrInput').addEventListener('change',function(e){var files=e.target.files;if(!files||!files.length)return;for(var i=0;i<files.length;i++){processOCRFile(files[i]);}e.target.value='';});
-document.addEventListener('paste',function(e){if($('ocrTab').classList.contains('hidden'))return;var items=e.clipboardData&&e.clipboardData.items;if(!items)return;var found=false;for(var i=0;i<items.length;i++){if(items[i].type.indexOf('image')!==-1){var blob=items[i].getAsFile();if(blob){processOCRFile(blob);found=true;}}}if(found)toast('📋 Screenshot pasted');});
+document.addEventListener('paste',function(e){if($('ocrTab').classList.contains('hidden'))return;var items=e.clipboardData&&e.clipboardData.items;if(!items)return;var found=false;for(var i=0;i<items.length;i++){if(items[i].type.indexOf('image')!==-1){var blob=items[i].getAsFile();if(blob){processOCRFile(blob);found=true;}}}if(found)toast('📋 Pasted');});
 function openCameraCapture(){var inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.capture='environment';inp.onchange=function(e){var f=e.target.files[0];if(f)processOCRFile(f);};inp.click();}
-async function processOCRFile(file){if(!file)return;if(file.size>5*1024*1024){toast('Max 5MB','err');return;}var idx=OCR_FILES.length;OCR_FILES.push({file:file,status:'processing',text:''});renderOCRThumbs();$('ocrProgress').classList.add('show');$('ocrProgressFill').style.width='5%';$('ocrStatus').innerHTML='⏳ Processing...';try{if(typeof Tesseract==='undefined')throw new Error('OCR not loaded');var worker=await Tesseract.createWorker('eng',1,{logger:function(m){if(m.status==='recognizing text'){var p=Math.round((m.progress||0)*100);$('ocrProgressFill').style.width=(5+p*0.9)+'%';$('ocrStatus').innerHTML='🔍 '+p+'%';}}});var result=await worker.recognize(file);await worker.terminate();OCR_FILES[idx].status='done';OCR_FILES[idx].text=(result.data.text||'');renderOCRThumbs();$('ocrProgressFill').style.width='100%';var allText=OCR_FILES.filter(function(x){return x.status==='done';}).map(function(x){return x.text;}).join('\n\n--- Screenshot ---\n\n');$('ocrText').value=allText;$('ocrResultWrap').style.display='block';$('ocrStatus').innerHTML='<span style="color:#86efac">✅ Done ('+result.data.text.length+' chars)</span>';toast('✅ Processed');}catch(e){OCR_FILES[idx].status='failed';renderOCRThumbs();$('ocrStatus').innerHTML='<span style="color:#fca5a5">❌ '+esc(e.message||'OCR error')+'</span>';toast('OCR failed','err');}}
-function renderOCRThumbs(){var w=$('ocrThumbs');if(!OCR_FILES.length){w.innerHTML='';return;}w.innerHTML=OCR_FILES.map(function(x,i){var url=URL.createObjectURL(x.file);var cls=x.status==='done'?'done':(x.status==='processing'?'processing':'failed');var lbl=x.status==='done'?'✓ Done':(x.status==='processing'?'... OCR':'✗ Failed');return '<div class="ocr-thumb '+cls+'"><img src="'+url+'"><div class="status">'+lbl+'</div></div>';}).join('');}
-function sendOCRToBulk(){var text=$('ocrText').value;if(!text.trim())return toast('No text','err');$('bulkInput').value=text;updateBulk();switchTab('bulk');toast('📋 Sent to bulk');}
-function copyOCRText(){var t=$('ocrText').value;if(!t)return;if(navigator.clipboard){navigator.clipboard.writeText(t).then(function(){toast('✅ Copied');});}else{var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('✅ Copied');}}
-function clearOCR(){$('ocrText').value='';OCR_FILES=[];$('ocrThumbs').innerHTML='';$('ocrResultWrap').style.display='none';$('ocrProgress').classList.remove('show');$('ocrProgressFill').style.width='0%';$('ocrStatus').innerHTML='';}
+async function processOCRFile(file){
+  if(!file)return;
+  if(file.size>5*1024*1024){toast('Max 5MB','err');return;}
+  var idx=OCR_FILES.length;
+  OCR_FILES.push({file:file,status:'processing',text:''});
+  renderOCRThumbs();
+  $('ocrProgress').classList.add('show');
+  $('ocrProgressFill').style.width='5%';
+  $('ocrStatus').innerHTML='⏳ Processing screenshot #'+(idx+1)+'...';
+  try{
+    if(typeof Tesseract==='undefined')throw new Error('OCR not loaded');
+    var worker=await Tesseract.createWorker('eng',1,{logger:function(m){if(m.status==='recognizing text'){var p=Math.round((m.progress||0)*100);$('ocrProgressFill').style.width=(5+p*0.9)+'%';$('ocrStatus').innerHTML='🔍 SS #'+(idx+1)+' — '+p+'%';}}});
+    var result=await worker.recognize(file);
+    await worker.terminate();
+    OCR_FILES[idx].status='done';
+    OCR_FILES[idx].text=(result.data.text||'');
+    renderOCRThumbs();
+    renderOCRResultCards();
+    $('ocrProgressFill').style.width='100%';
+    $('ocrResultWrap').style.display='block';
+    $('ocrStatus').innerHTML='<span style="color:#86efac">✅ Screenshot #'+(idx+1)+' done ('+result.data.text.length+' chars)</span>';
+    toast('✅ Processed SS #'+(idx+1));
+  }catch(e){
+    OCR_FILES[idx].status='failed';
+    renderOCRThumbs();
+    renderOCRResultCards();
+    $('ocrStatus').innerHTML='<span style="color:#fca5a5">❌ '+esc(e.message||'OCR error')+'</span>';
+    toast('OCR failed','err');
+  }
+}
+function renderOCRThumbs(){var w=$('ocrThumbs');if(!OCR_FILES.length){w.innerHTML='';return;}w.innerHTML=OCR_FILES.map(function(x,i){var url=URL.createObjectURL(x.file);var cls=x.status==='done'?'done':(x.status==='processing'?'processing':'failed');var lbl=x.status==='done'?'✓ Done':(x.status==='processing'?'... OCR':'✗ Failed');return '<div class="ocr-thumb '+cls+'" title="'+esc(x.file.name||'')+'"><img src="'+url+'"><div class="status">'+(i+1)+'. '+lbl+'</div></div>';}).join('');}
+function renderOCRResultCards(){
+  var wrap=$('ocrResultCards');
+  if(!wrap)return;
+  if(!OCR_FILES.length){wrap.innerHTML='';if($('ocrCardCount'))$('ocrCardCount').innerText='';return;}
+  var doneCount=OCR_FILES.filter(function(x){return x.status==='done';}).length;
+  if($('ocrCardCount'))$('ocrCardCount').innerText=doneCount+'/'+OCR_FILES.length+' extracted';
+  var h='';
+  OCR_FILES.forEach(function(x,i){
+    var stCls = x.status==='done'?'done':(x.status==='processing'?'processing':'failed');
+    var stTxt = x.status==='done'?'✓ Extracted':(x.status==='processing'?'... Processing':'✗ Failed');
+    h += '<div class="ocr-card">';
+    h += '<div class="head">';
+    h += '<span class="num">SS #'+(i+1)+'</span>';
+    h += '<span class="fname" title="'+esc(x.file.name||'')+'">'+esc(x.file.name||'image')+'</span>';
+    h += '<span class="st '+stCls+'">'+stTxt+'</span>';
+    h += '</div>';
+    h += '<textarea data-ocr-idx="'+i+'" oninput="onOCRCardEdit('+i+',this.value)" placeholder="Extracted text...">'+esc(x.text||'')+'</textarea>';
+    h += '</div>';
+  });
+  wrap.innerHTML=h;
+}
+function onOCRCardEdit(idx, val){ if(OCR_FILES[idx]) OCR_FILES[idx].text = val; }
+function collectOCRTextFromCards(){
+  return OCR_FILES.map(function(x,i){
+    if(x.status!=='done') return '';
+    return '═══════════════════════════════\n📸 SCREENSHOT #' + (i+1) + ' — ' + (x.file.name || 'image') + '\n═══════════════════════════════\n' + (x.text||'');
+  }).filter(Boolean).join('\n\n');
+}
+function sendOCRToBulk(){
+  var text = collectOCRTextFromCards();
+  if(!text.trim()) return toast('No extracted text','err');
+  $('bulkInput').value=text;
+  updateBulk();
+  switchTab('bulk');
+  toast('📋 Sent to bulk');
+}
+function copyOCRText(){
+  var t = collectOCRTextFromCards();
+  if(!t) return toast('Nothing','err');
+  if(navigator.clipboard) navigator.clipboard.writeText(t).then(function(){toast('✅ Copied');});
+  else {var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('✅ Copied');}
+}
+function clearOCR(){
+  OCR_FILES=[];
+  $('ocrThumbs').innerHTML='';
+  if($('ocrResultCards')) $('ocrResultCards').innerHTML='';
+  $('ocrResultWrap').style.display='none';
+  $('ocrProgress').classList.remove('show');
+  $('ocrProgressFill').style.width='0%';
+  $('ocrStatus').innerHTML='';
+}
 
 document.addEventListener('DOMContentLoaded',function(){var ta=$('bulkInput');if(ta)ta.addEventListener('input',updateBulk);});
 
-function loadAll(isManual){if(isManual)toast('🔄 Refreshing...');api('/api/stats').then(function(r){if(!r.ok)return;$('stTotal').innerText=r.stats.total;$('stSent').innerText=r.stats.sent;$('stOpened').innerText=r.stats.opened;$('stPending').innerText=r.stats.pending;$('stTotalSends').innerText=r.stats.totalSends||0;});api('/api/recipients').then(function(r){if(!r.ok)return;CURRENT_ROWS=r.recipients||[];ALL_ROWS=CURRENT_ROWS.slice();renderRecipients();});}
-function renderRecipients(){var w=$('tableWrap');var q=($('recipSearch').value||'').toLowerCase();var stF=$('statusFilter').value;var filtered=CURRENT_ROWS.filter(function(x){if(stF!=='all'&&(x.status||'')!==stF)return false;return !q||(x.company||'').toLowerCase().indexOf(q)!==-1||(x.email||'').toLowerCase().indexOf(q)!==-1;});$('trackCount').innerText=filtered.length+' / '+CURRENT_ROWS.length;if(!CURRENT_ROWS.length){w.innerHTML='<div class="empty"><div class="ico">📭</div>No recipients</div>';updateBulkBar();return;}if(!filtered.length){w.innerHTML='<div class="empty"><div class="ico">🔍</div>No matches</div>';updateBulkBar();return;}var h='<table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" class="cbox" onchange="toggleAll(this.checked)"></th><th>Company</th><th>Email</th><th>Status</th><th>Sends</th><th>Last Sent</th><th>Actions</th></tr></thead><tbody>';filtered.forEach(function(x){var st=(x.status||'').toLowerCase();var cls='pending',lbl='Pending',icon='⏳';if(st.indexOf('opened')!==-1){cls='opened';lbl='Opened';icon='👁';}else if(st==='sent'){cls='sent';lbl='Sent';icon='📤';}h+='<tr class="clickable '+(SELECTED[x.id]?'selected':'')+'" onclick="openRecipHistory(\''+x.id+'\')"><td onclick="event.stopPropagation()"><input type="checkbox" class="cbox" '+(SELECTED[x.id]?'checked':'')+' onchange="toggleOne(\''+x.id+'\',this.checked)"></td>';h+='<td>'+esc(x.company||'—')+'</td><td style="word-break:break-all">'+esc(x.email)+'</td>';h+='<td><span class="badge '+cls+'">'+icon+' '+lbl+'</span></td>';h+='<td><span class="badge count">'+(x.sendCount||0)+'×</span></td>';h+='<td style="font-size:10px">'+fmtDate(x.lastSentAt||x.sentAt)+'</td>';h+='<td style="white-space:nowrap" onclick="event.stopPropagation()"><button class="btn ghost small" onclick="openRecipHistory(\''+x.id+'\')" title="History">📊</button> <button class="btn ghost small" onclick="openSendOptions(\''+x.id+'\')" title="Send">📤</button> <button class="btn danger small" onclick="delRec(\''+x.id+'\')" title="Delete">✕</button></td></tr>';});h+='</tbody></table>';w.innerHTML=h;updateBulkBar();}
+function loadAll(isManual){if(isManual)toast('🔄 Refreshing...');api('/api/stats').then(function(r){if(!r.ok)return;$('stTotal').innerText=r.stats.total;$('stSent').innerText=r.stats.sent;$('stOpened').innerText=r.stats.opened;$('stPending').innerText=r.stats.pending;$('stTotalSends').innerText=r.stats.totalSends||0;});api('/api/recipients').then(function(r){if(!r.ok)return;CURRENT_ROWS=(r.recipients||[]).sort(function(a,b){var ta=a.createdAt&&a.createdAt._seconds?a.createdAt._seconds*1000:new Date(a.createdAt||0).getTime();var tb=b.createdAt&&b.createdAt._seconds?b.createdAt._seconds*1000:new Date(b.createdAt||0).getTime();return tb-ta;});ALL_ROWS=CURRENT_ROWS.slice();renderRecipients();});}
+function renderRecipients(){var w=$('tableWrap');var q=($('recipSearch').value||'').toLowerCase();var stF=$('statusFilter').value;var filtered=CURRENT_ROWS.filter(function(x){if(stF!=='all'&&(x.status||'')!==stF)return false;return !q||(x.company||'').toLowerCase().indexOf(q)!==-1||(x.email||'').toLowerCase().indexOf(q)!==-1;});$('trackCount').innerText=filtered.length+' / '+CURRENT_ROWS.length;if(!CURRENT_ROWS.length){w.innerHTML='<div class="empty"><div class="ico">📭</div>No recipients</div>';updateBulkBar();return;}if(!filtered.length){w.innerHTML='<div class="empty">🔍 No matches</div>';updateBulkBar();return;}var h='<table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" class="cbox" onchange="toggleAll(this.checked)"></th><th>Company</th><th>Email</th><th>Status</th><th>Sends</th><th>Last Sent</th><th>Actions</th></tr></thead><tbody>';filtered.forEach(function(x){var st=(x.status||'').toLowerCase();var cls='pending',lbl='Pending',icon='⏳';if(st.indexOf('opened')!==-1){cls='opened';lbl='Opened';icon='👁';}else if(st==='sent'){cls='sent';lbl='Sent';icon='📤';}h+='<tr class="clickable '+(SELECTED[x.id]?'selected':'')+'" onclick="openRecipHistory(\''+x.id+'\')"><td onclick="event.stopPropagation()"><input type="checkbox" class="cbox" '+(SELECTED[x.id]?'checked':'')+' onchange="toggleOne(\''+x.id+'\',this.checked)"></td>';h+='<td>'+esc(x.company||'—')+'</td><td style="word-break:break-all">'+esc(x.email)+'</td>';h+='<td><span class="badge '+cls+'">'+icon+' '+lbl+'</span></td>';h+='<td><span class="badge count">'+(x.sendCount||0)+'×</span></td>';h+='<td style="font-size:10px">'+fmtDate(x.lastSentAt||x.sentAt)+'</td>';h+='<td style="white-space:nowrap" onclick="event.stopPropagation()"><button class="btn ghost small" onclick="openRecipHistory(\''+x.id+'\')" title="History">📊</button> <button class="btn ghost small" onclick="openSendOptions(\''+x.id+'\')" title="Send">📤</button> <button class="btn danger small" onclick="delRec(\''+x.id+'\')" title="Delete">✕</button></td></tr>';});h+='</tbody></table>';w.innerHTML=h;updateBulkBar();}
 function toggleOne(id,c){if(c)SELECTED[id]=true;else delete SELECTED[id];renderRecipients();}
 function toggleAll(c){var q=($('recipSearch').value||'').toLowerCase();var stF=$('statusFilter').value;var filtered=CURRENT_ROWS.filter(function(x){if(stF!=='all'&&(x.status||'')!==stF)return false;return !q||(x.company||'').toLowerCase().indexOf(q)!==-1||(x.email||'').toLowerCase().indexOf(q)!==-1;});if(c)filtered.forEach(function(r){SELECTED[r.id]=true;});else SELECTED={};renderRecipients();}
 function selectAll(){CURRENT_ROWS.forEach(function(r){SELECTED[r.id]=true;});renderRecipients();}
 function clearSelection(){SELECTED={};renderRecipients();}
 function updateBulkBar(){var ids=Object.keys(SELECTED);var b=$('bulkActionBar');if(ids.length>0){b.classList.add('show');$('selectedCount').innerText=ids.length+' selected';}else b.classList.remove('show');}
 
-function openRecipHistory(recipientId){$('recipHistoryTitle').innerText='📊 Recipient History';$('recipHistoryInfo').innerHTML='<div class="empty" style="padding:20px">Loading...</div>';$('recipHistoryStats').innerHTML='';$('recipHistoryList').innerHTML='';$('recipHistoryModal').classList.remove('hidden');api('/api/recipient/'+recipientId+'/history').then(function(r){if(!r.ok){$('recipHistoryInfo').innerHTML='<div class="empty">Error: '+esc(r.error||'Failed')+'</div>';return;}var rec=r.recipient||{},stats=r.stats||{},emails=r.emails||[];var info='<div style="font-size:14px;font-weight:700;margin-bottom:6px;word-break:break-all">'+esc(rec.email||'')+'</div>';if(rec.company)info+='<div style="font-size:12px;color:var(--text2)">Company: <b style="color:#cbd5e1">'+esc(rec.company)+'</b></div>';var statusColor=rec.status==='Opened'?'#86efac':rec.status==='Sent'?'#7dd3fc':'#fcd34d';info+='<div style="font-size:12px;color:var(--text2);margin-top:4px">Status: <b style="color:'+statusColor+'">'+esc(rec.status||'Pending')+'</b>';if(rec.everOpened)info+=' <span class="badge everopened">✓ Ever Opened</span>';info+='</div>';$('recipHistoryInfo').innerHTML=info;var s='<div class="recipient-stat-grid"><div class="recipient-stat total"><div class="label">Total</div><div class="value">'+(stats.totalSent||0)+'</div></div><div class="recipient-stat sent"><div class="label">Opened</div><div class="value">'+(stats.totalOpened||0)+'</div></div><div class="recipient-stat pending"><div class="label">Not Opened</div><div class="value">'+(stats.totalNotOpened||0)+'</div></div><div class="recipient-stat opened"><div class="label">Rate</div><div class="value">'+(stats.openRate||0)+'%</div></div></div>';$('recipHistoryStats').innerHTML=s;if(!emails.length){$('recipHistoryList').innerHTML='<div class="empty"><div class="ico">📭</div>No emails</div>';return;}var list='<div style="font-size:11px;color:var(--text2);text-transform:uppercase;font-weight:700;margin-bottom:12px">📧 All sends ('+emails.length+')</div>';emails.forEach(function(e,i){var opened=!!e.openedAt;var pred=e.aiPrediction||'GOOD';var prob=e.aiInboxProb||75;var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';var attHtml='';if(e.attachmentNames&&e.attachmentNames.length>0)attHtml='<div class="attachment-list">'+e.attachmentNames.map(function(n){return '<span class="attachment-name">📎 '+esc(n)+'</span>';}).join('')+'</div>';list+='<div class="send-history-item'+(opened?' opened':'')+'"><div class="top"><div class="subj">#'+(emails.length-i)+' · '+esc(e.subject||'(no subject)')+'</div><span class="badge '+(opened?'opened':'sent')+'">'+(opened?'👁 Opened':'📤 Sent')+'</span></div><div class="meta"><span>📅 '+fmtDate(e.sentAt)+'</span>'+(opened?'<span style="color:#86efac">👁 '+fmtDate(e.openedAt)+'</span>':'<span style="color:#fcd34d">⏳ Not opened</span>')+'<span style="color:'+pc+'">🤖 '+pred+' ('+prob+'%)</span></div>'+attHtml+'</div>';});$('recipHistoryList').innerHTML=list;});}
+function openRecipHistory(recipientId){$('recipHistoryTitle').innerText='📊 All-Time History';$('recipHistoryInfo').innerHTML='<div class="empty" style="padding:20px">Loading...</div>';$('recipHistoryStats').innerHTML='';$('recipHistoryList').innerHTML='';$('recipHistoryModal').classList.remove('hidden');api('/api/recipient/'+recipientId+'/history').then(function(r){if(!r.ok){$('recipHistoryInfo').innerHTML='<div class="empty">Error</div>';return;}var rec=r.recipient||{},stats=r.stats||{},emails=r.emails||[];var info='<div style="font-size:14px;font-weight:700;margin-bottom:6px;word-break:break-all">'+esc(rec.email||'')+'</div>';if(rec.company)info+='<div style="font-size:12px;color:var(--text2)">Company: <b>'+esc(rec.company)+'</b></div>';info+='<div style="font-size:12px;color:var(--text2);margin-top:4px">Status: <b>'+esc(rec.status||'Pending')+'</b>';if(rec.everOpened)info+=' <span class="badge everopened">✓ Ever Opened</span>';info+='</div>';info+='<div style="font-size:11px;color:var(--green);margin-top:6px">🟢 Live sync — data refreshes on open</div>';$('recipHistoryInfo').innerHTML=info;var s='<div class="recipient-stat-grid"><div class="recipient-stat total"><div class="label">MailFlow Sends</div><div class="value">'+(stats.totalSent||0)+'</div></div><div class="recipient-stat sent"><div class="label">Opened</div><div class="value">'+(stats.totalOpened||0)+'</div></div><div class="recipient-stat pending"><div class="label">Not Opened</div><div class="value">'+(stats.totalNotOpened||0)+'</div></div><div class="recipient-stat opened"><div class="label">Rate</div><div class="value">'+(stats.openRate||0)+'%</div></div></div>';$('recipHistoryStats').innerHTML=s;if(!emails.length){$('recipHistoryList').innerHTML='<div class="empty">No MailFlow sends</div>';return;}var list='<div style="font-size:11px;color:var(--text2);text-transform:uppercase;font-weight:700;margin-bottom:12px">📧 MailFlow Sends ('+emails.length+') — newest first</div>';emails.forEach(function(e,i){var opened=!!e.openedAt;var pred=e.aiPrediction||'GOOD';var prob=e.aiInboxProb||75;var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';var attHtml='';if(e.attachmentNames&&e.attachmentNames.length>0)attHtml='<div class="attachment-list">'+e.attachmentNames.map(function(n){return '<span class="attachment-name">📎 '+esc(n)+'</span>';}).join('')+'</div>';list+='<div class="send-history-item'+(opened?' opened':'')+'"><div class="top"><div class="subj">#'+(emails.length-i)+' · '+esc(e.subject||'(no subject)')+'</div><span class="badge '+(opened?'opened':'sent')+'">'+(opened?'👁 Opened':'📤 Sent')+'</span></div><div class="meta"><span>📅 '+fmtDate(e.sentAt)+'</span>'+(opened?'<span style="color:#86efac">👁 '+fmtDate(e.openedAt)+'</span>':'<span style="color:#fcd34d">⏳ Not opened</span>')+'<span style="color:'+pc+'">🤖 '+pred+' ('+prob+'%)</span></div>'+attHtml+'</div>';});list+='<div style="margin-top:14px;text-align:center"><button class="btn ghost" id="loadGmailHistBtn" onclick="loadGmailHistory(\''+recipientId+'\')">📧 Load Gmail Sent History (All-time)</button></div>';$('recipHistoryList').innerHTML=list;});}
 function closeRecipHistory(){$('recipHistoryModal').classList.add('hidden');}
+
+async function loadGmailHistory(recipientId){
+  var btn = $('loadGmailHistBtn');
+  if(!btn) return;
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Fetching Gmail...';
+  try{
+    var r = await api('/api/recipient/'+recipientId+'/gmail-history');
+    if(!r.ok){
+      if(r.needsImap){ toast('Connect Inbox (IMAP) first from Inbox tab','warn'); }
+      else toast('Error: '+(r.error||''),'err');
+      btn.disabled=false; btn.innerHTML='📧 Load Gmail Sent History (All-time)';
+      return;
+    }
+    var ems = r.emails || [];
+    var wrap = $('recipHistoryList');
+    var existing = wrap.innerHTML;
+    var h = '<div style="font-size:11px;color:var(--text2);text-transform:uppercase;font-weight:700;margin:14px 0 10px">📧 Gmail Sent History — '+ems.length+' emails (newest first)</div>';
+    if(!ems.length){ h += '<div class="empty" style="padding:20px">No Gmail sent emails found for this recipient</div>'; }
+    else {
+      ems.forEach(function(e,i){
+        h += '<div class="send-history-item gmail"><div class="top"><div class="subj">#'+(ems.length-i)+' · '+esc(e.subject||'(no subject)')+'</div><span class="badge gmail">📧 Gmail</span></div><div class="meta"><span>📅 '+fmtEmailDate(e.date)+'</span><span>'+esc(e.to||'')+'</span></div></div>';
+      });
+    }
+    // Remove old button + old gmail section
+    var cleaned = existing.replace(/<div style="margin-top:14px;text-align:center"><button[^>]*id="loadGmailHistBtn"[^>]*>[\s\S]*?<\/button><\/div>/,'');
+    cleaned = cleaned.split('<div style="font-size:11px;color:var(--text2);text-transform:uppercase;font-weight:700;margin:14px 0 10px">📧 Gmail Sent History')[0];
+    wrap.innerHTML = cleaned + h + '<div style="margin-top:14px;text-align:center"><button class="btn ghost" onclick="loadGmailHistory(\''+recipientId+'\')">🔄 Refresh Gmail History</button></div>';
+  } catch(e){ toast('Error','err'); btn.disabled=false; btn.innerHTML='📧 Load Gmail Sent History (All-time)'; }
+}
+
 function openSendOptions(id){_currentSendId=id;var rec=ALL_ROWS.filter(function(x){return x.id===id;})[0]||{};var status=rec.status||'Pending';var info='<div><b>'+esc(rec.email||'')+'</b>'+(rec.company?' — '+esc(rec.company):'')+'</div>';info+='<div style="margin-top:6px">Status: <b>'+status+'</b></div>';$('sendOptionsInfo').innerHTML=info;$('optSignature').checked=true;$('optLogo').checked=true;$('optAttachments').checked=true;$('sendOptionsBackdrop').classList.remove('hidden');}
 function closeSendOptions(){$('sendOptionsBackdrop').classList.add('hidden');_currentSendId=null;}
-document.getElementById('sendOptionsConfirm').addEventListener('click',function(){if(!_currentSendId)return;var id=_currentSendId;var payload={recipientId:id,includeSignature:$('optSignature').checked,includeLogo:$('optLogo').checked,includeAttachments:$('optAttachments').checked,selectedFileIds:Object.keys(SELECTED_FILES)};var btn=this;btn.disabled=true;btn.innerHTML='<span class="spin"></span> Sending...';api('/api/send','POST',payload).then(function(r){btn.disabled=false;btn.innerText='📤 Send';if(r.ok){toast('✅ Sent');closeSendOptions();loadAll();loadMyEmails();loadQuota();loadQuickAuto();}else if(r.error==='QUIET_HOURS'){closeSendOptions();showConfirm({icon:'🌙',title:'Quiet Hours',message:'Send anyway?',okText:'Send',primary:true}).then(function(f){if(!f)return;api('/api/send','POST',Object.assign({force:true},payload)).then(function(r2){if(r2.ok){toast('✅ Sent');loadAll();}else toast('Error','err');});});}else if(r.error==='DAILY_LIMIT_REACHED'){toast('❌ Daily limit','err');}else toast('Error: '+r.error,'err');}).catch(function(){btn.disabled=false;btn.innerText='📤 Send';});});
+document.getElementById('sendOptionsConfirm').addEventListener('click',function(){if(!_currentSendId)return;var id=_currentSendId;var payload={recipientId:id,includeSignature:$('optSignature').checked,includeLogo:$('optLogo').checked,includeAttachments:$('optAttachments').checked,selectedFileIds:Object.keys(SELECTED_FILES)};var btn=this;btn.disabled=true;btn.innerHTML='<span class="spin"></span> Sending...';api('/api/send','POST',payload).then(function(r){btn.disabled=false;btn.innerText='📤 Send';if(r.ok){toast('✅ Sent');closeSendOptions();loadAll();loadMyEmails();loadQuota();loadQuickAuto();}else if(r.error==='QUIET_HOURS'){closeSendOptions();showConfirm({icon:'🌙',title:'Quiet Hours',message:'Send anyway?',okText:'Send',primary:true}).then(function(f){if(!f)return;api('/api/send','POST',Object.assign({force:true},payload)).then(function(r2){if(r2.ok){toast('✅');loadAll();}else toast('Error','err');});});}else if(r.error==='DAILY_LIMIT_REACHED'){toast('❌ Daily limit','err');}else toast('Error: '+r.error,'err');}).catch(function(){btn.disabled=false;btn.innerText='📤 Send';});});
 async function delRec(id){var ok=await showConfirm({icon:'🗑',title:'Delete?',message:'Permanent.',okText:'Delete'});if(!ok)return;api('/api/recipients/'+id,'DELETE').then(function(r){if(r.ok){toast('Deleted');delete SELECTED[id];loadAll();loadQuickAuto();}});}
 async function resendSelected(){var ids=Object.keys(SELECTED);if(!ids.length)return toast('Select first','err');var ok=await showConfirm({icon:'🔁',title:'Resend to '+ids.length+'?',message:'',okText:'Resend',primary:true});if(!ok)return;var done=0,err=0;var selFiles=Object.keys(SELECTED_FILES);toast('Starting...');var next=function(i){if(i>=ids.length){toast('✅ '+done+' sent');clearSelection();loadAll();loadQuota();loadMyEmails();return;}setTimeout(function(){api('/api/resend','POST',{recipientId:ids[i],selectedFileIds:selFiles}).then(function(r){if(r.ok)done++;else if(r.error==='DAILY_LIMIT_REACHED'){toast('❌ Limit','err');clearSelection();loadAll();return;}else err++;next(i+1);}).catch(function(){err++;next(i+1);});},800);};next(0);}
-async function deleteSelected(){var ids=Object.keys(SELECTED);if(!ids.length)return toast('Select first','err');var ok=await showConfirm({icon:'⚠️',title:'Delete '+ids.length+'?',message:'Cannot undo.',okText:'Delete All'});if(!ok)return;api('/api/recipients/bulk-delete','POST',{ids:ids}).then(function(r){if(r.ok){toast('✅ '+r.deleted);clearSelection();loadAll();loadQuickAuto();}});}
+async function deleteSelected(){var ids=Object.keys(SELECTED);if(!ids.length)return toast('Select first','err');var ok=await showConfirm({icon:'⚠️',title:'Delete '+ids.length+'?',message:'',okText:'Delete All'});if(!ok)return;api('/api/recipients/bulk-delete','POST',{ids:ids}).then(function(r){if(r.ok){toast('✅ '+r.deleted);clearSelection();loadAll();loadQuickAuto();}});}
 
-function loadMyEmails(){var range=$('myEmailRange')?$('myEmailRange').value:'all';api('/api/my-emails?range='+encodeURIComponent(range)).then(function(r){if(!r.ok)return;MY_EMAILS=r.emails||[];renderMyEmails();});}
-function renderMyEmails(){var w=$('myEmailsWrap');var q=($('myEmailSearch').value||'').toLowerCase();var filtered=MY_EMAILS.filter(function(e){return !q||(e.recipientEmail||'').toLowerCase().indexOf(q)!==-1||(e.subject||'').toLowerCase().indexOf(q)!==-1;});if($('myEmailCount'))$('myEmailCount').innerText=filtered.length+' shown';if(!filtered.length){w.innerHTML='<div class="empty"><div class="ico">📧</div>No history</div>';return;}var h='<table class="data-table"><thead><tr><th>Recipient</th><th>Subject</th><th>Sent</th><th>Status</th><th>Opened</th><th>Files</th></tr></thead><tbody>';filtered.slice(0,300).forEach(function(e){var opened=!!e.openedAt;var stCls=opened?'opened':'sent';var stIcon=opened?'👁':'📤';var stLbl=opened?'Opened':'Sent';var attCell='—';if(e.attachmentNames&&e.attachmentNames.length>0)attCell='<div class="attachment-list">'+e.attachmentNames.map(function(n){return '<span class="attachment-name">📎 '+esc(n)+'</span>';}).join('')+'</div>';else if((e.attachmentsCount||0)>0)attCell='<span class="badge attach">📎 '+e.attachmentsCount+'</span>';h+='<tr><td style="word-break:break-all;font-size:11px">'+esc(e.recipientEmail)+'</td><td style="font-size:11px">'+esc(e.subject||'—')+'</td><td style="font-size:10px">'+fmtDate(e.sentAt)+'</td><td><span class="badge '+stCls+'">'+stIcon+' '+stLbl+'</span></td><td style="font-size:10px">'+(opened?fmtDate(e.openedAt):'—')+'</td><td>'+attCell+'</td></tr>';});h+='</tbody></table>';w.innerHTML=h;}
+function loadMyEmails(){var range=$('myEmailRange')?$('myEmailRange').value:'all';api('/api/my-emails?range='+encodeURIComponent(range)).then(function(r){if(!r.ok)return;MY_EMAILS=(r.emails||[]).sort(function(a,b){var ta=a.sentAt&&a.sentAt._seconds?a.sentAt._seconds*1000:new Date(a.sentAt||0).getTime();var tb=b.sentAt&&b.sentAt._seconds?b.sentAt._seconds*1000:new Date(b.sentAt||0).getTime();return tb-ta;});renderMyEmails();});}
+function renderMyEmails(){var w=$('myEmailsWrap');var q=($('myEmailSearch').value||'').toLowerCase();var filtered=MY_EMAILS.filter(function(e){return !q||(e.recipientEmail||'').toLowerCase().indexOf(q)!==-1||(e.subject||'').toLowerCase().indexOf(q)!==-1;});if($('myEmailCount'))$('myEmailCount').innerText=filtered.length+' shown';if(!filtered.length){w.innerHTML='<div class="empty">📧 No history</div>';return;}var h='<table class="data-table"><thead><tr><th>Recipient</th><th>Subject</th><th>Sent</th><th>Status</th><th>Opened</th><th>Files</th></tr></thead><tbody>';filtered.slice(0,300).forEach(function(e){var opened=!!e.openedAt;var stCls=opened?'opened':'sent';var stIcon=opened?'👁':'📤';var stLbl=opened?'Opened':'Sent';var attCell='—';if(e.attachmentNames&&e.attachmentNames.length>0)attCell='<div class="attachment-list">'+e.attachmentNames.map(function(n){return '<span class="attachment-name">📎 '+esc(n)+'</span>';}).join('')+'</div>';else if((e.attachmentsCount||0)>0)attCell='<span class="badge attach">📎 '+e.attachmentsCount+'</span>';h+='<tr><td style="word-break:break-all;font-size:11px">'+esc(e.recipientEmail)+'</td><td style="font-size:11px">'+esc(e.subject||'—')+'</td><td style="font-size:10px">'+fmtDate(e.sentAt)+'</td><td><span class="badge '+stCls+'">'+stIcon+' '+stLbl+'</span></td><td style="font-size:10px">'+(opened?fmtDate(e.openedAt):'—')+'</td><td>'+attCell+'</td></tr>';});h+='</tbody></table>';w.innerHTML=h;}
 
 function loadPrefs(){api('/api/prefs').then(function(r){if(!r.ok)return;});}
 
 function checkIMAPStatus(){api('/api/imap/status').then(function(r){if(!r.ok){showIMAPSetup();return;}IMAP_CONNECTED=!!r.connected;if(IMAP_CONNECTED){$('imapSetupPanel').classList.add('hidden');$('imapInboxUI').classList.remove('hidden');loadIMAPInbox();startLiveInbox();}else{showIMAPSetup();}}).catch(function(){showIMAPSetup();});}
 function showIMAPSetup(){$('imapSetupPanel').classList.remove('hidden');$('imapInboxUI').classList.add('hidden');}
-async function connectIMAP(){var pass=$('imapAppPassword').value.trim();if(!pass||pass.replace(/\s/g,'').length<16){return toast('App Password 16 chars','err');}var btn=$('imapConnectBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Testing...';try{var r=await api('/api/imap/connect','POST',{appPassword:pass});if(r.ok){toast('✅ Connected');$('imapAppPassword').value='';IMAP_CONNECTED=true;$('imapSetupPanel').classList.add('hidden');$('imapInboxUI').classList.remove('hidden');loadIMAPInbox();startLiveInbox();}else{toast('Error: '+r.error,'err');}}catch(e){toast('Error','err');}btn.disabled=false;btn.innerHTML='🔌 Connect Inbox';}
+async function connectIMAP(){var pass=$('imapAppPassword').value.trim();if(!pass||pass.replace(/\s/g,'').length<16){return toast('16 chars required','err');}var btn=$('imapConnectBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Testing...';try{var r=await api('/api/imap/connect','POST',{appPassword:pass});if(r.ok){toast('✅ Connected');$('imapAppPassword').value='';IMAP_CONNECTED=true;$('imapSetupPanel').classList.add('hidden');$('imapInboxUI').classList.remove('hidden');loadIMAPInbox();startLiveInbox();}else{toast('Error: '+r.error,'err');}}catch(e){toast('Error','err');}btn.disabled=false;btn.innerHTML='🔌 Connect Inbox';}
+async function connectIMAPWithStored(){var btn=$('imapSamePassBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Connecting...';try{var r=await api('/api/imap/connect','POST',{useStored:true});if(r.ok){toast('✅ Connected with saved password');IMAP_CONNECTED=true;$('imapSetupPanel').classList.add('hidden');$('imapInboxUI').classList.remove('hidden');loadIMAPInbox();startLiveInbox();}else{toast('Error: '+r.error,'err');}}catch(e){toast('Error','err');}btn.disabled=false;btn.innerHTML='🔗 Use Saved Gmail Password';}
 async function disconnectIMAP(){var ok=await showConfirm({icon:'🔌',title:'Disconnect?',message:'',okText:'Disconnect'});if(!ok)return;api('/api/imap/disconnect','POST').then(function(r){if(r.ok){toast('Disconnected');IMAP_CONNECTED=false;INBOX_EMAILS=[];if(LIVE_INBOX_TIMER)clearInterval(LIVE_INBOX_TIMER);$('imapSetupPanel').classList.remove('hidden');$('imapInboxUI').classList.add('hidden');}});}
-function loadIMAPInbox(silent){if(!IMAP_CONNECTED)return;var folder=$('inboxFolder').value;var pageSize=parseInt($('inboxLimit').value)||20;if(!silent){$('inboxList').innerHTML='<div class="empty"><div class="ico">⏳</div>Loading...</div>';}$('imapPageInfo').innerText='Page '+imapPage;$('imapPrevBtn').disabled=imapPage<=1;$('imapNextBtn').disabled=true;api('/api/imap/inbox','POST',{folder:folder,page:imapPage,pageSize:pageSize}).then(function(r){if(!r.ok){if(!silent)$('inboxList').innerHTML='<div class="empty">'+esc(r.error)+'</div>';return;}var newEmails=r.emails||[];var newHash=JSON.stringify(newEmails.map(function(e){return e.uid+'-'+e.isRead;}));if(silent&&newHash===lastInboxHash)return;lastInboxHash=newHash;INBOX_EMAILS=newEmails;$('imapNextBtn').disabled=!r.hasMore;if(!INBOX_EMAILS.length){$('inboxList').innerHTML='<div class="empty">No emails</div>';return;}renderInboxList();});}
-function renderInboxList(){var h='';INBOX_EMAILS.forEach(function(e,i){h+='<div class="inbox-item'+(e.isRead?'':' unread')+'" onclick="openIMAPEmail('+i+')" data-idx="'+i+'">';h+='<div class="from"><span class="from-name">'+esc(e.fromName||e.from||'Unknown')+'</span><span class="date">'+esc(fmtTimeAgo(e.date||e.receivedAt))+'</span></div>';h+='<div class="subj">'+esc(e.subject||'(no subject)')+'</div>';h+='</div>';});$('inboxList').innerHTML=h;}
+function loadIMAPInbox(silent){if(!IMAP_CONNECTED)return;var folder=$('inboxFolder').value;var pageSize=parseInt($('inboxLimit').value)||20;if(!silent){$('inboxList').innerHTML='<div class="empty">⏳ Loading...</div>';}$('imapPageInfo').innerText='Page '+imapPage;$('imapPrevBtn').disabled=imapPage<=1;$('imapNextBtn').disabled=true;api('/api/imap/inbox','POST',{folder:folder,page:imapPage,pageSize:pageSize}).then(function(r){if(!r.ok){if(!silent)$('inboxList').innerHTML='<div class="empty">'+esc(r.error)+'</div>';return;}var newEmails=r.emails||[];var newHash=JSON.stringify(newEmails.map(function(e){return e.uid+'-'+e.isRead;}));if(silent&&newHash===lastInboxHash)return;lastInboxHash=newHash;INBOX_EMAILS=newEmails;$('imapNextBtn').disabled=!r.hasMore;if(!INBOX_EMAILS.length){$('inboxList').innerHTML='<div class="empty">No emails</div>';return;}renderInboxList();});}
+function renderInboxList(){var h='';INBOX_EMAILS.forEach(function(e,i){h+='<div class="inbox-item'+(e.isRead?'':' unread')+'" onclick="openIMAPEmail('+i+')" data-idx="'+i+'">';h+='<div class="from"><span class="from-name">'+esc(e.fromName||e.from||'Unknown')+'</span><span class="date">'+esc(fmtTimeAgo(e.date||e.receivedAt))+'</span></div>';h+='<div class="subj">'+esc(e.subject||'(no subject)')+'</div></div>';});$('inboxList').innerHTML=h;}
 function openIMAPEmail(i){var e=INBOX_EMAILS[i];if(!e)return;ACTIVE_EMAIL=e;document.querySelectorAll('.inbox-item').forEach(function(el){el.classList.remove('active');if(parseInt(el.getAttribute('data-idx'))===i)el.classList.add('active');});$('inboxEmpty').classList.add('hidden');$('inboxViewerContent').classList.remove('hidden');$('inboxViewerContent').style.display='flex';$('viewSubject').innerText=e.subject||'(no subject)';$('viewFrom').innerText=(e.fromName||'')+' <'+(e.from||'')+'>';$('viewTo').innerText=e.to||'';$('viewDate').innerText=fmtEmailDate(e.date||e.receivedAt);var bodyContainer=$('viewBody');bodyContainer.innerHTML='<div class="loading"><div class="spin"></div><span>Loading...</span></div>';api('/api/imap/body','POST',{folder:e.folder||'INBOX',uid:e.uid}).then(function(r){if(!r.ok){bodyContainer.innerHTML='<div class="plain-body">Failed</div>';return;}var email=r.email;ACTIVE_EMAIL=Object.assign({},e,email);bodyContainer.innerHTML='';if(email.htmlBody && email.htmlBody.trim().length>0){var iframe=document.createElement('iframe');iframe.style.cssText='width:100%;border:none;background:#fff;display:block;';iframe.setAttribute('sandbox','allow-same-origin allow-popups');bodyContainer.appendChild(iframe);try{var doc=iframe.contentDocument||iframe.contentWindow.document;doc.open();doc.write('<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:20px;font-family:-apple-system,sans-serif;font-size:14px;line-height:1.6;color:#222;word-break:break-word;background:#fff}img{max-width:100%;height:auto}a{color:#1a73e8}</style></head><body>'+email.htmlBody+'</body></html>');doc.close();setTimeout(function(){try{var hh=doc.body.scrollHeight;iframe.style.height=Math.max(400,Math.min(hh+60,1500))+'px';}catch(err){iframe.style.height='500px';}},200);}catch(err){bodyContainer.innerHTML='<div class="plain-body">'+esc(email.textBody||email.snippet||'')+'</div>';}}else bodyContainer.innerHTML='<div class="plain-body">'+esc(email.textBody||email.snippet||'')+'</div>';});}
 async function deleteIMAPEmail(){if(!ACTIVE_EMAIL)return;var ok=await showConfirm({icon:'🗑',title:'Delete?',message:'From MailFlow only.',okText:'Delete'});if(!ok)return;api('/api/imap/email/'+encodeURIComponent(ACTIVE_EMAIL.id),'DELETE').then(function(r){if(r.ok){toast('Deleted');INBOX_EMAILS=INBOX_EMAILS.filter(function(e){return e.id!==ACTIVE_EMAIL.id;});ACTIVE_EMAIL=null;$('inboxViewerContent').classList.add('hidden');$('inboxEmpty').classList.remove('hidden');renderInboxList();}});}
 
@@ -1243,7 +1503,7 @@ function addTestRow(){var w=$('testRecipientsRows');if(!w)return;var d=document.
 function submitTestRecipientsManual(){var rows=$('testRecipientsRows').querySelectorAll('.recip-row');var list=[];rows.forEach(function(r){var i=r.querySelectorAll('input');if(i[1].value.trim())list.push({company:i[0].value.trim(),email:i[1].value.trim()});});if(!list.length)return toast('No emails','err');api('/api/test/recipients','POST',{list:list}).then(function(res){if(res.ok){toast('✅ '+res.added);$('testRecipientsRows').innerHTML='';addTestRow();loadTestDashboard();}});}
 function clearTestBulk(){$('testBulkInput').value='';}
 function submitTestBulk(){var r=parseBulk($('testBulkInput').value);if(!r.valid.length)return toast('No emails','err');api('/api/test/recipients','POST',{list:r.valid}).then(function(res){if(res.ok){toast('✅ '+res.added);$('testBulkInput').value='';loadTestDashboard();switchTestTab('manual');}});}
-function loadTestDashboard(){api('/api/test/stats').then(function(r){if(!r.ok)return;var s=r.stats;$('tstTotal').innerText=s.total;$('tstSent').innerText=s.sent;$('tstOpened').innerText=s.opened;$('tstPending').innerText=s.pending;$('tstLog').innerText=s.totalSends;if($('testPendingCount'))$('testPendingCount').innerText=s.pending;});api('/api/test/recipients').then(function(r){if(!r.ok)return;TEST_RECIPIENTS=r.recipients||[];renderTestRecipients();});api('/api/test/log').then(function(r){if(!r.ok)return;var w=$('testLogWrap');var arr=r.logs||[];if(!arr.length){w.innerHTML='<div class="empty">No log</div>';return;}var h='<table class="data-table"><thead><tr><th>To</th><th>Subject</th><th>Sent</th><th>Status</th></tr></thead><tbody>';arr.slice(0,100).forEach(function(x){var op=!!x.openedAt;var st=op?'opened':'sent';var stIco=op?'👁 Opened':'📤 Sent';h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(x.recipientEmail)+'</td><td style="font-size:11px">'+esc(x.subject||'—')+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(x.sentAt)+'</td><td><span class="badge '+st+'">'+stIco+'</span></td></tr>';});h+='</tbody></table>';w.innerHTML=h;});api('/api/test/prefs').then(function(r){if(!r.ok)return;var p=r.prefs;if($('testAutoBatchSize'))$('testAutoBatchSize').value=p.autoSendBatchSize||5;if($('testAutoDelay'))$('testAutoDelay').value=p.sendDelay!==undefined?p.sendDelay:20;if($('testTotalAutoSent'))$('testTotalAutoSent').innerText=p.totalAutoSent||0;if($('testLastAutoRun'))$('testLastAutoRun').innerText=p.lastRun?fmtDate(p.lastRun):'Never';});}
+function loadTestDashboard(){api('/api/test/stats').then(function(r){if(!r.ok)return;var s=r.stats;$('tstTotal').innerText=s.total;$('tstSent').innerText=s.sent;$('tstOpened').innerText=s.opened;$('tstPending').innerText=s.pending;$('tstLog').innerText=s.totalSends;if($('testPendingCount'))$('testPendingCount').innerText=s.pending;});api('/api/test/recipients').then(function(r){if(!r.ok)return;TEST_RECIPIENTS=(r.recipients||[]).sort(function(a,b){var ta=a.createdAt&&a.createdAt._seconds?a.createdAt._seconds*1000:new Date(a.createdAt||0).getTime();var tb=b.createdAt&&b.createdAt._seconds?b.createdAt._seconds*1000:new Date(b.createdAt||0).getTime();return tb-ta;});renderTestRecipients();});api('/api/test/log').then(function(r){if(!r.ok)return;var w=$('testLogWrap');var arr=r.logs||[];if(!arr.length){w.innerHTML='<div class="empty">No log</div>';return;}var h='<table class="data-table"><thead><tr><th>To</th><th>Subject</th><th>Sent</th><th>Status</th></tr></thead><tbody>';arr.slice(0,100).forEach(function(x){var op=!!x.openedAt;var st=op?'opened':'sent';var stIco=op?'👁 Opened':'📤 Sent';h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(x.recipientEmail)+'</td><td style="font-size:11px">'+esc(x.subject||'—')+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(x.sentAt)+'</td><td><span class="badge '+st+'">'+stIco+'</span></td></tr>';});h+='</tbody></table>';w.innerHTML=h;});api('/api/test/prefs').then(function(r){if(!r.ok)return;var p=r.prefs;if($('testAutoBatchSize'))$('testAutoBatchSize').value=p.autoSendBatchSize||5;if($('testAutoDelay'))$('testAutoDelay').value=p.sendDelay!==undefined?p.sendDelay:20;if($('testTotalAutoSent'))$('testTotalAutoSent').innerText=p.totalAutoSent||0;if($('testLastAutoRun'))$('testLastAutoRun').innerText=p.lastRun?fmtDate(p.lastRun):'Never';});}
 function renderTestRecipients(){var w=$('testRecipientsWrap');if(!w)return;var q=($('testRecipSearch').value||'').toLowerCase();var stF=$('testRecipStatusFilter').value;var filtered=TEST_RECIPIENTS.filter(function(x){if(stF!=='all'&&(x.status||'')!==stF)return false;return !q||(x.email||'').toLowerCase().indexOf(q)!==-1||(x.company||'').toLowerCase().indexOf(q)!==-1;});if($('testRecipCount'))$('testRecipCount').innerText=filtered.length+' / '+TEST_RECIPIENTS.length;if(!TEST_RECIPIENTS.length){w.innerHTML='<div class="empty">No test recipients</div>';updateTestBulkBar();return;}var h='<table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" class="cbox" onchange="testToggleAll(this.checked)"></th><th>Email</th><th>Company</th><th>Status</th><th>Sent</th><th>Actions</th></tr></thead><tbody>';filtered.forEach(function(x){var st=(x.status||'').toLowerCase();var cls=st==='opened'?'opened':st==='sent'?'sent':'pending';var icon=st==='opened'?'👁':st==='sent'?'📤':'⏳';h+='<tr class="'+(TEST_SELECTED[x.id]?'selected':'')+'"><td><input type="checkbox" class="cbox" '+(TEST_SELECTED[x.id]?'checked':'')+' onchange="testToggleOne(\''+x.id+'\',this.checked)"></td>';h+='<td style="word-break:break-all">'+esc(x.email)+'</td><td>'+esc(x.company||'—')+'</td><td><span class="badge '+cls+'">'+icon+' '+esc(x.status||'Pending')+'</span></td><td style="font-size:11px">'+fmtDate(x.sentAt)+'</td>';h+='<td style="white-space:nowrap"><button class="btn ghost small" onclick="useTestRecipient(\''+esc(x.email).replace(/'/g,"\\'")+'\')">Use</button> <button class="btn danger small" onclick="delTestRec(\''+x.id+'\')">✕</button></td></tr>';});h+='</tbody></table>';w.innerHTML=h;updateTestBulkBar();}
 function useTestRecipient(email){$('testTo').value=email;toast('📋 Set');}
 function testToggleOne(id,c){if(c)TEST_SELECTED[id]=true;else delete TEST_SELECTED[id];renderTestRecipients();}
@@ -1251,17 +1511,19 @@ function testToggleAll(c){if(c)TEST_RECIPIENTS.forEach(function(r){TEST_SELECTED
 function testSelectAll(){TEST_RECIPIENTS.forEach(function(r){TEST_SELECTED[r.id]=true;});renderTestRecipients();}
 function testClearSelection(){TEST_SELECTED={};renderTestRecipients();}
 function updateTestBulkBar(){var ids=Object.keys(TEST_SELECTED);var b=$('testBulkActionBar');if(ids.length>0){b.classList.add('show');$('testSelectedCount').innerText=ids.length+' selected';}else b.classList.remove('show');}
-async function testDeleteSelected(){var ids=Object.keys(TEST_SELECTED);if(!ids.length)return toast('Select first','err');var ok=await showConfirm({icon:'🗑',title:'Delete '+ids.length+'?',message:'',okText:'Delete'});if(!ok)return;api('/api/test/recipients/bulk-delete','POST',{ids:ids}).then(function(r){if(r.ok){toast('✅ '+r.deleted);TEST_SELECTED={};loadTestDashboard();}});}
+async function testDeleteSelected(){var ids=Object.keys(TEST_SELECTED);if(!ids.length)return toast('Select','err');var ok=await showConfirm({icon:'🗑',title:'Delete '+ids.length+'?',message:'',okText:'Delete'});if(!ok)return;api('/api/test/recipients/bulk-delete','POST',{ids:ids}).then(function(r){if(r.ok){toast('✅ '+r.deleted);TEST_SELECTED={};loadTestDashboard();}});}
 async function delTestRec(id){var ok=await showConfirm({icon:'🗑',title:'Delete?',message:'',okText:'Delete'});if(!ok)return;api('/api/test/recipients/'+id,'DELETE').then(function(r){if(r.ok){toast('Deleted');delete TEST_SELECTED[id];loadTestDashboard();}});}
-async function clearTestData(){var ok=await showConfirm({icon:'⚠️',title:'Clear ALL?',message:'Permanent.',okText:'Clear All'});if(!ok)return;toast('Clearing...');api('/api/test/clear','POST',{}).then(function(r){if(r.ok){toast('✅ '+r.deleted);TEST_SELECTED={};setTimeout(loadTestDashboard,500);}});}
+async function clearTestData(){var ok=await showConfirm({icon:'⚠️',title:'Clear ALL?',message:'',okText:'Clear All'});if(!ok)return;toast('Clearing...');api('/api/test/clear','POST',{}).then(function(r){if(r.ok){toast('✅ '+r.deleted);TEST_SELECTED={};setTimeout(loadTestDashboard,500);}});}
 function sendTestEmail(){var to=$('testTo').value.trim(),subject=$('testSubject').value.trim(),body=$('testBody').value.trim();if(!to||!subject||!body)return toast('Fill fields','err');toast('Sending...');api('/api/test/send','POST',{to:to,subject:subject,body:body,includeSignature:true,includeLogo:false,selectedFileIds:[],useTestSignature:false}).then(function(r){if(r.ok){toast('✅ Sent');loadTestDashboard();}else toast('Error: '+r.error,'err');});}
-async function runTestAutomation(){var bs=parseInt($('testAutoBatchSize').value)||5;var delay=parseInt($('testAutoDelay').value)||20;var ok=await showConfirm({icon:'▶️',title:'Run?',message:bs+' emails with '+delay+'s delay',okText:'Run',primary:true});if(!ok)return;toast('⏳ Running...');api('/api/test/automation/run','POST',{batchSize:bs,delay:delay}).then(function(r){if(r.ok){if(r.sent>0)toast('✅ '+r.sent+' sent');else toast(r.message||'No pending','warn');loadTestDashboard();}});}
+async function runTestAutomation(){var bs=parseInt($('testAutoBatchSize').value)||5;var delay=parseInt($('testAutoDelay').value)||20;var ok=await showConfirm({icon:'▶️',title:'Run?',message:bs+' emails, '+delay+'s delay',okText:'Run',primary:true});if(!ok)return;toast('⏳ Running...');api('/api/test/automation/run','POST',{batchSize:bs,delay:delay}).then(function(r){if(r.ok){if(r.sent>0)toast('✅ '+r.sent+' sent');else toast(r.message||'No pending','warn');loadTestDashboard();}});}
 
-function loadAdmin(){$('adminUsersList').innerHTML='<div class="empty">Loading...</div>';api('/api/admin/dashboard').then(function(r){if(!r.ok){$('adminUsersList').innerHTML='<div class="empty">Error</div>';return;}$('adTotalUsers').innerText=r.stats.totalUsers;$('adTotalEmails').innerText=r.stats.totalEmails;$('adTotalOpened').innerText=r.stats.totalOpened;$('adTotalPending').innerText=r.stats.totalPending;$('adTotalSends').innerText=r.stats.totalSends||0;});api('/api/admin/all-emails').then(function(r){if(!r.ok)return;ADMIN_ALL_EMAILS=r.emails||[];renderAllEmails();});}
-function loadAdminUsersPage(p){if(p<1)p=1;adminPage=p;$('adminUsersList').innerHTML='<div class="empty">Loading...</div>';$('adminPagination').style.display='none';api('/api/admin/users/paginated?page='+adminPage+'&limit=10&search='+encodeURIComponent(adminSearchQuery)).then(function(r){if(!r.ok){$('adminUsersList').innerHTML='<div class="empty">Error</div>';return;}var users=r.users||[];var pag=r.pagination||{page:1,totalPages:1,total:0};if(!users.length){$('adminUsersList').innerHTML='<div class="empty">'+(adminSearchQuery?'No match':'No users')+'</div>';$('adminPagination').style.display='none';return;}var h='';users.forEach(function(u){h+='<div class="user-card '+(u.banned?'banned':'')+'"><div class="top"><div style="flex:1;min-width:0"><div class="name">'+esc(u.name||'(no name)')+(u.banned?' <span class="badge banned">🚫</span>':'')+'</div><div class="email">'+esc(u.email)+'</div></div><span class="app-id-pill">'+esc(u.appAccountId||'N/A')+'</span></div>';h+='<div style="font-size:11px;color:var(--text3);margin-top:6px">Reg: '+fmtDate(u.createdAt)+' · Auth: '+(u.authType||'email')+'</div>';h+='<div class="actions-row"><button class="btn ghost small" onclick="viewAdminUser(\''+esc(u.id)+'\')">👁 Details</button>';if(u.email.toLowerCase()!==(USER.email||'').toLowerCase()){if(u.banned){h+='<button class="btn success small" onclick="unbanUser(\''+esc(u.id)+'\')">✓ Unban</button>';}else{h+='<button class="btn warn small" onclick="openBanModal(\''+esc(u.id)+'\',\''+esc(u.email)+'\')">🚫 Ban</button>';}h+='<button class="btn danger small" onclick="deleteUserAccount(\''+esc(u.id)+'\',\''+esc(u.email)+'\')">🗑 Delete</button>';}h+='</div></div>';});$('adminUsersList').innerHTML=h;if(pag.totalPages>1){$('adminPagination').style.display='flex';$('adminPageInfo').innerText='Page '+pag.page+' of '+pag.totalPages+' ('+pag.total+' total)';$('adminPrevBtn').disabled=pag.page<=1;$('adminNextBtn').disabled=pag.page>=pag.totalPages;}else $('adminPagination').style.display='none';});}
+function loadAdmin(){$('adminUsersList').innerHTML='<div class="empty">Loading...</div>';api('/api/admin/dashboard').then(function(r){if(!r.ok)return;$('adTotalUsers').innerText=r.stats.totalUsers;$('adTotalEmails').innerText=r.stats.totalEmails;$('adTotalOpened').innerText=r.stats.totalOpened;$('adTotalPending').innerText=r.stats.totalPending;$('adTotalSends').innerText=r.stats.totalSends||0;});}
+function loadAdminUsersPage(p,silent){if(p<1)p=1;adminPage=p;if(!silent)$('adminUsersList').innerHTML='<div class="empty">Loading...</div>';$('adminPagination').style.display='none';api('/api/admin/users/paginated?page='+adminPage+'&limit=15&search='+encodeURIComponent(adminSearchQuery)).then(function(r){if(!r.ok){if(!silent)$('adminUsersList').innerHTML='<div class="empty">Error</div>';return;}var users=r.users||[];var pag=r.pagination||{page:1,totalPages:1,total:0};if(!users.length){if(!silent){$('adminUsersList').innerHTML='<div class="empty">'+(adminSearchQuery?'No match':'No users')+'</div>';}$('adminPagination').style.display='none';return;}var h='';users.forEach(function(u){h+='<div class="user-card '+(u.banned?'banned':'')+'"><div class="top"><div style="flex:1;min-width:0"><div class="name">'+esc(u.name||'(no name)')+(u.banned?' <span class="badge banned">🚫</span>':'')+(u.hasSmtp?' <span class="badge sent">📧</span>':'')+'</div><div class="email">'+esc(u.email)+'</div></div><span class="app-id-pill">'+esc(u.appAccountId||'N/A')+'</span></div>';h+='<div style="font-size:11px;color:var(--text3);margin-top:6px">Reg: '+fmtDate(u.createdAt)+' · Auth: '+(u.authType||'email')+'</div>';h+='<div class="actions-row"><button class="btn ghost small" onclick="viewAdminUser(\''+esc(u.id)+'\')">👁 Details</button>';if(u.email.toLowerCase()!==(USER.email||'').toLowerCase()){if(u.banned){h+='<button class="btn success small" onclick="unbanUser(\''+esc(u.id)+'\')">✓ Unban</button>';}else{h+='<button class="btn warn small" onclick="openBanModal(\''+esc(u.id)+'\',\''+esc(u.email)+'\')">🚫 Ban</button>';}h+='<button class="btn danger small" onclick="deleteUserAccount(\''+esc(u.id)+'\',\''+esc(u.email)+'\')">🗑 Delete</button>';}h+='</div></div>';});$('adminUsersList').innerHTML=h;if(pag.totalPages>1){$('adminPagination').style.display='flex';$('adminPageInfo').innerText='Page '+pag.page+' of '+pag.totalPages+' ('+pag.total+' total)';$('adminPrevBtn').disabled=pag.page<=1;$('adminNextBtn').disabled=pag.page>=pag.totalPages;}else $('adminPagination').style.display='none';});}
 function onAdminSearchChange(){if(adminSearchTimer)clearTimeout(adminSearchTimer);adminSearchTimer=setTimeout(function(){adminSearchQuery=$('adminSearch').value.trim();loadAdminUsersPage(1);},400);}
-function loadAdminAIUsage(){api('/api/admin/ai-usage').then(function(r){if(!r.ok)return;$('adAIUsers').innerText=r.summary.totalUsers||0;$('adAIActiveUsers').innerText=r.summary.activeAIUsers||0;$('adAITokensToday').innerText=fmtNum(r.summary.tokensToday||0);$('adAITokensMonth').innerText=fmtNum(r.summary.tokensThisMonth||0);$('adAITokensTotal').innerText=fmtNum(r.summary.tokensLifetime||0);$('adminAIUsageSummary').innerText=r.summary.monthKey||'';var w=$('adminAIUsageTable');if(!r.rows.length){w.innerHTML='<div class="empty">No AI usage</div>';return;}var h='<table class="data-table"><thead><tr><th>User</th><th>App ID</th><th>Today</th><th>Month</th><th>Lifetime</th><th>Calls</th><th>Providers</th></tr></thead><tbody>';r.rows.slice(0,100).forEach(function(row){var prov=Object.keys(row.totalProviders||{}).map(function(k){return '<span class="badge sent" style="font-size:9px;margin:1px">'+esc(k)+'</span>';}).join('');h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(row.email)+'</td><td style="font-size:10px"><span class="app-id-pill">'+esc(row.appAccountId)+'</span></td><td style="font-size:11px;text-align:center">'+fmtNum(row.todayTokens)+'</td><td style="font-size:11px;text-align:center">'+fmtNum(row.monthTokens)+'</td><td style="font-size:11px;text-align:center;color:#fbbf24;font-weight:800">'+fmtNum(row.totalTokens)+'</td><td style="font-size:11px;text-align:center">'+fmtNum(row.totalCalls)+'</td><td>'+prov+'</td></tr>';});h+='</tbody></table>';w.innerHTML=h;});}
-function loadAdminBanned(){api('/api/admin/banned-users').then(function(r){if(!r.ok)return;ADMIN_BANNED=r.banned||[];$('adminBannedCount').innerText=ADMIN_BANNED.length+' banned';var w=$('adminBannedList');if(!ADMIN_BANNED.length){w.innerHTML='<div class="empty">No banned</div>';return;}w.innerHTML=ADMIN_BANNED.map(function(b){return '<div class="user-card banned"><div class="top"><div><div class="name">'+esc(b.name||'(no name)')+'</div><div class="email">'+esc(b.email)+'</div></div><span class="badge banned">🚫 BANNED</span></div><div style="font-size:11px;color:var(--text2);margin-top:6px"><b>Reason:</b> '+esc(b.reason||'—')+'</div><div style="font-size:11px;color:var(--text2);margin-top:4px"><b>Banned:</b> '+fmtDate(b.bannedAt)+'</div><div class="actions-row"><button class="btn success small" onclick="unbanUser(\''+esc(b.id)+'\')">✓ Unban</button></div></div>';}).join('');});}
+function loadAdminEmailsPage(p,silent){if(p<1)p=1;adminEmailsPage=p;if(!silent)$('adminAllEmailsWrap').innerHTML='<div class="empty">Loading...</div>';$('adminEmailsPagination').style.display='none';api('/api/admin/all-emails-paginated?page='+adminEmailsPage+'&limit=15&search='+encodeURIComponent(adminEmailsSearchQuery)).then(function(r){if(!r.ok){if(!silent)$('adminAllEmailsWrap').innerHTML='<div class="empty">Error</div>';return;}var emails=r.emails||[];var pag=r.pagination||{page:1,totalPages:1,total:0};if(!emails.length){if(!silent){$('adminAllEmailsWrap').innerHTML='<div class="empty">No emails</div>';}$('adminEmailsPagination').style.display='none';return;}var h='<table class="data-table"><thead><tr><th>User</th><th>Recipient</th><th>Subject</th><th>Sent</th><th>AI</th></tr></thead><tbody>';emails.forEach(function(e){var pred=e.aiPrediction||'GOOD';var prob=e.aiInboxProb||75;var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';h+='<tr><td style="font-size:10px;word-break:break-all">'+esc(e.userEmail)+'</td><td style="font-size:11px;word-break:break-all">'+esc(e.recipientEmail)+'</td><td style="font-size:10px">'+esc(e.subject||'—')+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(e.sentAt)+'</td><td><span style="padding:2px 8px;border-radius:12px;font-size:9px;font-weight:700;background:'+pc+'22;color:'+pc+'">'+prob+'%</span></td></tr>';});h+='</tbody></table>';$('adminAllEmailsWrap').innerHTML=h;if(pag.totalPages>1){$('adminEmailsPagination').style.display='flex';$('adminEmailsPageInfo').innerText='Page '+pag.page+' of '+pag.totalPages+' ('+pag.total+' total)';$('adminEmailsPrevBtn').disabled=pag.page<=1;$('adminEmailsNextBtn').disabled=pag.page>=pag.totalPages;}else $('adminEmailsPagination').style.display='none';});}
+function onAdminEmailSearchChange(){if(adminEmailsSearchTimer)clearTimeout(adminEmailsSearchTimer);adminEmailsSearchTimer=setTimeout(function(){adminEmailsSearchQuery=$('adminEmailSearch').value.trim();loadAdminEmailsPage(1);},400);}
+function loadAdminAIUsage(){api('/api/admin/ai-usage').then(function(r){if(!r.ok)return;$('adAIUsers').innerText=r.summary.totalUsers||0;$('adAIActiveUsers').innerText=r.summary.activeAIUsers||0;$('adAITokensToday').innerText=fmtNum(r.summary.tokensToday||0);$('adAITokensMonth').innerText=fmtNum(r.summary.tokensThisMonth||0);$('adAITokensTotal').innerText=fmtNum(r.summary.tokensLifetime||0);$('adAIRemaining').innerText=r.summary.remainingTokens!==null&&r.summary.remainingTokens!==undefined?fmtNum(r.summary.remainingTokens):'—';$('adAICallsLeft').innerText=r.summary.estimatedRemainingCalls!==null&&r.summary.estimatedRemainingCalls!==undefined?fmtNum(r.summary.estimatedRemainingCalls):'—';$('adAITotalCalls').innerText=fmtNum(r.summary.totalCalls||0);$('adminAIUsageSummary').innerText=r.summary.monthKey||'';var w=$('adminAIUsageTable');if(!r.rows.length){w.innerHTML='<div class="empty">No AI usage</div>';return;}var h='<table class="data-table"><thead><tr><th>User</th><th>App ID</th><th>Today</th><th>Month</th><th>Lifetime</th><th>Calls</th><th>Providers</th></tr></thead><tbody>';r.rows.slice(0,100).forEach(function(row){var prov=Object.keys(row.totalProviders||{}).map(function(k){return '<span class="badge sent" style="font-size:9px;margin:1px">'+esc(k)+'</span>';}).join('');h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(row.email)+'</td><td style="font-size:10px"><span class="app-id-pill">'+esc(row.appAccountId)+'</span></td><td style="font-size:11px;text-align:center">'+fmtNum(row.todayTokens)+'</td><td style="font-size:11px;text-align:center">'+fmtNum(row.monthTokens)+'</td><td style="font-size:11px;text-align:center;color:#fbbf24;font-weight:800">'+fmtNum(row.totalTokens)+'</td><td style="font-size:11px;text-align:center">'+fmtNum(row.totalCalls)+'</td><td>'+prov+'</td></tr>';});h+='</tbody></table>';w.innerHTML=h;});}
+function loadAdminBanned(){api('/api/admin/banned-users').then(function(r){if(!r.ok)return;ADMIN_BANNED=r.banned||[];$('adminBannedCount').innerText=ADMIN_BANNED.length+' banned';var w=$('adminBannedList');if(!ADMIN_BANNED.length){w.innerHTML='<div class="empty">No banned</div>';return;}w.innerHTML=ADMIN_BANNED.map(function(b){return '<div class="user-card banned"><div class="top"><div><div class="name">'+esc(b.name||'(no name)')+'</div><div class="email">'+esc(b.email)+'</div></div><span class="badge banned">🚫</span></div><div style="font-size:11px;color:var(--text2);margin-top:6px"><b>Reason:</b> '+esc(b.reason||'—')+'</div><div style="font-size:11px;color:var(--text2);margin-top:4px"><b>Banned:</b> '+fmtDate(b.bannedAt)+'</div><div class="actions-row"><button class="btn success small" onclick="unbanUser(\''+esc(b.id)+'\')">✓ Unban</button></div></div>';}).join('');});}
 function loadAdminRequests(){api('/api/admin/access-requests').then(function(r){if(!r.ok)return;ADMIN_REQUESTS=r.requests||[];var pending=ADMIN_REQUESTS.filter(function(x){return x.status==='pending';});$('adminReqCount').innerText=pending.length+' pending';var w=$('adminRequestList');if(!ADMIN_REQUESTS.length){w.innerHTML='<div class="empty">No requests</div>';return;}w.innerHTML=ADMIN_REQUESTS.map(function(req){var st=req.status||'pending';var stColor=st==='pending'?'#fcd34d':st==='approved'?'#86efac':'#fca5a5';return '<div class="user-card"><div class="top"><div><div class="name">'+esc(req.name||'(no name)')+'</div><div class="email">'+esc(req.email)+'</div></div><span class="badge" style="background:rgba(245,158,11,.15);color:'+stColor+';border:1px solid '+stColor+'44">'+st.toUpperCase()+'</span></div>'+(req.company?'<div style="font-size:11px;color:var(--text2);margin-top:4px"><b>Company:</b> '+esc(req.company)+'</div>':'')+'<div style="font-size:12px;color:#cbd5e1;margin-top:8px;padding:10px;background:rgba(0,0,0,.2);border-radius:8px;line-height:1.6"><b>Reason:</b> '+esc(req.reason)+'</div><div style="font-size:11px;color:var(--text3);margin-top:6px">'+fmtTimeAgo(req.requestedAt)+'</div>'+((st==='pending')?'<div class="actions-row"><button class="btn success small" onclick="approveRequest(\''+esc(req.id)+'\')">✓ Approve</button><button class="btn danger small" onclick="rejectRequest(\''+esc(req.id)+'\')">✕ Reject</button></div>':'')+'</div>';}).join('');});}
 async function approveRequest(id){var ok=await showConfirm({icon:'✓',title:'Approve?',message:'Unban user?',okText:'Approve',primary:true});if(!ok)return;api('/api/admin/access-requests/'+id+'/approve','POST',{}).then(function(r){if(r.ok){toast('✅ Approved');loadAdminRequests();loadAdminBanned();loadAdminUsersPage(adminPage);}else toast('Error','err');});}
 async function rejectRequest(id){var reason=prompt('Reason (optional):')||'';api('/api/admin/access-requests/'+id+'/reject','POST',{reason:reason}).then(function(r){if(r.ok){toast('Rejected');loadAdminRequests();}});}
@@ -1270,9 +1532,8 @@ function openBanModal(uid,email){_banTargetUid=uid;_banTargetEmail=email;$('banU
 function closeBanModal(){$('banUserModal').classList.add('hidden');_banTargetUid=null;_banTargetEmail='';}
 async function confirmBanUser(){if(!_banTargetUid)return;var reason=$('banReason').value.trim()||'Violation of terms';var banIP=$('banIP').checked;var btn=event.target;btn.disabled=true;btn.innerHTML='<span class="spin"></span> Banning...';try{var r=await api('/api/admin/user/'+_banTargetUid+'/ban','POST',{reason:reason,banIP:banIP});if(r.ok){toast('✅ Banned');closeBanModal();loadAdmin();loadAdminBanned();loadAdminUsersPage(adminPage);}else toast('Error: '+r.error,'err');}catch(e){toast('Error','err');}btn.disabled=false;btn.innerHTML='🚫 Ban User';}
 async function deleteUserAccount(uid,email){var ok=await showConfirm({icon:'⚠️',title:'Delete User?',message:'Delete '+email+' and ALL data?',okText:'Delete'});if(!ok)return;var ok2=await showConfirm({icon:'🚨',title:'FINAL',message:'Really delete '+email+'?',okText:'Yes'});if(!ok2)return;toast('Deleting...');api('/api/admin/user/'+uid,'DELETE').then(function(r){if(r.ok){toast('✅ Deleted');loadAdmin();loadAdminAIUsage();loadAdminBanned();loadAdminUsersPage(adminPage);}else toast('Error','err');});}
-function viewAdminUser(uid){$('adminUserContent').innerHTML='<div class="empty">Loading...</div>';$('adminUserModal').classList.remove('hidden');api('/api/admin/user/'+uid+'/details').then(function(r){if(!r.ok){$('adminUserContent').innerHTML='<div class="empty">Error</div>';return;}var u=r.user;var ai=u.aiUsage||{today:0,month:0,total:0,calls:0,providers:{}};var h='<div class="info-box" style="margin:0"><div class="row"><span class="k">Name:</span><span class="v">'+esc(u.name||'—')+'</span></div><div class="row"><span class="k">Email:</span><span class="v" style="font-size:12px">'+esc(u.email)+'</span></div><div class="row"><span class="k">App ID:</span><span class="v"><span class="app-id-pill">'+esc(u.appAccountId)+'</span></span></div><div class="row"><span class="k">Auth:</span><span class="v">'+esc(u.authType||'email')+'</span></div><div class="row"><span class="k">Gmail:</span><span class="v">'+(u.hasSmtp?'✅ Connected':'❌ Not connected')+'</span></div><div class="row"><span class="k">Registered:</span><span class="v" style="font-size:12px">'+fmtDate(u.createdAt)+'</span></div><div class="row"><span class="k">Last Login:</span><span class="v" style="font-size:12px">'+fmtDate(u.lastLogin)+'</span></div><div class="row"><span class="k">Status:</span><span class="v">'+(u.banned?'<span class="badge banned">🚫 BANNED</span>':'<span class="badge opened">✅ Active</span>')+'</span></div></div>';var s=u.stats;h+='<div class="recipient-stat-grid" style="margin-top:16px"><div class="recipient-stat total"><div class="label">Recipients</div><div class="value">'+s.total+'</div></div><div class="recipient-stat sent"><div class="label">Sent</div><div class="value">'+s.sent+'</div></div><div class="recipient-stat opened"><div class="label">Opened</div><div class="value">'+s.opened+'</div></div><div class="recipient-stat pending"><div class="label">Pending</div><div class="value">'+s.pending+'</div></div></div>';h+='<div style="font-size:13px;font-weight:700;margin-top:20px;margin-bottom:12px;color:var(--cyan)">🤖 AI Usage</div><div class="ai-usage-grid"><div class="ai-usage-card"><div class="lbl">Today</div><div class="val">'+fmtNum(ai.today)+'</div></div><div class="ai-usage-card"><div class="lbl">Month</div><div class="val">'+fmtNum(ai.month)+'</div></div><div class="ai-usage-card highlight"><div class="lbl">Lifetime</div><div class="val">'+fmtNum(ai.total)+'</div></div><div class="ai-usage-card"><div class="lbl">Calls</div><div class="val">'+fmtNum(ai.calls)+'</div></div></div>';var provs=Object.keys(ai.providers||{}).map(function(k){return '<span class="badge sent" style="font-size:10px;margin:2px">'+esc(k)+' ('+ai.providers[k]+')</span>';}).join('');if(provs)h+='<div style="margin-top:12px"><b style="font-size:11px;color:var(--text2)">Providers:</b><div style="margin-top:6px">'+provs+'</div></div>';$('adminUserContent').innerHTML=h;});}
+function viewAdminUser(uid){$('adminUserContent').innerHTML='<div class="empty">Loading...</div>';$('adminUserModal').classList.remove('hidden');api('/api/admin/user/'+uid+'/details').then(function(r){if(!r.ok){$('adminUserContent').innerHTML='<div class="empty">Error</div>';return;}var u=r.user;var ai=u.aiUsage||{today:0,month:0,total:0,calls:0,providers:{}};var h='<div class="info-box" style="margin:0"><div class="row"><span class="k">Name:</span><span class="v">'+esc(u.name||'—')+'</span></div><div class="row"><span class="k">Email:</span><span class="v" style="font-size:12px">'+esc(u.email)+'</span></div><div class="row"><span class="k">App ID:</span><span class="v"><span class="app-id-pill">'+esc(u.appAccountId)+'</span></span></div><div class="row"><span class="k">Auth:</span><span class="v">'+esc(u.authType||'email')+'</span></div><div class="row"><span class="k">Gmail:</span><span class="v">'+(u.hasSmtp?'✅ Connected':'❌ Not connected')+'</span></div><div class="row"><span class="k">Inbox:</span><span class="v">'+(u.hasImap?'✅ Connected':'❌ Not connected')+'</span></div><div class="row"><span class="k">Registered:</span><span class="v" style="font-size:12px">'+fmtDate(u.createdAt)+'</span></div><div class="row"><span class="k">Last Login:</span><span class="v" style="font-size:12px">'+fmtDate(u.lastLogin)+'</span></div><div class="row"><span class="k">Status:</span><span class="v">'+(u.banned?'<span class="badge banned">🚫 BANNED</span>':'<span class="badge opened">✅ Active</span>')+'</span></div></div>';var s=u.stats;h+='<div class="recipient-stat-grid" style="margin-top:16px"><div class="recipient-stat total"><div class="label">Recipients</div><div class="value">'+s.total+'</div></div><div class="recipient-stat sent"><div class="label">Sent</div><div class="value">'+s.sent+'</div></div><div class="recipient-stat opened"><div class="label">Opened</div><div class="value">'+s.opened+'</div></div><div class="recipient-stat pending"><div class="label">Pending</div><div class="value">'+s.pending+'</div></div></div>';h+='<div style="font-size:13px;font-weight:700;margin-top:20px;margin-bottom:12px;color:var(--cyan)">🤖 AI Usage</div><div class="ai-usage-grid"><div class="ai-usage-card"><div class="lbl">Today</div><div class="val">'+fmtNum(ai.today)+'</div></div><div class="ai-usage-card"><div class="lbl">Month</div><div class="val">'+fmtNum(ai.month)+'</div></div><div class="ai-usage-card highlight"><div class="lbl">Lifetime</div><div class="val">'+fmtNum(ai.total)+'</div></div><div class="ai-usage-card"><div class="lbl">Calls</div><div class="val">'+fmtNum(ai.calls)+'</div></div></div>';var provs=Object.keys(ai.providers||{}).map(function(k){return '<span class="badge sent" style="font-size:10px;margin:2px">'+esc(k)+' ('+ai.providers[k]+')</span>';}).join('');if(provs)h+='<div style="margin-top:12px"><b style="font-size:11px;color:var(--text2)">Providers:</b><div style="margin-top:6px">'+provs+'</div></div>';$('adminUserContent').innerHTML=h;});}
 function closeAdminUser(){$('adminUserModal').classList.add('hidden');}
-function renderAllEmails(){var w=$('adminAllEmailsWrap');var q=($('adminEmailSearch').value||'').toLowerCase();var filtered=ADMIN_ALL_EMAILS.filter(function(e){return !q||(e.userEmail||'').toLowerCase().indexOf(q)!==-1||(e.recipientEmail||'').toLowerCase().indexOf(q)!==-1||(e.subject||'').toLowerCase().indexOf(q)!==-1;});if(!filtered.length){w.innerHTML='<div class="empty">No emails</div>';return;}var h='<table class="data-table"><thead><tr><th>User</th><th>Recipient</th><th>Subject</th><th>Sent</th><th>AI</th></tr></thead><tbody>';filtered.slice(0,500).forEach(function(e){var pred=e.aiPrediction||'GOOD';var prob=e.aiInboxProb||75;var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';h+='<tr><td style="font-size:10px;word-break:break-all">'+esc(e.userEmail)+'</td><td style="font-size:11px;word-break:break-all">'+esc(e.recipientEmail)+'</td><td style="font-size:10px">'+esc(e.subject||'—')+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(e.sentAt)+'</td><td><span style="padding:2px 8px;border-radius:12px;font-size:9px;font-weight:700;background:'+pc+'22;color:'+pc+'">'+prob+'%</span></td></tr>';});h+='</tbody></table>';w.innerHTML=h;}
 
 var url=new URL(window.location.href);
 if(url.searchParams.get('login')==='success'){window.history.replaceState({},'','/');location.reload();}

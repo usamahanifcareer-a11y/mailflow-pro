@@ -18,11 +18,14 @@ const DEFAULT_DAILY_LIMIT = 500;
 const DEFAULT_SEND_DELAY = 20;
 const IS_VERCEL = !!process.env.VERCEL;
 const CRON_SECRET = process.env.CRON_SECRET || '';
+const BACKEND_URL = process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org';
 
 if (!process.env.SESSION_SECRET) { console.error('FATAL: SESSION_SECRET missing!'); process.exit(1); }
 if (!process.env.ENCRYPTION_KEY) { console.error('FATAL: ENCRYPTION_KEY missing!'); process.exit(1); }
 
 const ENC_KEY = crypto.createHash('sha256').update(process.env.ENCRYPTION_KEY).digest();
+const SESSION_DAYS_SHORT = 3;
+const SESSION_DAYS_LONG  = 30;
 
 function encrypt(text) {
   if (!text) return text;
@@ -56,29 +59,52 @@ function verifyPassword(password, hash, salt) {
     return crypto.timingSafeEqual(Buffer.from(attempt, 'hex'), Buffer.from(hash, 'hex'));
   } catch (e) { return false; }
 }
+function normalizeEmail(email) {
+  let e = String(email).toLowerCase().trim();
+  const parts = e.split('@');
+  if (parts.length !== 2) return e;
+  let local = parts[0];
+  const domain = parts[1];
+  if (domain === 'gmail.com' || domain === 'googlemail.com') {
+    local = local.split('+')[0].replace(/\./g, '');
+    return local + '@gmail.com';
+  }
+  return e;
+}
 
 const GEMINI_KEY = process.env.GEMINI_API_KEY || '';
 const GROQ_KEY = process.env.GROQ_API_KEY || '';
 const MISTRAL_KEY = process.env.MISTRAL_API_KEY || '';
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY || '';
 
+// Per-user AI cache to prevent cross-user leaks
 const aiCache = new Map();
 const AI_CACHE_TTL = 10 * 60 * 1000;
-const quotaCache = new Map();
 
-function getCacheKey(p) { return crypto.createHash('md5').update(p).digest('hex'); }
-function getCachedResponse(p) {
-  const k = getCacheKey(p); const e = aiCache.get(k);
+// Configurable provider budgets (tokens). Set via env.
+const PROVIDER_BUDGETS = {
+  groq: parseInt(process.env.GROQ_TOKEN_BUDGET || '0', 10),
+  gemini: parseInt(process.env.GEMINI_TOKEN_BUDGET || '0', 10),
+  mistral: parseInt(process.env.MISTRAL_TOKEN_BUDGET || '0', 10),
+  openrouter: parseInt(process.env.OPENROUTER_TOKEN_BUDGET || '0', 10),
+  omniroute: parseInt(process.env.OMNIROUTE_TOKEN_BUDGET || '0', 10)
+};
+const TOTAL_AI_BUDGET = parseInt(process.env.AI_TOKEN_BUDGET || '0', 10);
+
+function getCacheKey(prompt, uid) {
+  return crypto.createHash('md5').update((uid || 'anon') + '::' + prompt).digest('hex');
+}
+function getCachedResponse(prompt, uid) {
+  const k = getCacheKey(prompt, uid); const e = aiCache.get(k);
   if (!e) return null;
   if (Date.now() - e.time > AI_CACHE_TTL) { aiCache.delete(k); return null; }
   return e.text;
 }
-function setCachedResponse(p, t) {
-  if (aiCache.size > 500) { const k = aiCache.keys().next().value; aiCache.delete(k); }
-  aiCache.set(getCacheKey(p), { text: t, time: Date.now() });
+function setCachedResponse(prompt, uid, t) {
+  if (aiCache.size > 800) { const k = aiCache.keys().next().value; aiCache.delete(k); }
+  aiCache.set(getCacheKey(prompt, uid), { text: t, time: Date.now() });
 }
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
 function safeParseJSON(text) {
   if (!text) return null;
   let c = text.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
@@ -105,7 +131,6 @@ function stripSignature(text) {
   if (lines.length >= 3 && closer.test(secondLast)) return lines.slice(0, -2).join('\n').trim();
   return t;
 }
-
 function localCategorize(fromEmail, subject, bodyText) {
   const f = (fromEmail || '').toLowerCase();
   const s = (subject || '').toLowerCase();
@@ -137,36 +162,32 @@ async function logAIUsage(uid, provider, model, usage) {
     const dayRef = db.collection('users').doc(uid).collection('aiUsage').doc(today);
     const monthRef = db.collection('users').doc(uid).collection('aiUsage').doc('month_' + month);
     const totalRef = db.collection('users').doc(uid).collection('aiUsage').doc('total');
+    const provRef = db.collection('users').doc(uid).collection('aiUsage').doc('prov_' + provider);
     const batch = db.batch();
-    const [daySnap, monthSnap, totalSnap] = await Promise.all([dayRef.get(), monthRef.get(), totalRef.get()]);
-    const dayData = daySnap.exists ? daySnap.data() : { calls: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0, providers: {} };
-    dayData.calls = (dayData.calls || 0) + 1;
-    dayData.promptTokens = (dayData.promptTokens || 0) + pt;
-    dayData.completionTokens = (dayData.completionTokens || 0) + ct;
-    dayData.totalTokens = (dayData.totalTokens || 0) + tt;
-    dayData.providers = dayData.providers || {};
-    dayData.providers[provider] = (dayData.providers[provider] || 0) + 1;
-    dayData.updatedAt = new Date();
-    batch.set(dayRef, dayData, { merge: true });
-    const monthData = monthSnap.exists ? monthSnap.data() : { calls: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0, providers: {} };
-    monthData.calls = (monthData.calls || 0) + 1;
-    monthData.promptTokens = (monthData.promptTokens || 0) + pt;
-    monthData.completionTokens = (monthData.completionTokens || 0) + ct;
-    monthData.totalTokens = (monthData.totalTokens || 0) + tt;
-    monthData.providers = monthData.providers || {};
-    monthData.providers[provider] = (monthData.providers[provider] || 0) + 1;
-    monthData.updatedAt = new Date();
-    batch.set(monthRef, monthData, { merge: true });
-    const totalData = totalSnap.exists ? totalSnap.data() : { calls: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0, providers: {} };
-    totalData.calls = (totalData.calls || 0) + 1;
-    totalData.promptTokens = (totalData.promptTokens || 0) + pt;
-    totalData.completionTokens = (totalData.completionTokens || 0) + ct;
-    totalData.totalTokens = (totalData.totalTokens || 0) + tt;
-    totalData.providers = totalData.providers || {};
-    totalData.providers[provider] = (totalData.providers[provider] || 0) + 1;
-    totalData.updatedAt = new Date();
+    const [daySnap, monthSnap, totalSnap, provSnap] = await Promise.all([
+      dayRef.get(), monthRef.get(), totalRef.get(), provRef.get()
+    ]);
+    const mut = (snap) => {
+      const d = snap.exists ? snap.data() : { calls: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0, providers: {} };
+      d.calls = (d.calls || 0) + 1;
+      d.promptTokens = (d.promptTokens || 0) + pt;
+      d.completionTokens = (d.completionTokens || 0) + ct;
+      d.totalTokens = (d.totalTokens || 0) + tt;
+      d.providers = d.providers || {};
+      d.providers[provider] = (d.providers[provider] || 0) + 1;
+      d.updatedAt = new Date();
+      return d;
+    };
+    batch.set(dayRef, mut(daySnap), { merge: true });
+    batch.set(monthRef, mut(monthSnap), { merge: true });
+    const totalData = mut(totalSnap);
     totalData.firstUsed = totalData.firstUsed || new Date();
     batch.set(totalRef, totalData, { merge: true });
+    const provData = provSnap.exists ? provSnap.data() : { calls: 0, tokens: 0 };
+    provData.calls = (provData.calls || 0) + 1;
+    provData.tokens = (provData.tokens || 0) + tt;
+    provData.updatedAt = new Date();
+    batch.set(provRef, provData, { merge: true });
     await batch.commit();
   } catch (e) {}
 }
@@ -218,7 +239,7 @@ async function callOpenRouter(prompt, uid) {
     try {
       const r = await fetchWithTimeout('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENROUTER_KEY, 'HTTP-Referer': process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org', 'X-Title': 'MailFlow Pro' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENROUTER_KEY, 'HTTP-Referer': BACKEND_URL, 'X-Title': 'MailFlow Pro' },
         body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt + '\nReturn valid JSON only.' }], temperature: 0.7, max_tokens: 1800 })
       }, 20000);
       if (!r.ok) { lastErr = new Error('OR ' + model + ' HTTP ' + r.status); continue; }
@@ -269,7 +290,7 @@ async function callOmniRoute(prompt, uid) {
   return content;
 }
 async function callAI(prompt, uid) {
-  const cached = getCachedResponse(prompt);
+  const cached = getCachedResponse(prompt, uid);
   if (cached) return cached;
   const providers = [
     { n: 'omniroute', f: callOmniRoute },
@@ -283,7 +304,7 @@ async function callAI(prompt, uid) {
     try {
       const text = await p.f(prompt, uid);
       if (!text || text.length < 5) continue;
-      setCachedResponse(prompt, text);
+      setCachedResponse(prompt, uid, text);
       return text;
     } catch (e) { errs.push(p.n + ': ' + e.message); }
   }
@@ -312,8 +333,12 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '20mb' }));
 app.use(cookieSession({
-  name: 'mf_session', keys: [process.env.SESSION_SECRET], maxAge: 72 * 60 * 60 * 1000,
-  secure: IS_VERCEL, sameSite: IS_VERCEL ? 'none' : 'lax', httpOnly: true, signed: true, overwrite: true
+  name: 'mf_session',
+  keys: [process.env.SESSION_SECRET],
+  maxAge: SESSION_DAYS_LONG * 24 * 60 * 60 * 1000,
+  secure: IS_VERCEL,
+  sameSite: IS_VERCEL ? 'none' : 'lax',
+  httpOnly: true, signed: true, overwrite: true
 }));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -333,14 +358,28 @@ const db = getFirestore();
 
 function createTransporter(email, appPassword) {
   return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
+    host: 'smtp.gmail.com', port: 465, secure: true,
     auth: { user: email, pass: appPassword },
-    connectionTimeout: 30000,
-    greetingTimeout: 30000,
-    socketTimeout: 60000
+    connectionTimeout: 30000, greetingTimeout: 30000, socketTimeout: 60000
   });
+}
+function createImapClient(email, appPassword) {
+  return new ImapFlow({
+    host: 'imap.gmail.com', port: 993, secure: true,
+    auth: { user: email, pass: appPassword },
+    logger: false, tls: { rejectUnauthorized: false }
+  });
+}
+
+// Resolve user's unified Gmail app password (SMTP or IMAP)
+async function resolveAppPassword(uid) {
+  const snap = await db.collection('users').doc(uid).get();
+  if (!snap.exists) return null;
+  const d = snap.data();
+  let pass = null;
+  if (d.smtpAppPassword) pass = decrypt(d.smtpAppPassword);
+  if (!pass && d.imapAppPassword) pass = decrypt(d.imapAppPassword);
+  return pass;
 }
 
 async function authRequired(req, res, next) {
@@ -391,7 +430,6 @@ function getClientIP(req) {
   if (fwd) return String(fwd).split(',')[0].trim();
   return req.headers['x-real-ip'] || req.connection?.remoteAddress || req.socket?.remoteAddress || 'unknown';
 }
-
 function localAnalysis(subject, body) {
   const SW = ['free','guarantee','act now','click here','limited time','buy now','cash','prize','urgent','risk-free','earn money','work from home','make money','no cost','no fees'];
   const text = ((subject || '') + ' ' + (body || '')).toLowerCase();
@@ -420,12 +458,12 @@ function localAnalysis(subject, body) {
 }
 
 async function testImapConnection(email, appPassword) {
-  const client = new ImapFlow({ host: 'imap.gmail.com', port: 993, secure: true, auth: { user: email, pass: appPassword }, logger: false, tls: { rejectUnauthorized: false } });
+  const client = createImapClient(email, appPassword);
   try { await client.connect(); await client.logout(); return { ok: true }; }
   catch (e) { try { await client.close(); } catch (err) {} return { ok: false, error: e.message }; }
 }
 async function fetchImapEmails(email, appPassword, options = {}) {
-  const client = new ImapFlow({ host: 'imap.gmail.com', port: 993, secure: true, auth: { user: email, pass: appPassword }, logger: false, tls: { rejectUnauthorized: false } });
+  const client = createImapClient(email, appPassword);
   const emails = [];
   try {
     await client.connect();
@@ -462,7 +500,7 @@ async function fetchImapEmails(email, appPassword, options = {}) {
   } catch (e) { try { await client.close(); } catch (err) {} return { ok: false, error: e.message }; }
 }
 async function fetchImapBody(email, appPassword, folder, uid) {
-  const client = new ImapFlow({ host: 'imap.gmail.com', port: 993, secure: true, auth: { user: email, pass: appPassword }, logger: false, tls: { rejectUnauthorized: false } });
+  const client = createImapClient(email, appPassword);
   try {
     await client.connect();
     await client.mailboxOpen(folder || 'INBOX');
@@ -480,6 +518,58 @@ async function fetchImapBody(email, appPassword, folder, uid) {
     return { ok: true, body };
   } catch (e) { try { await client.close(); } catch (err) {} return { ok: false, error: e.message }; }
 }
+
+// Fetch all-time sent mails for a recipient from Gmail Sent folder via IMAP
+async function fetchImapSentForRecipient(email, appPassword, recipientEmail, maxResults) {
+  maxResults = maxResults || 200;
+  const client = createImapClient(email, appPassword);
+  const results = [];
+  try {
+    await client.connect();
+    // Try common Gmail Sent folder names
+    const folders = ['[Gmail]/Sent Mail', '[Gmail]/Sent', 'Sent', 'Sent Items', 'INBOX.Sent'];
+    let opened = false;
+    for (const f of folders) {
+      try { await client.mailboxOpen(f); opened = true; break; } catch (e) {}
+    }
+    if (!opened) { await client.logout(); return { ok: false, error: 'No Sent folder' }; }
+    const target = String(recipientEmail || '').toLowerCase();
+    if (!target) { await client.logout(); return { ok: true, emails: [] }; }
+    // Search for messages to that recipient
+    let searchRes = [];
+    try { searchRes = await client.search({ to: target }); } catch (e) { searchRes = []; }
+    if (!searchRes || !searchRes.length) {
+      // Fallback: search by text
+      try { searchRes = await client.search({ or: [{ to: target }, { text: target }] }); } catch (e) {}
+    }
+    if (!searchRes || !searchRes.length) { await client.logout(); return { ok: true, emails: [] }; }
+    const uids = searchRes.slice(-maxResults);
+    for (const uid of uids) {
+      try {
+        const msg = await client.fetchOne(String(uid), { envelope: true, flags: true, uid: true }, { uid: true });
+        if (!msg) continue;
+        const env = msg.envelope || {};
+        const toAddrs = (env.to || []).map(x => (x.address || '').toLowerCase());
+        if (!toAddrs.includes(target)) continue;
+        const flags = msg.flags || new Set();
+        results.push({
+          uid: msg.uid,
+          messageId: env.messageId || '',
+          subject: env.subject || '(no subject)',
+          date: env.date ? new Date(env.date).toISOString() : null,
+          from: env.from && env.from[0] ? env.from[0].address : email,
+          to: env.to && env.to[0] ? env.to[0].address : '',
+          isRead: flags.has('\\Seen'),
+          source: 'gmail_imap'
+        });
+      } catch (e) {}
+    }
+    await client.logout();
+    results.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    return { ok: true, emails: results };
+  } catch (e) { try { await client.close(); } catch (err) {} return { ok: false, error: e.message }; }
+}
+
 async function updateSenderMemory(userId, email) {
   try {
     if (!email.from) return;
@@ -496,7 +586,96 @@ async function updateSenderMemory(userId, email) {
   } catch (e) {}
 }
 
-app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL, version: '4.1.0', method: 'smtp' }));
+function looksLikeBinaryCv(text) {
+  if (!text) return true;
+  const t = String(text).trim();
+  if (t.startsWith('%PDF') || t.startsWith('PK\x03\x04')) return true;
+  const sample = t.substring(0, 800);
+  let bad = 0;
+  for (let i = 0; i < sample.length; i++) { const c = sample.charCodeAt(i); if (c === 0 || (c < 9) || (c > 13 && c < 32)) bad++; }
+  return bad > 12;
+}
+function decodePdfString(s) {
+  return s.replace(/\\n/g, '\n').replace(/\\r/g, '\n').replace(/\\t/g, '\t').replace(/\\\(/g, '(').replace(/\\\)/g, ')').replace(/\\\\/g, '\\')
+    .replace(/\\(\d{1,3})/g, function (_, oct) { return String.fromCharCode(parseInt(oct, 8)); });
+}
+function naivePdfExtract(buf) {
+  try {
+    const raw = Buffer.isBuffer(buf) ? buf.toString('latin1') : String(buf);
+    if (raw.indexOf('%PDF') === -1) return '';
+    const chunks = [];
+    const tj = raw.match(/\((?:\\.|[^\\)]){2,}\)(?:\s*Tj)?/g) || [];
+    for (const x of tj) {
+      const inner = x.replace(/\)\s*Tj\s*$/, '').replace(/^\(/, '').replace(/\)$/, '');
+      const d = decodePdfString(inner);
+      if (/[A-Za-z]{3,}/.test(d)) chunks.push(d);
+    }
+    const tjArr = raw.match(/\[(?:[^\]]{4,1200})\]\s*TJ/g) || [];
+    for (const x of tjArr) {
+      const parts = x.match(/\((?:\\.|[^\\)])+\)/g) || [];
+      const line = parts.map(p => decodePdfString(p.slice(1, -1))).join('');
+      if (/[A-Za-z]{3,}/.test(line)) chunks.push(line);
+    }
+    const text = chunks.join('\n').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').replace(/[^\S\n]+/g, ' ').trim();
+    return text.length > 40 ? text : '';
+  } catch (e) { return ''; }
+}
+async function extractPdfText(buf) {
+  try {
+    const pdfParse = require('pdf-parse');
+    const data = await pdfParse(buf);
+    const t = (data && data.text ? data.text : '').replace(/\u0000/g, '').trim();
+    if (t.replace(/\s/g, '').length > 30) return t;
+  } catch (e) {}
+  return naivePdfExtract(buf);
+}
+function extractDocxText(buf) {
+  try {
+    const zip = Buffer.isBuffer(buf) ? buf : Buffer.from(buf);
+    const name = 'word/document.xml';
+    let pos = zip.indexOf(Buffer.from(name));
+    if (pos < 0) return '';
+    let local = -1;
+    for (let i = Math.max(0, pos - 80); i < pos; i++) { if (zip[i] === 0x50 && zip[i + 1] === 0x4b && zip[i + 2] === 0x03 && zip[i + 3] === 0x04) { local = i; break; } }
+    if (local < 0) return '';
+    const compression = zip.readUInt16LE(local + 8);
+    const compSize = zip.readUInt32LE(local + 18);
+    const nameLen = zip.readUInt16LE(local + 26);
+    const extraLen = zip.readUInt16LE(local + 28);
+    const dataStart = local + 30 + nameLen + extraLen;
+    const data = zip.slice(dataStart, dataStart + compSize);
+    let xml = '';
+    if (compression === 0) xml = data.toString('utf8');
+    else { const zlib = require('zlib'); xml = zlib.inflateRawSync(data).toString('utf8'); }
+    return xml.replace(/<w:p[^>]*>/g, '\n').replace(/<w:tab[^/]*\/>/g, '\t').replace(/<[^>]+>/g, ' ')
+      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
+      .replace(/&#(\d+);/g, function (_, n) { return String.fromCharCode(Number(n)); })
+      .replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').replace(/[ \t]{2,}/g, ' ').trim();
+  } catch (e) { return ''; }
+}
+async function extractCvFromBuffer(buf, filename, mimeType) {
+  const name = (filename || '').toLowerCase();
+  const mime = (mimeType || '').toLowerCase();
+  if (mime.includes('pdf') || name.endsWith('.pdf') || buf.slice(0, 5).toString() === '%PDF-') {
+    const pdf = await extractPdfText(buf);
+    if (pdf) return pdf;
+    return ''; // no OCR fallback server-side, client handles
+  }
+  if (mime.includes('wordprocessingml') || name.endsWith('.docx')) return extractDocxText(buf);
+  if (mime.startsWith('text/') || name.endsWith('.txt') || name.endsWith('.md') || name.endsWith('.rtf')) {
+    let t = buf.toString('utf8'); if (t.charCodeAt(0) === 0xFEFF) t = t.slice(1);
+    return t.replace(/\u0000/g, '').trim();
+  }
+  const asText = buf.toString('utf8');
+  if (!looksLikeBinaryCv(asText)) return asText.trim();
+  const pdfTry = await extractPdfText(buf);
+  if (pdfTry) return pdfTry;
+  const docxTry = extractDocxText(buf);
+  if (docxTry) return docxTry;
+  return '';
+}
+
+app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL, version: '4.3.0', method: 'smtp' }));
 
 /* ============ AUTH ============ */
 app.post('/api/auth/register', async (req, res) => {
@@ -505,15 +684,16 @@ app.post('/api/auth/register', async (req, res) => {
     if (!email || !password || !name) return res.json({ ok: false, error: 'Email, password, and name required' });
     if (password.length < 8) return res.json({ ok: false, error: 'Password must be at least 8 characters' });
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.json({ ok: false, error: 'Invalid email' });
-    const emailLower = String(email).toLowerCase();
-    const uid = crypto.createHash('md5').update(emailLower).digest('hex');
+    const emailLower = String(email).toLowerCase().trim();
+    const normalized = normalizeEmail(emailLower);
+    const uid = crypto.createHash('md5').update(normalized).digest('hex');
     const ip = getClientIP(req);
     const banned = await db.collection('bannedUsers').doc(uid).get();
     if (banned.exists) return res.json({ ok: false, error: 'This email is suspended', banned: true });
     const ipBanned = await db.collection('bannedUsers').where('ip', '==', ip).limit(1).get();
     if (!ipBanned.empty) return res.json({ ok: false, error: 'Your IP is suspended', banned: true });
     const existing = await db.collection('users').doc(uid).get();
-    if (existing.exists && existing.data().passwordHash) return res.json({ ok: false, error: 'Email already registered' });
+    if (existing.exists && existing.data().passwordHash) return res.json({ ok: false, error: 'This email is already registered. Try logging in.' });
     const { hash, salt } = hashPassword(password);
     const now = new Date();
     const data = {
@@ -547,10 +727,11 @@ app.post('/api/auth/register', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
   try {
-    const { email, password } = req.body || {};
+    const { email, password, remember } = req.body || {};
     if (!email || !password) return res.json({ ok: false, error: 'Email and password required' });
-    const emailLower = String(email).toLowerCase();
-    const uid = crypto.createHash('md5').update(emailLower).digest('hex');
+    const emailLower = String(email).toLowerCase().trim();
+    const normalized = normalizeEmail(emailLower);
+    const uid = crypto.createHash('md5').update(normalized).digest('hex');
     const banned = await db.collection('bannedUsers').doc(uid).get();
     if (banned.exists) return res.json({ ok: false, error: 'Account suspended', banned: true, reason: banned.data().reason });
     const ip = getClientIP(req);
@@ -563,8 +744,12 @@ app.post('/api/auth/login', async (req, res) => {
     const valid = verifyPassword(password, userData.passwordHash, userData.passwordSalt);
     if (!valid) return res.json({ ok: false, error: 'Invalid credentials' });
     await db.collection('users').doc(uid).update({ lastLogin: new Date(), lastIP: ip });
+    // Extended session for remember-me
+    const sessionDays = remember ? SESSION_DAYS_LONG : SESSION_DAYS_SHORT;
+    req.sessionOptions.maxAge = sessionDays * 24 * 60 * 60 * 1000;
+    req.session.remember = !!remember;
     req.session.user = { id: uid, email: userData.email, name: userData.name, picture: userData.profilePicture || '', appAccountId: userData.appAccountId, isAdmin: userData.email.toLowerCase() === ADMIN_EMAIL };
-    res.json({ ok: true, user: req.session.user });
+    res.json({ ok: true, user: req.session.user, remember: !!remember });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -574,7 +759,7 @@ app.post('/api/check-banned', async (req, res) => {
     const result = { banned: false, reason: '', canRequest: false };
     if (email) {
       const emailLower = String(email).toLowerCase();
-      const uid = crypto.createHash('md5').update(emailLower).digest('hex');
+      const uid = crypto.createHash('md5').update(normalizeEmail(emailLower)).digest('hex');
       const snap = await db.collection('bannedUsers').doc(uid).get();
       if (snap.exists) { result.banned = true; result.reason = snap.data().reason || 'Account suspended'; result.canRequest = true; }
     }
@@ -591,7 +776,7 @@ app.post('/api/request-access', async (req, res) => {
     const { name, email, company, phone, reason, oldEmail } = req.body || {};
     if (!name || !email || !reason) return res.json({ ok: false, error: 'Name, email, reason required' });
     const ip = getClientIP(req);
-    const uid = crypto.createHash('md5').update(String(email).toLowerCase()).digest('hex');
+    const uid = crypto.createHash('md5').update(normalizeEmail(email)).digest('hex');
     const ref = db.collection('accessRequests').doc(uid);
     const existing = await ref.get();
     if (existing.exists && existing.data().status === 'pending') return res.json({ ok: false, error: 'You already have a pending request' });
@@ -603,27 +788,33 @@ app.post('/api/request-access', async (req, res) => {
 app.get('/api/me', async (req, res) => {
   if (req.session && req.session.user) {
     if (!req.session.user.appAccountId) { const d = await getUserData(req.session.user.id); if (d && d.appAccountId) req.session.user.appAccountId = d.appAccountId; }
-    res.json({ ok: true, user: req.session.user });
+    res.json({ ok: true, user: req.session.user, remember: !!req.session.remember });
   } else res.json({ ok: false });
 });
 app.post('/api/logout', (req, res) => { req.session = null; res.json({ ok: true }); });
 
-/* ============ SMTP (Gmail App Password) ============ */
+/* ============ SMTP (shared credential with IMAP) ============ */
 app.post('/api/smtp/connect', authRequired, async (req, res) => {
   try {
-    const { appPassword } = req.body || {};
+    const { appPassword, alsoEnableImap } = req.body || {};
     if (!appPassword || appPassword.replace(/\s/g, '').length < 16) return res.json({ ok: false, error: 'App password must be 16 characters.' });
     const cleanPass = appPassword.replace(/\s/g, '');
     const userEmail = req.session.user.email;
     const transporter = createTransporter(userEmail, cleanPass);
     try { await transporter.verify(); }
     catch (err) { return res.json({ ok: false, error: 'Connection failed: ' + err.message }); }
-    await db.collection('users').doc(req.session.user.id).update({ smtpAppPassword: encrypt(cleanPass), smtpEnabled: true, smtpConnectedAt: new Date() });
-    res.json({ ok: true, message: 'Gmail connected successfully' });
+    const update = { smtpAppPassword: encrypt(cleanPass), smtpEnabled: true, smtpConnectedAt: new Date() };
+    // Also enable IMAP with same password if requested
+    if (alsoEnableImap) {
+      const test = await testImapConnection(userEmail, cleanPass);
+      if (test.ok) { update.imapAppPassword = encrypt(cleanPass); update.imapEnabled = true; update.imapConnectedAt = new Date(); }
+    }
+    await db.collection('users').doc(req.session.user.id).update(update);
+    res.json({ ok: true, message: 'Gmail connected successfully', imapEnabled: !!update.imapEnabled });
   } catch (e) { res.json({ ok: false, error: 'Connection failed: ' + e.message }); }
 });
 app.get('/api/smtp/status', authRequired, async (req, res) => {
-  try { const u = await getUserData(req.session.user.id); res.json({ ok: true, connected: !!u.smtpEnabled, connectedAt: u.smtpConnectedAt || null }); }
+  try { const u = await getUserData(req.session.user.id); res.json({ ok: true, connected: !!u.smtpEnabled, connectedAt: u.smtpConnectedAt || null, imapEnabled: !!u.imapEnabled }); }
   catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.post('/api/smtp/disconnect', authRequired, async (req, res) => {
@@ -634,9 +825,17 @@ app.post('/api/smtp/disconnect', authRequired, async (req, res) => {
 /* ============ IMAP ============ */
 app.post('/api/imap/connect', authRequired, async (req, res) => {
   try {
-    const { appPassword } = req.body || {};
-    if (!appPassword || appPassword.replace(/\s/g, '').length < 16) return res.json({ ok: false, error: 'App password must be 16 characters.' });
-    const cleanPass = appPassword.replace(/\s/g, '');
+    const { appPassword, useStored } = req.body || {};
+    let cleanPass = '';
+    if (useStored) {
+      // Reuse SMTP password
+      const stored = await resolveAppPassword(req.session.user.id);
+      if (!stored) return res.json({ ok: false, error: 'No stored password found' });
+      cleanPass = stored;
+    } else {
+      if (!appPassword || appPassword.replace(/\s/g, '').length < 16) return res.json({ ok: false, error: 'App password must be 16 characters.' });
+      cleanPass = appPassword.replace(/\s/g, '');
+    }
     const test = await testImapConnection(req.session.user.email, cleanPass);
     if (!test.ok) return res.json({ ok: false, error: 'Connection failed: ' + test.error });
     await db.collection('users').doc(req.session.user.id).update({ imapAppPassword: encrypt(cleanPass), imapEnabled: true, imapConnectedAt: new Date() });
@@ -644,7 +843,7 @@ app.post('/api/imap/connect', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.get('/api/imap/status', authRequired, async (req, res) => {
-  try { const u = await getUserData(req.session.user.id); res.json({ ok: true, connected: !!u.imapEnabled, connectedAt: u.imapConnectedAt || null, lastSync: u.imapLastSync || null, totalSynced: u.imapTotalSynced || 0 }); }
+  try { const u = await getUserData(req.session.user.id); res.json({ ok: true, connected: !!u.imapEnabled, connectedAt: u.imapConnectedAt || null, lastSync: u.imapLastSync || null, totalSynced: u.imapTotalSynced || 0, hasSmtpPass: !!u.smtpEnabled }); }
   catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.post('/api/imap/disconnect', authRequired, async (req, res) => {
@@ -710,9 +909,7 @@ app.post('/api/inbox/reply', authRequired, async (req, res) => {
     const fullHtml = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">' + bodyHtml + sigHtml + '</div>';
     const mailOptions = {
       from: '"' + (u.name || 'User') + '" <' + req.session.user.email + '>',
-      to: to,
-      subject: sanitizeSubject(subject),
-      html: fullHtml
+      to, subject: sanitizeSubject(subject), html: fullHtml
     };
     if (inReplyTo) mailOptions.inReplyTo = inReplyTo;
     if (references) mailOptions.references = references;
@@ -758,7 +955,7 @@ app.post('/api/ai/smart-reply', authRequired, async (req, res) => {
     const sigInstruction = hasSignature
       ? 'Signature will be auto-appended by the app. Do NOT include any sign-off, name, or contact info.'
       : `Write a clean professional sign-off at the end. Include name "${userName}"${userPos ? ', ' + userPos : ''}${userCompany ? ' at ' + userCompany : ''}. Keep it minimal.`;
-    const prompt = `You are an expert email assistant writing AS ${userName}. Write a thoughtful reply to this incoming email.\n\nSENDER PROFILE:\nName: ${userName}\n${userPos ? 'Position: ' + userPos : ''}\n${userCompany ? 'Company: ' + userCompany : ''}\n${userAbout ? 'About: ' + userAbout : ''}\nPreferred Tone: ${userTone}\n\nINCOMING EMAIL:\nFrom: ${originalFrom || 'Unknown'}\nSubject: ${originalSubject || '(no subject)'}\nBody: """${(originalBody || '').substring(0, 4000)}"""\n\n${instruction ? 'EXTRA INSTRUCTION: ' + instruction : ''}\n\nRULES:\n- Write in FIRST PERSON as ${userName}\n- Match tone: ${userTone}\n- Address EVERY point\n- 2-4 paragraphs\n- ${sigInstruction}\n- Do NOT invent facts\n\nReturn ONLY JSON: {"subject":"Re: ...","body":"complete reply with \\n\\n"}`;
+    const prompt = `You are an expert email assistant writing AS ${userName}. The incoming email may be in ANY language (English, Urdu, Hindi, Arabic, Roman-Urdu, etc.). Understand the MEANING and write a reply in professional ENGLISH.\n\nSENDER PROFILE:\nName: ${userName}\n${userPos ? 'Position: ' + userPos : ''}\n${userCompany ? 'Company: ' + userCompany : ''}\n${userAbout ? 'About: ' + userAbout : ''}\nPreferred Tone: ${userTone}\n\nINCOMING EMAIL:\nFrom: ${originalFrom || 'Unknown'}\nSubject: ${originalSubject || '(no subject)'}\nBody: """${(originalBody || '').substring(0, 4000)}"""\n\n${instruction ? 'EXTRA INSTRUCTION: ' + instruction : ''}\n\nRULES:\n- Write in FIRST PERSON as ${userName}\n- Match tone: ${userTone}\n- Address EVERY point\n- Reply in professional ENGLISH only\n- 2-4 paragraphs\n- ${sigInstruction}\n- Do NOT invent facts\n\nReturn ONLY JSON: {"subject":"Re: ...","body":"complete reply with \\n\\n"}`;
     try {
       const text = await callAI(prompt, req.session.user.id);
       const parsed = safeParseJSON(text);
@@ -782,7 +979,7 @@ app.post('/api/ai/write-email', authRequired, async (req, res) => {
     const writerAbout = aiProfile.aboutMe || '';
     const TM = { formal: 'professional', friendly: 'warm', casual: 'casual', persuasive: 'confident' };
     const LM = { short: 'under 80 words', medium: '100-150 words', long: '200-250 words' };
-    const prompt = `Write a professional email MESSAGE BODY ONLY. Return ONLY JSON.\nWriter: ${writerName}${writerDesig ? ', ' + writerDesig : ''}${writerCompany ? ' at ' + writerCompany : ''}\n${writerAbout ? 'About writer: ' + writerAbout : ''}\nContext: ${context}\nRecipient: ${recipientName || 'unknown'}\nRecipient Company: ${recipientCompany || 'unknown'}\nTone: ${TM[tone] || TM.formal}\nLength: ${LM[length] || LM.medium}\nSTRICT: No signature, no name, no contact info at end.\nReturn: {"subject":"under 60 chars","body":"with \\n\\n breaks"}`;
+    const prompt = `Write a professional email. The user's context may be written in ANY language (English, Urdu, Roman-Urdu, Hindi, Arabic, etc.). Understand the INTENT and produce a polished professional email in ENGLISH.\n\nReturn ONLY JSON.\nWriter: ${writerName}${writerDesig ? ', ' + writerDesig : ''}${writerCompany ? ' at ' + writerCompany : ''}\n${writerAbout ? 'About writer: ' + writerAbout : ''}\nContext (may be in any language): ${context}\nRecipient: ${recipientName || 'unknown'}\nRecipient Company: ${recipientCompany || 'unknown'}\nTone: ${TM[tone] || TM.formal}\nLength: ${LM[length] || LM.medium}\n\nOutput must be in professional English. STRICT: No signature, no name, no contact info at end.\nReturn: {"subject":"under 60 chars","body":"with \\n\\n breaks"}`;
     try {
       const text = await callAI(prompt, req.session.user.id);
       const parsed = safeParseJSON(text);
@@ -794,78 +991,6 @@ app.post('/api/ai/write-email', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-function looksLikeBinaryCv(text) {
-  if (!text) return true;
-  const t = String(text).trim();
-  if (t.startsWith('%PDF') || t.startsWith('PK\x03\x04')) return true;
-  const sample = t.substring(0, 800);
-  let bad = 0;
-  for (let i = 0; i < sample.length; i++) { const c = sample.charCodeAt(i); if (c === 0 || (c < 9) || (c > 13 && c < 32)) bad++; }
-  return bad > 12;
-}
-function decodePdfString(s) {
-  return s.replace(/\\n/g, '\n').replace(/\\r/g, '\n').replace(/\\t/g, '\t').replace(/\\\(/g, '(').replace(/\\\)/g, ')').replace(/\\\\/g, '\\')
-    .replace(/\\(\d{1,3})/g, function (_, oct) { return String.fromCharCode(parseInt(oct, 8)); });
-}
-function naivePdfExtract(buf) {
-  try {
-    const raw = Buffer.isBuffer(buf) ? buf.toString('latin1') : String(buf);
-    if (raw.indexOf('%PDF') === -1) return '';
-    const chunks = [];
-    const tj = raw.match(/\((?:\\.|[^\\)]){2,}\)(?:\s*Tj)?/g) || [];
-    for (const x of tj) { const inner = x.replace(/\)\s*Tj\s*$/, '').replace(/^\(/, '').replace(/\)$/, ''); const d = decodePdfString(inner); if (/[A-Za-z]{3,}/.test(d)) chunks.push(d); }
-    const tjArr = raw.match(/\[(?:[^\]]{4,1200})\]\s*TJ/g) || [];
-    for (const x of tjArr) { const parts = x.match(/\((?:\\.|[^\\)])+\)/g) || []; const line = parts.map(p => decodePdfString(p.slice(1, -1))).join(''); if (/[A-Za-z]{3,}/.test(line)) chunks.push(line); }
-    const text = chunks.join('\n').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').replace(/[^\S\n]+/g, ' ').trim();
-    return text.length > 40 ? text : '';
-  } catch (e) { return ''; }
-}
-async function extractPdfText(buf) {
-  try { const pdfParse = require('pdf-parse'); const data = await pdfParse(buf); const t = (data && data.text ? data.text : '').replace(/\u0000/g, '').trim(); if (t.replace(/\s/g, '').length > 30) return t; } catch (e) {}
-  return naivePdfExtract(buf);
-}
-function extractDocxText(buf) {
-  try {
-    const zip = Buffer.isBuffer(buf) ? buf : Buffer.from(buf);
-    const name = 'word/document.xml';
-    let pos = zip.indexOf(Buffer.from(name));
-    if (pos < 0) return '';
-    let local = -1;
-    for (let i = Math.max(0, pos - 80); i < pos; i++) { if (zip[i] === 0x50 && zip[i + 1] === 0x4b && zip[i + 2] === 0x03 && zip[i + 3] === 0x04) { local = i; break; } }
-    if (local < 0) return '';
-    const compression = zip.readUInt16LE(local + 8);
-    const compSize = zip.readUInt32LE(local + 18);
-    const nameLen = zip.readUInt16LE(local + 26);
-    const extraLen = zip.readUInt16LE(local + 28);
-    const dataStart = local + 30 + nameLen + extraLen;
-    const data = zip.slice(dataStart, dataStart + compSize);
-    let xml = '';
-    if (compression === 0) xml = data.toString('utf8');
-    else { const zlib = require('zlib'); xml = zlib.inflateRawSync(data).toString('utf8'); }
-    return xml.replace(/<w:p[^>]*>/g, '\n').replace(/<w:tab[^/]*\/>/g, '\t').replace(/<[^>]+>/g, ' ')
-      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
-      .replace(/&#(\d+);/g, function (_, n) { return String.fromCharCode(Number(n)); })
-      .replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').replace(/[ \t]{2,}/g, ' ').trim();
-  } catch (e) { return ''; }
-}
-async function extractCvFromBuffer(buf, filename, mimeType) {
-  const name = (filename || '').toLowerCase();
-  const mime = (mimeType || '').toLowerCase();
-  if (mime.includes('pdf') || name.endsWith('.pdf') || buf.slice(0, 5).toString() === '%PDF-') return extractPdfText(buf);
-  if (mime.includes('wordprocessingml') || name.endsWith('.docx')) return extractDocxText(buf);
-  if (mime.startsWith('text/') || name.endsWith('.txt') || name.endsWith('.md') || name.endsWith('.rtf')) {
-    let t = buf.toString('utf8'); if (t.charCodeAt(0) === 0xFEFF) t = t.slice(1);
-    return t.replace(/\u0000/g, '').trim();
-  }
-  const asText = buf.toString('utf8');
-  if (!looksLikeBinaryCv(asText)) return asText.trim();
-  const pdfTry = await extractPdfText(buf);
-  if (pdfTry) return pdfTry;
-  const docxTry = extractDocxText(buf);
-  if (docxTry) return docxTry;
-  return '';
-}
-
 app.post('/api/ai/extract-cv', authRequired, async (req, res) => {
   try {
     const { fileId, base64, mimeType, filename } = req.body || {};
@@ -874,15 +999,15 @@ app.post('/api/ai/extract-cv', authRequired, async (req, res) => {
       const f = await db.collection('users').doc(req.session.user.id).collection('files').doc(fileId).get();
       if (!f.exists) return res.json({ ok: false, error: 'File not found' });
       const meta = f.data();
-      if (!meta.base64) return res.json({ ok: false, error: 'File data missing' });
+      if (!meta.base64) return res.json({ ok: false, error: 'File data missing. Please re-upload.' });
       fname = meta.name || fname; mime = meta.mimeType || mime;
       buf = Buffer.from(meta.base64, 'base64');
     } else if (base64) {
       buf = Buffer.from(base64, 'base64');
-      if (buf.length > 4 * 1024 * 1024) return res.json({ ok: false, error: 'Max 4MB' });
+      if (buf.length > 900 * 1024) return res.json({ ok: false, error: 'Max 900KB' });
     } else return res.json({ ok: false, error: 'No file' });
     const text = await extractCvFromBuffer(buf, fname, mime);
-    if (!text || text.replace(/\s/g, '').length < 30 || looksLikeBinaryCv(text)) return res.json({ ok: false, error: 'Could not read. Use PDF, DOCX, or TXT.' });
+    if (!text || text.replace(/\s/g, '').length < 30 || looksLikeBinaryCv(text)) return res.json({ ok: false, error: 'Could not read CV. Upload a text-based PDF, DOCX or TXT file. If it is a scanned image, please paste the text manually.' });
     res.json({ ok: true, text: text.substring(0, 20000), filename: fname, chars: text.length });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
@@ -892,26 +1017,43 @@ app.post('/api/ai/analyze-cv', authRequired, async (req, res) => {
     const { cvText, targetRole, jobDescription, fileId } = req.body;
     let text = cvText || '';
     if (fileId && (!text || looksLikeBinaryCv(text))) {
-      const f = await db.collection('users').doc(req.session.user.id).collection('files').doc(fileId).get();
-      if (f.exists) {
-        const meta = f.data();
-        if (meta.base64) text = await extractCvFromBuffer(Buffer.from(meta.base64, 'base64'), meta.name, meta.mimeType);
-      }
+      try {
+        const f = await db.collection('users').doc(req.session.user.id).collection('files').doc(fileId).get();
+        if (f.exists) {
+          const meta = f.data();
+          if (meta.base64 && meta.base64.length > 100) {
+            text = await extractCvFromBuffer(Buffer.from(meta.base64, 'base64'), meta.name || 'cv', meta.mimeType || '');
+          }
+        }
+      } catch (e) { console.log('CV fetch err:', e.message); }
     }
-    if (looksLikeBinaryCv(text)) return res.json({ ok: false, error: 'CV not readable.' });
-    if (!text || text.replace(/\s/g, '').length < 30) return res.json({ ok: false, error: 'CV too short' });
-    const prompt = `You are an expert career coach. Analyze CV and write job application email.\n\nCV:\n"""${text.substring(0, 3500)}"""\n\nTarget Role: ${targetRole || 'Not specified'}\nJob Description: ${jobDescription ? jobDescription.substring(0, 600) : 'Not provided'}\n\nReturn ONLY JSON: {"subject":"under 65 chars","body":"email body with \\n\\n, NO signature","keySkills":["s1","s2","s3","s4"],"analysis":"2-3 sentences","score":0-100}`;
+    if (looksLikeBinaryCv(text)) return res.json({ ok: false, error: 'CV not readable. Please upload a text-based PDF/DOCX.' });
+    if (!text || text.replace(/\s/g, '').length < 30) return res.json({ ok: false, error: 'CV text is too short or empty.' });
+    const prompt = `You are an expert career coach. Analyze this CV and write a job application email.
+
+CRITICAL RULES:
+1. The CV may contain text in ANY language (Urdu, Hindi, Arabic, Roman-Urdu, mixed). Understand the MEANING regardless of language.
+2. Output MUST be in professional English only.
+3. If CV has Roman-Urdu/mixed language, translate intent to formal English.
+
+CV:
+"""${text.substring(0, 3500)}"""
+
+Target Role: ${targetRole || 'Not specified'}
+Job Description: ${jobDescription ? jobDescription.substring(0, 600) : 'Not provided'}
+
+Return ONLY JSON: {"subject":"under 65 chars","body":"professional email body with \\n\\n, NO signature, NO name","keySkills":["s1","s2","s3","s4"],"analysis":"2-3 sentences in English","score":0-100}`;
     const aiText = await callAI(prompt, req.session.user.id);
     const parsed = safeParseJSON(aiText);
     if (parsed && parsed.subject && parsed.body) return res.json({ ok: true, subject: parsed.subject, body: stripSignature(parsed.body), keySkills: parsed.keySkills || [], analysis: parsed.analysis || '', score: parsed.score || 70, aiPowered: true });
-    res.json({ ok: false, error: 'AI could not parse CV' });
+    res.json({ ok: false, error: 'AI could not parse CV. Please try again.' });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
 app.post('/api/ai/generate-subjects', authRequired, async (req, res) => {
   try {
     const { context } = req.body;
-    const prompt = `Generate 5 email subject lines (max 60 chars). Return ONLY JSON.\nContext: ${context || 'professional outreach'}\nReturn: {"subjects":["s1","s2","s3","s4","s5"]}`;
+    const prompt = `Generate 5 email subject lines (max 60 chars, English). Return ONLY JSON.\nContext (may be in any language): ${context || 'professional outreach'}\nReturn: {"subjects":["s1","s2","s3","s4","s5"]}`;
     try {
       const text = await callAI(prompt, req.session.user.id);
       const parsed = safeParseJSON(text);
@@ -925,7 +1067,7 @@ app.post('/api/ai/generate-subjects', authRequired, async (req, res) => {
 app.post('/api/ai/improve-email', authRequired, async (req, res) => {
   try {
     const { subject, body } = req.body;
-    const prompt = `Improve this email for inbox placement. Return ONLY JSON.\nSubject: "${subject || ''}"\nBody: "${(body || '').substring(0, 800)}"\nSTRICT: No signature, sign-off.\nReturn: {"improvedSubject":"...","improvedBody":"...","beforeScore":50,"afterScore":85}`;
+    const prompt = `Improve this email for inbox placement. If subject/body is in any language other than English, translate to professional English. Return ONLY JSON.\nSubject: "${subject || ''}"\nBody: "${(body || '').substring(0, 800)}"\nSTRICT: No signature, sign-off.\nReturn: {"improvedSubject":"...","improvedBody":"...","beforeScore":50,"afterScore":85}`;
     try {
       const text = await callAI(prompt, req.session.user.id);
       const parsed = safeParseJSON(text);
@@ -1030,11 +1172,9 @@ app.get('/api/recipient/:id/history', authRequired, async (req, res) => {
     if (!recSnap.exists) return res.json({ ok: false, error: 'Recipient not found' });
     const rec = recSnap.data();
     const allEmails = [];
-    let lastDoc = null;
-    let more = true;
-    let iterations = 0;
-    while (more && iterations < 40) {
-      iterations++;
+    let lastDoc = null, more = true, it = 0;
+    while (more && it < 40) {
+      it++;
       let q = db.collection('users').doc(uid).collection('emailLog').where('recipientId', '==', recipientId).limit(500);
       if (lastDoc) q = q.startAfter(lastDoc);
       const snap = await q.get();
@@ -1061,14 +1201,28 @@ app.get('/api/recipient/:id/history', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ FILES (base64 in Firestore) ============ */
+// NEW: Fetch Gmail's Sent folder (all-time) for this recipient via IMAP
+app.get('/api/recipient/:id/gmail-history', authRequired, async (req, res) => {
+  try {
+    const uid = req.session.user.id;
+    const recSnap = await db.collection('users').doc(uid).collection('recipients').doc(req.params.id).get();
+    if (!recSnap.exists) return res.json({ ok: false, error: 'Recipient not found' });
+    const u = await getUserData(uid);
+    if (!u.imapEnabled || !u.imapAppPassword) return res.json({ ok: false, error: 'Connect Inbox (IMAP) first', needsImap: true });
+    const result = await fetchImapSentForRecipient(u.email, u.imapAppPassword, recSnap.data().email, 300);
+    if (!result.ok) return res.json({ ok: false, error: result.error });
+    res.json({ ok: true, emails: result.emails || [], count: (result.emails || []).length });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+/* ============ FILES ============ */
 app.post('/api/upload-file', authRequired, async (req, res) => {
   try {
     const { base64, mimeType, filename } = req.body;
     if (!base64 || !filename) return res.json({ ok: false, error: 'Missing' });
     const buf = Buffer.from(base64, 'base64');
-    if (buf.length > 700 * 1024) return res.json({ ok: false, error: 'Max 700KB (Firestore limit). Use smaller files.' });
-    const fd = { base64: base64, name: filename, mimeType: mimeType || 'application/octet-stream', size: buf.length, uploadedAt: new Date() };
+    if (buf.length > 900 * 1024) return res.json({ ok: false, error: 'Max 900KB (Firestore limit).' });
+    const fd = { base64, name: filename, mimeType: mimeType || 'application/octet-stream', size: buf.length, uploadedAt: new Date() };
     const doc = await db.collection('users').doc(req.session.user.id).collection('files').add(fd);
     res.json({ ok: true, file: { id: doc.id, name: fd.name, mimeType: fd.mimeType, size: fd.size, uploadedAt: fd.uploadedAt } });
   } catch (e) { res.json({ ok: false, error: e.message }); }
@@ -1085,7 +1239,7 @@ app.delete('/api/files/:id', authRequired, async (req, res) => {
   catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ LOGO (base64 in Firestore) ============ */
+/* ============ LOGO ============ */
 app.post('/api/upload-logo', authRequired, async (req, res) => {
   try {
     const { base64, mimeType, filename } = req.body;
@@ -1110,7 +1264,7 @@ app.get('/api/logo', authRequired, async (req, res) => {
   catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ PROFILE PICTURE (base64) ============ */
+/* ============ PROFILE PICTURE ============ */
 app.post('/api/profile/picture', authRequired, async (req, res) => {
   try {
     const { base64, mimeType } = req.body;
@@ -1159,7 +1313,15 @@ app.get('/api/ai/usage', authRequired, async (req, res) => {
     const day = daySnap.exists ? daySnap.data() : { calls: 0, totalTokens: 0, providers: {} };
     const mon = monthSnap.exists ? monthSnap.data() : { calls: 0, totalTokens: 0, providers: {} };
     const tot = totalSnap.exists ? totalSnap.data() : { calls: 0, totalTokens: 0, providers: {} };
-    res.json({ ok: true, today: day, month: mon, total: tot, date: today, monthKey: month });
+    const avgPerCall = tot.calls > 0 ? Math.round(tot.totalTokens / tot.calls) : 500;
+    // Real provider-level budgets if configured
+    let totalBudget = TOTAL_AI_BUDGET;
+    if (!totalBudget) {
+      totalBudget = Object.values(PROVIDER_BUDGETS).reduce((a, b) => a + (b || 0), 0);
+    }
+    const remainingTokens = totalBudget > 0 ? Math.max(0, totalBudget - (tot.totalTokens || 0)) : null;
+    const estimatedRemainingCalls = remainingTokens !== null && avgPerCall > 0 ? Math.floor(remainingTokens / avgPerCall) : null;
+    res.json({ ok: true, today: day, month: mon, total: tot, date: today, monthKey: month, avgPerCall, remainingTokens, estimatedRemainingCalls, tokenBudget: totalBudget, budgets: PROVIDER_BUDGETS });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.get('/api/ai-profile', authRequired, async (req, res) => {
@@ -1197,7 +1359,7 @@ app.post('/api/signature', authRequired, async (req, res) => {
 app.get('/api/prefs', authRequired, async (req, res) => {
   try {
     const d = await getUserData(req.session.user.id);
-    res.json({ ok: true, prefs: { quietEnabled: d.quietEnabled === true, quietStart: d.quietStart !== undefined ? d.quietStart : 22, quietEnd: d.quietEnd !== undefined ? d.quietEnd : 7, autoSend: d.autoSend === true, autoSendBatchSize: d.autoSendBatchSize !== undefined ? d.autoSendBatchSize : 5, appAccountId: d.appAccountId || '', totalAutoSent: d.totalAutoSent || 0, autoSendIncludeLogo: d.autoSendIncludeLogo !== false, autoSendIncludeSignature: d.autoSendIncludeSignature !== false, sendDelay: d.sendDelay !== undefined ? d.sendDelay : DEFAULT_SEND_DELAY, lastAutoSendRun: d.lastAutoSendRun || null } });
+    res.json({ ok: true, prefs: { quietEnabled: d.quietEnabled === true, quietStart: d.quietStart !== undefined ? d.quietStart : 22, quietEnd: d.quietEnd !== undefined ? d.quietEnd : 7, autoSend: d.autoSend === true, autoSendBatchSize: d.autoSendBatchSize !== undefined ? d.autoSendBatchSize : 5, appAccountId: d.appAccountId || '', totalAutoSent: d.totalAutoSent || 0, autoSendIncludeLogo: d.autoSendIncludeLogo !== false, autoSendIncludeSignature: d.autoSendIncludeSignature !== false, sendDelay: d.sendDelay !== undefined ? d.sendDelay : DEFAULT_SEND_DELAY, lastAutoSendRun: d.lastAutoSendRun || null, dailyLimit: d.dailyLimit || DEFAULT_DAILY_LIMIT } });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.post('/api/prefs', authRequired, async (req, res) => {
@@ -1252,7 +1414,7 @@ app.get('/api/my-emails', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ SEND EMAIL (SMTP) ============ */
+/* ============ SEND ============ */
 async function sendOne(userId, userEmail, recipientId, options) {
   options = options || {};
   const u = await getUserData(userId);
@@ -1312,33 +1474,24 @@ async function sendOne(userId, userEmail, recipientId, options) {
   }
   const logRef = await db.collection('users').doc(userId).collection('emailLog').add({ recipientId, recipientEmail: rec.email, company: rec.company || '', subject, sentAt: new Date(), attachmentsCount: atts.length, attachmentNames: attNames, aiPrediction: lp.prediction, aiScore: lp.score, aiInboxProb: lp.inboxProbability, sendTrackToken, openedAt: null });
   const logId = logRef.id;
-  const trackUrl = (process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org') + '/track/' + logId + '?u=' + userId + '&t=' + sendTrackToken;
+  const trackUrl = BACKEND_URL + '/track/' + logId + '?u=' + userId + '&t=' + sendTrackToken;
   const pix = '<img src="' + trackUrl + '" width="1" height="1" alt="" style="border:0;display:block;width:1px;height:1px">';
   const finalHtml = fullHtml + pix;
-
   const transporter = createTransporter(userEmail, u.smtpAppPassword);
   const mailOptions = {
     from: '"' + (u.name || 'MailFlow User') + '" <' + userEmail + '>',
-    to: rec.email,
-    subject: sanitizeSubject(subject),
-    html: finalHtml,
-    headers: {
-      'List-Unsubscribe': '<mailto:' + userEmail + '?subject=unsubscribe>',
-      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-      'Precedence': 'bulk'
-    }
+    to: rec.email, subject: sanitizeSubject(subject), html: finalHtml,
+    headers: { 'List-Unsubscribe': '<mailto:' + userEmail + '?subject=unsubscribe>', 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click', 'Precedence': 'bulk' }
   };
   if (atts.length > 0) mailOptions.attachments = atts;
   await transporter.sendMail(mailOptions);
-
   const everOpenedFlag = rec.everOpened === true || rec.status === 'Opened';
   await db.collection('users').doc(userId).collection('recipients').doc(recipientId).update({ status: 'Sent', lastSentAt: new Date(), sentAt: new Date(), everOpened: everOpenedFlag });
   await db.collection('users').doc(userId).update({ lastSendTime: new Date() });
   const todayKey = new Date().toISOString().split('T')[0];
   const sr = db.collection('users').doc(userId).collection('stats').doc(todayKey);
-  const sd = await sr.get();
-  await sr.set({ sent: ((sd.exists ? sd.data().sent : 0) + 1), updatedAt: new Date() }, { merge: true });
-  quotaCache.delete(userId);
+  const sd2 = await sr.get();
+  await sr.set({ sent: ((sd2.exists ? sd2.data().sent : 0) + 1), updatedAt: new Date() }, { merge: true });
   return rec.email;
 }
 
@@ -1437,7 +1590,7 @@ app.post('/api/auto-send-check', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ QUOTA (local stats only now) ============ */
+/* ============ QUOTA ============ */
 app.get('/api/quota', authRequired, async (req, res) => {
   try {
     const userId = req.session.user.id;
@@ -1446,7 +1599,8 @@ app.get('/api/quota', authRequired, async (req, res) => {
     const today = new Date().toISOString().split('T')[0];
     const sd = await db.collection('users').doc(userId).collection('stats').doc(today).get();
     const sent = sd.exists ? (sd.data().sent || 0) : 0;
-    const result = { ok: true, sent, limit: 500, remaining: Math.max(0, 500 - sent), timestamp: new Date().toISOString() };
+    const limit = u.dailyLimit || 500;
+    const result = { ok: true, sent, limit, remaining: Math.max(0, limit - sent), timestamp: new Date().toISOString(), live: true };
     res.json(result);
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
@@ -1557,7 +1711,7 @@ app.post('/api/test/send', adminRequired, async (req, res) => {
     if (recId) {
       const trackTok = crypto.randomBytes(16).toString('hex');
       await db.collection('users').doc(uid).collection('testRecipients').doc(recId).update({ trackToken: trackTok });
-      const tu = (process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org') + '/track/' + recId + '?u=' + uid + '&t=' + trackTok + '&type=test';
+      const tu = BACKEND_URL + '/track/' + recId + '?u=' + uid + '&t=' + trackTok + '&type=test';
       pix = '<img src="' + tu + '" width="1" height="1" alt="" style="border:0;display:block;width:1px;height:1px">';
     }
     const bodyHtml = body.replace(/\n/g, '<br>');
@@ -1623,10 +1777,10 @@ app.post('/api/test/automation/run', adminRequired, async (req, res) => {
         const sigHtml = sig ? '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>' : '';
         const tok = crypto.randomBytes(16).toString('hex');
         await db.collection('users').doc(uid).collection('testRecipients').doc(r.id).update({ trackToken: tok });
-        const tu = (process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org') + '/track/' + r.id + '?u=' + uid + '&t=' + tok + '&type=test';
+        const tu = BACKEND_URL + '/track/' + r.id + '?u=' + uid + '&t=' + tok + '&type=test';
         const pix = '<img src="' + tu + '" width="1" height="1" alt="" style="border:0;display:block;width:1px;height:1px">';
         const full = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">' + bodyHtml + sigHtml + pix + '</div>';
-        await transporter.sendMail({ from: '"' + (u.name || 'User') + '" <' + u.email + '>', to: rec.email, subject: subject, html: full });
+        await transporter.sendMail({ from: '"' + (u.name || 'User') + '" <' + u.email + '>', to: rec.email, subject, html: full });
         await db.collection('users').doc(uid).collection('testLog').add({ recipientEmail: rec.email, subject, body: bodyText, sentAt: new Date(), recipientId: r.id, attachmentsCount: 0 });
         const wasOpened = rec.everOpened === true;
         await db.collection('users').doc(uid).collection('testRecipients').doc(r.id).update({ status: 'Sent', sentAt: new Date(), everOpened: wasOpened });
@@ -1644,34 +1798,29 @@ app.post('/api/test/automation/run', adminRequired, async (req, res) => {
 app.get('/api/admin/dashboard', adminRequired, async (req, res) => {
   try {
     const us = await db.collection('users').get();
-    const bannedSnap = await db.collection('bannedUsers').get();
-    const bannedSet = new Set(bannedSnap.docs.map(d => d.id));
-    const users = [];
-    let tE = 0, tS = 0, tO = 0, tP = 0, tSd = 0;
+    const totalUsers = us.size;
+    let totalEmails = 0, totalOpened = 0, totalPending = 0, totalSends = 0;
     for (const u of us.docs) {
-      const d = u.data();
-      const [t, s, oSnap1, oSnap2, p, sd] = await Promise.all([
+      const [t, o1, o2, p, s] = await Promise.all([
         db.collection('users').doc(u.id).collection('recipients').count().get(),
-        db.collection('users').doc(u.id).collection('recipients').where('status', 'in', ['Sent', 'Opened']).count().get(),
-        db.collection('users').doc(u.id).collection('recipients').where('everOpened', '==', true).get(),
-        db.collection('users').doc(u.id).collection('recipients').where('status', '==', 'Opened').get(),
+        db.collection('users').doc(u.id).collection('recipients').where('everOpened', '==', true).count().get(),
+        db.collection('users').doc(u.id).collection('recipients').where('status', '==', 'Opened').count().get(),
         db.collection('users').doc(u.id).collection('recipients').where('status', '==', 'Pending').count().get(),
         db.collection('users').doc(u.id).collection('emailLog').count().get()
       ]);
-      const openedSet = new Set([...oSnap1.docs.map(x => x.id), ...oSnap2.docs.map(x => x.id)]);
-      const tc = t.data().count, sc = s.data().count, oc = openedSet.size, pc = p.data().count, sdc = sd.data().count;
-      tE += tc; tS += sc; tO += oc; tP += pc; tSd += sdc;
-      users.push({ id: u.id, email: d.email, name: d.name, picture: d.profilePicture || '', appAccountId: d.appAccountId || 'N/A', autoSend: !!d.autoSend, totalAutoSent: d.totalAutoSent || 0, createdAt: d.createdAt ? (d.createdAt.toDate ? d.createdAt.toDate().toISOString() : d.createdAt) : '', lastLogin: d.lastLogin || null, authType: d.authType || 'email', banned: bannedSet.has(u.id), total: tc, sent: sc, opened: oc, pending: pc, totalSends: sdc });
+      totalEmails += t.data().count;
+      totalOpened += Math.max(o1.data().count, o2.data().count);
+      totalPending += p.data().count;
+      totalSends += s.data().count;
     }
-    users.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-    res.json({ ok: true, users, stats: { totalUsers: users.length, totalEmails: tE, totalSent: tS, totalOpened: tO, totalPending: tP, totalSends: tSd } });
+    res.json({ ok: true, stats: { totalUsers, totalEmails, totalOpened, totalPending, totalSends } });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
 app.get('/api/admin/users/paginated', adminRequired, async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.min(50, parseInt(req.query.limit) || 10);
+    const limit = Math.min(50, parseInt(req.query.limit) || 15);
     const search = (req.query.search || '').toLowerCase().trim();
     const bannedSnap = await db.collection('bannedUsers').get();
     const bannedSet = new Set(bannedSnap.docs.map(d => d.id));
@@ -1679,7 +1828,7 @@ app.get('/api/admin/users/paginated', adminRequired, async (req, res) => {
     let allUsers = [];
     for (const u of us.docs) {
       const d = u.data();
-      allUsers.push({ id: u.id, email: d.email, name: d.name, picture: d.profilePicture || '', appAccountId: d.appAccountId || 'N/A', autoSend: !!d.autoSend, totalAutoSent: d.totalAutoSent || 0, createdAt: d.createdAt ? (d.createdAt.toDate ? d.createdAt.toDate().toISOString() : d.createdAt) : '', lastLogin: d.lastLogin || null, authType: d.authType || 'email', banned: bannedSet.has(u.id) });
+      allUsers.push({ id: u.id, email: d.email, name: d.name, picture: d.profilePicture || '', appAccountId: d.appAccountId || 'N/A', autoSend: !!d.autoSend, totalAutoSent: d.totalAutoSent || 0, createdAt: d.createdAt ? (d.createdAt.toDate ? d.createdAt.toDate().toISOString() : d.createdAt) : '', lastLogin: d.lastLogin || null, authType: d.authType || 'email', banned: bannedSet.has(u.id), hasSmtp: !!d.smtpEnabled });
     }
     if (search) {
       allUsers = allUsers.filter(u => (u.email || '').toLowerCase().includes(search) || (u.name || '').toLowerCase().includes(search) || (u.appAccountId || '').toLowerCase().includes(search));
@@ -1691,8 +1840,11 @@ app.get('/api/admin/users/paginated', adminRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-app.get('/api/admin/all-emails', adminRequired, async (req, res) => {
+app.get('/api/admin/all-emails-paginated', adminRequired, async (req, res) => {
   try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, parseInt(req.query.limit) || 15);
+    const search = (req.query.search || '').toLowerCase().trim();
     const us = await db.collection('users').get();
     const all = [];
     for (const u of us.docs) {
@@ -1704,25 +1856,12 @@ app.get('/api/admin/all-emails', adminRequired, async (req, res) => {
       });
     }
     all.sort((a, b) => { const ta = a.sentAt?._seconds || 0; const tb = b.sentAt?._seconds || 0; return tb - ta; });
-    res.json({ ok: true, emails: all.slice(0, 1000) });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-
-app.get('/api/admin/user/:id/emails', adminRequired, async (req, res) => {
-  try {
-    const uid = req.params.id;
-    const [emailSnap, recSnap] = await Promise.all([
-      db.collection('users').doc(uid).collection('emailLog').orderBy('sentAt', 'desc').limit(500).get(),
-      db.collection('users').doc(uid).collection('recipients').get()
-    ]);
-    const recMap = {}; recSnap.forEach(d => { recMap[d.id] = d.data(); });
-    const emails = [];
-    emailSnap.forEach(d => {
-      const dd = d.data();
-      const rec = recMap[dd.recipientId] || {};
-      emails.push({ id: d.id, recipientEmail: dd.recipientEmail || '', company: dd.company || '', subject: dd.subject || '', sentAt: dd.sentAt, attachmentsCount: dd.attachmentsCount || 0, attachmentNames: dd.attachmentNames || [], aiPrediction: dd.aiPrediction || 'GOOD', aiInboxProb: dd.aiInboxProb || 75, status: rec.status || 'Sent', openedAt: dd.openedAt || rec.openedAt || null, recipientId: dd.recipientId || '' });
-    });
-    res.json({ ok: true, emails });
+    let filtered = all;
+    if (search) filtered = all.filter(e => (e.userEmail || '').toLowerCase().includes(search) || (e.recipientEmail || '').toLowerCase().includes(search) || (e.subject || '').toLowerCase().includes(search));
+    const total = filtered.length;
+    const start = (page - 1) * limit;
+    const emails = filtered.slice(start, start + limit);
+    res.json({ ok: true, emails, pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) } });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -1732,7 +1871,7 @@ app.get('/api/admin/ai-usage', adminRequired, async (req, res) => {
     const today = new Date().toISOString().split('T')[0];
     const month = today.substring(0, 7);
     const rows = [];
-    let totalToday = 0, totalMonth = 0, totalLifetime = 0, totalUsersWithAI = 0;
+    let totalToday = 0, totalMonth = 0, totalLifetime = 0, totalUsersWithAI = 0, totalCalls = 0;
     for (const u of us.docs) {
       const d = u.data();
       const [dSnap, mSnap, tSnap] = await Promise.all([
@@ -1747,10 +1886,16 @@ app.get('/api/admin/ai-usage', adminRequired, async (req, res) => {
       totalToday += day.totalTokens || 0;
       totalMonth += mon.totalTokens || 0;
       totalLifetime += tot.totalTokens || 0;
+      totalCalls += tot.calls || 0;
       rows.push({ id: u.id, email: d.email, name: d.name, appAccountId: d.appAccountId || 'N/A', todayCalls: day.calls || 0, todayTokens: day.totalTokens || 0, monthCalls: mon.calls || 0, monthTokens: mon.totalTokens || 0, totalCalls: tot.calls || 0, totalTokens: tot.totalTokens || 0, totalProviders: tot.providers || {} });
     }
     rows.sort((a, b) => (b.totalTokens || 0) - (a.totalTokens || 0));
-    res.json({ ok: true, rows, summary: { totalUsers: us.size, activeAIUsers: totalUsersWithAI, tokensToday: totalToday, tokensThisMonth: totalMonth, tokensLifetime: totalLifetime, monthKey: month, date: today } });
+    let totalBudget = TOTAL_AI_BUDGET;
+    if (!totalBudget) totalBudget = Object.values(PROVIDER_BUDGETS).reduce((a, b) => a + (b || 0), 0);
+    const remainingTokens = totalBudget > 0 ? Math.max(0, totalBudget - totalLifetime) : null;
+    const avgPerCall = totalCalls > 0 ? Math.round(totalLifetime / totalCalls) : 500;
+    const estimatedRemainingCalls = remainingTokens !== null && avgPerCall > 0 ? Math.floor(remainingTokens / avgPerCall) : null;
+    res.json({ ok: true, rows, summary: { totalUsers: us.size, activeAIUsers: totalUsersWithAI, tokensToday: totalToday, tokensThisMonth: totalMonth, tokensLifetime: totalLifetime, totalCalls, remainingTokens, estimatedRemainingCalls, tokenBudget: totalBudget, budgets: PROVIDER_BUDGETS, monthKey: month, date: today } });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -1789,16 +1934,15 @@ app.get('/api/admin/access-requests', adminRequired, async (req, res) => {
 });
 app.post('/api/admin/access-requests/:id/approve', adminRequired, async (req, res) => {
   try {
-    const requestId = req.params.id;
-    const ref = db.collection('accessRequests').doc(requestId);
+    const ref = db.collection('accessRequests').doc(req.params.id);
     const snap = await ref.get();
     if (!snap.exists) return res.json({ ok: false, error: 'Not found' });
     const reqData = snap.data();
     if (reqData.oldEmail && reqData.oldEmail !== reqData.email) {
-      const oldUid = crypto.createHash('md5').update(reqData.oldEmail).digest('hex');
+      const oldUid = crypto.createHash('md5').update(normalizeEmail(reqData.oldEmail)).digest('hex');
       await db.collection('bannedUsers').doc(oldUid).delete().catch(() => {});
     }
-    const newUid = crypto.createHash('md5').update(reqData.email).digest('hex');
+    const newUid = crypto.createHash('md5').update(normalizeEmail(reqData.email)).digest('hex');
     await db.collection('bannedUsers').doc(newUid).delete().catch(() => {});
     await ref.update({ status: 'approved', approvedAt: new Date(), approvedBy: req.session.user.email });
     res.json({ ok: true });
@@ -1897,5 +2041,5 @@ app.use((req, res, next) => {
 if (process.env.VERCEL) {
   module.exports = app;
 } else {
-  app.listen(PORT, () => console.log('✅ MailFlow Pro v4.1.0 (SMTP) running on port ' + PORT));
+  app.listen(PORT, () => console.log('✅ MailFlow Pro v4.3.0 (SMTP) running on port ' + PORT));
 }
