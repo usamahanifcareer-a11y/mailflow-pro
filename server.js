@@ -2,12 +2,11 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const cookieSession = require('cookie-session');
-const { google } = require('googleapis');
+const nodemailer = require('nodemailer');
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const crypto = require('crypto');
-const { Readable } = require('stream');
 const path = require('path');
 const { ImapFlow } = require('imapflow');
 const { simpleParser } = require('mailparser');
@@ -191,7 +190,6 @@ async function callGroq(prompt, uid) {
   }
   throw lastErr || new Error('All Groq models failed');
 }
-
 async function callGemini(prompt, uid) {
   if (!GEMINI_KEY) throw new Error('No key');
   const models = ['gemini-2.0-flash-exp','gemini-2.0-flash','gemini-1.5-flash','gemini-1.5-flash-latest','gemini-1.5-pro'];
@@ -212,7 +210,6 @@ async function callGemini(prompt, uid) {
   }
   throw lastErr || new Error('All Gemini models failed');
 }
-
 async function callOpenRouter(prompt, uid) {
   if (!OPENROUTER_KEY) throw new Error('No key');
   const models = ['meta-llama/llama-3.3-70b-instruct:free','meta-llama/llama-3.1-8b-instruct:free','google/gemini-flash-1.5-8b:free','mistralai/mistral-7b-instruct:free','qwen/qwen-2.5-7b-instruct:free'];
@@ -233,7 +230,6 @@ async function callOpenRouter(prompt, uid) {
   }
   throw lastErr || new Error('All OpenRouter models failed');
 }
-
 async function callMistral(prompt, uid) {
   if (!MISTRAL_KEY) throw new Error('No key');
   const doFetch = async () => {
@@ -256,7 +252,6 @@ async function callMistral(prompt, uid) {
   }
   throw lastErr;
 }
-
 async function callOmniRoute(prompt, uid) {
   const OMNIROUTE_URL = process.env.OMNIROUTE_URL || '';
   const OMNIROUTE_KEY = process.env.OMNIROUTE_KEY || '';
@@ -273,7 +268,6 @@ async function callOmniRoute(prompt, uid) {
   logAIUsage(uid, 'omniroute', d.model || 'auto', d.usage || {});
   return content;
 }
-
 async function callAI(prompt, uid) {
   const cached = getCachedResponse(prompt);
   if (cached) return cached;
@@ -316,7 +310,7 @@ app.use(cors({
   },
   credentials: true
 }));
-app.use(express.json({ limit: '8mb' }));
+app.use(express.json({ limit: '20mb' }));
 app.use(cookieSession({
   name: 'mf_session', keys: [process.env.SESSION_SECRET], maxAge: 72 * 60 * 60 * 1000,
   secure: IS_VERCEL, sameSite: IS_VERCEL ? 'none' : 'lax', httpOnly: true, signed: true, overwrite: true
@@ -337,10 +331,17 @@ try {
 } catch (e) { console.error('Firebase init error:', e.message); }
 const db = getFirestore();
 
-const SCOPES = ['https://www.googleapis.com/auth/gmail.send','https://www.googleapis.com/auth/userinfo.email','https://www.googleapis.com/auth/userinfo.profile','https://www.googleapis.com/auth/drive.file'];
-
-function createOAuthClient() { return new google.auth.OAuth2(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, process.env.GOOGLE_REDIRECT_URI); }
-function setUserOAuth(t) { const c = createOAuthClient(); c.setCredentials(t); return c; }
+function createTransporter(email, appPassword) {
+  return nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: { user: email, pass: appPassword },
+    connectionTimeout: 30000,
+    greetingTimeout: 30000,
+    socketTimeout: 60000
+  });
+}
 
 async function authRequired(req, res, next) {
   if (!req.session || !req.session.user) return res.status(401).json({ ok: false, error: 'Session expired.' });
@@ -359,8 +360,8 @@ async function getUserData(uid) {
   const d = await db.collection('users').doc(uid).get();
   if (!d.exists) return null;
   const data = d.data();
-  if (data.tokens && typeof data.tokens === 'string') data.tokens = decrypt(data.tokens) || null;
   if (data.imapAppPassword && typeof data.imapAppPassword === 'string') data.imapAppPassword = decrypt(data.imapAppPassword) || null;
+  if (data.smtpAppPassword && typeof data.smtpAppPassword === 'string') data.smtpAppPassword = decrypt(data.smtpAppPassword) || null;
   return data;
 }
 function generateAppAccountId() {
@@ -385,148 +386,10 @@ function sanitizeSubject(subject) {
   if (s.length > 78) s = s.substring(0, 75) + '...';
   return s;
 }
-function htmlToPlain(h) {
-  return h.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n\n').replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\n\s*\n\s*\n/g, '\n\n').trim();
-}
 function getClientIP(req) {
   const fwd = req.headers['x-forwarded-for'];
   if (fwd) return String(fwd).split(',')[0].trim();
   return req.headers['x-real-ip'] || req.connection?.remoteAddress || req.socket?.remoteAddress || 'unknown';
-}
-async function globalEverOpenedMigration() {
-  try {
-    const usersSnap = await db.collection('users').get();
-    let total = 0;
-    for (const u of usersSnap.docs) {
-      const snap = await db.collection('users').doc(u.id).collection('recipients').where('status', '==', 'Opened').limit(500).get();
-      if (snap.empty) continue;
-      const batch = db.batch();
-      let n = 0;
-      snap.forEach(d => { if (d.data().everOpened !== true) { batch.update(d.ref, { everOpened: true }); n++; } });
-      if (n > 0) { await batch.commit(); total += n; }
-    }
-    if (total > 0) console.log('Migration: ' + total + ' recipients updated');
-  } catch (e) { console.error('Migration error:', e.message); }
-}
-
-function looksLikeBinaryCv(text) {
-  if (!text) return true;
-  const t = String(text).trim();
-  if (t.startsWith('%PDF') || t.startsWith('PK\x03\x04') || t.indexOf('%PDF-') === 0) return true;
-  const sample = t.substring(0, 800);
-  let bad = 0;
-  for (let i = 0; i < sample.length; i++) { const c = sample.charCodeAt(i); if (c === 0 || (c < 9) || (c > 13 && c < 32)) bad++; }
-  return bad > 12;
-}
-function decodePdfString(s) {
-  return s.replace(/\\n/g, '\n').replace(/\\r/g, '\n').replace(/\\t/g, '\t').replace(/\\\(/g, '(').replace(/\\\)/g, ')').replace(/\\\\/g, '\\')
-    .replace(/\\(\d{1,3})/g, function (_, oct) { return String.fromCharCode(parseInt(oct, 8)); });
-}
-function naivePdfExtract(buf) {
-  try {
-    const raw = Buffer.isBuffer(buf) ? buf.toString('latin1') : String(buf);
-    if (raw.indexOf('%PDF') === -1) return '';
-    const chunks = [];
-    const tj = raw.match(/\((?:\\.|[^\\)]){2,}\)(?:\s*Tj)?/g) || [];
-    for (const x of tj) { const inner = x.replace(/\)\s*Tj\s*$/, '').replace(/^\(/, '').replace(/\)$/, ''); const d = decodePdfString(inner); if (/[A-Za-z]{3,}/.test(d)) chunks.push(d); }
-    const tjArr = raw.match(/\[(?:[^\]]{4,1200})\]\s*TJ/g) || [];
-    for (const x of tjArr) { const parts = x.match(/\((?:\\.|[^\\)])+\)/g) || []; const line = parts.map(p => decodePdfString(p.slice(1, -1))).join(''); if (/[A-Za-z]{3,}/.test(line)) chunks.push(line); }
-    const text = chunks.join('\n').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').replace(/[^\S\n]+/g, ' ').trim();
-    return text.length > 40 ? text : '';
-  } catch (e) { return ''; }
-}
-async function extractPdfText(buf) {
-  try { const pdfParse = require('pdf-parse'); const data = await pdfParse(buf); const t = (data && data.text ? data.text : '').replace(/\u0000/g, '').trim(); if (t.replace(/\s/g, '').length > 30) return t; } catch (e) {}
-  return naivePdfExtract(buf);
-}
-function extractDocxText(buf) {
-  try {
-    const zip = Buffer.isBuffer(buf) ? buf : Buffer.from(buf);
-    const name = 'word/document.xml';
-    let pos = zip.indexOf(Buffer.from(name));
-    if (pos < 0) return '';
-    let local = -1;
-    for (let i = Math.max(0, pos - 80); i < pos; i++) { if (zip[i] === 0x50 && zip[i + 1] === 0x4b && zip[i + 2] === 0x03 && zip[i + 3] === 0x04) { local = i; break; } }
-    if (local < 0) return '';
-    const compression = zip.readUInt16LE(local + 8);
-    const compSize = zip.readUInt32LE(local + 18);
-    const nameLen = zip.readUInt16LE(local + 26);
-    const extraLen = zip.readUInt16LE(local + 28);
-    const dataStart = local + 30 + nameLen + extraLen;
-    const data = zip.slice(dataStart, dataStart + compSize);
-    let xml = '';
-    if (compression === 0) xml = data.toString('utf8');
-    else { const zlib = require('zlib'); xml = zlib.inflateRawSync(data).toString('utf8'); }
-    return xml.replace(/<w:p[^>]*>/g, '\n').replace(/<w:tab[^/]*\/>/g, '\t').replace(/<[^>]+>/g, ' ')
-      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
-      .replace(/&#(\d+);/g, function (_, n) { return String.fromCharCode(Number(n)); })
-      .replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').replace(/[ \t]{2,}/g, ' ').trim();
-  } catch (e) { return ''; }
-}
-async function extractCvFromBuffer(buf, filename, mimeType) {
-  const name = (filename || '').toLowerCase();
-  const mime = (mimeType || '').toLowerCase();
-  if (mime.includes('pdf') || name.endsWith('.pdf') || buf.slice(0, 5).toString() === '%PDF-') return extractPdfText(buf);
-  if (mime.includes('wordprocessingml') || name.endsWith('.docx')) return extractDocxText(buf);
-  if (mime.startsWith('text/') || name.endsWith('.txt') || name.endsWith('.md') || name.endsWith('.rtf')) {
-    let t = buf.toString('utf8'); if (t.charCodeAt(0) === 0xFEFF) t = t.slice(1);
-    return t.replace(/\u0000/g, '').trim();
-  }
-  const asText = buf.toString('utf8');
-  if (!looksLikeBinaryCv(asText)) return asText.trim();
-  const pdfTry = await extractPdfText(buf);
-  if (pdfTry) return pdfTry;
-  const docxTry = extractDocxText(buf);
-  if (docxTry) return docxTry;
-  return '';
-}
-
-function buildMime(fromName, fromEmail, to, subject, htmlBody, attachments, options) {
-  options = options || {};
-  const isBulk = options.isBulk === true;
-  const mB = 'mixed_' + crypto.randomBytes(8).toString('hex');
-  const aB = 'alt_' + crypto.randomBytes(8).toString('hex');
-  const dom = fromEmail.split('@')[1] || 'gmail.com';
-  const msgId = options.messageId || ('<' + crypto.randomBytes(16).toString('hex') + '.' + Date.now() + '.mailflow@' + dom + '>');
-  const plainText = htmlToPlain(htmlBody);
-  const cleanSubject = sanitizeSubject(subject);
-  const encodedSubject = /^[\x00-\x7F]*$/.test(cleanSubject) ? cleanSubject : '=?UTF-8?B?' + Buffer.from(cleanSubject, 'utf8').toString('base64') + '?=';
-  const headers = [
-    'From: "' + fromName.replace(/"/g, '').replace(/[\r\n]/g, '') + '" <' + fromEmail + '>',
-    'To: ' + to, 'Reply-To: ' + fromEmail, 'Subject: ' + encodedSubject,
-    'Date: ' + new Date().toUTCString(), 'Message-ID: ' + msgId, 'MIME-Version: 1.0',
-    'X-Mailer: Gmail', 'Content-Language: en-US',
-    'List-Unsubscribe: <mailto:' + fromEmail + '?subject=unsubscribe>',
-    'List-Unsubscribe-Post: List-Unsubscribe=One-Click',
-    'X-Priority: 3', 'Importance: Normal'
-  ];
-  if (options.inReplyTo) headers.push('In-Reply-To: ' + options.inReplyTo);
-  if (options.references) headers.push('References: ' + options.references);
-  if (isBulk) headers.push('Precedence: bulk');
-  const hasAtt = attachments && attachments.length > 0;
-  if (hasAtt) {
-    headers.push('Content-Type: multipart/mixed; boundary="' + mB + '"', '', '--' + mB);
-    headers.push('Content-Type: multipart/alternative; boundary="' + aB + '"', '', '--' + aB);
-    headers.push('Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', Buffer.from(plainText, 'utf8').toString('base64'), '', '--' + aB);
-    headers.push('Content-Type: text/html; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', Buffer.from(htmlBody, 'utf8').toString('base64'), '', '--' + aB + '--', '');
-    for (const a of attachments) {
-      const safeName = a.filename.replace(/[\r\n"]/g, '');
-      headers.push('--' + mB);
-      headers.push('Content-Type: ' + a.mimeType + '; name="' + safeName + '"');
-      headers.push('Content-Transfer-Encoding: base64');
-      headers.push('Content-Disposition: attachment; filename="' + safeName + '"', '', a.data, '');
-    }
-    headers.push('--' + mB + '--');
-  } else {
-    headers.push('Content-Type: multipart/alternative; boundary="' + aB + '"', '', '--' + aB);
-    headers.push('Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', Buffer.from(plainText, 'utf8').toString('base64'), '', '--' + aB);
-    headers.push('Content-Type: text/html; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', Buffer.from(htmlBody, 'utf8').toString('base64'), '', '--' + aB + '--');
-  }
-  return Buffer.from(headers.join('\r\n')).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 function localAnalysis(subject, body) {
@@ -561,7 +424,6 @@ async function testImapConnection(email, appPassword) {
   try { await client.connect(); await client.logout(); return { ok: true }; }
   catch (e) { try { await client.close(); } catch (err) {} return { ok: false, error: e.message }; }
 }
-
 async function fetchImapEmails(email, appPassword, options = {}) {
   const client = new ImapFlow({ host: 'imap.gmail.com', port: 993, secure: true, auth: { user: email, pass: appPassword }, logger: false, tls: { rejectUnauthorized: false } });
   const emails = [];
@@ -599,7 +461,6 @@ async function fetchImapEmails(email, appPassword, options = {}) {
     return { ok: true, emails, total, hasMore, page, pageSize, folder };
   } catch (e) { try { await client.close(); } catch (err) {} return { ok: false, error: e.message }; }
 }
-
 async function fetchImapBody(email, appPassword, folder, uid) {
   const client = new ImapFlow({ host: 'imap.gmail.com', port: 993, secure: true, auth: { user: email, pass: appPassword }, logger: false, tls: { rejectUnauthorized: false } });
   try {
@@ -619,7 +480,6 @@ async function fetchImapBody(email, appPassword, folder, uid) {
     return { ok: true, body };
   } catch (e) { try { await client.close(); } catch (err) {} return { ok: false, error: e.message }; }
 }
-
 async function updateSenderMemory(userId, email) {
   try {
     if (!email.from) return;
@@ -636,8 +496,9 @@ async function updateSenderMemory(userId, email) {
   } catch (e) {}
 }
 
-app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL, version: '4.0.0' }));
+app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL, version: '4.1.0', method: 'smtp' }));
 
+/* ============ AUTH ============ */
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { email, password, name } = req.body || {};
@@ -666,13 +527,17 @@ app.post('/api/auth/register', async (req, res) => {
       lastAutoSendRun: null, totalAutoSent: 0, lastSendTime: null,
       dailyLimit: DEFAULT_DAILY_LIMIT, sendDelay: DEFAULT_SEND_DELAY,
       imapEnabled: false, imapAppPassword: null, aiProfile: {},
-      profilePicture: '', tokens: null
+      profilePicture: '',
+      smtpEnabled: false, smtpAppPassword: null
     };
     if (existing.exists) {
       const ex = existing.data();
-      if (ex.tokens) data.tokens = ex.tokens;
       if (ex.appAccountId) data.appAccountId = ex.appAccountId;
       data.createdAt = ex.createdAt || now;
+      if (ex.smtpAppPassword) data.smtpAppPassword = ex.smtpAppPassword;
+      if (ex.smtpEnabled) data.smtpEnabled = ex.smtpEnabled;
+      if (ex.imapAppPassword) data.imapAppPassword = ex.imapAppPassword;
+      if (ex.imapEnabled) data.imapEnabled = ex.imapEnabled;
     }
     await db.collection('users').doc(uid).set(data, { merge: true });
     req.session.user = { id: uid, email: emailLower, name: data.name, picture: '', appAccountId: data.appAccountId, isAdmin: emailLower === ADMIN_EMAIL };
@@ -694,7 +559,7 @@ app.post('/api/auth/login', async (req, res) => {
     const userSnap = await db.collection('users').doc(uid).get();
     if (!userSnap.exists) return res.json({ ok: false, error: 'Invalid credentials' });
     const userData = userSnap.data();
-    if (!userData.passwordHash || !userData.passwordSalt) return res.json({ ok: false, error: 'This account uses Google login. Please continue with Google.' });
+    if (!userData.passwordHash || !userData.passwordSalt) return res.json({ ok: false, error: 'Invalid credentials' });
     const valid = verifyPassword(password, userData.passwordHash, userData.passwordSalt);
     if (!valid) return res.json({ ok: false, error: 'Invalid credentials' });
     await db.collection('users').doc(uid).update({ lastLogin: new Date(), lastIP: ip });
@@ -735,50 +600,6 @@ app.post('/api/request-access', async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-app.get('/auth/google', (req, res) => {
-  const client = createOAuthClient();
-  const url = client.generateAuthUrl({ access_type: 'offline', scope: SCOPES, prompt: 'consent' });
-  res.redirect(url);
-});
-
-app.get('/auth/google/callback', async (req, res) => {
-  try {
-    const client = createOAuthClient();
-    const { tokens } = await client.getToken(req.query.code);
-    client.setCredentials(tokens);
-    const info = await google.oauth2({ version: 'v2', auth: client }).userinfo.get();
-    const email = info.data.email, name = info.data.name, picture = info.data.picture || '';
-    const uid = crypto.createHash('md5').update(email).digest('hex');
-    const ip = getClientIP(req);
-    const bannedSnap = await db.collection('bannedUsers').doc(uid).get();
-    if (bannedSnap.exists) return res.redirect((process.env.FRONTEND_URL || 'http://localhost:3000') + '/?banned=1');
-    const ipBanned = await db.collection('bannedUsers').where('ip', '==', ip).limit(1).get();
-    if (!ipBanned.empty) return res.redirect((process.env.FRONTEND_URL || 'http://localhost:3000') + '/?banned=1');
-    const existing = await db.collection('users').doc(uid).get();
-    const data = { email, name, picture, tokens: encrypt(tokens), updatedAt: new Date(), lastIP: ip, lastLogin: new Date() };
-    if (!existing.exists) {
-      data.createdAt = new Date();
-      data.quietEnabled = false; data.quietStart = 22; data.quietEnd = 7;
-      data.autoSend = false; data.autoSendBatchSize = 5;
-      data.signature = ''; data.logoUrl = ''; data.logoUrlAlt = ''; data.logoFileId = null; data.sigFields = {};
-      data.appAccountId = generateAppAccountId();
-      data.lastAutoSendRun = null; data.totalAutoSent = 0; data.lastSendTime = null;
-      data.dailyLimit = DEFAULT_DAILY_LIMIT; data.sendDelay = DEFAULT_SEND_DELAY;
-      data.imapEnabled = false; data.imapAppPassword = null; data.aiProfile = {};
-      data.profilePicture = picture || ''; data.firstIP = ip;
-    } else {
-      const ex = existing.data();
-      if (!ex.appAccountId) data.appAccountId = generateAppAccountId();
-      if (ex.sendDelay === undefined) data.sendDelay = DEFAULT_SEND_DELAY;
-      if (!ex.firstIP) data.firstIP = ip;
-    }
-    await db.collection('users').doc(uid).set(data, { merge: true });
-    const fresh = await db.collection('users').doc(uid).get();
-    req.session.user = { id: uid, email, name, picture, appAccountId: fresh.data().appAccountId, isAdmin: email.toLowerCase() === ADMIN_EMAIL };
-    res.redirect((process.env.FRONTEND_URL || 'http://localhost:3000') + '?login=success');
-  } catch (err) { res.redirect((process.env.FRONTEND_URL || 'http://localhost:3000') + '?login=error'); }
-});
-
 app.get('/api/me', async (req, res) => {
   if (req.session && req.session.user) {
     if (!req.session.user.appAccountId) { const d = await getUserData(req.session.user.id); if (d && d.appAccountId) req.session.user.appAccountId = d.appAccountId; }
@@ -787,118 +608,30 @@ app.get('/api/me', async (req, res) => {
 });
 app.post('/api/logout', (req, res) => { req.session = null; res.json({ ok: true }); });
 
-app.get('/api/quiet-status', authRequired, async (req, res) => {
-  try { const d = await getUserData(req.session.user.id); res.json({ ok: true, inQuiet: isQuietHours(d), quietEnd: d.quietEnd }); }
+/* ============ SMTP (Gmail App Password) ============ */
+app.post('/api/smtp/connect', authRequired, async (req, res) => {
+  try {
+    const { appPassword } = req.body || {};
+    if (!appPassword || appPassword.replace(/\s/g, '').length < 16) return res.json({ ok: false, error: 'App password must be 16 characters.' });
+    const cleanPass = appPassword.replace(/\s/g, '');
+    const userEmail = req.session.user.email;
+    const transporter = createTransporter(userEmail, cleanPass);
+    try { await transporter.verify(); }
+    catch (err) { return res.json({ ok: false, error: 'Connection failed: ' + err.message }); }
+    await db.collection('users').doc(req.session.user.id).update({ smtpAppPassword: encrypt(cleanPass), smtpEnabled: true, smtpConnectedAt: new Date() });
+    res.json({ ok: true, message: 'Gmail connected successfully' });
+  } catch (e) { res.json({ ok: false, error: 'Connection failed: ' + e.message }); }
+});
+app.get('/api/smtp/status', authRequired, async (req, res) => {
+  try { const u = await getUserData(req.session.user.id); res.json({ ok: true, connected: !!u.smtpEnabled, connectedAt: u.smtpConnectedAt || null }); }
+  catch (e) { res.json({ ok: false, error: e.message }); }
+});
+app.post('/api/smtp/disconnect', authRequired, async (req, res) => {
+  try { await db.collection('users').doc(req.session.user.id).update({ smtpAppPassword: null, smtpEnabled: false }); res.json({ ok: true }); }
   catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-app.get('/api/quota', authRequired, async (req, res) => {
-  try {
-    const userId = req.session.user.id;
-    const u = await getUserData(userId);
-    if (!u || !u.tokens) return res.json({ ok: false, error: 'Session expired', noTokens: true });
-    const cached = quotaCache.get(userId);
-    if (cached && Date.now() - cached.time < 20000) return res.json({ ...cached.data, cached: true });
-    let sent = 0;
-    try {
-      const client = setUserOAuth(u.tokens);
-      const gmail = google.gmail({ version: 'v1', auth: client });
-      const oneDayAgo = Math.floor((Date.now() - 24 * 60 * 60 * 1000) / 1000);
-      const r = await gmail.users.messages.list({ userId: 'me', q: `in:sent after:${oneDayAgo}`, maxResults: 500 });
-      sent = r.data.resultSizeEstimate || (r.data.messages ? r.data.messages.length : 0);
-    } catch (e) {
-      const today = new Date().toISOString().split('T')[0];
-      const sd = await db.collection('users').doc(userId).collection('stats').doc(today).get();
-      sent = sd.exists ? (sd.data().sent || 0) : 0;
-    }
-    const result = { ok: true, sent, limit: 500, remaining: Math.max(0, 500 - sent), timestamp: new Date().toISOString() };
-    quotaCache.set(userId, { data: result, time: Date.now() });
-    res.json(result);
-  } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-
-app.get('/api/profile', authRequired, async (req, res) => {
-  try {
-    const d = await getUserData(req.session.user.id);
-    res.json({ ok: true, profile: { name: d.name || '', email: d.email || '', picture: d.profilePicture || d.picture || '', appAccountId: d.appAccountId || '', createdAt: d.createdAt || null, lastLogin: d.lastLogin || null, hasGoogle: !!d.tokens, authType: d.authType || 'google' } });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-app.post('/api/profile', authRequired, async (req, res) => {
-  try {
-    const { name } = req.body;
-    const update = {};
-    if (name && typeof name === 'string') update.name = name.substring(0, 100);
-    if (Object.keys(update).length) {
-      await db.collection('users').doc(req.session.user.id).update(update);
-      if (req.session.user) req.session.user.name = update.name || req.session.user.name;
-    }
-    res.json({ ok: true });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-app.post('/api/profile/picture', authRequired, async (req, res) => {
-  try {
-    const { base64, mimeType } = req.body;
-    if (!base64) return res.json({ ok: false, error: 'No image' });
-    const allowed = ['image/png','image/jpeg','image/jpg','image/webp'];
-    if (allowed.indexOf(mimeType) === -1) return res.json({ ok: false, error: 'Invalid type' });
-    const buf = Buffer.from(base64, 'base64');
-    if (buf.length > 2 * 1024 * 1024) return res.json({ ok: false, error: 'Max 2MB' });
-    const uid = req.session.user.id;
-    const u = await getUserData(uid);
-    if (!u.tokens) return res.json({ ok: false, error: 'Connect Google first to upload picture' });
-    const client = setUserOAuth(u.tokens);
-    const drive = google.drive({ version: 'v3', auth: client });
-    if (u.profilePictureFileId) { try { await drive.files.delete({ fileId: u.profilePictureFileId }); } catch (e) {} }
-    const up = await drive.files.create({ requestBody: { name: 'profile_' + uid, mimeType }, media: { mimeType, body: Readable.from(buf) }, fields: 'id' });
-    const fid = up.data.id;
-    try { await drive.permissions.create({ fileId: fid, requestBody: { role: 'reader', type: 'anyone' } }); } catch (e) {}
-    const url = 'https://lh3.googleusercontent.com/d/' + fid;
-    await db.collection('users').doc(uid).update({ profilePicture: url, profilePictureFileId: fid });
-    if (req.session.user) req.session.user.picture = url;
-    res.json({ ok: true, url });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-
-app.get('/api/ai/usage', authRequired, async (req, res) => {
-  try {
-    const uid = req.session.user.id;
-    const today = new Date().toISOString().split('T')[0];
-    const month = today.substring(0, 7);
-    const [daySnap, monthSnap, totalSnap] = await Promise.all([
-      db.collection('users').doc(uid).collection('aiUsage').doc(today).get(),
-      db.collection('users').doc(uid).collection('aiUsage').doc('month_' + month).get(),
-      db.collection('users').doc(uid).collection('aiUsage').doc('total').get()
-    ]);
-    const day = daySnap.exists ? daySnap.data() : { calls: 0, totalTokens: 0, providers: {} };
-    const mon = monthSnap.exists ? monthSnap.data() : { calls: 0, totalTokens: 0, providers: {} };
-    const tot = totalSnap.exists ? totalSnap.data() : { calls: 0, totalTokens: 0, providers: {} };
-    res.json({ ok: true, today: day, month: mon, total: tot, date: today, monthKey: month });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-
-app.get('/api/ai-profile', authRequired, async (req, res) => {
-  try {
-    const d = await getUserData(req.session.user.id);
-    const p = d.aiProfile || {};
-    res.json({ ok: true, profile: { fullName: p.fullName || d.name || '', designation: p.designation || (d.sigFields?.pos) || '', company: p.company || (d.sigFields?.company) || '', industry: p.industry || '', tone: p.tone || 'professional', aboutMe: p.aboutMe || '', commonPhrases: p.commonPhrases || '' } });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-app.post('/api/ai-profile', authRequired, async (req, res) => {
-  try {
-    const { fullName, designation, company, industry, tone, aboutMe, commonPhrases } = req.body;
-    await db.collection('users').doc(req.session.user.id).update({
-      aiProfile: {
-        fullName: String(fullName || '').substring(0, 100), designation: String(designation || '').substring(0, 150),
-        company: String(company || '').substring(0, 150), industry: String(industry || '').substring(0, 100),
-        tone: ['professional','friendly','casual','confident'].includes(tone) ? tone : 'professional',
-        aboutMe: String(aboutMe || '').substring(0, 500), commonPhrases: String(commonPhrases || '').substring(0, 300),
-        updatedAt: new Date()
-      }
-    });
-    res.json({ ok: true });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-
+/* ============ IMAP ============ */
 app.post('/api/imap/connect', authRequired, async (req, res) => {
   try {
     const { appPassword } = req.body || {};
@@ -969,17 +702,23 @@ app.post('/api/inbox/reply', authRequired, async (req, res) => {
     if (!to || !subject || !body) return res.json({ ok: false, error: 'Missing fields' });
     const uid = req.session.user.id;
     const u = await getUserData(uid);
-    if (!u.tokens) return res.json({ ok: false, error: 'Connect Google first' });
-    const client = setUserOAuth(u.tokens);
-    const gmail = google.gmail({ version: 'v1', auth: client });
+    if (!u.smtpEnabled || !u.smtpAppPassword) return res.json({ ok: false, error: 'Connect Gmail first' });
+    const transporter = createTransporter(req.session.user.email, u.smtpAppPassword);
     let sigHtml = '';
     if (u.signature) sigHtml = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + u.signature + '</div>';
     const bodyHtml = body.replace(/\n/g, '<br>');
-    const full = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">' + bodyHtml + sigHtml + '</div>';
-    const raw = buildMime(u.name || 'User', req.session.user.email, to, subject, full, [], { isBulk: false, inReplyTo, references });
-    const r = await gmail.users.messages.send({ userId: 'me', requestBody: { raw } });
-    await db.collection('users').doc(uid).collection('replyLog').add({ to, subject, body, sentAt: new Date(), gmailId: r.data.id || '', inReplyTo: inReplyTo || '' });
-    res.json({ ok: true, id: r.data.id });
+    const fullHtml = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">' + bodyHtml + sigHtml + '</div>';
+    const mailOptions = {
+      from: '"' + (u.name || 'User') + '" <' + req.session.user.email + '>',
+      to: to,
+      subject: sanitizeSubject(subject),
+      html: fullHtml
+    };
+    if (inReplyTo) mailOptions.inReplyTo = inReplyTo;
+    if (references) mailOptions.references = references;
+    const info = await transporter.sendMail(mailOptions);
+    await db.collection('users').doc(uid).collection('replyLog').add({ to, subject, body, sentAt: new Date(), messageId: info.messageId || '', inReplyTo: inReplyTo || '' });
+    res.json({ ok: true, id: info.messageId });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -988,6 +727,7 @@ app.get('/api/memory/senders', authRequired, async (req, res) => {
   catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+/* ============ AI ============ */
 app.post('/api/ai/analyze-live', authRequired, async (req, res) => {
   try {
     const { subject, body } = req.body;
@@ -1054,6 +794,78 @@ app.post('/api/ai/write-email', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+function looksLikeBinaryCv(text) {
+  if (!text) return true;
+  const t = String(text).trim();
+  if (t.startsWith('%PDF') || t.startsWith('PK\x03\x04')) return true;
+  const sample = t.substring(0, 800);
+  let bad = 0;
+  for (let i = 0; i < sample.length; i++) { const c = sample.charCodeAt(i); if (c === 0 || (c < 9) || (c > 13 && c < 32)) bad++; }
+  return bad > 12;
+}
+function decodePdfString(s) {
+  return s.replace(/\\n/g, '\n').replace(/\\r/g, '\n').replace(/\\t/g, '\t').replace(/\\\(/g, '(').replace(/\\\)/g, ')').replace(/\\\\/g, '\\')
+    .replace(/\\(\d{1,3})/g, function (_, oct) { return String.fromCharCode(parseInt(oct, 8)); });
+}
+function naivePdfExtract(buf) {
+  try {
+    const raw = Buffer.isBuffer(buf) ? buf.toString('latin1') : String(buf);
+    if (raw.indexOf('%PDF') === -1) return '';
+    const chunks = [];
+    const tj = raw.match(/\((?:\\.|[^\\)]){2,}\)(?:\s*Tj)?/g) || [];
+    for (const x of tj) { const inner = x.replace(/\)\s*Tj\s*$/, '').replace(/^\(/, '').replace(/\)$/, ''); const d = decodePdfString(inner); if (/[A-Za-z]{3,}/.test(d)) chunks.push(d); }
+    const tjArr = raw.match(/\[(?:[^\]]{4,1200})\]\s*TJ/g) || [];
+    for (const x of tjArr) { const parts = x.match(/\((?:\\.|[^\\)])+\)/g) || []; const line = parts.map(p => decodePdfString(p.slice(1, -1))).join(''); if (/[A-Za-z]{3,}/.test(line)) chunks.push(line); }
+    const text = chunks.join('\n').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').replace(/[^\S\n]+/g, ' ').trim();
+    return text.length > 40 ? text : '';
+  } catch (e) { return ''; }
+}
+async function extractPdfText(buf) {
+  try { const pdfParse = require('pdf-parse'); const data = await pdfParse(buf); const t = (data && data.text ? data.text : '').replace(/\u0000/g, '').trim(); if (t.replace(/\s/g, '').length > 30) return t; } catch (e) {}
+  return naivePdfExtract(buf);
+}
+function extractDocxText(buf) {
+  try {
+    const zip = Buffer.isBuffer(buf) ? buf : Buffer.from(buf);
+    const name = 'word/document.xml';
+    let pos = zip.indexOf(Buffer.from(name));
+    if (pos < 0) return '';
+    let local = -1;
+    for (let i = Math.max(0, pos - 80); i < pos; i++) { if (zip[i] === 0x50 && zip[i + 1] === 0x4b && zip[i + 2] === 0x03 && zip[i + 3] === 0x04) { local = i; break; } }
+    if (local < 0) return '';
+    const compression = zip.readUInt16LE(local + 8);
+    const compSize = zip.readUInt32LE(local + 18);
+    const nameLen = zip.readUInt16LE(local + 26);
+    const extraLen = zip.readUInt16LE(local + 28);
+    const dataStart = local + 30 + nameLen + extraLen;
+    const data = zip.slice(dataStart, dataStart + compSize);
+    let xml = '';
+    if (compression === 0) xml = data.toString('utf8');
+    else { const zlib = require('zlib'); xml = zlib.inflateRawSync(data).toString('utf8'); }
+    return xml.replace(/<w:p[^>]*>/g, '\n').replace(/<w:tab[^/]*\/>/g, '\t').replace(/<[^>]+>/g, ' ')
+      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
+      .replace(/&#(\d+);/g, function (_, n) { return String.fromCharCode(Number(n)); })
+      .replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').replace(/[ \t]{2,}/g, ' ').trim();
+  } catch (e) { return ''; }
+}
+async function extractCvFromBuffer(buf, filename, mimeType) {
+  const name = (filename || '').toLowerCase();
+  const mime = (mimeType || '').toLowerCase();
+  if (mime.includes('pdf') || name.endsWith('.pdf') || buf.slice(0, 5).toString() === '%PDF-') return extractPdfText(buf);
+  if (mime.includes('wordprocessingml') || name.endsWith('.docx')) return extractDocxText(buf);
+  if (mime.startsWith('text/') || name.endsWith('.txt') || name.endsWith('.md') || name.endsWith('.rtf')) {
+    let t = buf.toString('utf8'); if (t.charCodeAt(0) === 0xFEFF) t = t.slice(1);
+    return t.replace(/\u0000/g, '').trim();
+  }
+  const asText = buf.toString('utf8');
+  if (!looksLikeBinaryCv(asText)) return asText.trim();
+  const pdfTry = await extractPdfText(buf);
+  if (pdfTry) return pdfTry;
+  const docxTry = extractDocxText(buf);
+  if (docxTry) return docxTry;
+  return '';
+}
+
 app.post('/api/ai/extract-cv', authRequired, async (req, res) => {
   try {
     const { fileId, base64, mimeType, filename } = req.body || {};
@@ -1062,13 +874,9 @@ app.post('/api/ai/extract-cv', authRequired, async (req, res) => {
       const f = await db.collection('users').doc(req.session.user.id).collection('files').doc(fileId).get();
       if (!f.exists) return res.json({ ok: false, error: 'File not found' });
       const meta = f.data();
+      if (!meta.base64) return res.json({ ok: false, error: 'File data missing' });
       fname = meta.name || fname; mime = meta.mimeType || mime;
-      const u = await getUserData(req.session.user.id);
-      if (!u.tokens) return res.json({ ok: false, error: 'Session expired' });
-      const client = setUserOAuth(u.tokens);
-      const dr = google.drive({ version: 'v3', auth: client });
-      const r2 = await dr.files.get({ fileId: meta.driveId, alt: 'media' }, { responseType: 'arraybuffer' });
-      buf = Buffer.from(r2.data);
+      buf = Buffer.from(meta.base64, 'base64');
     } else if (base64) {
       buf = Buffer.from(base64, 'base64');
       if (buf.length > 4 * 1024 * 1024) return res.json({ ok: false, error: 'Max 4MB' });
@@ -1087,11 +895,7 @@ app.post('/api/ai/analyze-cv', authRequired, async (req, res) => {
       const f = await db.collection('users').doc(req.session.user.id).collection('files').doc(fileId).get();
       if (f.exists) {
         const meta = f.data();
-        const u = await getUserData(req.session.user.id);
-        const client = setUserOAuth(u.tokens);
-        const dr = google.drive({ version: 'v3', auth: client });
-        const r2 = await dr.files.get({ fileId: meta.driveId, alt: 'media' }, { responseType: 'arraybuffer' });
-        text = await extractCvFromBuffer(Buffer.from(r2.data), meta.name, meta.mimeType);
+        if (meta.base64) text = await extractCvFromBuffer(Buffer.from(meta.base64, 'base64'), meta.name, meta.mimeType);
       }
     }
     if (looksLikeBinaryCv(text)) return res.json({ ok: false, error: 'CV not readable.' });
@@ -1131,33 +935,6 @@ app.post('/api/ai/improve-email', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/ai/parse-bulk', authRequired, async (req, res) => {
-  try {
-    const { text } = req.body;
-    if (!text || !text.trim()) return res.json({ ok: false, error: 'No text' });
-    const emailRx = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-    const lines = text.split(/\r?\n/).filter(l => l.trim());
-    const foundEmails = {}; const seenEmails = new Set();
-    for (const line of lines) {
-      const emails = line.match(emailRx) || [];
-      if (!emails.length) continue;
-      let cleanLine = line;
-      for (const e of emails) cleanLine = cleanLine.replace(e, ' ');
-      cleanLine = cleanLine.replace(/[,;|<>"'\(\)\[\]]/g, ' ').replace(/\s+/g, ' ').trim();
-      let company = '';
-      if (cleanLine.length >= 2 && cleanLine.length <= 80) {
-        const compacted = cleanLine.replace(/\s/g, '');
-        const looksLikeDomain = /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(compacted);
-        const isSingleWord = !cleanLine.includes(' ');
-        if (!looksLikeDomain && !(isSingleWord && /^[a-z0-9._-]+$/i.test(cleanLine))) company = cleanLine;
-      }
-      for (const e of emails) { const lower = e.toLowerCase(); if (seenEmails.has(lower)) continue; seenEmails.add(lower); foundEmails[lower] = company; }
-    }
-    const items = Object.keys(foundEmails).map(e => ({ email: e, company: foundEmails[e] }));
-    res.json({ ok: true, items });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-
 app.get('/api/ai/best-time', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -1175,6 +952,7 @@ app.get('/api/ai/best-time', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: true, bestHours: [9, 11, 14], reasoning: 'Default', aiPowered: false }); }
 });
 
+/* ============ TEMPLATES ============ */
 app.get('/api/templates', authRequired, async (req, res) => {
   try { const s = await db.collection('users').doc(req.session.user.id).collection('templates').get(); const l = []; s.forEach(d => l.push({ id: d.id, ...d.data() })); res.json({ ok: true, templates: l }); }
   catch (e) { res.json({ ok: false, error: e.message }); }
@@ -1200,6 +978,7 @@ app.delete('/api/templates/:id', authRequired, async (req, res) => {
   catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+/* ============ RECIPIENTS ============ */
 app.get('/api/recipients', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -1282,6 +1061,31 @@ app.get('/api/recipient/:id/history', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+/* ============ FILES (base64 in Firestore) ============ */
+app.post('/api/upload-file', authRequired, async (req, res) => {
+  try {
+    const { base64, mimeType, filename } = req.body;
+    if (!base64 || !filename) return res.json({ ok: false, error: 'Missing' });
+    const buf = Buffer.from(base64, 'base64');
+    if (buf.length > 700 * 1024) return res.json({ ok: false, error: 'Max 700KB (Firestore limit). Use smaller files.' });
+    const fd = { base64: base64, name: filename, mimeType: mimeType || 'application/octet-stream', size: buf.length, uploadedAt: new Date() };
+    const doc = await db.collection('users').doc(req.session.user.id).collection('files').add(fd);
+    res.json({ ok: true, file: { id: doc.id, name: fd.name, mimeType: fd.mimeType, size: fd.size, uploadedAt: fd.uploadedAt } });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+app.get('/api/files', authRequired, async (req, res) => {
+  try {
+    const s = await db.collection('users').doc(req.session.user.id).collection('files').orderBy('uploadedAt', 'desc').get();
+    const l = []; s.forEach(d => { const dd = d.data(); l.push({ id: d.id, name: dd.name, mimeType: dd.mimeType, size: dd.size, uploadedAt: dd.uploadedAt }); });
+    res.json({ ok: true, files: l });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+app.delete('/api/files/:id', authRequired, async (req, res) => {
+  try { await db.collection('users').doc(req.session.user.id).collection('files').doc(req.params.id).delete(); res.json({ ok: true }); }
+  catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+/* ============ LOGO (base64 in Firestore) ============ */
 app.post('/api/upload-logo', authRequired, async (req, res) => {
   try {
     const { base64, mimeType, filename } = req.body;
@@ -1289,26 +1093,15 @@ app.post('/api/upload-logo', authRequired, async (req, res) => {
     const allowed = ['image/png','image/jpeg','image/jpg','image/gif','image/svg+xml','image/webp'];
     if (!allowed.includes(mimeType)) return res.json({ ok: false, error: 'Invalid type' });
     const buf = Buffer.from(base64, 'base64');
-    if (buf.length > 2 * 1024 * 1024) return res.json({ ok: false, error: 'Max 2MB' });
-    const u = await getUserData(req.session.user.id);
-    if (!u.tokens) return res.json({ ok: false, error: 'Expired' });
-    const client = setUserOAuth(u.tokens);
-    const drive = google.drive({ version: 'v3', auth: client });
-    if (u.logoFileId) { try { await drive.files.delete({ fileId: u.logoFileId }); } catch (e) {} }
-    const up = await drive.files.create({ requestBody: { name: filename || 'logo', mimeType }, media: { mimeType, body: Readable.from(buf) }, fields: 'id' });
-    const fid = up.data.id;
-    try { await drive.permissions.create({ fileId: fid, requestBody: { role: 'reader', type: 'anyone' } }); } catch (e) {}
-    const url = 'https://drive.google.com/thumbnail?id=' + fid + '&sz=w500';
-    const urlAlt = 'https://lh3.googleusercontent.com/d/' + fid;
-    await db.collection('users').doc(req.session.user.id).update({ logoFileId: fid, logoUrl: url, logoUrlAlt: urlAlt });
-    res.json({ ok: true, url, urlAlt, fileId: fid });
+    if (buf.length > 500 * 1024) return res.json({ ok: false, error: 'Max 500KB' });
+    const dataUrl = 'data:' + mimeType + ';base64,' + base64;
+    await db.collection('users').doc(req.session.user.id).update({ logoUrl: dataUrl, logoUrlAlt: dataUrl, logoBase64: base64, logoMimeType: mimeType });
+    res.json({ ok: true, url: dataUrl, urlAlt: dataUrl });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.post('/api/remove-logo', authRequired, async (req, res) => {
   try {
-    const u = await getUserData(req.session.user.id);
-    if (u.logoFileId && u.tokens) { try { const c = setUserOAuth(u.tokens); await google.drive({ version: 'v3', auth: c }).files.delete({ fileId: u.logoFileId }); } catch (e) {} }
-    await db.collection('users').doc(req.session.user.id).update({ logoFileId: null, logoUrl: '', logoUrlAlt: '' });
+    await db.collection('users').doc(req.session.user.id).update({ logoUrl: '', logoUrlAlt: '', logoBase64: null, logoMimeType: null });
     res.json({ ok: true });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
@@ -1317,37 +1110,82 @@ app.get('/api/logo', authRequired, async (req, res) => {
   catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/upload-file', authRequired, async (req, res) => {
+/* ============ PROFILE PICTURE (base64) ============ */
+app.post('/api/profile/picture', authRequired, async (req, res) => {
   try {
-    const { base64, mimeType, filename } = req.body;
-    if (!base64 || !filename) return res.json({ ok: false, error: 'Missing' });
+    const { base64, mimeType } = req.body;
+    if (!base64) return res.json({ ok: false, error: 'No image' });
+    const allowed = ['image/png','image/jpeg','image/jpg','image/webp'];
+    if (allowed.indexOf(mimeType) === -1) return res.json({ ok: false, error: 'Invalid type' });
     const buf = Buffer.from(base64, 'base64');
-    if (buf.length > 4 * 1024 * 1024) return res.json({ ok: false, error: 'Max 4MB' });
-    const u = await getUserData(req.session.user.id);
-    if (!u.tokens) return res.json({ ok: false, error: 'Connect Google first' });
-    const client = setUserOAuth(u.tokens);
-    const drive = google.drive({ version: 'v3', auth: client });
-    const up = await drive.files.create({ requestBody: { name: filename, mimeType: mimeType || 'application/octet-stream' }, media: { mimeType: mimeType || 'application/octet-stream', body: Readable.from(buf) }, fields: 'id,name,size,mimeType' });
-    const fd = { driveId: up.data.id, name: up.data.name, mimeType: up.data.mimeType, size: up.data.size || buf.length, uploadedAt: new Date() };
-    const doc = await db.collection('users').doc(req.session.user.id).collection('files').add(fd);
-    res.json({ ok: true, file: { id: doc.id, ...fd } });
+    if (buf.length > 500 * 1024) return res.json({ ok: false, error: 'Max 500KB' });
+    const url = 'data:' + mimeType + ';base64,' + base64;
+    await db.collection('users').doc(req.session.user.id).update({ profilePicture: url });
+    if (req.session.user) req.session.user.picture = url;
+    res.json({ ok: true, url });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-app.get('/api/files', authRequired, async (req, res) => {
-  try { const s = await db.collection('users').doc(req.session.user.id).collection('files').orderBy('uploadedAt', 'desc').get(); const l = []; s.forEach(d => l.push({ id: d.id, ...d.data() })); res.json({ ok: true, files: l }); }
-  catch (e) { res.json({ ok: false, error: e.message }); }
-});
-app.delete('/api/files/:id', authRequired, async (req, res) => {
+
+/* ============ PROFILE / AI PROFILE ============ */
+app.get('/api/profile', authRequired, async (req, res) => {
   try {
-    const f = await db.collection('users').doc(req.session.user.id).collection('files').doc(req.params.id).get();
-    if (!f.exists) return res.json({ ok: false });
-    const u = await getUserData(req.session.user.id);
-    if (u.tokens) { const c = setUserOAuth(u.tokens); try { await google.drive({ version: 'v3', auth: c }).files.delete({ fileId: f.data().driveId }); } catch (e) {} }
-    await f.ref.delete();
+    const d = await getUserData(req.session.user.id);
+    res.json({ ok: true, profile: { name: d.name || '', email: d.email || '', picture: d.profilePicture || '', appAccountId: d.appAccountId || '', createdAt: d.createdAt || null, lastLogin: d.lastLogin || null, hasSmtp: !!d.smtpEnabled, authType: d.authType || 'email' } });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+app.post('/api/profile', authRequired, async (req, res) => {
+  try {
+    const { name } = req.body;
+    const update = {};
+    if (name && typeof name === 'string') update.name = name.substring(0, 100);
+    if (Object.keys(update).length) {
+      await db.collection('users').doc(req.session.user.id).update(update);
+      if (req.session.user) req.session.user.name = update.name || req.session.user.name;
+    }
     res.json({ ok: true });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+app.get('/api/ai/usage', authRequired, async (req, res) => {
+  try {
+    const uid = req.session.user.id;
+    const today = new Date().toISOString().split('T')[0];
+    const month = today.substring(0, 7);
+    const [daySnap, monthSnap, totalSnap] = await Promise.all([
+      db.collection('users').doc(uid).collection('aiUsage').doc(today).get(),
+      db.collection('users').doc(uid).collection('aiUsage').doc('month_' + month).get(),
+      db.collection('users').doc(uid).collection('aiUsage').doc('total').get()
+    ]);
+    const day = daySnap.exists ? daySnap.data() : { calls: 0, totalTokens: 0, providers: {} };
+    const mon = monthSnap.exists ? monthSnap.data() : { calls: 0, totalTokens: 0, providers: {} };
+    const tot = totalSnap.exists ? totalSnap.data() : { calls: 0, totalTokens: 0, providers: {} };
+    res.json({ ok: true, today: day, month: mon, total: tot, date: today, monthKey: month });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+app.get('/api/ai-profile', authRequired, async (req, res) => {
+  try {
+    const d = await getUserData(req.session.user.id);
+    const p = d.aiProfile || {};
+    res.json({ ok: true, profile: { fullName: p.fullName || d.name || '', designation: p.designation || (d.sigFields?.pos) || '', company: p.company || (d.sigFields?.company) || '', industry: p.industry || '', tone: p.tone || 'professional', aboutMe: p.aboutMe || '', commonPhrases: p.commonPhrases || '' } });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+app.post('/api/ai-profile', authRequired, async (req, res) => {
+  try {
+    const { fullName, designation, company, industry, tone, aboutMe, commonPhrases } = req.body;
+    await db.collection('users').doc(req.session.user.id).update({
+      aiProfile: {
+        fullName: String(fullName || '').substring(0, 100), designation: String(designation || '').substring(0, 150),
+        company: String(company || '').substring(0, 150), industry: String(industry || '').substring(0, 100),
+        tone: ['professional','friendly','casual','confident'].includes(tone) ? tone : 'professional',
+        aboutMe: String(aboutMe || '').substring(0, 500), commonPhrases: String(commonPhrases || '').substring(0, 300),
+        updatedAt: new Date()
+      }
+    });
+    res.json({ ok: true });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+/* ============ SIGNATURE / PREFS / STATS ============ */
 app.get('/api/signature', authRequired, async (req, res) => {
   try { const d = await getUserData(req.session.user.id); res.json({ ok: true, signature: d.signature || '', fields: d.sigFields || {} }); }
   catch (e) { res.json({ ok: false, error: e.message }); }
@@ -1414,10 +1252,11 @@ app.get('/api/my-emails', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+/* ============ SEND EMAIL (SMTP) ============ */
 async function sendOne(userId, userEmail, recipientId, options) {
   options = options || {};
   const u = await getUserData(userId);
-  if (!u.tokens) throw new Error('Connect Google first to send emails');
+  if (!u.smtpEnabled || !u.smtpAppPassword) throw new Error('Connect Gmail first to send emails');
   if (isQuietHours(u) && !options.force) { const e = new Error('QUIET_HOURS'); e.code = 'QUIET_HOURS'; e.quietEnd = u.quietEnd; throw e; }
   const today = new Date().toISOString().split('T')[0];
   const sdChk = await db.collection('users').doc(userId).collection('stats').doc(today).get();
@@ -1436,8 +1275,6 @@ async function sendOne(userId, userEmail, recipientId, options) {
     const mg = delayMs + jitter;
     if (el < mg) await sleep(mg - el);
   }
-  const c = setUserOAuth(u.tokens);
-  const g = google.gmail({ version: 'v1', auth: c });
   let t;
   if (rec.templateId) { const tt = await db.collection('users').doc(userId).collection('templates').doc(rec.templateId).get(); if (tt.exists) t = tt.data(); }
   if (!t) { const ts = await db.collection('users').doc(userId).collection('templates').limit(1).get(); if (!ts.empty) t = ts.docs[0].data(); }
@@ -1456,27 +1293,44 @@ async function sendOne(userId, userEmail, recipientId, options) {
     sigHtml = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>';
   }
   const bodyHtml = body.replace(/\n/g, '<br>');
-  const full = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">' + bodyHtml + sigHtml + '</div>';
-  const lp = localAnalysis(subject, full);
+  const fullHtml = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">' + bodyHtml + sigHtml + '</div>';
+  const lp = localAnalysis(subject, fullHtml);
   const sendTrackToken = crypto.randomBytes(16).toString('hex');
   const atts = [];
   const attNames = [];
   if (options.includeAttachments !== false) {
     const fs = await db.collection('users').doc(userId).collection('files').get();
-    const dr = google.drive({ version: 'v3', auth: c });
     const selectedIds = options.selectedFileIds;
     for (const fd of fs.docs) {
       if (selectedIds && selectedIds.length > 0 && selectedIds.indexOf(fd.id) === -1) continue;
       const f = fd.data();
-      try { const r2 = await dr.files.get({ fileId: f.driveId, alt: 'media' }, { responseType: 'arraybuffer' }); atts.push({ filename: f.name, mimeType: f.mimeType || 'application/octet-stream', data: Buffer.from(r2.data).toString('base64') }); attNames.push(f.name); } catch (e) {}
+      if (f.base64) {
+        atts.push({ filename: f.name, content: Buffer.from(f.base64, 'base64'), contentType: f.mimeType || 'application/octet-stream' });
+        attNames.push(f.name);
+      }
     }
   }
   const logRef = await db.collection('users').doc(userId).collection('emailLog').add({ recipientId, recipientEmail: rec.email, company: rec.company || '', subject, sentAt: new Date(), attachmentsCount: atts.length, attachmentNames: attNames, aiPrediction: lp.prediction, aiScore: lp.score, aiInboxProb: lp.inboxProbability, sendTrackToken, openedAt: null });
   const logId = logRef.id;
   const trackUrl = (process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org') + '/track/' + logId + '?u=' + userId + '&t=' + sendTrackToken;
   const pix = '<img src="' + trackUrl + '" width="1" height="1" alt="" style="border:0;display:block;width:1px;height:1px">';
-  const raw = buildMime(u.name || 'MailFlow User', userEmail, rec.email, subject, full + pix, atts, { isBulk: true });
-  await g.users.messages.send({ userId: 'me', requestBody: { raw } });
+  const finalHtml = fullHtml + pix;
+
+  const transporter = createTransporter(userEmail, u.smtpAppPassword);
+  const mailOptions = {
+    from: '"' + (u.name || 'MailFlow User') + '" <' + userEmail + '>',
+    to: rec.email,
+    subject: sanitizeSubject(subject),
+    html: finalHtml,
+    headers: {
+      'List-Unsubscribe': '<mailto:' + userEmail + '?subject=unsubscribe>',
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      'Precedence': 'bulk'
+    }
+  };
+  if (atts.length > 0) mailOptions.attachments = atts;
+  await transporter.sendMail(mailOptions);
+
   const everOpenedFlag = rec.everOpened === true || rec.status === 'Opened';
   await db.collection('users').doc(userId).collection('recipients').doc(recipientId).update({ status: 'Sent', lastSentAt: new Date(), sentAt: new Date(), everOpened: everOpenedFlag });
   await db.collection('users').doc(userId).update({ lastSendTime: new Date() });
@@ -1534,6 +1388,70 @@ app.get('/track/:id', async (req, res) => {
   res.set('Content-Type', 'image/gif'); res.send(px);
 });
 
+/* ============ AUTO-SEND ============ */
+async function runAutoSend(uid, ue, ud) {
+  if (isQuietHours(ud)) return { skipped: true };
+  const bs = Number(ud.autoSendBatchSize) || 5;
+  const ps = await db.collection('users').doc(uid).collection('recipients').where('status', '==', 'Pending').limit(bs).get();
+  if (ps.empty) return { sent: 0, failed: 0 };
+  let s = 0, f = 0;
+  const delaySec = ud.sendDelay !== undefined ? Number(ud.sendDelay) : DEFAULT_SEND_DELAY;
+  for (const r of ps.docs) {
+    try {
+      await sendOne(uid, ue, r.id, { force: true, skipDelay: true, includeSignature: ud.autoSendIncludeSignature !== false, includeLogo: ud.autoSendIncludeLogo !== false, includeAttachments: true });
+      s++;
+      if (delaySec > 0) await sleep(delaySec * 1000 + Math.floor(Math.random() * 1000));
+    } catch (e) { f++; if (e.code === 'QUIET_HOURS' || e.code === 'DAILY_LIMIT_REACHED') break; }
+  }
+  if (s > 0) await db.collection('users').doc(uid).update({ totalAutoSent: (ud.totalAutoSent || 0) + s, lastAutoSendRun: new Date() });
+  return { sent: s, failed: f };
+}
+
+app.get('/api/cron/auto-send', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization || '';
+    const bearer = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : '';
+    const sec = bearer || req.headers['x-cron-secret'] || req.query.secret;
+    if (!CRON_SECRET || sec !== CRON_SECRET) return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    const us = await db.collection('users').where('autoSend', '==', true).get();
+    let ts = 0, tu = 0, sk = 0, er = 0;
+    for (const u of us.docs) {
+      const d = u.data();
+      if (!d.smtpEnabled || !d.email) continue;
+      try { const r = await runAutoSend(u.id, d.email, d); if (r.skipped) sk++; else if (r.sent > 0) { ts += r.sent; tu++; } } catch (e) { er++; }
+    }
+    res.json({ ok: true, totalSent: ts, totalUsers: tu, skipped: sk, errors: er, timestamp: new Date().toISOString() });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/auto-send-check', authRequired, async (req, res) => {
+  try {
+    const u = await getUserData(req.session.user.id);
+    if (!u || !u.autoSend) return res.json({ ok: true, skipped: true });
+    const l = u.lastAutoSendRun ? new Date(u.lastAutoSendRun._seconds ? u.lastAutoSendRun._seconds * 1000 : u.lastAutoSendRun) : null;
+    const hk = getCurrentHourKey();
+    const lhk = l ? (l.toISOString().split('T')[0] + '-' + l.getHours()) : null;
+    if (lhk === hk) return res.json({ ok: true, skipped: true });
+    const r = await runAutoSend(req.session.user.id, req.session.user.email, u);
+    res.json({ ok: true, ...r });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+/* ============ QUOTA (local stats only now) ============ */
+app.get('/api/quota', authRequired, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    const u = await getUserData(userId);
+    if (!u || !u.smtpEnabled) return res.json({ ok: false, error: 'Gmail not connected', noTokens: true });
+    const today = new Date().toISOString().split('T')[0];
+    const sd = await db.collection('users').doc(userId).collection('stats').doc(today).get();
+    const sent = sd.exists ? (sd.data().sent || 0) : 0;
+    const result = { ok: true, sent, limit: 500, remaining: Math.max(0, 500 - sent), timestamp: new Date().toISOString() };
+    res.json(result);
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+/* ============ TEST LAB ============ */
 app.get('/api/test/stats', adminRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -1617,60 +1535,16 @@ app.post('/api/test/prefs', adminRequired, async (req, res) => {
     res.json({ ok: true });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-app.post('/api/test/automation/run', adminRequired, async (req, res) => {
-  try {
-    const uid = req.session.user.id;
-    const u = await getUserData(uid);
-    if (!u.tokens) return res.json({ ok: false, error: 'Session expired' });
-    const batchSize = Number(req.body.batchSize) || 5;
-    const delay = Number(req.body.delay) || 20;
-    const ps = await db.collection('users').doc(uid).collection('testRecipients').where('status', '==', 'Pending').limit(batchSize).get();
-    if (ps.empty) return res.json({ ok: true, sent: 0, message: 'No pending' });
-    let sent = 0, failed = 0;
-    const client = setUserOAuth(u.tokens);
-    const gmail = google.gmail({ version: 'v1', auth: client });
-    for (const r of ps.docs) {
-      try {
-        const rec = r.data();
-        const subject = 'Test Email from MailFlow Pro';
-        const bodyText = 'Hello,\n\nThis is an automated test email.\n\nThank you.';
-        const sig = u.testSignature || u.signature || '';
-        const bodyHtml = bodyText.replace(/\n/g, '<br>');
-        const sigHtml = sig ? '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>' : '';
-        const tok = crypto.randomBytes(16).toString('hex');
-        await db.collection('users').doc(uid).collection('testRecipients').doc(r.id).update({ trackToken: tok });
-        const tu = (process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org') + '/track/' + r.id + '?u=' + uid + '&t=' + tok + '&type=test';
-        const pix = '<img src="' + tu + '" width="1" height="1" alt="" style="border:0;display:block;width:1px;height:1px">';
-        const full = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">' + bodyHtml + sigHtml + pix + '</div>';
-        const raw = buildMime(u.name || 'User', u.email, rec.email, subject, full, [], { isBulk: false });
-        await gmail.users.messages.send({ userId: 'me', requestBody: { raw } });
-        await db.collection('users').doc(uid).collection('testLog').add({ recipientEmail: rec.email, subject, body: bodyText, sentAt: new Date(), recipientId: r.id, attachmentsCount: 0 });
-        const wasOpened = rec.everOpened === true;
-        await db.collection('users').doc(uid).collection('testRecipients').doc(r.id).update({ status: 'Sent', sentAt: new Date(), everOpened: wasOpened });
-        sent++;
-        if (delay > 0 && sent < batchSize) await sleep(delay * 1000);
-      } catch (e) { failed++; }
-    }
-    const upd = await getUserData(uid);
-    await db.collection('users').doc(uid).update({ testLastAutoRun: new Date(), testTotalAutoSent: (upd.testTotalAutoSent || 0) + sent });
-    res.json({ ok: true, sent, failed });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
-});
 app.post('/api/test/send', adminRequired, async (req, res) => {
   try {
     const { recipientId, subject, body, to, includeSignature, includeLogo, selectedFileIds, useTestSignature } = req.body;
     const uid = req.session.user.id;
     const u = await getUserData(uid);
-    if (!u.tokens) return res.json({ ok: false, error: 'Session expired' });
-    const client = setUserOAuth(u.tokens);
-    const gmail = google.gmail({ version: 'v1', auth: client });
+    if (!u.smtpEnabled || !u.smtpAppPassword) return res.json({ ok: false, error: 'Connect Gmail first' });
+    const transporter = createTransporter(u.email, u.smtpAppPassword);
     let targetEmail = to;
     let recId = recipientId || '';
     if (recId) { const r = await db.collection('users').doc(uid).collection('testRecipients').doc(recId).get(); if (r.exists) targetEmail = r.data().email; }
-    if (!recId && targetEmail) {
-      const snap = await db.collection('users').doc(uid).collection('testRecipients').where('email', '==', String(targetEmail).toLowerCase()).limit(1).get();
-      if (!snap.empty) recId = snap.docs[0].id;
-    }
     if (!targetEmail || !subject || !body) return res.json({ ok: false, error: 'Missing fields' });
     let sigHtml = '';
     const sigToUse = useTestSignature ? (u.testSignature || u.signature) : (u.signature || u.testSignature);
@@ -1692,15 +1566,15 @@ app.post('/api/test/send', adminRequired, async (req, res) => {
     const attNames = [];
     if (selectedFileIds && selectedFileIds.length > 0) {
       const fs = await db.collection('users').doc(uid).collection('files').get();
-      const dr = google.drive({ version: 'v3', auth: client });
       for (const fd of fs.docs) {
         if (selectedFileIds.indexOf(fd.id) === -1) continue;
         const f = fd.data();
-        try { const r2 = await dr.files.get({ fileId: f.driveId, alt: 'media' }, { responseType: 'arraybuffer' }); atts.push({ filename: f.name, mimeType: f.mimeType || 'application/octet-stream', data: Buffer.from(r2.data).toString('base64') }); attNames.push(f.name); } catch (e) {}
+        if (f.base64) { atts.push({ filename: f.name, content: Buffer.from(f.base64, 'base64'), contentType: f.mimeType || 'application/octet-stream' }); attNames.push(f.name); }
       }
     }
-    const raw = buildMime(u.name || 'User', u.email, targetEmail, subject, full, atts, { isBulk: false });
-    await gmail.users.messages.send({ userId: 'me', requestBody: { raw } });
+    const mailOptions = { from: '"' + (u.name || 'User') + '" <' + u.email + '>', to: targetEmail, subject: sanitizeSubject(subject), html: full };
+    if (atts.length > 0) mailOptions.attachments = atts;
+    await transporter.sendMail(mailOptions);
     await db.collection('users').doc(uid).collection('testLog').add({ recipientEmail: targetEmail, subject, body, sentAt: new Date(), recipientId: recId || '', attachmentsCount: atts.length, attachmentNames: attNames });
     if (recId) {
       const rec = await db.collection('users').doc(uid).collection('testRecipients').doc(recId).get();
@@ -1728,55 +1602,45 @@ app.get('/api/test/log', adminRequired, async (req, res) => {
     res.json({ ok: true, logs: l });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-
-async function runAutoSend(uid, ue, ud) {
-  if (isQuietHours(ud)) return { skipped: true };
-  const bs = Number(ud.autoSendBatchSize) || 5;
-  const ps = await db.collection('users').doc(uid).collection('recipients').where('status', '==', 'Pending').limit(bs).get();
-  if (ps.empty) return { sent: 0, failed: 0 };
-  let s = 0, f = 0;
-  const delaySec = ud.sendDelay !== undefined ? Number(ud.sendDelay) : DEFAULT_SEND_DELAY;
-  for (const r of ps.docs) {
-    try {
-      await sendOne(uid, ue, r.id, { force: true, skipDelay: true, includeSignature: ud.autoSendIncludeSignature !== false, includeLogo: ud.autoSendIncludeLogo !== false, includeAttachments: true });
-      s++;
-      if (delaySec > 0) await sleep(delaySec * 1000 + Math.floor(Math.random() * 1000));
-    } catch (e) { f++; if (e.code === 'QUIET_HOURS' || e.code === 'DAILY_LIMIT_REACHED') break; }
-  }
-  if (s > 0) await db.collection('users').doc(uid).update({ totalAutoSent: (ud.totalAutoSent || 0) + s, lastAutoSendRun: new Date() });
-  return { sent: s, failed: f };
-}
-
-app.get('/api/cron/auto-send', async (req, res) => {
+app.post('/api/test/automation/run', adminRequired, async (req, res) => {
   try {
-    const authHeader = req.headers.authorization || '';
-    const bearer = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : '';
-    const sec = bearer || req.headers['x-cron-secret'] || req.query.secret;
-    if (!CRON_SECRET || sec !== CRON_SECRET) return res.status(401).json({ ok: false, error: 'Unauthorized' });
-    const us = await db.collection('users').where('autoSend', '==', true).get();
-    let ts = 0, tu = 0, sk = 0, er = 0;
-    for (const u of us.docs) {
-      const d = u.data();
-      if (!d.tokens || !d.email) continue;
-      try { const r = await runAutoSend(u.id, d.email, d); if (r.skipped) sk++; else if (r.sent > 0) { ts += r.sent; tu++; } } catch (e) { er++; }
+    const uid = req.session.user.id;
+    const u = await getUserData(uid);
+    if (!u.smtpEnabled || !u.smtpAppPassword) return res.json({ ok: false, error: 'Connect Gmail first' });
+    const batchSize = Number(req.body.batchSize) || 5;
+    const delay = Number(req.body.delay) || 20;
+    const ps = await db.collection('users').doc(uid).collection('testRecipients').where('status', '==', 'Pending').limit(batchSize).get();
+    if (ps.empty) return res.json({ ok: true, sent: 0, message: 'No pending' });
+    let sent = 0, failed = 0;
+    const transporter = createTransporter(u.email, u.smtpAppPassword);
+    for (const r of ps.docs) {
+      try {
+        const rec = r.data();
+        const subject = 'Test Email from MailFlow Pro';
+        const bodyText = 'Hello,\n\nThis is an automated test email.\n\nThank you.';
+        const sig = u.testSignature || u.signature || '';
+        const bodyHtml = bodyText.replace(/\n/g, '<br>');
+        const sigHtml = sig ? '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>' : '';
+        const tok = crypto.randomBytes(16).toString('hex');
+        await db.collection('users').doc(uid).collection('testRecipients').doc(r.id).update({ trackToken: tok });
+        const tu = (process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org') + '/track/' + r.id + '?u=' + uid + '&t=' + tok + '&type=test';
+        const pix = '<img src="' + tu + '" width="1" height="1" alt="" style="border:0;display:block;width:1px;height:1px">';
+        const full = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">' + bodyHtml + sigHtml + pix + '</div>';
+        await transporter.sendMail({ from: '"' + (u.name || 'User') + '" <' + u.email + '>', to: rec.email, subject: subject, html: full });
+        await db.collection('users').doc(uid).collection('testLog').add({ recipientEmail: rec.email, subject, body: bodyText, sentAt: new Date(), recipientId: r.id, attachmentsCount: 0 });
+        const wasOpened = rec.everOpened === true;
+        await db.collection('users').doc(uid).collection('testRecipients').doc(r.id).update({ status: 'Sent', sentAt: new Date(), everOpened: wasOpened });
+        sent++;
+        if (delay > 0 && sent < batchSize) await sleep(delay * 1000);
+      } catch (e) { failed++; }
     }
-    res.json({ ok: true, totalSent: ts, totalUsers: tu, skipped: sk, errors: er, timestamp: new Date().toISOString() });
+    const upd = await getUserData(uid);
+    await db.collection('users').doc(uid).update({ testLastAutoRun: new Date(), testTotalAutoSent: (upd.testTotalAutoSent || 0) + sent });
+    res.json({ ok: true, sent, failed });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/auto-send-check', authRequired, async (req, res) => {
-  try {
-    const u = await getUserData(req.session.user.id);
-    if (!u || !u.autoSend) return res.json({ ok: true, skipped: true });
-    const l = u.lastAutoSendRun ? new Date(u.lastAutoSendRun._seconds ? u.lastAutoSendRun._seconds * 1000 : u.lastAutoSendRun) : null;
-    const hk = getCurrentHourKey();
-    const lhk = l ? (l.toISOString().split('T')[0] + '-' + l.getHours()) : null;
-    if (lhk === hk) return res.json({ ok: true, skipped: true });
-    const r = await runAutoSend(req.session.user.id, req.session.user.email, u);
-    res.json({ ok: true, ...r });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-
+/* ============ ADMIN ============ */
 app.get('/api/admin/dashboard', adminRequired, async (req, res) => {
   try {
     const us = await db.collection('users').get();
@@ -1797,7 +1661,7 @@ app.get('/api/admin/dashboard', adminRequired, async (req, res) => {
       const openedSet = new Set([...oSnap1.docs.map(x => x.id), ...oSnap2.docs.map(x => x.id)]);
       const tc = t.data().count, sc = s.data().count, oc = openedSet.size, pc = p.data().count, sdc = sd.data().count;
       tE += tc; tS += sc; tO += oc; tP += pc; tSd += sdc;
-      users.push({ id: u.id, email: d.email, name: d.name, picture: d.profilePicture || d.picture || '', appAccountId: d.appAccountId || 'N/A', autoSend: !!d.autoSend, totalAutoSent: d.totalAutoSent || 0, createdAt: d.createdAt ? (d.createdAt.toDate ? d.createdAt.toDate().toISOString() : d.createdAt) : '', lastLogin: d.lastLogin || null, authType: d.authType || 'google', banned: bannedSet.has(u.id), total: tc, sent: sc, opened: oc, pending: pc, totalSends: sdc });
+      users.push({ id: u.id, email: d.email, name: d.name, picture: d.profilePicture || '', appAccountId: d.appAccountId || 'N/A', autoSend: !!d.autoSend, totalAutoSent: d.totalAutoSent || 0, createdAt: d.createdAt ? (d.createdAt.toDate ? d.createdAt.toDate().toISOString() : d.createdAt) : '', lastLogin: d.lastLogin || null, authType: d.authType || 'email', banned: bannedSet.has(u.id), total: tc, sent: sc, opened: oc, pending: pc, totalSends: sdc });
     }
     users.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
     res.json({ ok: true, users, stats: { totalUsers: users.length, totalEmails: tE, totalSent: tS, totalOpened: tO, totalPending: tP, totalSends: tSd } });
@@ -1815,7 +1679,7 @@ app.get('/api/admin/users/paginated', adminRequired, async (req, res) => {
     let allUsers = [];
     for (const u of us.docs) {
       const d = u.data();
-      allUsers.push({ id: u.id, email: d.email, name: d.name, picture: d.profilePicture || d.picture || '', appAccountId: d.appAccountId || 'N/A', autoSend: !!d.autoSend, totalAutoSent: d.totalAutoSent || 0, createdAt: d.createdAt ? (d.createdAt.toDate ? d.createdAt.toDate().toISOString() : d.createdAt) : '', lastLogin: d.lastLogin || null, authType: d.authType || 'google', banned: bannedSet.has(u.id) });
+      allUsers.push({ id: u.id, email: d.email, name: d.name, picture: d.profilePicture || '', appAccountId: d.appAccountId || 'N/A', autoSend: !!d.autoSend, totalAutoSent: d.totalAutoSent || 0, createdAt: d.createdAt ? (d.createdAt.toDate ? d.createdAt.toDate().toISOString() : d.createdAt) : '', lastLogin: d.lastLogin || null, authType: d.authType || 'email', banned: bannedSet.has(u.id) });
     }
     if (search) {
       allUsers = allUsers.filter(u => (u.email || '').toLowerCase().includes(search) || (u.name || '').toLowerCase().includes(search) || (u.appAccountId || '').toLowerCase().includes(search));
@@ -1824,6 +1688,23 @@ app.get('/api/admin/users/paginated', adminRequired, async (req, res) => {
     const start = (page - 1) * limit;
     const users = allUsers.slice(start, start + limit);
     res.json({ ok: true, users, pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) } });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/admin/all-emails', adminRequired, async (req, res) => {
+  try {
+    const us = await db.collection('users').get();
+    const all = [];
+    for (const u of us.docs) {
+      const d = u.data();
+      const es = await db.collection('users').doc(u.id).collection('emailLog').orderBy('sentAt', 'desc').limit(500).get();
+      es.forEach(e => {
+        const dd = e.data();
+        all.push({ id: e.id, userId: u.id, userEmail: d.email, userAppId: d.appAccountId || 'N/A', recipientEmail: dd.recipientEmail, company: dd.company || '', subject: dd.subject || '', sentAt: dd.sentAt, attachmentsCount: dd.attachmentsCount || 0, aiPrediction: dd.aiPrediction || 'GOOD', aiInboxProb: dd.aiInboxProb || 75 });
+      });
+    }
+    all.sort((a, b) => { const ta = a.sentAt?._seconds || 0; const tb = b.sentAt?._seconds || 0; return tb - ta; });
+    res.json({ ok: true, emails: all.slice(0, 1000) });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -1842,23 +1723,6 @@ app.get('/api/admin/user/:id/emails', adminRequired, async (req, res) => {
       emails.push({ id: d.id, recipientEmail: dd.recipientEmail || '', company: dd.company || '', subject: dd.subject || '', sentAt: dd.sentAt, attachmentsCount: dd.attachmentsCount || 0, attachmentNames: dd.attachmentNames || [], aiPrediction: dd.aiPrediction || 'GOOD', aiInboxProb: dd.aiInboxProb || 75, status: rec.status || 'Sent', openedAt: dd.openedAt || rec.openedAt || null, recipientId: dd.recipientId || '' });
     });
     res.json({ ok: true, emails });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-
-app.get('/api/admin/all-emails', adminRequired, async (req, res) => {
-  try {
-    const us = await db.collection('users').get();
-    const all = [];
-    for (const u of us.docs) {
-      const d = u.data();
-      const es = await db.collection('users').doc(u.id).collection('emailLog').orderBy('sentAt', 'desc').limit(500).get();
-      es.forEach(e => {
-        const dd = e.data();
-        all.push({ id: e.id, userId: u.id, userEmail: d.email, userAppId: d.appAccountId || 'N/A', recipientEmail: dd.recipientEmail, company: dd.company || '', subject: dd.subject || '', sentAt: dd.sentAt, attachmentsCount: dd.attachmentsCount || 0, aiPrediction: dd.aiPrediction || 'GOOD', aiInboxProb: dd.aiInboxProb || 75 });
-      });
-    }
-    all.sort((a, b) => { const ta = a.sentAt?._seconds || 0; const tb = b.sentAt?._seconds || 0; return tb - ta; });
-    res.json({ ok: true, emails: all.slice(0, 1000) });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -1979,11 +1843,11 @@ app.get('/api/admin/user/:id/details', adminRequired, async (req, res) => {
       providers: aiAll.exists ? (aiAll.data().providers || {}) : {}
     };
     res.json({ ok: true, user: {
-      id: uid, email: data.email, name: data.name, picture: data.profilePicture || data.picture || '',
+      id: uid, email: data.email, name: data.name, picture: data.profilePicture || '',
       appAccountId: data.appAccountId || 'N/A',
       createdAt: data.createdAt ? (data.createdAt.toDate ? data.createdAt.toDate().toISOString() : data.createdAt) : null,
       lastLogin: data.lastLogin ? (data.lastLogin.toDate ? data.lastLogin.toDate().toISOString() : data.lastLogin) : null,
-      authType: data.authType || 'google', hasGoogle: !!data.tokens,
+      authType: data.authType || 'email', hasSmtp: !!data.smtpEnabled, hasImap: !!data.imapEnabled,
       autoSend: !!data.autoSend, banned: banned.exists,
       banReason: banned.exists ? banned.data().reason : '',
       aiUsage,
@@ -2014,11 +1878,6 @@ app.delete('/api/admin/user/:id', adminRequired, async (req, res) => {
     }
     await db.collection('users').doc(uid).delete();
     await db.collection('bannedUsers').doc(uid).delete().catch(() => {});
-    try {
-      const tokens = target.data().tokens;
-      const dec = typeof tokens === 'string' ? decrypt(tokens) : tokens;
-      if (dec && dec.access_token) await fetch('https://oauth2.googleapis.com/revoke?token=' + dec.access_token, { method: 'POST' }).catch(() => {});
-    } catch (e) {}
     res.json({ ok: true, deleted: true, email });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
@@ -2036,9 +1895,7 @@ app.use((req, res, next) => {
 });
 
 if (process.env.VERCEL) {
-  globalEverOpenedMigration().catch(() => {});
   module.exports = app;
 } else {
-  globalEverOpenedMigration().catch(() => {});
-  app.listen(PORT, () => console.log('✅ MailFlow Pro v4.0.0 running on port ' + PORT));
+  app.listen(PORT, () => console.log('✅ MailFlow Pro v4.1.0 (SMTP) running on port ' + PORT));
 }

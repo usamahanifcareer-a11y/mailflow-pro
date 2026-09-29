@@ -1,7 +1,7 @@
 {
   "name": "mailflow-pro",
-  "version": "3.0.0",
-  "description": "AI-powered email automation with real-time IMAP recognition",
+  "version": "4.1.0",
+  "description": "AI-powered email automation with Gmail App Password (SMTP) sending",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -17,22 +17,12 @@
     "dotenv": "^16.4.5",
     "express": "^4.21.2",
     "firebase-admin": "^13.0.2",
-    "googleapis": "^144.0.0",
     "imapflow": "^1.0.164",
     "mailparser": "^3.7.1",
+    "nodemailer": "^6.9.16",
     "pdf-parse": "^1.1.1"
   },
-  "keywords": [
-    "email",
-    "automation",
-    "ai",
-    "gmail",
-    "mailflow",
-    "cv-analyzer",
-    "gemini",
-    "groq",
-    "imap"
-  ],
+  "keywords": ["email", "automation", "ai", "gmail", "smtp", "mailflow", "imap"],
   "author": "Usama Hanif",
   "license": "MIT"
 }
