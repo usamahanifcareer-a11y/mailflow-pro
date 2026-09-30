@@ -369,7 +369,7 @@ table.data-table tr.clickable{cursor:pointer}
 .ocr-thumb.failed{border-color:var(--red)}
 .ocr-thumb.queued{border-color:var(--text3)}
 .ocr-thumb .status{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.75);color:white;font-size:9px;padding:3px;text-align:center;font-weight:700}
-.ocr-progress{margin-top:12px;background:#1e293b;border-radius:8px;height:8px;overflow:hidden;display:none;position:relative}
+.ocr-progress{margin-top:12px;background:#1e293b;border-radius:8px;height:8px;overflow:hidden;display:none}
 .ocr-progress.show{display:block}
 .ocr-progress-fill{height:100%;background:var(--grad);width:0%;transition:.3s}
 .ocr-progress-info{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:11px;color:var(--text2);flex-wrap:wrap;gap:8px}
@@ -409,14 +409,58 @@ table.data-table tr.clickable{cursor:pointer}
 .reply-warning::before{content:'⚠️';flex-shrink:0}
 .reply-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .reply-actions .btn{flex:1;min-width:140px}
-.monitor-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px}
-@media(min-width:700px){.monitor-grid{grid-template-columns:repeat(4,1fr)}}
-.monitor-card{background:linear-gradient(135deg,rgba(56,189,248,.08),rgba(168,85,247,.06));border:1px solid rgba(56,189,248,.25);border-radius:12px;padding:14px;text-align:center}
-.monitor-card .lbl{font-size:10px;color:var(--text2);text-transform:uppercase;font-weight:700;margin-bottom:6px}
-.monitor-card .val{font-size:22px;font-weight:800;color:var(--cyan)}
+
+/* ===== NEW: Clean OCR monitor styles ===== */
+.ocr-quota-card{background:linear-gradient(135deg,rgba(56,189,248,.1),rgba(168,85,247,.08));border:1px solid rgba(56,189,248,.35);border-radius:14px;padding:16px;margin-bottom:16px}
+.ocr-quota-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.ocr-quota-head .ttl{font-size:14px;font-weight:800;color:#7dd3fc;display:flex;align-items:center;gap:8px}
+.ocr-quota-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+@media(min-width:600px){.ocr-quota-stats{grid-template-columns:repeat(3,1fr)}}
+.ocr-quota-stat{background:rgba(10,14,26,.6);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.ocr-quota-stat .lbl{font-size:9px;color:var(--text2);text-transform:uppercase;font-weight:700;margin-bottom:4px;letter-spacing:.6px}
+.ocr-quota-stat .val{font-size:20px;font-weight:800}
+.ocr-quota-stat .val.cyan{color:var(--cyan)}
+.ocr-quota-stat .val.green{color:#86efac}
+.ocr-quota-stat .val.amber{color:#fcd34d}
+.ocr-quota-stat .val.red{color:#fca5a5}
+
+.monitor-summary{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+@media(min-width:700px){.monitor-summary{grid-template-columns:repeat(4,1fr)}}
+.monitor-card{background:linear-gradient(135deg,rgba(30,41,59,.7),rgba(15,23,42,.7));border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;position:relative;overflow:hidden}
+.monitor-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;opacity:.7}
+.monitor-card.total::before{background:var(--grad)}
+.monitor-card.green::before{background:var(--grad-green)}
+.monitor-card.red::before{background:var(--grad-red)}
+.monitor-card.amber::before{background:var(--grad-amber)}
+.monitor-card .lbl{font-size:10px;color:var(--text2);text-transform:uppercase;font-weight:700;margin-bottom:6px;letter-spacing:.5px}
+.monitor-card .val{font-size:24px;font-weight:800}
+.monitor-card.total .val{color:var(--cyan)}
 .monitor-card.green .val{color:#86efac}
 .monitor-card.red .val{color:#fca5a5}
 .monitor-card.amber .val{color:#fcd34d}
+
+.compact-table{width:100%;border-collapse:collapse;font-size:12px}
+.compact-table th{text-align:left;font-size:9px;color:var(--text2);text-transform:uppercase;padding:10px 8px;font-weight:700;border-bottom:1px solid var(--border);background:rgba(10,14,26,.6);letter-spacing:.5px;white-space:nowrap}
+.compact-table td{padding:10px 8px;border-bottom:1px solid rgba(26,35,56,.4);color:#cbd5e1;font-size:12px}
+.compact-table tr.clickable{cursor:pointer;transition:.15s}
+.compact-table tr.clickable:hover td{background:rgba(56,189,248,.06)}
+.compact-table .user-cell{display:flex;align-items:center;gap:8px;min-width:140px}
+.compact-table .user-cell .av{width:28px;height:28px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0}
+.compact-table .user-cell .nm{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px}
+.compact-table .num{text-align:center;font-weight:700}
+.compact-table .num.green{color:#86efac}
+.compact-table .num.red{color:#fca5a5}
+.compact-table .num.amber{color:#fcd34d}
+
+.tiny-badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:10px;font-size:9px;font-weight:700;white-space:nowrap}
+.tiny-badge.ok{background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.3)}
+.tiny-badge.fail{background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.3)}
+
+.user-detail-modal-row{display:flex;justify-content:space-between;padding:8px 0;font-size:12px;border-bottom:1px dashed var(--border);gap:10px}
+.user-detail-modal-row:last-child{border-bottom:none}
+.user-detail-modal-row .k{color:var(--text2)}
+.user-detail-modal-row .v{color:var(--text);font-weight:700;text-align:right;word-break:break-all}
+
 @media(max-width:768px){
 .maintabs{position:fixed;bottom:0;top:auto;left:0;right:0;padding:6px 8px;z-index:2000;border-top:1px solid var(--border);border-bottom:none;justify-content:space-around;box-shadow:0 -10px 30px rgba(0,0,0,.5);padding-bottom:calc(6px + env(safe-area-inset-bottom));background:rgba(10,14,26,.98)}
 .maintab{flex:1;text-align:center;font-size:10px;padding:8px 4px}
@@ -430,6 +474,8 @@ input,textarea,select{min-height:44px;font-size:16px}
 .email-actions .btn{flex:1;min-width:0}
 .send-options-row label{flex:1;justify-content:center;padding:11px 8px;font-size:11px}
 .reply-actions .btn{min-width:0;flex:1;font-size:13px;padding:12px 8px}
+.ocr-quota-stats{grid-template-columns:repeat(3,1fr)}
+.ocr-quota-stat .val{font-size:16px}
 }
 ::-webkit-scrollbar{width:8px;height:8px}
 ::-webkit-scrollbar-track{background:var(--bg2)}
@@ -739,7 +785,7 @@ input,textarea,select{min-height:44px;font-size:16px}
 </div>
 </div>
 <div id="ocrTab" class="hidden">
-<div class="bulk-help" style="background:linear-gradient(135deg,rgba(34,197,94,.1),rgba(56,189,248,.08));border-color:rgba(34,197,94,.4);color:#86efac">📸 <div><b>Screenshot to Text (Bulk Mode)</b> — 17-18 screenshots ek saath upload karo. Rate-limit safe.</div></div>
+<div class="bulk-help" style="background:linear-gradient(135deg,rgba(34,197,94,.1),rgba(56,189,248,.08));border-color:rgba(34,197,94,.4);color:#86efac">📸 <div><b>Screenshot to Text (Bulk Mode)</b> — Upload 17-18 screenshots at once. Optimized for Android & iOS.</div></div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
 <input type="file" id="ocrInput" accept="image/*" multiple style="display:none">
 <button class="btn ghost" onclick="document.getElementById('ocrInput').click()" style="border:1px dashed var(--cyan);color:#7dd3fc;flex:1">📁 Choose Files</button>
@@ -762,7 +808,7 @@ input,textarea,select{min-height:44px;font-size:16px}
 <button class="btn success" onclick="sendOCRToBulk()" style="flex:1">📋 Send All to Bulk</button>
 <button class="btn ghost" onclick="copyOCRText()">📋 Copy</button>
 <button class="btn warn" onclick="retryAllFailedOCR()" id="ocrRetryFailedBtn" style="display:none">🔄 Retry Failed</button>
-<button class="btn ghost" onclick="cancelOCRQueue()" id="ocrCancelBtn" style="display:none;border-color:var(--amber);color:#fcd34d">⏹ Cancel Queue</button>
+<button class="btn ghost" onclick="cancelOCRQueue()" id="ocrCancelBtn" style="display:none;border-color:var(--amber);color:#fcd34d">⏹ Cancel</button>
 <button class="btn ghost" onclick="clearOCR()">🗑 Clear</button>
 </div>
 </div>
@@ -959,32 +1005,47 @@ input,textarea,select{min-height:44px;font-size:16px}
 
 <div class="panel" style="background:linear-gradient(135deg,rgba(56,189,248,.06),rgba(168,85,247,.06));border-color:rgba(56,189,248,.3)">
 <h2>🔍 OCR & AI Monitor <span style="color:var(--green);font-size:11px">● Live</span></h2>
-<div class="monitor-grid">
-<div class="monitor-card"><div class="lbl">OCR Total</div><div class="val" id="monOcrTotal">0</div></div>
-<div class="monitor-card green"><div class="lbl">OCR Success</div><div class="val" id="monOcrSuccess">0</div></div>
-<div class="monitor-card red"><div class="lbl">OCR Failed</div><div class="val" id="monOcrFailed">0</div></div>
+
+<!-- GLOBAL QUOTA CARD -->
+<div class="ocr-quota-card">
+<div class="ocr-quota-head">
+<div class="ttl">📊 OCR Monthly Quota (Free Tier)</div>
+<div id="ocrQuotaMonth" style="font-size:11px;color:var(--text3)">—</div>
+</div>
+<div class="ocr-quota-stats">
+<div class="ocr-quota-stat"><div class="lbl">Used</div><div class="val cyan" id="ocrQuotaUsed">0</div></div>
+<div class="ocr-quota-stat"><div class="lbl">Remaining</div><div class="val green" id="ocrQuotaRemaining">0</div></div>
+<div class="ocr-quota-stat"><div class="lbl">Limit / Month</div><div class="val amber" id="ocrQuotaLimit">25K</div></div>
+</div>
+<div class="quota-bar"><div class="quota-fill" id="ocrQuotaBar" style="width:0%"></div></div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:8px;flex-wrap:wrap">
+<div style="font-size:10px;color:var(--text3)" id="ocrQuotaHint">Loading…</div>
+<button class="btn ghost small" onclick="loadOcrQuota()" style="font-size:11px;padding:4px 10px">🔄 Refresh</button>
+</div>
+</div>
+
+<!-- SUMMARY CARDS -->
+<div class="monitor-summary">
+<div class="monitor-card total"><div class="lbl">Total Attempts</div><div class="val" id="monOcrTotal">0</div></div>
+<div class="monitor-card green"><div class="lbl">Success</div><div class="val" id="monOcrSuccess">0</div></div>
+<div class="monitor-card red"><div class="lbl">Failed</div><div class="val" id="monOcrFailed">0</div></div>
 <div class="monitor-card amber"><div class="lbl">Chars Extracted</div><div class="val" id="monOcrChars">0</div></div>
 </div>
+
+<!-- PER-USER TABLE -->
 <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-<div style="font-size:12px;font-weight:700;color:#7dd3fc">📸 Per-User OCR Usage</div>
-<button class="btn ghost small" onclick="loadOcrMonitor()" style="font-size:11px;padding:5px 12px">🔄 Refresh</button>
+<div style="font-size:13px;font-weight:700;color:#7dd3fc">👥 Per-User OCR Usage</div>
+<div style="font-size:10px;color:var(--text3)">💡 Click any row to see user's full OCR history</div>
 </div>
 <div id="ocrMonitorTable" class="tbl-wrap"></div>
 
+<!-- AI ERRORS -->
 <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
 <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-<div style="font-size:12px;font-weight:700;color:#fcd34d">⚠️ AI Provider Errors (today)</div>
+<div style="font-size:13px;font-weight:700;color:#fcd34d">⚠️ AI Provider Errors (Today)</div>
 <span id="aiErrSummary" style="font-size:11px;color:var(--text3)"></span>
 </div>
 <div id="aiErrorTable" class="tbl-wrap"></div>
-</div>
-
-<div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
-<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-<div style="font-size:12px;font-weight:700;color:#c4b5fd">📜 Latest OCR Attempts (all users)</div>
-<button class="btn ghost small" onclick="loadOcrLog()" style="font-size:11px;padding:5px 12px">🔄 Refresh</button>
-</div>
-<div id="ocrLogTable" class="tbl-wrap"></div>
 </div>
 </div>
 
@@ -1024,6 +1085,15 @@ input,textarea,select{min-height:44px;font-size:16px}
 <button id="adminEmailsNextBtn" onclick="loadAdminEmailsPage(adminEmailsPage+1)">Next →</button>
 </div>
 </div>
+</div>
+</div>
+
+<!-- USER OCR DETAIL MODAL -->
+<div id="userOcrModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeUserOcr()">
+<div class="modal" style="max-width:800px">
+<button class="close-btn" onclick="closeUserOcr()">✕</button>
+<h3>📸 User OCR Details</h3>
+<div id="userOcrContent"></div>
 </div>
 </div>
 
@@ -1322,8 +1392,9 @@ var BANNED_USER_EMAIL='',_banTargetUid=null,_banTargetEmail='';
 var adminPage=1,adminSearchQuery='',adminSearchTimer=null;
 var adminEmailsPage=1,adminEmailsSearchQuery='',adminEmailsSearchTimer=null;
 var OCR_FILES=[];var OCR_QUEUE=[];var OCR_PROCESSING=false;var OCR_MAX_RETRIES=3;
-var OCR_LAST_REQUEST_TIME=0;var OCR_MIN_INTERVAL_MS=2600;var OCR_CANCELLED=false;var OCR_STARTED_AT=0;var OCR_DONE_AT_QUEUE_START=0;
+var OCR_LAST_REQUEST_TIME=0;var OCR_MIN_INTERVAL_MS=2600;var OCR_CANCELLED=false;var OCR_STARTED_AT=0;
 var REPLY_TARGET_EMAIL='';var REPLY_SELECTED_FILES={};
+var OCR_MONITOR_DATA=[];
 
 function $(id){return document.getElementById(id);}
 function api(p,m,b){return fetch(p,{method:m||'GET',credentials:'include',headers:{'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined}).then(function(r){return r.text().then(function(t){try{return JSON.parse(t);}catch(e){return {ok:false,error:'Server error '+r.status};}});}).catch(function(e){var msg;if(e&&e.message)msg=e.message;else if(e&&e.type)msg='Network '+e.type;else msg='Network error';return {ok:false,error:msg};});}
@@ -1360,8 +1431,8 @@ function closeGmailConnectModal(){$('gmailConnectModal').classList.add('hidden')
 async function connectGmail(){var pass=$('smtpAppPassword').value.trim();if(!pass||pass.replace(/\s/g,'').length<16){return toast('App password must be 16 characters','err');}var btn=$('gmailConnectBtn');setBtnLoading(btn,'🔌 Testing connection...');try{var alsoImap=$('alsoEnableImap')?$('alsoEnableImap').checked:false;var r=await api('/api/smtp/connect','POST',{appPassword:pass,alsoEnableImap:alsoImap});if(r.ok){toast('✅ Gmail connected'+(r.imapEnabled?' + Inbox enabled':''));$('smtpAppPassword').value='';closeGmailConnectModal();checkGmailStatus();loadQuota(true);checkIMAPStatus();}else{toast('Error: '+r.error,'err');}}catch(e){toast('Connection failed','err');}resetBtn(btn);}
 function startAutoRefresh(){if(POLL_TIMER)clearInterval(POLL_TIMER);POLL_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('myView').classList.contains('hidden')){loadQuota();loadAll();loadMyEmails();}},30000);}
 function startLiveInbox(){if(LIVE_INBOX_TIMER)clearInterval(LIVE_INBOX_TIMER);LIVE_INBOX_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('inboxView').classList.contains('hidden')&&IMAP_CONNECTED){loadIMAPInbox(true);}},3000);}
-function switchMain(t){['myView','inboxView','aiprofileView','testView','testDashView','adminView'].forEach(function(v){$(v).classList.add('hidden');});document.querySelectorAll('.maintab').forEach(function(el){el.classList.remove('active');});if(t==='my'){$('myView').classList.remove('hidden');$('tabMy').classList.add('active');loadAll();loadQuota();loadMyEmails();loadQuickAuto();loadSignature();loadFiles();}else if(t==='inbox'){$('inboxView').classList.remove('hidden');$('tabInbox').classList.add('active');checkIMAPStatus();}else if(t==='aiprofile'){$('aiprofileView').classList.remove('hidden');$('tabAIP').classList.add('active');loadAIProfile();}else if(t==='test'){$('testView').classList.remove('hidden');$('tabTest').classList.add('active');loadAIPredictions();loadSenders();}else if(t==='testdash'){$('testDashView').classList.remove('hidden');$('tabTestDash').classList.add('active');loadTestDashboard();}else if(t==='admin'){$('adminView').classList.remove('hidden');$('tabAdmin').classList.add('active');loadAdmin();loadAdminAIUsage();loadAdminBanned();loadAdminRequests();loadAdminUsersPage(1);loadAdminEmailsPage(1);loadOcrMonitor();loadOcrLog();startAdminLive();}}
-function startAdminLive(){if(ADMIN_LIVE_TIMER)clearInterval(ADMIN_LIVE_TIMER);ADMIN_LIVE_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('adminView').classList.contains('hidden')){loadAdminUsersPage(adminPage,true);loadAdminAIUsage();loadAdminBanned();loadAdminRequests();loadOcrMonitor();}},15000);if(ADMIN_EMAIL_LIVE_TIMER)clearInterval(ADMIN_EMAIL_LIVE_TIMER);ADMIN_EMAIL_LIVE_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('adminView').classList.contains('hidden')){loadAdminEmailsPage(adminEmailsPage,true);loadOcrLog();}},20000);}
+function switchMain(t){['myView','inboxView','aiprofileView','testView','testDashView','adminView'].forEach(function(v){$(v).classList.add('hidden');});document.querySelectorAll('.maintab').forEach(function(el){el.classList.remove('active');});if(t==='my'){$('myView').classList.remove('hidden');$('tabMy').classList.add('active');loadAll();loadQuota();loadMyEmails();loadQuickAuto();loadSignature();loadFiles();}else if(t==='inbox'){$('inboxView').classList.remove('hidden');$('tabInbox').classList.add('active');checkIMAPStatus();}else if(t==='aiprofile'){$('aiprofileView').classList.remove('hidden');$('tabAIP').classList.add('active');loadAIProfile();}else if(t==='test'){$('testView').classList.remove('hidden');$('tabTest').classList.add('active');loadAIPredictions();loadSenders();}else if(t==='testdash'){$('testDashView').classList.remove('hidden');$('tabTestDash').classList.add('active');loadTestDashboard();}else if(t==='admin'){$('adminView').classList.remove('hidden');$('tabAdmin').classList.add('active');loadAdmin();loadAdminAIUsage();loadAdminBanned();loadAdminRequests();loadAdminUsersPage(1);loadAdminEmailsPage(1);loadOcrMonitor();loadOcrQuota();startAdminLive();}}
+function startAdminLive(){if(ADMIN_LIVE_TIMER)clearInterval(ADMIN_LIVE_TIMER);ADMIN_LIVE_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('adminView').classList.contains('hidden')){loadAdminUsersPage(adminPage,true);loadAdminAIUsage();loadAdminBanned();loadAdminRequests();loadOcrMonitor();loadOcrQuota();}},15000);if(ADMIN_EMAIL_LIVE_TIMER)clearInterval(ADMIN_EMAIL_LIVE_TIMER);ADMIN_EMAIL_LIVE_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('adminView').classList.contains('hidden')){loadAdminEmailsPage(adminEmailsPage,true);}},20000);}
 function loadQuickAuto(){api('/api/prefs').then(function(r){if(!r.ok)return;var p=r.prefs;$('qAutoSend').checked=p.autoSend;$('qAutoConfig').style.display=p.autoSend?'block':'none';$('qBatchSize').value=p.autoSendBatchSize||5;$('qDelay').value=p.sendDelay!==undefined?p.sendDelay:20;$('qTotalSent').innerText=p.totalAutoSent||0;$('qLastRun').innerText=p.lastAutoSendRun?fmtTimeAgo(p.lastAutoSendRun):'Never';});api('/api/stats').then(function(r){if(!r.ok)return;$('qPending').innerText=r.stats.pending||0;});}
 function onQuickAutoToggle(v){$('qAutoConfig').style.display=v?'block':'none';}
 function saveQuickAuto(){var bs=parseInt($('qBatchSize').value)||5;var sd=parseInt($('qDelay').value);if(isNaN(sd)||sd<0)sd=20;if(sd>120)sd=120;api('/api/prefs','POST',{autoSend:$('qAutoSend').checked,autoSendBatchSize:bs,sendDelay:sd,quietEnabled:false,quietStart:22,quietEnd:7}).then(function(r){if(r.ok){toast('✅ Automation settings saved');loadQuickAuto();}else toast('Error saving settings','err');});}
@@ -1446,7 +1517,7 @@ function clearBulk(){$('bulkInput').value='';updateBulk();}
 function submitBulk(){var r=parseBulk($('bulkInput').value);if(!r.valid.length)return toast('No valid emails found','err');sendBulkRecipients(r.valid);}
 function sendBulkRecipients(items){api('/api/recipients','POST',{list:items,templateId:$('tplSelect').value}).then(function(res){if(res.ok){toast('✅ '+res.added+' recipients added');$('bulkInput').value='';updateBulk();loadAll();loadQuickAuto();switchTab('manual');}else toast('Error adding recipients','err');});}
 
-/* ============ OCR v1.8.4 — BULK-OPTIMIZED (17-18 images, rate-limit safe) ============ */
+/* ============ OCR v1.8.4-mobile — canvas.toDataURL (Android + iOS SAFE) ============ */
 document.getElementById('ocrInput').addEventListener('change',function(e){var files=e.target.files;if(!files||!files.length)return;for(var i=0;i<files.length;i++){enqueueOCRFile(files[i]);}e.target.value='';});
 document.addEventListener('paste',function(e){if($('ocrTab').classList.contains('hidden'))return;var items=e.clipboardData&&e.clipboardData.items;if(!items)return;var found=false;for(var i=0;i<items.length;i++){if(items[i].type.indexOf('image')!==-1){var blob=items[i].getAsFile();if(blob){enqueueOCRFile(blob);found=true;}}}if(found)toast('📋 Screenshot added to queue');});
 function openCameraCapture(){var inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.capture='environment';inp.onchange=function(e){var f=e.target.files[0];if(f)enqueueOCRFile(f);};inp.click();}
@@ -1461,6 +1532,7 @@ async function enqueueOCRFile(file){
   renderOCRThumbs();
   renderOCRResultCards();
   updateOCRStatus();
+  await new Promise(function(r){setTimeout(r,120);});
   if(!OCR_PROCESSING)processOCRQueue();
 }
 
@@ -1473,11 +1545,11 @@ async function processOCRQueue(){
   while(OCR_QUEUE.length>0 && !OCR_CANCELLED){
     var idx=OCR_QUEUE.shift();
     await processOCRItem(idx);
-    // Rate-limit safety: wait between OCR.space requests
     var sinceLast=Date.now()-OCR_LAST_REQUEST_TIME;
     if(sinceLast<OCR_MIN_INTERVAL_MS){
-      await new Promise(function(r){setTimeout(r, OCR_MIN_INTERVAL_MS-sinceLast);});
+      await new Promise(function(r){setTimeout(r,OCR_MIN_INTERVAL_MS-sinceLast);});
     }
+    await new Promise(function(r){setTimeout(r,400);});
   }
   OCR_PROCESSING=false;
   updateOCRStatus(true);
@@ -1516,16 +1588,62 @@ function retryAllFailedOCR(){
   if(!OCR_PROCESSING)processOCRQueue();
 }
 
-/* Extract real error message from any error object (fixes [object ProgressEvent]) */
 function extractErrorMessage(err){
-  if(!err) return 'Unknown error';
-  if(typeof err==='string') return err;
-  if(err.message) return String(err.message);
-  if(err.type) return 'Network '+err.type;
-  if(err.name) return String(err.name);
-  if(err.code) return 'Code '+err.name;
+  if(!err)return 'Unknown error';
+  if(typeof err==='string')return err;
+  if(err.message)return String(err.message);
+  if(err.type)return 'Network '+err.type;
+  if(err.name)return String(err.name);
   try{var s=String(err);if(s&&s!=='[object Object]'&&s!=='[object ProgressEvent]')return s;}catch(e){}
-  return 'Network error (request failed)';
+  return 'Network error';
+}
+
+/* CRITICAL: canvas.toDataURL — no FileReader, no Blob. Works on all mobile browsers. */
+function compressImageToBase64(file, maxDim, quality){
+  return new Promise(function(resolve,reject){
+    var url=null,img=null,canvas=null;
+    var done=false;
+    var finish=function(err,base64){
+      if(done)return;
+      done=true;
+      try{if(url)URL.revokeObjectURL(url);}catch(e){}
+      try{if(img){img.onload=null;img.onerror=null;img.src='';img=null;}}catch(e){}
+      try{if(canvas){canvas.width=0;canvas.height=0;canvas=null;}}catch(e){}
+      if(err)reject(err);else resolve(base64);
+    };
+    try{
+      url=URL.createObjectURL(file);
+      img=new Image();
+      var timeoutId=setTimeout(function(){finish(new Error('Image load timeout'));},20000);
+      img.onload=function(){
+        clearTimeout(timeoutId);
+        try{
+          var w=img.naturalWidth||img.width;
+          var h=img.naturalHeight||img.height;
+          if(!w||!h)return finish(new Error('Invalid image'));
+          var scale=Math.min(maxDim/w,maxDim/h,1);
+          var newW=Math.max(1,Math.round(w*scale));
+          var newH=Math.max(1,Math.round(h*scale));
+          canvas=document.createElement('canvas');
+          canvas.width=newW;
+          canvas.height=newH;
+          var ctx=canvas.getContext('2d');
+          if(!ctx)return finish(new Error('Canvas failed'));
+          ctx.fillStyle='#ffffff';
+          ctx.fillRect(0,0,newW,newH);
+          ctx.drawImage(img,0,0,newW,newH);
+          var dataUrl;
+          try{dataUrl=canvas.toDataURL('image/jpeg',quality);}catch(e){return finish(new Error('Export failed - try smaller image'));}
+          if(!dataUrl||dataUrl.length<30)return finish(new Error('Empty output'));
+          var base64=dataUrl.split(',')[1]||'';
+          if(!base64||base64.length<20)return finish(new Error('Empty base64'));
+          finish(null,base64);
+        }catch(err){finish(new Error('Processing: '+(err.message||'unknown')));}
+      };
+      img.onerror=function(){clearTimeout(timeoutId);finish(new Error('Cannot load image — file may be corrupted'));};
+      img.src=url;
+    }catch(e){finish(new Error('Setup: '+(e.message||'unknown')));}
+  });
 }
 
 async function processOCRItem(idx){
@@ -1536,60 +1654,42 @@ async function processOCRItem(idx){
   renderOCRThumbs();
   renderOCRResultCards();
   updateOCRStatus();
-
-  // 4-stage progressive compression. Each retry → smaller image.
   var stages=[
-    {dim:1400, q:0.72, maxBase64KB:500},
-    {dim:1100, q:0.65, maxBase64KB:400},
-    {dim:900,  q:0.58, maxBase64KB:320},
-    {dim:700,  q:0.50, maxBase64KB:260}
+    {dim:1200,q:0.72},
+    {dim:1000,q:0.65},
+    {dim:800,q:0.58},
+    {dim:640,q:0.50}
   ];
-
-  for(var attempt=1; attempt<=OCR_MAX_RETRIES; attempt++){
-    var stage=stages[Math.min(attempt-1, stages.length-1)];
+  for(var attempt=1;attempt<=OCR_MAX_RETRIES;attempt++){
+    var stage=stages[Math.min(attempt-1,stages.length-1)];
     try{
-      var processedFile=await compressForOCR(item.file, stage.dim, stage.q);
-      var base64=await fileToBase64(processedFile);
+      var base64=await compressImageToBase64(item.file,stage.dim,stage.q);
       var sizeKB=Math.round(base64.length/1024);
-
-      // If still too big, one more pass at next stage size
-      if(sizeKB>stage.maxBase64KB+80){
-        var nextStage=stages[Math.min(attempt, stages.length-1)];
-        processedFile=await compressForOCR(item.file, nextStage.dim, nextStage.q);
-        base64=await fileToBase64(processedFile);
+      if(sizeKB>900){
+        var smaller=stages[Math.min(attempt,stages.length-1)];
+        base64=await compressImageToBase64(item.file,smaller.dim,smaller.q);
         sizeKB=Math.round(base64.length/1024);
       }
-
-      // Absolute hard cap: 1.5MB base64 (Vercel body limit safe zone)
-      if(sizeKB>1500){
-        throw new Error('Image too large after compression ('+sizeKB+'KB). Try a smaller screenshot.');
-      }
-
+      if(sizeKB>1400)throw new Error('Image too large ('+sizeKB+'KB) even after compression');
       OCR_LAST_REQUEST_TIME=Date.now();
-      var mimeType=processedFile.type||'image/jpeg';
-      var r=await api('/api/ocr/extract','POST',{base64:base64,mimeType:mimeType,filename:item.file.name||''});
-
+      var r=await api('/api/ocr/extract','POST',{base64:base64,mimeType:'image/jpeg',filename:item.file.name||''});
       if(!r.ok){
-        // Detect rate-limit / 429
         var em=(r.error||'').toLowerCase();
-        if(em.indexOf('429')!==-1 || em.indexOf('rate')!==-1 || em.indexOf('too many')!==-1){
-          throw new Error('RATE_LIMIT');
-        }
+        if(em.indexOf('429')!==-1||em.indexOf('rate')!==-1||em.indexOf('too many')!==-1){throw new Error('RATE_LIMIT');}
         throw new Error(r.error||'OCR failed');
       }
-      if(!r.text||r.text.length<2) throw new Error('No text detected in image');
-
+      if(!r.text||r.text.length<2)throw new Error('No text detected in image');
       item.text=r.text;
       item.status='done';
       item.error='';
       renderOCRThumbs();
       renderOCRResultCards();
       updateOCRStatus();
+      await new Promise(function(rs){setTimeout(rs,200);});
       return;
-
     }catch(err){
       var msg=extractErrorMessage(err);
-      console.warn('OCR SS#'+(idx+1)+' attempt '+attempt+':', msg);
+      console.warn('OCR SS#'+(idx+1)+' attempt '+attempt+':',msg);
       item.retries=attempt;
       item.error=msg;
       if(attempt<OCR_MAX_RETRIES){
@@ -1597,60 +1697,17 @@ async function processOCRItem(idx){
         renderOCRThumbs();
         renderOCRResultCards();
         updateOCRStatus();
-        // Rate-limit → longer pause
-        var waitMs = (msg==='RATE_LIMIT') ? (5000*attempt) : (2000*attempt);
-        await new Promise(function(r){setTimeout(r, waitMs);});
+        var waitMs=(msg==='RATE_LIMIT')?(5000*attempt):(1500*attempt);
+        await new Promise(function(rs){setTimeout(rs,waitMs);});
       }else{
         item.status='failed';
-        if(msg==='RATE_LIMIT') item.error='Rate limit — try again in a minute';
+        if(msg==='RATE_LIMIT')item.error='Rate limit — try again in a minute';
       }
     }
   }
   renderOCRThumbs();
   renderOCRResultCards();
   updateOCRStatus();
-}
-
-function fileToBase64(file){
-  return new Promise(function(resolve,reject){
-    var reader=new FileReader();
-    reader.onload=function(){var result=reader.result;var base64=String(result).split(',')[1]||'';resolve(base64);};
-    reader.onerror=function(e){reject(new Error('File read failed'));};
-    reader.readAsDataURL(file);
-  });
-}
-
-function compressForOCR(file, maxDim, quality){
-  quality=quality||0.72;
-  return new Promise(function(resolve){
-    try{
-      var img=new Image();
-      var url=URL.createObjectURL(file);
-      var done=false;
-      var finish=function(out){if(done)return;done=true;try{URL.revokeObjectURL(url);}catch(e){}resolve(out);};
-      img.onload=function(){
-        var w=img.width,h=img.height;
-        // Skip re-compress if already small
-        if(w<=maxDim && h<=maxDim && file.size<500*1024){finish(file);return;}
-        var scale=Math.min(maxDim/w,maxDim/h,1);
-        var newW=Math.max(1,Math.round(w*scale));
-        var newH=Math.max(1,Math.round(h*scale));
-        var canvas=document.createElement('canvas');
-        canvas.width=newW;canvas.height=newH;
-        var ctx=canvas.getContext('2d');
-        ctx.fillStyle='#ffffff';
-        ctx.fillRect(0,0,newW,newH);
-        ctx.drawImage(img,0,0,newW,newH);
-        canvas.toBlob(function(blob){
-          if(!blob){finish(file);return;}
-          try{blob.name=file.name||('screenshot-'+Date.now()+'.jpg');}catch(e){}
-          finish(blob);
-        },'image/jpeg',quality);
-      };
-      img.onerror=function(){finish(file);};
-      img.src=url;
-    }catch(e){resolve(file);}
-  });
 }
 
 function updateOCRStatus(done){
@@ -1662,32 +1719,24 @@ function updateOCRStatus(done){
   var doneCount=OCR_FILES.filter(function(x){return x.status==='done';}).length;
   var failed=OCR_FILES.filter(function(x){return x.status==='failed';}).length;
   var finished=doneCount+failed;
-
   $('ocrProgress').classList.add('show');
   $('ocrProgressFill').style.width=Math.round(finished/total*100)+'%';
   if(info)info.style.display='flex';
-
   var msg='';
-  if(OCR_CANCELLED) msg='<span style="color:#fcd34d">⏹ Cancelled — '+finished+'/'+total+' processed</span>';
-  else if(queued>0 && processing===0) msg='⏳ '+queued+' in queue · '+doneCount+' done'+(failed>0?' · <span style="color:#fca5a5">'+failed+' failed</span>':'');
-  else if(processing>0) msg='☁️ Processing SS#'+(finished+1)+' of '+total+' · '+doneCount+' ✓'+(failed>0?' <span style="color:#fca5a5">'+failed+' ✗</span>':'');
-  else if(finished===total) msg='<span style="color:#86efac">✅ Complete: '+doneCount+' succeeded'+(failed>0?', <span style="color:#fca5a5">'+failed+' failed</span>':'')+'</span>';
+  if(OCR_CANCELLED)msg='<span style="color:#fcd34d">⏹ Cancelled — '+finished+'/'+total+'</span>';
+  else if(queued>0&&processing===0)msg='⏳ '+queued+' in queue · '+doneCount+' done'+(failed>0?' · <span style="color:#fca5a5">'+failed+' failed</span>':'');
+  else if(processing>0)msg='☁️ Processing SS#'+(finished+1)+'/'+total+' · '+doneCount+' ✓'+(failed>0?' <span style="color:#fca5a5">'+failed+' ✗</span>':'');
+  else if(finished===total)msg='<span style="color:#86efac">✅ Complete: '+doneCount+' succeeded'+(failed>0?', <span style="color:#fca5a5">'+failed+' failed</span>':'')+'</span>';
   else msg=doneCount+'/'+total+' done';
   $('ocrStatus').innerHTML=msg;
-
-  // ETA calculation
   var eta='';
-  if(OCR_PROCESSING && !OCR_CANCELLED && finished>0){
+  if(OCR_PROCESSING&&!OCR_CANCELLED&&finished>0){
     var elapsed=Date.now()-OCR_STARTED_AT;
     var avgPerItem=elapsed/finished;
     var remaining=queued+processing;
-    if(remaining>0){
-      var etaMs=avgPerItem*remaining;
-      eta='<span style="font-size:11px;color:var(--text3)">⏱ ~'+fmtDuration(etaMs)+' left</span>';
-    }
+    if(remaining>0){eta='<span style="font-size:11px;color:var(--text3)">⏱ ~'+fmtDuration(avgPerItem*remaining)+' left</span>';}
   }
   $('ocrETA').innerHTML=eta;
-
   if(doneCount>0)$('ocrResultWrap').style.display='block';
   updateOCRCancelBtn();
 }
@@ -1698,7 +1747,7 @@ function renderOCRThumbs(){
   w.innerHTML=OCR_FILES.map(function(x,i){
     var cls=x.status==='done'?'done':((x.status==='processing'||x.status==='retrying')?'processing':(x.status==='failed'?'failed':'queued'));
     var lbl=x.status==='done'?'✓ Done':(x.status==='processing'?'... OCR':(x.status==='retrying'?'↻ '+x.retries+'/'+OCR_MAX_RETRIES:(x.status==='queued'?'Queued':'✗ Failed')));
-    return '<div class="ocr-thumb '+cls+'" title="'+esc(x.file.name||'')+'"><img src="'+x.previewUrl+'"><div class="status">'+(i+1)+'. '+lbl+'</div></div>';
+    return '<div class="ocr-thumb '+cls+'"><img src="'+x.previewUrl+'"><div class="status">'+(i+1)+'. '+lbl+'</div></div>';
   }).join('');
 }
 
@@ -1713,7 +1762,7 @@ function renderOCRResultCards(){
   OCR_FILES.forEach(function(x,i){
     var stCls=x.status==='done'?'done':((x.status==='processing'||x.status==='retrying')?'processing':(x.status==='queued'?'queued':'failed'));
     var stTxt=x.status==='done'?'✓ Extracted':(x.status==='processing'?'... Processing':(x.status==='retrying'?'↻ Retry '+x.retries+'/'+OCR_MAX_RETRIES:(x.status==='queued'?'⏳ Queued':'✗ Failed')));
-    h+='<div class="ocr-card"><div class="head"><span class="num">SS #'+(i+1)+'</span><span class="fname" title="'+esc(x.file.name||'')+'">'+esc(x.file.name||'image')+'</span><span class="st '+stCls+'">'+stTxt+'</span></div>';
+    h+='<div class="ocr-card"><div class="head"><span class="num">SS #'+(i+1)+'</span><span class="fname">'+esc(x.file.name||'image')+'</span><span class="st '+stCls+'">'+stTxt+'</span></div>';
     if(x.status==='failed'&&x.error){h+='<div style="font-size:11px;color:#fca5a5;margin-bottom:6px">Error: '+esc(x.error)+'</div>';}
     h+='<textarea data-ocr-idx="'+i+'" oninput="onOCRCardEdit('+i+',this.value)" placeholder="Extracted text will appear here...">'+esc(x.text||'')+'</textarea></div>';
   });
@@ -1721,15 +1770,10 @@ function renderOCRResultCards(){
 }
 
 function onOCRCardEdit(idx,val){if(OCR_FILES[idx])OCR_FILES[idx].text=val;}
-function collectOCRTextFromCards(){
-  return OCR_FILES.map(function(x,i){
-    if(x.status!=='done')return '';
-    return '═══════════════════════════════\n📸 SCREENSHOT #'+(i+1)+' — '+(x.file.name||'image')+'\n═══════════════════════════════\n'+(x.text||'');
-  }).filter(Boolean).join('\n\n');
-}
+function collectOCRTextFromCards(){return OCR_FILES.map(function(x,i){if(x.status!=='done')return '';return '═══════════════════════════════\n📸 SCREENSHOT #'+(i+1)+' — '+(x.file.name||'image')+'\n═══════════════════════════════\n'+(x.text||'');}).filter(Boolean).join('\n\n');}
 function sendOCRToBulk(){var text=collectOCRTextFromCards();if(!text.trim())return toast('No extracted text to send','err');$('bulkInput').value=text;updateBulk();switchTab('bulk');toast('📋 Text sent to Bulk tab');}
-function copyOCRText(){var t=collectOCRTextFromCards();if(!t)return toast('Nothing to copy','err');if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){toast('✅ Copied to clipboard');});else{var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('✅ Copied');}}
-function clearOCR(){if(OCR_PROCESSING){OCR_CANCELLED=true;OCR_QUEUE=[];}OCR_FILES.forEach(function(x){try{URL.revokeObjectURL(x.previewUrl);}catch(e){}});OCR_FILES=[];OCR_QUEUE=[];OCR_PROCESSING=false;$('ocrThumbs').innerHTML='';if($('ocrResultCards'))$('ocrResultCards').innerHTML='';$('ocrResultWrap').style.display='none';$('ocrProgress').classList.remove('show');$('ocrProgressFill').style.width='0%';$('ocrStatus').innerHTML='';if($('ocrETA'))$('ocrETA').innerHTML='';if($('ocrProgressInfo'))$('ocrProgressInfo').style.display='none';updateOCRCancelBtn();}
+function copyOCRText(){var t=collectOCRTextFromCards();if(!t)return toast('Nothing to copy','err');if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){toast('✅ Copied');});else{var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('✅ Copied');}}
+function clearOCR(){if(OCR_PROCESSING){OCR_CANCELLED=true;OCR_QUEUE=[];}OCR_FILES.forEach(function(x){try{URL.revokeObjectURL(x.previewUrl);}catch(e){}x.file=null;x.previewUrl=null;x.text='';});OCR_FILES=[];OCR_QUEUE=[];OCR_PROCESSING=false;$('ocrThumbs').innerHTML='';if($('ocrResultCards'))$('ocrResultCards').innerHTML='';$('ocrResultWrap').style.display='none';$('ocrProgress').classList.remove('show');$('ocrProgressFill').style.width='0%';$('ocrStatus').innerHTML='';if($('ocrETA'))$('ocrETA').innerHTML='';if($('ocrProgressInfo'))$('ocrProgressInfo').style.display='none';updateOCRCancelBtn();}
 document.addEventListener('DOMContentLoaded',function(){var ta=$('bulkInput');if(ta)ta.addEventListener('input',updateBulk);});
 
 function loadAll(isManual){if(isManual)toast('🔄 Refreshing...');api('/api/stats').then(function(r){if(!r.ok)return;$('stTotal').innerText=r.stats.total;$('stSent').innerText=r.stats.sent;$('stOpened').innerText=r.stats.opened;$('stPending').innerText=r.stats.pending;$('stTotalSends').innerText=r.stats.totalSends||0;});api('/api/recipients').then(function(r){if(!r.ok)return;CURRENT_ROWS=(r.recipients||[]).sort(function(a,b){var ta=a.createdAt&&a.createdAt._seconds?a.createdAt._seconds*1000:new Date(a.createdAt||0).getTime();var tb=b.createdAt&&b.createdAt._seconds?b.createdAt._seconds*1000:new Date(b.createdAt||0).getTime();return tb-ta;});ALL_ROWS=CURRENT_ROWS.slice();renderRecipients();});}
@@ -1790,7 +1834,24 @@ function sendTestEmail(){var to=$('testTo').value.trim(),subject=$('testSubject'
 async function runTestAutomation(){var bs=parseInt($('testAutoBatchSize').value)||5;var delay=parseInt($('testAutoDelay').value)||20;var ok=await showConfirm({icon:'▶️',title:'Run automation?',message:bs+' emails with '+delay+'s delay',okText:'Run',primary:true});if(!ok)return;toast('⏳ Running automation...');api('/api/test/automation/run','POST',{batchSize:bs,delay:delay}).then(function(r){if(r.ok){if(r.sent>0)toast('✅ '+r.sent+' emails sent');else toast(r.message||'No pending recipients','warn');loadTestDashboard();}});}
 function loadAdmin(){$('adminUsersList').innerHTML='<div class="empty">Loading...</div>';api('/api/admin/dashboard').then(function(r){if(!r.ok)return;$('adTotalUsers').innerText=r.stats.totalUsers;$('adTotalEmails').innerText=r.stats.totalEmails;$('adTotalOpened').innerText=r.stats.totalOpened;$('adTotalPending').innerText=r.stats.totalPending;$('adTotalSends').innerText=r.stats.totalSends||0;});}
 
+/* ===== NEW CLEAN: OCR & AI Monitor ===== */
+function loadOcrQuota(){
+  api('/api/admin/ocr-quota').then(function(r){
+    if(!r.ok)return;
+    $('ocrQuotaMonth').innerText=r.month||'—';
+    $('ocrQuotaUsed').innerText=fmtNum(r.used||0);
+    $('ocrQuotaRemaining').innerText=fmtNum(r.remaining||0);
+    $('ocrQuotaLimit').innerText=fmtNum(r.limit||25000);
+    var pct=r.percent||0;
+    var bar=$('ocrQuotaBar');
+    bar.style.width=Math.min(100,pct)+'%';
+    bar.className='quota-fill'+(pct>90?' crit':(pct>70?' warn':''));
+    $('ocrQuotaHint').innerHTML='✅ '+(r.success||0)+' success · ✗ '+(r.failed||0)+' failed · '+pct+'% used';
+  });
+}
+
 function loadOcrMonitor(){
+  // Summary
   api('/api/admin/ocr-usage').then(function(r){
     if(!r.ok)return;
     var s=r.summary||{};
@@ -1798,54 +1859,105 @@ function loadOcrMonitor(){
     $('monOcrSuccess').innerText=fmtNum(s.grandSuccess||0);
     $('monOcrFailed').innerText=fmtNum(s.grandFailed||0);
     $('monOcrChars').innerText=fmtNum(s.grandChars||0);
-    var rows=r.rows||[];
+    OCR_MONITOR_DATA=r.rows||[];
+    var rows=OCR_MONITOR_DATA;
     var w=$('ocrMonitorTable');
-    if(!rows.length){w.innerHTML='<div class="empty" style="padding:20px">No OCR usage yet</div>';}
+    if(!rows.length){w.innerHTML='<div class="empty" style="padding:24px">No OCR usage yet</div>';}
     else{
-      var h='<table class="data-table"><thead><tr><th>User</th><th>App ID</th><th>Today</th><th>✓</th><th>✗</th><th>Chars</th><th>All-Time</th><th>Success Rate</th></tr></thead><tbody>';
-      rows.slice(0,50).forEach(function(row){
+      var h='<table class="compact-table"><thead><tr><th>User</th><th>App ID</th><th style="text-align:center">Today</th><th style="text-align:center">✓</th><th style="text-align:center">✗</th><th style="text-align:center">All-Time</th><th style="text-align:center">Success</th></tr></thead><tbody>';
+      rows.slice(0,60).forEach(function(row){
         var sr = row.total>0 ? Math.round((row.success/row.total)*100) : 0;
         var src = sr>=80?'#86efac':sr>=50?'#fcd34d':'#fca5a5';
-        h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(row.email)+'</td><td style="font-size:10px"><span class="app-id-pill">'+esc(row.appAccountId)+'</span></td><td style="font-size:12px;text-align:center;font-weight:700">'+fmtNum(row.todayTotal)+'</td><td style="font-size:12px;text-align:center;color:#86efac">'+fmtNum(row.todaySuccess)+'</td><td style="font-size:12px;text-align:center;color:#fca5a5">'+fmtNum(row.todayFailed)+'</td><td style="font-size:11px;text-align:center">'+fmtNum(row.todayChars)+'</td><td style="font-size:11px;text-align:center;color:#fbbf24;font-weight:800">'+fmtNum(row.total)+'</td><td style="font-size:11px;text-align:center;color:'+src+';font-weight:800">'+sr+'%</td></tr>';
+        var initial = (row.email||'?').charAt(0).toUpperCase();
+        h+='<tr class="clickable" onclick="openUserOcr(\''+esc(row.id)+'\')">';
+        h+='<td><div class="user-cell"><div class="av">'+initial+'</div><div class="nm">'+esc(row.email)+'</div></div></td>';
+        h+='<td><span class="app-id-pill" style="font-size:9px">'+esc(row.appAccountId)+'</span></td>';
+        h+='<td class="num">'+fmtNum(row.todayTotal)+'</td>';
+        h+='<td class="num green">'+fmtNum(row.todaySuccess)+'</td>';
+        h+='<td class="num red">'+fmtNum(row.todayFailed)+'</td>';
+        h+='<td class="num amber">'+fmtNum(row.total)+'</td>';
+        h+='<td class="num" style="color:'+src+'">'+sr+'%</td>';
+        h+='</tr>';
       });
       h+='</tbody></table>';
       w.innerHTML=h;
     }
   });
+  // AI errors
   api('/api/admin/ai-errors').then(function(r){
     if(!r.ok)return;
     var s=r.summary||{};
-    var provs=Object.entries(s.providerTotals||{}).map(function(kv){return '<span class="badge pending" style="font-size:10px;margin:2px">'+esc(kv[0])+': '+kv[1]+'</span>';}).join('');
-    $('aiErrSummary').innerHTML='Total today: <b>'+(s.grandTotal||0)+'</b> '+provs;
+    var provs=Object.entries(s.providerTotals||{}).map(function(kv){return '<span class="tiny-badge fail" style="margin:1px">'+esc(kv[0])+': '+kv[1]+'</span>';}).join('');
+    $('aiErrSummary').innerHTML='Total today: <b style="color:#fca5a5">'+(s.grandTotal||0)+'</b> '+provs;
     var rows=r.rows||[];
     var w=$('aiErrorTable');
     if(!rows.length){w.innerHTML='<div class="empty" style="padding:16px">No AI errors today ✅</div>';}
     else{
-      var h='<table class="data-table"><thead><tr><th>User</th><th>Errors</th><th>Providers</th><th>Last Error</th></tr></thead><tbody>';
+      var h='<table class="compact-table"><thead><tr><th>User</th><th style="text-align:center">Errors</th><th>Providers</th><th>Last Error</th></tr></thead><tbody>';
       rows.slice(0,30).forEach(function(row){
-        var pv=Object.entries(row.providers||{}).map(function(kv){return '<span class="badge banned" style="font-size:9px;margin:1px">'+esc(kv[0])+' ('+kv[1]+')</span>';}).join('');
-        h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(row.email)+'</td><td style="font-size:13px;text-align:center;color:#fca5a5;font-weight:800">'+row.todayTotal+'</td><td>'+pv+'</td><td style="font-size:10px;color:var(--text3);max-width:300px;word-break:break-word">'+esc((row.lastError||'').substring(0,120))+'</td></tr>';
+        var pv=Object.entries(row.providers||{}).map(function(kv){return '<span class="tiny-badge fail" style="margin:1px">'+esc(kv[0])+' ('+kv[1]+')</span>';}).join('');
+        h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(row.email)+'</td><td class="num red">'+row.todayTotal+'</td><td>'+pv+'</td><td style="font-size:10px;color:var(--text3);max-width:260px;word-break:break-word">'+esc((row.lastError||'').substring(0,100))+'</td></tr>';
       });
       h+='</tbody></table>';
       w.innerHTML=h;
     }
   });
 }
-function loadOcrLog(){
-  api('/api/admin/ocr-log?limit=200').then(function(r){
+
+function openUserOcr(uid){
+  var user = OCR_MONITOR_DATA.filter(function(x){return x.id===uid;})[0];
+  if(!user)return;
+  $('userOcrModal').classList.remove('hidden');
+  var c=$('userOcrContent');
+  c.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3)">Loading...</div>';
+  var successRate = user.total>0 ? Math.round((user.success/user.total)*100) : 0;
+  var sc = successRate>=80?'#86efac':successRate>=50?'#fcd34d':'#fca5a5';
+  var h='<div class="info-box" style="margin:0 0 16px 0">';
+  h+='<div class="user-detail-modal-row"><span class="k">Email:</span><span class="v" style="font-size:12px">'+esc(user.email)+'</span></div>';
+  if(user.name)h+='<div class="user-detail-modal-row"><span class="k">Name:</span><span class="v">'+esc(user.name)+'</span></div>';
+  h+='<div class="user-detail-modal-row"><span class="k">App ID:</span><span class="v"><span class="app-id-pill">'+esc(user.appAccountId)+'</span></span></div>';
+  h+='</div>';
+  h+='<div class="ai-usage-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:16px">';
+  h+='<div class="ai-usage-card"><div class="lbl">Today</div><div class="val">'+fmtNum(user.todayTotal)+'</div></div>';
+  h+='<div class="ai-usage-card green"><div class="lbl">Today ✓</div><div class="val">'+fmtNum(user.todaySuccess)+'</div></div>';
+  h+='<div class="ai-usage-card"><div class="lbl">Today ✗</div><div class="val" style="color:#fca5a5">'+fmtNum(user.todayFailed)+'</div></div>';
+  h+='<div class="ai-usage-card highlight"><div class="lbl">Today Chars</div><div class="val">'+fmtNum(user.todayChars)+'</div></div>';
+  h+='<div class="ai-usage-card"><div class="lbl">All-Time</div><div class="val">'+fmtNum(user.total)+'</div></div>';
+  h+='<div class="ai-usage-card green"><div class="lbl">All-Time ✓</div><div class="val">'+fmtNum(user.success)+'</div></div>';
+  h+='<div class="ai-usage-card"><div class="lbl">All-Time ✗</div><div class="val" style="color:#fca5a5">'+fmtNum(user.failed)+'</div></div>';
+  h+='<div class="ai-usage-card"><div class="lbl">Success Rate</div><div class="val" style="color:'+sc+'">'+successRate+'%</div></div>';
+  h+='</div>';
+  if(user.todayLastError)h+='<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:10px 12px;font-size:11px;color:#fca5a5;margin-bottom:14px"><b>Today\'s Last Error:</b> '+esc(user.todayLastError)+'</div>';
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">';
+  h+='<div style="font-size:12px;font-weight:700;color:#c4b5fd">📜 Recent OCR Attempts (last 100)</div>';
+  h+='<button class="btn ghost small" onclick="reloadUserOcrLog(\''+uid+'\')" style="font-size:11px;padding:5px 12px">🔄 Refresh</button>';
+  h+='</div>';
+  h+='<div id="userOcrLogTable" class="tbl-wrap"><div class="empty" style="padding:16px">Loading...</div></div>';
+  c.innerHTML=h;
+  reloadUserOcrLog(uid);
+}
+function reloadUserOcrLog(uid){
+  api('/api/admin/ocr-log?user='+encodeURIComponent(uid)+'&limit=100').then(function(r){
     if(!r.ok)return;
-    var w=$('ocrLogTable');
+    var w=$('userOcrLogTable');
+    if(!w)return;
     var logs=r.logs||[];
-    if(!logs.length){w.innerHTML='<div class="empty" style="padding:16px">No OCR attempts logged yet</div>';return;}
-    var h='<table class="data-table"><thead><tr><th>Time</th><th>User</th><th>File</th><th>Status</th><th>Chars</th><th>Error</th></tr></thead><tbody>';
-    logs.slice(0,100).forEach(function(l){
-      var st = l.success?'<span class="badge opened">✓ Success</span>':'<span class="badge banned">✗ Failed</span>';
-      h+='<tr><td style="font-size:10px;white-space:nowrap">'+fmtTimeAgo(l.at?new Date(l.at).toISOString():null)+'</td><td style="font-size:10px;word-break:break-all">'+esc(l.userEmail)+'</td><td style="font-size:10px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(l.fileName||'—')+'</td><td>'+st+'</td><td style="font-size:11px;text-align:center">'+fmtNum(l.chars||0)+'</td><td style="font-size:10px;color:#fca5a5;max-width:250px;word-break:break-word">'+esc((l.error||'').substring(0,80))+'</td></tr>';
+    if(!logs.length){w.innerHTML='<div class="empty" style="padding:16px">No attempts logged yet</div>';return;}
+    var h='<table class="compact-table"><thead><tr><th>Time</th><th>File</th><th style="text-align:center">Status</th><th style="text-align:center">Chars</th><th>Error</th></tr></thead><tbody>';
+    logs.forEach(function(l){
+      var st = l.success?'<span class="tiny-badge ok">✓ OK</span>':'<span class="tiny-badge fail">✗ Fail</span>';
+      h+='<tr><td style="font-size:10px;white-space:nowrap">'+fmtTimeAgo(l.at?new Date(l.at).toISOString():null)+'</td>';
+      h+='<td style="font-size:10px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(l.fileName||'')+'">'+esc(l.fileName||'—')+'</td>';
+      h+='<td style="text-align:center">'+st+'</td>';
+      h+='<td class="num">'+fmtNum(l.chars||0)+'</td>';
+      h+='<td style="font-size:10px;color:#fca5a5;max-width:200px;word-break:break-word">'+esc((l.error||'').substring(0,80))+'</td></tr>';
     });
     h+='</tbody></table>';
     w.innerHTML=h;
   });
 }
+function closeUserOcr(){$('userOcrModal').classList.add('hidden');}
+
 function loadAdminUsersPage(p,silent){if(p<1)p=1;adminPage=p;if(!silent)$('adminUsersList').innerHTML='<div class="empty">Loading...</div>';$('adminPagination').style.display='none';api('/api/admin/users/paginated?page='+adminPage+'&limit=15&search='+encodeURIComponent(adminSearchQuery)).then(function(r){if(!r.ok){if(!silent)$('adminUsersList').innerHTML='<div class="empty">Error loading users</div>';return;}var users=r.users||[];var pag=r.pagination||{page:1,totalPages:1,total:0};if(!users.length){if(!silent){$('adminUsersList').innerHTML='<div class="empty">'+(adminSearchQuery?'No matching users':'No users yet')+'</div>';}$('adminPagination').style.display='none';return;}var h='';users.forEach(function(u){h+='<div class="user-card '+(u.banned?'banned':'')+'"><div class="top"><div style="flex:1;min-width:0"><div class="name">'+esc(u.name||'(no name)')+(u.banned?' <span class="badge banned">🚫</span>':'')+(u.hasSmtp?' <span class="badge sent">📧</span>':'')+'</div><div class="email">'+esc(u.email)+'</div></div><span class="app-id-pill">'+esc(u.appAccountId||'N/A')+'</span></div>';h+='<div style="font-size:11px;color:var(--text3);margin-top:6px">Reg: '+fmtDate(u.createdAt)+' · Auth: '+(u.authType||'email')+'</div>';h+='<div class="actions-row"><button class="btn ghost small" onclick="viewAdminUser(\''+esc(u.id)+'\')">👁 Details</button>';if(u.email.toLowerCase()!==(USER.email||'').toLowerCase()){if(u.banned){h+='<button class="btn success small" onclick="unbanUser(\''+esc(u.id)+'\')">✓ Unban</button>';}else{h+='<button class="btn warn small" onclick="openBanModal(\''+esc(u.id)+'\',\''+esc(u.email)+'\')">🚫 Ban</button>';}h+='<button class="btn danger small" onclick="deleteUserAccount(\''+esc(u.id)+'\',\''+esc(u.email)+'\')">🗑 Delete</button>';}h+='</div></div>';});$('adminUsersList').innerHTML=h;if(pag.totalPages>1){$('adminPagination').style.display='flex';$('adminPageInfo').innerText='Page '+pag.page+' of '+pag.totalPages+' ('+pag.total+' total)';$('adminPrevBtn').disabled=pag.page<=1;$('adminNextBtn').disabled=pag.page>=pag.totalPages;}else $('adminPagination').style.display='none';});}
 function onAdminSearchChange(){if(adminSearchTimer)clearTimeout(adminSearchTimer);adminSearchTimer=setTimeout(function(){adminSearchQuery=$('adminSearch').value.trim();loadAdminUsersPage(1);},400);}
 function loadAdminEmailsPage(p,silent){if(p<1)p=1;adminEmailsPage=p;if(!silent)$('adminAllEmailsWrap').innerHTML='<div class="empty">Loading...</div>';$('adminEmailsPagination').style.display='none';api('/api/admin/all-emails-paginated?page='+adminEmailsPage+'&limit=15&search='+encodeURIComponent(adminEmailsSearchQuery)).then(function(r){if(!r.ok){if(!silent)$('adminAllEmailsWrap').innerHTML='<div class="empty">Error</div>';return;}var emails=r.emails||[];var pag=r.pagination||{page:1,totalPages:1,total:0};if(!emails.length){if(!silent){$('adminAllEmailsWrap').innerHTML='<div class="empty">No emails found</div>';}$('adminEmailsPagination').style.display='none';return;}var h='<table class="data-table"><thead><tr><th>Type</th><th>User</th><th>Recipient</th><th>Subject</th><th>Sent</th></tr></thead><tbody>';emails.forEach(function(e){var typeBadge=e.isReply?'<span class="badge reply-badge">📩</span>':'<span class="badge sent">📤</span>';h+='<tr><td>'+typeBadge+'</td><td style="font-size:10px;word-break:break-all">'+esc(e.userEmail)+'</td><td style="font-size:11px;word-break:break-all">'+esc(e.recipientEmail)+'</td><td style="font-size:10px">'+esc(e.subject||'—')+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(e.sentAt)+'</td></tr>';});h+='</tbody></table>';$('adminAllEmailsWrap').innerHTML=h;if(pag.totalPages>1){$('adminEmailsPagination').style.display='flex';$('adminEmailsPageInfo').innerText='Page '+pag.page+' of '+pag.totalPages+' ('+pag.total+' total)';$('adminEmailsPrevBtn').disabled=pag.page<=1;$('adminEmailsNextBtn').disabled=pag.page>=pag.totalPages;}else $('adminEmailsPagination').style.display='none';});}

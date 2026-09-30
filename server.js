@@ -21,12 +21,12 @@ const CRON_SECRET = process.env.CRON_SECRET || '';
 const BACKEND_URL = process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org';
 const APP_VERSION = '1.8.4';
 const OCR_SPACE_API_KEY = process.env.OCR_SPACE_API_KEY || 'helloworld';
+const OCR_FREE_MONTHLY_LIMIT = 25000;
 
-/* ===== FILE SIZE LIMITS (increased) ===== */
-const MAX_FILE_SIZE = 3 * 1024 * 1024;       // 3MB for attachments
-const MAX_LOGO_SIZE = 2 * 1024 * 1024;       // 2MB for logo
-const MAX_PROFILE_PIC_SIZE = 1 * 1024 * 1024; // 1MB for profile pic
-const MAX_OCR_IMAGE_SIZE = 1500 * 1024;      // 1.5MB for OCR (OCR.space limit)
+const MAX_FILE_SIZE = 3 * 1024 * 1024;
+const MAX_LOGO_SIZE = 2 * 1024 * 1024;
+const MAX_PROFILE_PIC_SIZE = 1 * 1024 * 1024;
+const MAX_OCR_IMAGE_SIZE = 1500 * 1024;
 
 if (!process.env.SESSION_SECRET) { console.error('FATAL: SESSION_SECRET missing!'); process.exit(1); }
 if (!process.env.ENCRYPTION_KEY) { console.error('FATAL: ENCRYPTION_KEY missing!'); process.exit(1); }
@@ -114,39 +114,21 @@ async function logAIUsage(uid,provider,model,usage){
   }catch(e){}
 }
 
-/* ===== OCR USAGE LOGGING ===== */
+/* ===== OCR USAGE LOGGING (per-user + global monthly quota) ===== */
 async function logOcrUsage(uid, success, chars, errorMsg, fileName) {
   if (!uid) return;
   try {
     const today = new Date().toISOString().split('T')[0];
-    const dayRef = db.collection('users').doc(uid).collection('ocrUsage').doc(today);
-    const totalRef = db.collection('users').doc(uid).collection('ocrUsage').doc('total');
+    const month = today.substring(0, 7);
     const batch = db.batch();
-    batch.set(dayRef, {
-      date: today,
-      total: FieldValue.increment(1),
-      success: FieldValue.increment(success ? 1 : 0),
-      failed: FieldValue.increment(success ? 0 : 1),
-      charsExtracted: FieldValue.increment(chars || 0),
-      lastError: errorMsg ? String(errorMsg).substring(0, 200) : '',
-      lastFileName: fileName ? String(fileName).substring(0, 120) : '',
-      updatedAt: new Date()
-    }, { merge: true });
-    batch.set(totalRef, {
-      total: FieldValue.increment(1),
-      success: FieldValue.increment(success ? 1 : 0),
-      failed: FieldValue.increment(success ? 0 : 1),
-      charsExtracted: FieldValue.increment(chars || 0),
-      updatedAt: new Date()
-    }, { merge: true });
+    const dayRef = db.collection('users').doc(uid).collection('ocrUsage').doc(today);
+    batch.set(dayRef, { date: today, total: FieldValue.increment(1), success: FieldValue.increment(success ? 1 : 0), failed: FieldValue.increment(success ? 0 : 1), charsExtracted: FieldValue.increment(chars || 0), lastError: errorMsg ? String(errorMsg).substring(0, 200) : '', lastFileName: fileName ? String(fileName).substring(0, 120) : '', updatedAt: new Date() }, { merge: true });
+    const totalRef = db.collection('users').doc(uid).collection('ocrUsage').doc('total');
+    batch.set(totalRef, { total: FieldValue.increment(1), success: FieldValue.increment(success ? 1 : 0), failed: FieldValue.increment(success ? 0 : 1), charsExtracted: FieldValue.increment(chars || 0), updatedAt: new Date() }, { merge: true });
     const logRef = db.collection('users').doc(uid).collection('ocrLog').doc();
-    batch.set(logRef, {
-      success: !!success,
-      chars: chars || 0,
-      error: errorMsg ? String(errorMsg).substring(0, 300) : '',
-      fileName: fileName ? String(fileName).substring(0, 120) : '',
-      at: new Date()
-    });
+    batch.set(logRef, { success: !!success, chars: chars || 0, error: errorMsg ? String(errorMsg).substring(0, 300) : '', fileName: fileName ? String(fileName).substring(0, 120) : '', at: new Date() });
+    const globalRef = db.collection('globalStats').doc('ocrQuota_' + month);
+    batch.set(globalRef, { month, total: FieldValue.increment(1), success: FieldValue.increment(success ? 1 : 0), failed: FieldValue.increment(success ? 0 : 1), charsExtracted: FieldValue.increment(chars || 0), updatedAt: new Date() }, { merge: true });
     await batch.commit();
   } catch (e) { }
 }
@@ -157,13 +139,7 @@ async function logAIError(uid, provider, errorMessage) {
   try {
     const today = new Date().toISOString().split('T')[0];
     const ref = db.collection('users').doc(uid).collection('aiErrors').doc(today);
-    await ref.set({
-      date: today,
-      total: FieldValue.increment(1),
-      providers: { [provider]: FieldValue.increment(1) },
-      lastError: String(errorMessage || '').substring(0, 250),
-      updatedAt: new Date()
-    }, { merge: true });
+    await ref.set({ date: today, total: FieldValue.increment(1), providers: { [provider]: FieldValue.increment(1) }, lastError: String(errorMessage || '').substring(0, 250), updatedAt: new Date() }, { merge: true });
   } catch (e) { }
 }
 
@@ -652,7 +628,7 @@ app.post('/api/user-preferences', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ SMTP / IMAP ============ */
+/* ============ SMTP ============ */
 app.post('/api/smtp/connect', authRequired, async (req, res) => {
   try {
     const { appPassword, alsoEnableImap } = req.body || {};
@@ -1101,7 +1077,7 @@ app.get('/api/recipient/:id/gmail-history', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ FILES (3MB limit) ============ */
+/* ============ FILES ============ */
 app.post('/api/upload-file', authRequired, async (req, res) => {
   try {
     const { base64, mimeType, filename } = req.body;
@@ -1120,7 +1096,7 @@ app.delete('/api/files/:id', authRequired, async (req, res) => {
   try { await db.collection('users').doc(req.session.user.id).collection('files').doc(req.params.id).delete(); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ LOGO (2MB limit) ============ */
+/* ============ LOGO ============ */
 app.post('/api/upload-logo', authRequired, async (req, res) => {
   try {
     const { base64, mimeType, filename } = req.body;
@@ -1142,7 +1118,7 @@ app.get('/api/logo', authRequired, async (req, res) => {
   try { const d = await getUserData(req.session.user.id); const uid = req.session.user.id; const publicUrl = d.logoBase64 ? (BACKEND_URL + '/logo/' + uid) : ''; res.json({ ok: true, url: publicUrl, urlAlt: d.logoUrl || '' }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ PROFILE PIC (1MB limit) ============ */
+/* ============ PROFILE PIC ============ */
 app.post('/api/profile/picture', authRequired, async (req, res) => {
   try {
     const { base64, mimeType } = req.body;
@@ -1584,7 +1560,6 @@ app.get('/api/admin/dashboard', adminRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ===== NEW: OCR USAGE MONITOR ===== */
 app.get('/api/admin/ocr-usage', adminRequired, async (req, res) => {
   try {
     const us = await db.collection('users').get();
@@ -1600,15 +1575,8 @@ app.get('/api/admin/ocr-usage', adminRequired, async (req, res) => {
       const day = daySnap.exists ? daySnap.data() : { total: 0, success: 0, failed: 0, charsExtracted: 0 };
       const tot = totalSnap.exists ? totalSnap.data() : { total: 0, success: 0, failed: 0, charsExtracted: 0 };
       if ((tot.total || 0) > 0) {
-        rows.push({
-          id: u.id, email: d.email, name: d.name, appAccountId: d.appAccountId || 'N/A',
-          todayTotal: day.total || 0, todaySuccess: day.success || 0, todayFailed: day.failed || 0, todayChars: day.charsExtracted || 0, todayLastError: day.lastError || '',
-          total: tot.total || 0, success: tot.success || 0, failed: tot.failed || 0, chars: tot.charsExtracted || 0
-        });
-        grandTotal += tot.total || 0;
-        grandSuccess += tot.success || 0;
-        grandFailed += tot.failed || 0;
-        grandChars += tot.charsExtracted || 0;
+        rows.push({ id: u.id, email: d.email, name: d.name, appAccountId: d.appAccountId || 'N/A', todayTotal: day.total || 0, todaySuccess: day.success || 0, todayFailed: day.failed || 0, todayChars: day.charsExtracted || 0, todayLastError: day.lastError || '', total: tot.total || 0, success: tot.success || 0, failed: tot.failed || 0, chars: tot.charsExtracted || 0 });
+        grandTotal += tot.total || 0; grandSuccess += tot.success || 0; grandFailed += tot.failed || 0; grandChars += tot.charsExtracted || 0;
       }
     }
     rows.sort((a, b) => b.total - a.total);
@@ -1616,14 +1584,28 @@ app.get('/api/admin/ocr-usage', adminRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+app.get('/api/admin/ocr-quota', adminRequired, async (req, res) => {
+  try {
+    const month = new Date().toISOString().substring(0, 7);
+    const snap = await db.collection('globalStats').doc('ocrQuota_' + month).get();
+    const data = snap.exists ? snap.data() : { total: 0, success: 0, failed: 0, charsExtracted: 0 };
+    const used = data.total || 0;
+    const remaining = Math.max(0, OCR_FREE_MONTHLY_LIMIT - used);
+    const percent = Math.round((used / OCR_FREE_MONTHLY_LIMIT) * 100);
+    res.json({ ok: true, month, used, remaining, limit: OCR_FREE_MONTHLY_LIMIT, percent, success: data.success || 0, failed: data.failed || 0, charsExtracted: data.charsExtracted || 0 });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
 app.get('/api/admin/ocr-log', adminRequired, async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit) || 200, 500);
-    const us = await db.collection('users').get();
+    const userFilter = req.query.user || '';
+    const us = userFilter ? [await db.collection('users').doc(userFilter).get()] : (await db.collection('users').get()).docs;
     const all = [];
-    for (const u of us.docs) {
+    for (const u of us) {
+      if (!u.exists) continue;
       const d = u.data();
-      const snaps = await db.collection('users').doc(u.id).collection('ocrLog').orderBy('at', 'desc').limit(50).get();
+      const snaps = await db.collection('users').doc(u.id).collection('ocrLog').orderBy('at', 'desc').limit(200).get();
       snaps.forEach(s => {
         const dd = s.data();
         const at = dd.at && dd.at._seconds ? dd.at._seconds * 1000 : new Date(dd.at || 0).getTime();
@@ -1635,7 +1617,6 @@ app.get('/api/admin/ocr-log', adminRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ===== NEW: AI ERROR MONITOR ===== */
 app.get('/api/admin/ai-errors', adminRequired, async (req, res) => {
   try {
     const us = await db.collection('users').get();
@@ -1651,9 +1632,7 @@ app.get('/api/admin/ai-errors', adminRequired, async (req, res) => {
       if ((dd.total || 0) === 0) continue;
       rows.push({ id: u.id, email: d.email, name: d.name, appAccountId: d.appAccountId || 'N/A', todayTotal: dd.total || 0, providers: dd.providers || {}, lastError: dd.lastError || '' });
       grandTotal += dd.total || 0;
-      for (const [k, v] of Object.entries(dd.providers || {})) {
-        providerTotals[k] = (providerTotals[k] || 0) + (typeof v === 'number' ? v : 0);
-      }
+      for (const [k, v] of Object.entries(dd.providers || {})) { providerTotals[k] = (providerTotals[k] || 0) + (typeof v === 'number' ? v : 0); }
     }
     rows.sort((a, b) => b.todayTotal - a.todayTotal);
     res.json({ ok: true, rows, summary: { date: today, grandTotal, providerTotals } });
