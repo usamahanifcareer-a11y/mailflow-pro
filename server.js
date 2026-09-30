@@ -1,51 +1,50 @@
 require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const cookieSession = require('cookie-session');
-const nodemailer = require('nodemailer');
-const { initializeApp, cert } = require('firebase-admin/app');
-const { getFirestore } = require('firebase-admin/firestore');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const crypto = require('crypto');
-const path = require('path');
-const { ImapFlow } = require('imapflow');
-const { simpleParser } = require('mailparser');
+const express=require('express');
+const cors=require('cors');
+const cookieSession=require('cookie-session');
+const nodemailer=require('nodemailer');
+const {initializeApp,cert}=require('firebase-admin/app');
+const {getFirestore}=require('firebase-admin/firestore');
+const {GoogleGenerativeAI}=require('@google/generative-ai');
+const crypto=require('crypto');
+const path=require('path');
+const {ImapFlow}=require('imapflow');
+const {simpleParser}=require('mailparser');
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'usama.hanif.career@gmail.com').toLowerCase();
-const DEFAULT_DAILY_LIMIT = 500;
-const DEFAULT_SEND_DELAY = 20;
-const IS_VERCEL = !!process.env.VERCEL;
-const CRON_SECRET = process.env.CRON_SECRET || '';
-const BACKEND_URL = process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org';
-const APP_VERSION = '1.7.0';
+const app=express();
+const PORT=process.env.PORT||3000;
+const ADMIN_EMAIL=(process.env.ADMIN_EMAIL||'usama.hanif.career@gmail.com').toLowerCase();
+const DEFAULT_DAILY_LIMIT=500;
+const DEFAULT_SEND_DELAY=20;
+const IS_VERCEL=!!process.env.VERCEL;
+const CRON_SECRET=process.env.CRON_SECRET||'';
+const BACKEND_URL=process.env.BACKEND_URL||'https://mailflowpro.dpdns.org';
+const APP_VERSION='1.8.0';
 
-if (!process.env.SESSION_SECRET) { console.error('FATAL: SESSION_SECRET missing!'); process.exit(1); }
-if (!process.env.ENCRYPTION_KEY) { console.error('FATAL: ENCRYPTION_KEY missing!'); process.exit(1); }
+if(!process.env.SESSION_SECRET){console.error('FATAL: SESSION_SECRET missing!');process.exit(1);}
+if(!process.env.ENCRYPTION_KEY){console.error('FATAL: ENCRYPTION_KEY missing!');process.exit(1);}
 
-const ENC_KEY = crypto.createHash('sha256').update(process.env.ENCRYPTION_KEY).digest();
-const SESSION_DAYS_SHORT = 3;
-const SESSION_DAYS_LONG = 30;
+const ENC_KEY=crypto.createHash('sha256').update(process.env.ENCRYPTION_KEY).digest();
+const SESSION_DAYS_SHORT=3;
+const SESSION_DAYS_LONG=30;
 
-const userCache = new Map();
-const CACHE_TTL = { quota: 90 * 1000, history: 5 * 60 * 1000, status: 30 * 1000 };
-function cacheGet(key){const e=userCache.get(key);if(!e)return null;if(Date.now()-e.time>e.ttl){userCache.delete(key);return null;}return e.value;}
-function cacheSet(key,value,ttl){if(userCache.size>500){const k=userCache.keys().next().value;userCache.delete(k);}userCache.set(key,{value,time:Date.now(),ttl});}
+const userCache=new Map();
+const CACHE_TTL={quota:60*1000,history:5*60*1000,status:30*1000,stats:15*1000};
+function cacheGet(k){const e=userCache.get(k);if(!e)return null;if(Date.now()-e.time>e.ttl){userCache.delete(k);return null;}return e.value;}
+function cacheSet(k,v,ttl){if(userCache.size>500){const fk=userCache.keys().next().value;userCache.delete(fk);}userCache.set(k,{value:v,time:Date.now(),ttl});}
 function cacheDel(prefix){for(const k of userCache.keys()){if(k.startsWith(prefix))userCache.delete(k);}}
 
 function encrypt(text){if(!text)return text;try{const iv=crypto.randomBytes(12);const cipher=crypto.createCipheriv('aes-256-gcm',ENC_KEY,iv);let enc=cipher.update(JSON.stringify(text),'utf8','base64');enc+=cipher.final('base64');return 'v1:'+iv.toString('base64')+':'+cipher.getAuthTag().toString('base64')+':'+enc;}catch(e){return text;}}
-function decrypt(data){if(!data||typeof data!=='string'||!data.startsWith('v1:'))return data;try{const parts=data.split(':');const decipher=crypto.createDecipheriv('aes-256-gcm',ENC_KEY,Buffer.from(parts[1],'base64'));decipher.setAuthTag(Buffer.from(parts[2],'base64'));let dec=decipher.update(parts[3],'base64','utf8');dec+=decipher.final('utf8');return JSON.parse(dec);}catch(e){return null;}}
-function hashPassword(password,salt){if(!salt)salt=crypto.randomBytes(16).toString('hex');const hash=crypto.scryptSync(password,salt,64).toString('hex');return {hash,salt};}
-function verifyPassword(password,hash,salt){try{const attempt=crypto.scryptSync(password,salt,64).toString('hex');return crypto.timingSafeEqual(Buffer.from(attempt,'hex'),Buffer.from(hash,'hex'));}catch(e){return false;}}
-function normalizeEmail(email){let e=String(email).toLowerCase().trim();const parts=e.split('@');if(parts.length!==2)return e;let local=parts[0];const domain=parts[1];if(domain==='gmail.com'||domain==='googlemail.com'){local=local.split('+')[0].replace(/\./g,'');return local+'@gmail.com';}return e;}
+function decrypt(data){if(!data||typeof data!=='string'||!data.startsWith('v1:'))return data;try{const p=data.split(':');const d=crypto.createDecipheriv('aes-256-gcm',ENC_KEY,Buffer.from(p[1],'base64'));d.setAuthTag(Buffer.from(p[2],'base64'));let dec=d.update(p[3],'base64','utf8');dec+=d.final('utf8');return JSON.parse(dec);}catch(e){return null;}}
+function hashPassword(pw,salt){if(!salt)salt=crypto.randomBytes(16).toString('hex');return {hash:crypto.scryptSync(pw,salt,64).toString('hex'),salt};}
+function verifyPassword(pw,hash,salt){try{return crypto.timingSafeEqual(Buffer.from(crypto.scryptSync(pw,salt,64).toString('hex'),'hex'),Buffer.from(hash,'hex'));}catch(e){return false;}}
+function normalizeEmail(email){let e=String(email).toLowerCase().trim();const p=e.split('@');if(p.length!==2)return e;let local=p[0];const domain=p[1];if(domain==='gmail.com'||domain==='googlemail.com'){local=local.split('+')[0].replace(/\./g,'');return local+'@gmail.com';}return e;}
 function emailUid(email){return crypto.createHash('md5').update(normalizeEmail(email)).digest('hex');}
 
 const GEMINI_KEY=process.env.GEMINI_API_KEY||'';
 const GROQ_KEY=process.env.GROQ_API_KEY||'';
 const MISTRAL_KEY=process.env.MISTRAL_API_KEY||'';
 const OPENROUTER_KEY=process.env.OPENROUTER_API_KEY||'';
-
 const aiCache=new Map();
 const AI_CACHE_TTL=10*60*1000;
 const PROVIDER_BUDGETS={groq:parseInt(process.env.GROQ_TOKEN_BUDGET||'0',10),gemini:parseInt(process.env.GEMINI_TOKEN_BUDGET||'0',10),mistral:parseInt(process.env.MISTRAL_TOKEN_BUDGET||'0',10),openrouter:parseInt(process.env.OPENROUTER_TOKEN_BUDGET||'0',10),omniroute:parseInt(process.env.OMNIROUTE_TOKEN_BUDGET||'0',10)};
@@ -55,9 +54,23 @@ function getCacheKey(prompt,uid){return crypto.createHash('md5').update((uid||'a
 function getCachedResponse(prompt,uid){const k=getCacheKey(prompt,uid);const e=aiCache.get(k);if(!e)return null;if(Date.now()-e.time>AI_CACHE_TTL){aiCache.delete(k);return null;}return e.text;}
 function setCachedResponse(prompt,uid,t){if(aiCache.size>800){const k=aiCache.keys().next().value;aiCache.delete(k);}aiCache.set(getCacheKey(prompt,uid),{text:t,time:Date.now()});}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
-function safeParseJSON(text){if(!text)return null;let c=text.trim().replace(/^```(?:json)?\s*/i,'').replace(/```\s*$/i,'').trim();const fb=c.indexOf('{'),lb=c.lastIndexOf('}');if(fb===-1||lb===-1)return null;try{return JSON.parse(c.substring(fb,lb+1));}catch(e){return null;}}
+function safeParseJSON(t){if(!t)return null;let c=t.trim().replace(/^```(?:json)?\s*/i,'').replace(/```\s*$/i,'').trim();const fb=c.indexOf('{'),lb=c.lastIndexOf('}');if(fb===-1||lb===-1)return null;try{return JSON.parse(c.substring(fb,lb+1));}catch(e){return null;}}
 async function fetchWithTimeout(url,opts,ms){const ctrl=new AbortController();const t=setTimeout(()=>ctrl.abort(),ms||20000);try{const r=await fetch(url,{...opts,signal:ctrl.signal});clearTimeout(t);return r;}catch(e){clearTimeout(t);throw e;}}
-function stripSignature(text){if(!text)return text;let t=text.trim();const lines=t.split('\n');while(lines.length>0&&!lines[lines.length-1].trim())lines.pop();if(lines.length<2)return t;const closer=/^(best regards|regards|sincerely|thank you|thanks|warm regards|kind regards|cheers|warmly|yours truly|yours faithfully|respectfully|all the best)[,.!\s]*$/i;const lastLine=lines[lines.length-1].trim();const secondLast=lines.length>=2?lines[lines.length-2].trim():'';if(closer.test(lastLine))return lines.slice(0,-1).join('\n').trim();if(lines.length>=3&&closer.test(secondLast))return lines.slice(0,-2).join('\n').trim();return t;}
+
+function stripSignature(text){
+  if(!text)return text;
+  let t=String(text).trim();
+  const lines=t.split('\n');
+  while(lines.length>0&&!lines[lines.length-1].trim())lines.pop();
+  if(lines.length<2)return t;
+  const closer=/^(best regards|regards|sincerely|thank you|thanks|warm regards|kind regards|cheers|warmly|yours truly|yours faithfully|respectfully|all the best|best|thankyou|thanks & regards)[,.!\s]*$/i;
+  const last=lines[lines.length-1].trim();
+  const sec=lines.length>=2?lines[lines.length-2].trim():'';
+  if(closer.test(last))return lines.slice(0,-1).join('\n').trim();
+  if(lines.length>=3&&closer.test(sec))return lines.slice(0,-2).join('\n').trim();
+  return t;
+}
+
 function localCategorize(fromEmail,subject,bodyText){const f=(fromEmail||'').toLowerCase();const s=(subject||'').toLowerCase();const b=(bodyText||'').toLowerCase();if(f.includes('noreply')||f.includes('no-reply')||f.includes('donotreply')){if(s.includes('welcome')||s.includes('verify'))return 'NEWSLETTER';return 'AUTO_REPLY';}if(s.includes('newsletter')||b.includes('unsubscribe')||f.includes('notifications@'))return 'NEWSLETTER';if(s.includes('winner')||s.includes('prize')||s.includes('claim'))return 'SPAM';if(s.includes('meeting')||s.includes('invite')||s.includes('calendar'))return 'MEETING_REQUEST';if(s.includes('invoice')||s.includes('receipt')||s.includes('payment'))return 'INVOICE';if(s.includes('order')||s.includes('shipping')||s.includes('delivery'))return 'ORDER';if(s.includes('?'))return 'QUESTION';if(s.includes('following up'))return 'FOLLOW_UP';if(b.includes('interested')||b.includes("let's discuss"))return 'INTERESTED';if(b.includes('not interested'))return 'NOT_INTERESTED';return 'OTHER';}
 
 async function logAIUsage(uid,provider,model,usage){
@@ -73,29 +86,24 @@ async function logAIUsage(uid,provider,model,usage){
     const totalRef=db.collection('users').doc(uid).collection('aiUsage').doc('total');
     const provRef=db.collection('users').doc(uid).collection('aiUsage').doc('prov_'+provider);
     const batch=db.batch();
-    const [daySnap,monthSnap,totalSnap,provSnap]=await Promise.all([dayRef.get(),monthRef.get(),totalRef.get(),provRef.get()]);
+    const [ds,ms,ts,ps]=await Promise.all([dayRef.get(),monthRef.get(),totalRef.get(),provRef.get()]);
     const mut=(snap)=>{const d=snap.exists?snap.data():{calls:0,promptTokens:0,completionTokens:0,totalTokens:0,providers:{}};d.calls=(d.calls||0)+1;d.promptTokens=(d.promptTokens||0)+pt;d.completionTokens=(d.completionTokens||0)+ct;d.totalTokens=(d.totalTokens||0)+tt;d.providers=d.providers||{};d.providers[provider]=(d.providers[provider]||0)+1;d.updatedAt=new Date();return d;};
-    batch.set(dayRef,mut(daySnap),{merge:true});
-    batch.set(monthRef,mut(monthSnap),{merge:true});
-    const totalData=mut(totalSnap);totalData.firstUsed=totalData.firstUsed||new Date();
-    batch.set(totalRef,totalData,{merge:true});
-    const provData=provSnap.exists?provSnap.data():{calls:0,tokens:0};
-    provData.calls=(provData.calls||0)+1;provData.tokens=(provData.tokens||0)+tt;provData.updatedAt=new Date();
-    batch.set(provRef,provData,{merge:true});
+    batch.set(dayRef,mut(ds),{merge:true});batch.set(monthRef,mut(ms),{merge:true});
+    const td=mut(ts);td.firstUsed=td.firstUsed||new Date();batch.set(totalRef,td,{merge:true});
+    const pd=ps.exists?ps.data():{calls:0,tokens:0};pd.calls=(pd.calls||0)+1;pd.tokens=(pd.tokens||0)+tt;pd.updatedAt=new Date();batch.set(provRef,pd,{merge:true});
     await batch.commit();
   }catch(e){}
 }
 
-async function callGroq(prompt,uid){if(!GROQ_KEY)throw new Error('No key');const models=['openai/gpt-oss-120b','llama-3.3-70b-versatile','llama-3.1-8b-instant','llama3-70b-8192','mixtral-8x7b-32768','gemma2-9b-it'];let lastErr=null;for(const model of models){try{const r=await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+GROQ_KEY},body:JSON.stringify({model,messages:[{role:'user',content:prompt}],temperature:0.7,max_tokens:1800})},20000);if(!r.ok){lastErr=new Error('Groq '+model+' HTTP '+r.status);continue;}const d=await r.json();const content=(d.choices?.[0]?.message?.content||'').trim();if(content&&content.length>5){logAIUsage(uid,'groq',model,d.usage||{});return content;}lastErr=new Error('Groq '+model+' empty');}catch(e){lastErr=e;}}throw lastErr||new Error('All Groq models failed');}
-async function callGemini(prompt,uid){if(!GEMINI_KEY)throw new Error('No key');const models=['gemini-2.0-flash-exp','gemini-2.0-flash','gemini-1.5-flash','gemini-1.5-flash-latest','gemini-1.5-pro'];let lastErr=null;for(const modelName of models){try{const client=new GoogleGenerativeAI(GEMINI_KEY);const model=client.getGenerativeModel({model:modelName});const result=await model.generateContent(prompt);const text=result.response.text().trim();if(text&&text.length>5){const um=result.response.usageMetadata||{};logAIUsage(uid,'gemini',modelName,{promptTokens:um.promptTokenCount||0,completionTokens:um.candidatesTokenCount||0,totalTokens:um.totalTokenCount||0});return text;}lastErr=new Error('Gemini '+modelName+' empty');}catch(e){lastErr=new Error('Gemini '+modelName+': '+e.message);}}throw lastErr||new Error('All Gemini models failed');}
-async function callOpenRouter(prompt,uid){if(!OPENROUTER_KEY)throw new Error('No key');const models=['meta-llama/llama-3.3-70b-instruct:free','meta-llama/llama-3.1-8b-instruct:free','google/gemini-flash-1.5-8b:free','mistralai/mistral-7b-instruct:free','qwen/qwen-2.5-7b-instruct:free'];let lastErr=null;for(const model of models){try{const r=await fetchWithTimeout('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+OPENROUTER_KEY,'HTTP-Referer':BACKEND_URL,'X-Title':'MailFlow Pro'},body:JSON.stringify({model,messages:[{role:'user',content:prompt+'\nReturn valid JSON only.'}],temperature:0.7,max_tokens:1800})},20000);if(!r.ok){lastErr=new Error('OR '+model+' HTTP '+r.status);continue;}const d=await r.json();const content=(d.choices?.[0]?.message?.content||'').trim();if(content&&content.length>5){logAIUsage(uid,'openrouter',model,d.usage||{});return content;}lastErr=new Error('OR '+model+' empty');}catch(e){lastErr=e;}}throw lastErr||new Error('All OpenRouter models failed');}
-async function callMistral(prompt,uid){if(!MISTRAL_KEY)throw new Error('No key');const doFetch=async()=>{const r=await fetchWithTimeout('https://api.mistral.ai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+MISTRAL_KEY},body:JSON.stringify({model:'mistral-small-latest',messages:[{role:'user',content:prompt}],temperature:0.7,max_tokens:1800})},20000);if(r.status===429){const e=new Error('Rate limited');e.retryAfter=parseInt(r.headers.get('retry-after')||'5',10);throw e;}if(!r.ok)throw new Error('Mistral '+r.status);const d=await r.json();const content=(d.choices?.[0]?.message?.content||'').trim();if(content)logAIUsage(uid,'mistral','mistral-small-latest',d.usage||{});return content;};let lastErr;for(let attempt=0;attempt<3;attempt++){try{return await doFetch();}catch(e){lastErr=e;if(e.retryAfter!==undefined||e.message.includes('429'))await sleep((e.retryAfter||Math.pow(2,attempt))*1000);else throw e;}}throw lastErr;}
-async function callOmniRoute(prompt,uid){const OMNIROUTE_URL=process.env.OMNIROUTE_URL||'';const OMNIROUTE_KEY=process.env.OMNIROUTE_KEY||'';if(!OMNIROUTE_URL||!OMNIROUTE_KEY)throw new Error('No OmniRoute config');const r=await fetchWithTimeout(OMNIROUTE_URL.replace(/\/$/,'')+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+OMNIROUTE_KEY},body:JSON.stringify({model:'auto',messages:[{role:'user',content:prompt}],temperature:0.7,max_tokens:1800})},25000);if(!r.ok)throw new Error('OmniRoute HTTP '+r.status);const d=await r.json();const content=(d.choices?.[0]?.message?.content||'').trim();if(!content||content.length<5)throw new Error('OmniRoute empty');logAIUsage(uid,'omniroute',d.model||'auto',d.usage||{});return content;}
-async function callAI(prompt,uid){const cached=getCachedResponse(prompt,uid);if(cached)return cached;const providers=[{n:'omniroute',f:callOmniRoute},{n:'groq',f:callGroq},{n:'gemini',f:callGemini},{n:'openrouter',f:callOpenRouter},{n:'mistral',f:callMistral}];const errs=[];for(const p of providers){try{const text=await p.f(prompt,uid);if(!text||text.length<5)continue;setCachedResponse(prompt,uid,text);return text;}catch(e){errs.push(p.n+': '+e.message);}}throw new Error('All AI failed: '+errs.join(' | '));}
+async function callGroq(prompt,uid){if(!GROQ_KEY)throw new Error('No key');const models=['openai/gpt-oss-120b','llama-3.3-70b-versatile','llama-3.1-8b-instant','llama3-70b-8192','mixtral-8x7b-32768','gemma2-9b-it'];let lastErr=null;for(const model of models){try{const r=await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+GROQ_KEY},body:JSON.stringify({model,messages:[{role:'user',content:prompt}],temperature:0.75,max_tokens:2000})},25000);if(!r.ok){lastErr=new Error('Groq '+model+' HTTP '+r.status);continue;}const d=await r.json();const content=(d.choices?.[0]?.message?.content||'').trim();if(content&&content.length>5){logAIUsage(uid,'groq',model,d.usage||{});return content;}lastErr=new Error('Groq '+model+' empty');}catch(e){lastErr=e;}}throw lastErr||new Error('All Groq models failed');}
+async function callGemini(prompt,uid){if(!GEMINI_KEY)throw new Error('No key');const models=['gemini-2.0-flash-exp','gemini-2.0-flash','gemini-1.5-flash','gemini-1.5-flash-latest','gemini-1.5-pro'];let lastErr=null;for(const mn of models){try{const c=new GoogleGenerativeAI(GEMINI_KEY);const m=c.getGenerativeModel({model:mn});const r=await m.generateContent(prompt);const t=r.response.text().trim();if(t&&t.length>5){const um=r.response.usageMetadata||{};logAIUsage(uid,'gemini',mn,{promptTokens:um.promptTokenCount||0,completionTokens:um.candidatesTokenCount||0,totalTokens:um.totalTokenCount||0});return t;}lastErr=new Error('Gemini '+mn+' empty');}catch(e){lastErr=new Error('Gemini '+mn+': '+e.message);}}throw lastErr||new Error('All Gemini models failed');}
+async function callOpenRouter(prompt,uid){if(!OPENROUTER_KEY)throw new Error('No key');const models=['meta-llama/llama-3.3-70b-instruct:free','meta-llama/llama-3.1-8b-instruct:free','google/gemini-flash-1.5-8b:free','mistralai/mistral-7b-instruct:free','qwen/qwen-2.5-7b-instruct:free'];let lastErr=null;for(const model of models){try{const r=await fetchWithTimeout('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+OPENROUTER_KEY,'HTTP-Referer':BACKEND_URL,'X-Title':'MailFlow Pro'},body:JSON.stringify({model,messages:[{role:'user',content:prompt+'\nReturn valid JSON only.'}],temperature:0.7,max_tokens:2000})},25000);if(!r.ok){lastErr=new Error('OR '+model+' HTTP '+r.status);continue;}const d=await r.json();const content=(d.choices?.[0]?.message?.content||'').trim();if(content&&content.length>5){logAIUsage(uid,'openrouter',model,d.usage||{});return content;}lastErr=new Error('OR '+model+' empty');}catch(e){lastErr=e;}}throw lastErr||new Error('All OpenRouter models failed');}
+async function callMistral(prompt,uid){if(!MISTRAL_KEY)throw new Error('No key');const doF=async()=>{const r=await fetchWithTimeout('https://api.mistral.ai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+MISTRAL_KEY},body:JSON.stringify({model:'mistral-small-latest',messages:[{role:'user',content:prompt}],temperature:0.7,max_tokens:2000})},25000);if(r.status===429){const e=new Error('Rate limited');e.retryAfter=parseInt(r.headers.get('retry-after')||'5',10);throw e;}if(!r.ok)throw new Error('Mistral '+r.status);const d=await r.json();const c=(d.choices?.[0]?.message?.content||'').trim();if(c)logAIUsage(uid,'mistral','mistral-small-latest',d.usage||{});return c;};let lastErr;for(let a=0;a<3;a++){try{return await doF();}catch(e){lastErr=e;if(e.retryAfter!==undefined||e.message.includes('429'))await sleep((e.retryAfter||Math.pow(2,a))*1000);else throw e;}}throw lastErr;}
+async function callOmniRoute(prompt,uid){const U=process.env.OMNIROUTE_URL||'';const K=process.env.OMNIROUTE_KEY||'';if(!U||!K)throw new Error('No OmniRoute config');const r=await fetchWithTimeout(U.replace(/\/$/,'')+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+K},body:JSON.stringify({model:'auto',messages:[{role:'user',content:prompt}],temperature:0.7,max_tokens:2000})},30000);if(!r.ok)throw new Error('OmniRoute HTTP '+r.status);const d=await r.json();const c=(d.choices?.[0]?.message?.content||'').trim();if(!c||c.length<5)throw new Error('OmniRoute empty');logAIUsage(uid,'omniroute',d.model||'auto',d.usage||{});return c;}
+async function callAI(prompt,uid){const c=getCachedResponse(prompt,uid);if(c)return c;const providers=[{n:'omniroute',f:callOmniRoute},{n:'groq',f:callGroq},{n:'gemini',f:callGemini},{n:'openrouter',f:callOpenRouter},{n:'mistral',f:callMistral}];const errs=[];for(const p of providers){try{const text=await p.f(prompt,uid);if(!text||text.length<5)continue;setCachedResponse(prompt,uid,text);return text;}catch(e){errs.push(p.n+': '+e.message);}}throw new Error('All AI failed: '+errs.join(' | '));}
 
 app.set('trust proxy',1);
 app.use((req,res,next)=>{res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('X-Frame-Options','SAMEORIGIN');res.setHeader('X-XSS-Protection','1; mode=block');res.setHeader('Referrer-Policy','strict-origin-when-cross-origin');res.setHeader('Strict-Transport-Security','max-age=31536000; includeSubDomains');next();});
-
 const ALLOWED_ORIGINS=(process.env.ALLOWED_ORIGINS||'').split(',').map(x=>x.trim()).filter(Boolean);
 app.use(cors({origin:function(origin,cb){if(!origin)return cb(null,true);if(ALLOWED_ORIGINS.length===0)return cb(null,true);if(ALLOWED_ORIGINS.indexOf(origin)!==-1)return cb(null,true);cb(null,false);},credentials:true}));
 app.use(express.json({limit:'20mb'}));
@@ -113,14 +121,14 @@ function createTransporter(email,appPassword){return nodemailer.createTransport(
 function createImapClient(email,appPassword){return new ImapFlow({host:'imap.gmail.com',port:993,secure:true,auth:{user:email,pass:appPassword},logger:false,tls:{rejectUnauthorized:false}});}
 
 async function resolveAppPassword(uid){const snap=await db.collection('users').doc(uid).get();if(!snap.exists)return null;const d=snap.data();let pass=null;if(d.smtpAppPassword)pass=decrypt(d.smtpAppPassword);if(!pass&&d.imapAppPassword)pass=decrypt(d.imapAppPassword);return pass;}
-async function authRequired(req,res,next){if(!req.session||!req.session.user)return res.status(401).json({ok:false,error:'Session expired.'});try{const banned=await db.collection('bannedUsers').doc(req.session.user.id).get();if(banned.exists){req.session=null;return res.status(403).json({ok:false,error:'BANNED',reason:banned.data().reason});}}catch(e){}next();}
+async function authRequired(req,res,next){if(!req.session||!req.session.user)return res.status(401).json({ok:false,error:'Session expired.'});try{const b=await db.collection('bannedUsers').doc(req.session.user.id).get();if(b.exists){req.session=null;return res.status(403).json({ok:false,error:'BANNED',reason:b.data().reason});}}catch(e){}next();}
 async function adminRequired(req,res,next){if(!req.session||!req.session.user)return res.status(401).json({ok:false,error:'Session expired.'});if(req.session.user.email.toLowerCase()!==ADMIN_EMAIL)return res.status(403).json({ok:false,error:'Admin required'});next();}
 async function getUserData(uid){const d=await db.collection('users').doc(uid).get();if(!d.exists)return null;const data=d.data();if(data.imapAppPassword&&typeof data.imapAppPassword==='string')data.imapAppPassword=decrypt(data.imapAppPassword)||null;if(data.smtpAppPassword&&typeof data.smtpAppPassword==='string')data.smtpAppPassword=decrypt(data.smtpAppPassword)||null;return data;}
-function generateAppAccountId(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';const bytes=crypto.randomBytes(6);let id='MFP-';for(let i=0;i<6;i++)id+=c.charAt(bytes[i]%c.length);return id;}
+function generateAppAccountId(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';const b=crypto.randomBytes(6);let id='MFP-';for(let i=0;i<6;i++)id+=c.charAt(b[i]%c.length);return id;}
 function isQuietHours(p){if(!p||!p.quietEnabled)return false;const n=new Date().getHours();const s=Number(p.quietStart),e=Number(p.quietEnd);if(isNaN(s)||isNaN(e)||s===e)return false;if(s<e)return n>=s&&n<e;return n>=s||n<e;}
 function getCurrentHourKey(){const n=new Date();return n.toISOString().split('T')[0]+'-'+n.getHours();}
-function sanitizeSubject(subject){if(!subject)return '';let s=subject.replace(/!{2,}/g,'!').replace(/\?{2,}/g,'?').trim();if(s.length>78)s=s.substring(0,75)+'...';return s;}
-function getClientIP(req){const fwd=req.headers['x-forwarded-for'];if(fwd)return String(fwd).split(',')[0].trim();return req.headers['x-real-ip']||req.connection?.remoteAddress||req.socket?.remoteAddress||'unknown';}
+function sanitizeSubject(s){if(!s)return '';let x=s.replace(/!{2,}/g,'!').replace(/\?{2,}/g,'?').trim();if(x.length>78)x=x.substring(0,75)+'...';return x;}
+function getClientIP(req){const f=req.headers['x-forwarded-for'];if(f)return String(f).split(',')[0].trim();return req.headers['x-real-ip']||req.connection?.remoteAddress||req.socket?.remoteAddress||'unknown';}
 
 function localAnalysis(subject,body){
   const SW=['free','guarantee','act now','click here','limited time','buy now','cash','prize','urgent','risk-free','earn money','work from home','make money','no cost','no fees'];
@@ -149,15 +157,15 @@ function localAnalysis(subject,body){
   return {score,prediction,inboxProbability,issues,suggestions,tone:'professional',readability:75,emotionalTone:'neutral'};
 }
 
-async function testImapConnection(email,appPassword){const client=createImapClient(email,appPassword);try{await client.connect();await client.logout();return {ok:true};}catch(e){try{await client.close();}catch(err){}return {ok:false,error:e.message};}}
+async function testImapConnection(email,appPassword){const c=createImapClient(email,appPassword);try{await c.connect();await c.logout();return {ok:true};}catch(e){try{await c.close();}catch(err){}return {ok:false,error:e.message};}}
 
 async function fetchImapEmails(email,appPassword,options={}){
-  const client=createImapClient(email,appPassword);
+  const c=createImapClient(email,appPassword);
   const emails=[];
   try{
-    await client.connect();
+    await c.connect();
     const folder=options.folder||'INBOX';
-    const mailbox=await client.mailboxOpen(folder);
+    const mailbox=await c.mailboxOpen(folder);
     const total=mailbox.exists||0;
     const pageSize=Math.min(options.pageSize||20,50);
     const page=Math.max(1,options.page||1);
@@ -168,7 +176,7 @@ async function fetchImapEmails(email,appPassword,options={}){
       if(end>=1){
         hasMore=start>1;
         const raws=[];
-        for await(const message of client.fetch(`${start}:${end}`,{envelope:true,uid:true,flags:true})){raws.push(message);}
+        for await(const m of c.fetch(`${start}:${end}`,{envelope:true,uid:true,flags:true})){raws.push(m);}
         raws.reverse();
         for(const m of raws){
           try{
@@ -176,69 +184,82 @@ async function fetchImapEmails(email,appPassword,options={}){
             const fromAddr=env.from&&env.from[0]?env.from[0].address:'';
             const fromName=env.from&&env.from[0]?env.from[0].name:'';
             const toAddr=env.to&&env.to[0]?env.to[0].address:'';
+            const replyToAddr=env.replyTo&&env.replyTo[0]?env.replyTo[0].address:'';
             const subj=env.subject||'(no subject)';
             const dt=env.date?new Date(env.date).toISOString():new Date().toISOString();
             const flags=m.flags||new Set();
-            emails.push({uid:m.uid,seq:m.seq,messageId:env.messageId||'',from:fromAddr,fromName:fromName||fromAddr,to:toAddr,subject:subj,date:dt,snippet:'',category:localCategorize(fromAddr,subj,''),folder:folder,isRead:flags.has('\\Seen'),attachments:[]});
+            emails.push({uid:m.uid,seq:m.seq,messageId:env.messageId||'',from:fromAddr,fromName:fromName||fromAddr,to:toAddr,replyTo:replyToAddr,subject:subj,date:dt,snippet:'',category:localCategorize(fromAddr,subj,''),folder:folder,isRead:flags.has('\\Seen'),attachments:[]});
           }catch(pe){}
         }
       }
     }
-    await client.logout();
+    await c.logout();
     return {ok:true,emails,total,hasMore,page,pageSize,folder};
-  }catch(e){try{await client.close();}catch(err){}return {ok:false,error:e.message};}
+  }catch(e){try{await c.close();}catch(err){}return {ok:false,error:e.message};}
 }
 
 async function fetchImapBody(email,appPassword,folder,uid){
-  const client=createImapClient(email,appPassword);
+  const c=createImapClient(email,appPassword);
   try{
-    await client.connect();
-    await client.mailboxOpen(folder||'INBOX');
-    const msg=await client.fetchOne(String(uid),{source:true},{uid:true});
-    if(!msg||!msg.source){await client.logout();return {ok:false,error:'Not found'};}
+    await c.connect();
+    await c.mailboxOpen(folder||'INBOX');
+    const msg=await c.fetchOne(String(uid),{source:true},{uid:true});
+    if(!msg||!msg.source){await c.logout();return {ok:false,error:'Email not found'};}
     const parsed=await simpleParser(msg.source);
-    const body={textBody:(parsed.text||'').substring(0,10000),htmlBody:(parsed.html||'').substring(0,30000),snippet:(parsed.text||'').substring(0,200).replace(/\s+/g,' '),messageId:parsed.messageId||'',inReplyTo:parsed.inReplyTo||'',references:parsed.references||'',attachments:(parsed.attachments||[]).map(a=>({filename:a.filename||'attachment',size:a.size||0,contentType:a.contentType||'application/octet-stream'}))};
-    await client.logout();
+    const body={
+      textBody:(parsed.text||'').substring(0,15000),
+      htmlBody:(parsed.html||'').substring(0,40000),
+      snippet:(parsed.text||'').substring(0,200).replace(/\s+/g,' '),
+      messageId:parsed.messageId||'',
+      inReplyTo:parsed.inReplyTo||'',
+      references:Array.isArray(parsed.references)?parsed.references.join(' '):(parsed.references||''),
+      replyTo:parsed.replyTo?parsed.replyTo.text:'',
+      to:parsed.to?parsed.to.text:'',
+      from:parsed.from?parsed.from.text:'',
+      cc:parsed.cc?parsed.cc.text:'',
+      attachments:(parsed.attachments||[]).map(a=>({filename:a.filename||'attachment',size:a.size||0,contentType:a.contentType||'application/octet-stream'}))
+    };
+    await c.logout();
     return {ok:true,body};
-  }catch(e){try{await client.close();}catch(err){}return {ok:false,error:e.message};}
+  }catch(e){try{await c.close();}catch(err){}return {ok:false,error:e.message};}
 }
 
 async function fetchGmailSentTodayCount(email,appPassword){
-  const client=createImapClient(email,appPassword);
+  const c=createImapClient(email,appPassword);
   try{
-    await client.connect();
+    await c.connect();
     let opened=false;
     const folders=['[Gmail]/Sent Mail','[Gmail]/Sent','Sent','Sent Items'];
-    for(const f of folders){try{await client.mailboxOpen(f);opened=true;break;}catch(e){}}
-    if(!opened){await client.logout();return {ok:false,error:'No Sent folder'};}
+    for(const f of folders){try{await c.mailboxOpen(f);opened=true;break;}catch(e){}}
+    if(!opened){await c.logout();return {ok:false,error:'No Sent folder'};}
     const today=new Date();today.setHours(0,0,0,0);
     let uids=[];
-    try{uids=await client.search({since:today},{uid:true});}catch(e){uids=[];}
-    await client.logout();
+    try{uids=await c.search({since:today},{uid:true});}catch(e){uids=[];}
+    await c.logout();
     return {ok:true,count:uids?uids.length:0,since:today.toISOString()};
-  }catch(e){try{await client.close();}catch(err){}return {ok:false,error:e.message};}
+  }catch(e){try{await c.close();}catch(err){}return {ok:false,error:e.message};}
 }
 
 async function fetchImapSentForRecipient(email,appPassword,recipientEmail,maxResults){
-  const client=createImapClient(email,appPassword);
+  const c=createImapClient(email,appPassword);
   const results=[];
   try{
-    await client.connect();
+    await c.connect();
     const folders=['[Gmail]/Sent Mail','[Gmail]/Sent','Sent','Sent Items','INBOX.Sent','[Gmail]/All Mail'];
     let opened=false;
-    for(const f of folders){try{await client.mailboxOpen(f);opened=true;break;}catch(e){}}
-    if(!opened){await client.logout();return {ok:false,error:'No Sent folder found'};}
+    for(const f of folders){try{await c.mailboxOpen(f);opened=true;break;}catch(e){}}
+    if(!opened){await c.logout();return {ok:false,error:'No Sent folder found'};}
     const target=String(recipientEmail||'').toLowerCase().trim();
-    if(!target){await client.logout();return {ok:true,emails:[],total:0};}
+    if(!target){await c.logout();return {ok:true,emails:[],total:0};}
     let searchRes=[];
-    const searchStrategies=[{to:target},{or:[{to:target},{cc:target},{bcc:target}]},{text:target}];
-    for(const strat of searchStrategies){try{const res=await client.search(strat,{uid:true});if(res&&res.length>searchRes.length)searchRes=res;}catch(e){}}
-    if(!searchRes||!searchRes.length){await client.logout();return {ok:true,emails:[],total:0};}
+    const strategies=[{to:target},{or:[{to:target},{cc:target},{bcc:target}]},{text:target}];
+    for(const s of strategies){try{const res=await c.search(s,{uid:true});if(res&&res.length>searchRes.length)searchRes=res;}catch(e){}}
+    if(!searchRes||!searchRes.length){await c.logout();return {ok:true,emails:[],total:0};}
     let uids=searchRes;
     if(maxResults&&maxResults>0&&uids.length>maxResults)uids=uids.slice(-maxResults);
     const CHUNK=500;
     const fetched=[];
-    for(let i=0;i<uids.length;i+=CHUNK){const chunk=uids.slice(i,i+CHUNK);try{for await(const msg of client.fetch(chunk.join(','),{envelope:true,flags:true,uid:true},{uid:true})){fetched.push(msg);}}catch(e){}}
+    for(let i=0;i<uids.length;i+=CHUNK){const chunk=uids.slice(i,i+CHUNK);try{for await(const m of c.fetch(chunk.join(','),{envelope:true,flags:true,uid:true},{uid:true})){fetched.push(m);}}catch(e){}}
     for(const msg of fetched){
       try{
         const env=msg.envelope||{};
@@ -249,10 +270,10 @@ async function fetchImapSentForRecipient(email,appPassword,recipientEmail,maxRes
         results.push({uid:msg.uid,messageId:env.messageId||'',subject:env.subject||'(no subject)',date:env.date?new Date(env.date).toISOString():null,from:env.from&&env.from[0]?env.from[0].address:email,to:env.to&&env.to[0]?env.to[0].address:'',isRead:flags.has('\\Seen'),source:'gmail_imap'});
       }catch(e){}
     }
-    await client.logout();
+    await c.logout();
     results.sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
     return {ok:true,emails:results,total:results.length,searched:searchRes.length};
-  }catch(e){try{await client.close();}catch(err){}return {ok:false,error:e.message};}
+  }catch(e){try{await c.close();}catch(err){}return {ok:false,error:e.message};}
 }
 
 async function updateSenderMemory(userId,email){
@@ -260,14 +281,14 @@ async function updateSenderMemory(userId,email){
     if(!email.from)return;
     const senderId=crypto.createHash('md5').update(email.from.toLowerCase()).digest('hex');
     const ref=db.collection('users').doc(userId).collection('senderMemory').doc(senderId);
-    const existing=await ref.get();
+    const ex=await ref.get();
     const category=localCategorize(email.from,email.subject,email.textBody||'');
-    if(existing.exists){const data=existing.data();await ref.update({totalEmails:(data.totalEmails||0)+1,lastEmailAt:new Date(),lastSubject:email.subject,categories:Array.from(new Set([...(data.categories||[]),category])),subjects:[...(data.subjects||[]).slice(-9),email.subject]});}
+    if(ex.exists){const d=ex.data();await ref.update({totalEmails:(d.totalEmails||0)+1,lastEmailAt:new Date(),lastSubject:email.subject,categories:Array.from(new Set([...(d.categories||[]),category])),subjects:[...(d.subjects||[]).slice(-9),email.subject]});}
     else{await ref.set({senderEmail:email.from,senderName:email.fromName||email.from.split('@')[0],totalEmails:1,firstEmailAt:new Date(),lastEmailAt:new Date(),lastSubject:email.subject,categories:[category],subjects:[email.subject]});}
   }catch(e){}
 }
 
-function looksLikeBinaryCv(text){if(!text)return true;const t=String(text).trim();if(t.startsWith('%PDF')||t.startsWith('PK\x03\x04'))return true;const sample=t.substring(0,800);let bad=0;for(let i=0;i<sample.length;i++){const c=sample.charCodeAt(i);if(c===0||(c<9)||(c>13&&c<32))bad++;}return bad>12;}
+function looksLikeBinaryCv(t){if(!t)return true;const x=String(t).trim();if(x.startsWith('%PDF')||x.startsWith('PK\x03\x04'))return true;const s=x.substring(0,800);let bad=0;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);if(c===0||(c<9)||(c>13&&c<32))bad++;}return bad>12;}
 function decodePdfString(s){return s.replace(/\\n/g,'\n').replace(/\\r/g,'\n').replace(/\\t/g,'\t').replace(/\\\(/g,'(').replace(/\\\)/g,')').replace(/\\\\/g,'\\').replace(/\\(\d{1,3})/g,function(_,oct){return String.fromCharCode(parseInt(oct,8));});}
 function naivePdfExtract(buf){
   try{
@@ -319,7 +340,7 @@ async function extractCvFromBuffer(buf,filename,mimeType){
 
 app.get('/api/health',(req,res)=>res.json({ok:true,vercel:IS_VERCEL,version:APP_VERSION,method:'smtp'}));
 
-/* ============ AUTH ============ */
+/* ===== AUTH ===== */
 app.post('/api/auth/register',async(req,res)=>{
   try{
     const {email,password,name}=req.body||{};
@@ -335,7 +356,7 @@ app.post('/api/auth/register',async(req,res)=>{
     const ipBanned=await db.collection('bannedUsers').where('ip','==',ip).limit(1).get();
     if(!ipBanned.empty)return res.json({ok:false,error:'Your IP is suspended',banned:true});
     const dupCheck=await db.collection('users').where('email','in',[emailLower,normalized]).limit(1).get();
-    if(!dupCheck.empty){const existingDoc=dupCheck.docs[0];const exData=existingDoc.data();if(exData.passwordHash)return res.json({ok:false,error:'This email is already registered. Please login instead.'});}
+    if(!dupCheck.empty){const ex=dupCheck.docs[0].data();if(ex.passwordHash)return res.json({ok:false,error:'This email is already registered. Please login instead.'});}
     const existing=await db.collection('users').doc(uid).get();
     if(existing.exists&&existing.data().passwordHash)return res.json({ok:false,error:'This email is already registered. Please login instead.'});
     const {hash,salt}=hashPassword(password);
@@ -356,7 +377,7 @@ app.post('/api/auth/login',async(req,res)=>{
     const normalized=normalizeEmail(emailLower);
     let uid=emailUid(emailLower);
     let userSnap=await db.collection('users').doc(uid).get();
-    if(!userSnap.exists){const altUid=crypto.createHash('md5').update(emailLower).digest('hex');if(altUid!==uid){const altSnap=await db.collection('users').doc(altUid).get();if(altSnap.exists){userSnap=altSnap;uid=altUid;}}}
+    if(!userSnap.exists){const altUid=crypto.createHash('md5').update(emailLower).digest('hex');if(altUid!==uid){const a=await db.collection('users').doc(altUid).get();if(a.exists){userSnap=a;uid=altUid;}}}
     if(!userSnap.exists){const q=await db.collection('users').where('emailNormalized','==',normalized).limit(1).get();if(!q.empty){userSnap=q.docs[0];uid=q.docs[0].id;}}
     if(!userSnap.exists)return res.json({ok:false,error:'Invalid email or password'});
     const userData=userSnap.data();
@@ -381,8 +402,8 @@ app.post('/api/check-banned',async(req,res)=>{
   try{
     const {email,ip}=req.body||{};
     const result={banned:false,reason:'',canRequest:false};
-    if(email){const emailLower=String(email).toLowerCase();const uid=emailUid(emailLower);const snap=await db.collection('bannedUsers').doc(uid).get();if(snap.exists){result.banned=true;result.reason=snap.data().reason||'Account suspended';result.canRequest=true;}}
-    if(!result.banned&&ip){const snap=await db.collection('bannedUsers').where('ip','==',ip).limit(1).get();if(!snap.empty){result.banned=true;result.reason=snap.docs[0].data().reason||'IP suspended';result.canRequest=true;}}
+    if(email){const uid=emailUid(String(email).toLowerCase());const s=await db.collection('bannedUsers').doc(uid).get();if(s.exists){result.banned=true;result.reason=s.data().reason||'Account suspended';result.canRequest=true;}}
+    if(!result.banned&&ip){const s=await db.collection('bannedUsers').where('ip','==',ip).limit(1).get();if(!s.empty){result.banned=true;result.reason=s.docs[0].data().reason||'IP suspended';result.canRequest=true;}}
     res.json({ok:true,...result});
   }catch(e){res.json({ok:false,error:e.message});}
 });
@@ -394,8 +415,8 @@ app.post('/api/request-access',async(req,res)=>{
     const ip=getClientIP(req);
     const uid=emailUid(email);
     const ref=db.collection('accessRequests').doc(uid);
-    const existing=await ref.get();
-    if(existing.exists&&existing.data().status==='pending')return res.json({ok:false,error:'You already have a pending request'});
+    const ex=await ref.get();
+    if(ex.exists&&ex.data().status==='pending')return res.json({ok:false,error:'You already have a pending request'});
     await ref.set({name:String(name).substring(0,100),email:String(email).toLowerCase().substring(0,200),company:String(company||'').substring(0,150),phone:String(phone||'').substring(0,50),reason:String(reason).substring(0,1000),oldEmail:String(oldEmail||'').toLowerCase(),ip,status:'pending',requestedAt:new Date()});
     res.json({ok:true,message:'Request submitted'});
   }catch(e){res.json({ok:false,error:e.message});}
@@ -407,24 +428,22 @@ app.get('/api/me',async(req,res)=>{
 });
 app.post('/api/logout',(req,res)=>{req.session=null;res.json({ok:true});});
 
-/* ============ NEW: CHANGE PASSWORD ============ */
 app.post('/api/change-password',authRequired,async(req,res)=>{
   try{
     const {currentPassword,newPassword}=req.body||{};
     if(!currentPassword||!newPassword)return res.json({ok:false,error:'Current and new password required'});
     if(newPassword.length<8)return res.json({ok:false,error:'New password must be at least 8 characters'});
     if(currentPassword===newPassword)return res.json({ok:false,error:'New password must be different'});
-    const userSnap=await db.collection('users').doc(req.session.user.id).get();
-    if(!userSnap.exists)return res.json({ok:false,error:'User not found'});
-    const userData=userSnap.data();
-    if(!verifyPassword(currentPassword,userData.passwordHash,userData.passwordSalt))return res.json({ok:false,error:'Current password is incorrect'});
+    const s=await db.collection('users').doc(req.session.user.id).get();
+    if(!s.exists)return res.json({ok:false,error:'User not found'});
+    const ud=s.data();
+    if(!verifyPassword(currentPassword,ud.passwordHash,ud.passwordSalt))return res.json({ok:false,error:'Current password is incorrect'});
     const {hash,salt}=hashPassword(newPassword);
     await db.collection('users').doc(req.session.user.id).update({passwordHash:hash,passwordSalt:salt,passwordChangedAt:new Date()});
     res.json({ok:true,message:'Password changed successfully'});
   }catch(e){res.json({ok:false,error:e.message});}
 });
 
-/* ============ NEW: CHANGE EMAIL ============ */
 app.post('/api/change-email',authRequired,async(req,res)=>{
   try{
     const {currentPassword,newEmail}=req.body||{};
@@ -434,85 +453,78 @@ app.post('/api/change-email',authRequired,async(req,res)=>{
     const newNormalized=normalizeEmail(newEmailLower);
     const newUid=emailUid(newEmailLower);
     if(newUid===req.session.user.id)return res.json({ok:false,error:'New email is same as current'});
-    const userSnap=await db.collection('users').doc(req.session.user.id).get();
-    if(!userSnap.exists)return res.json({ok:false,error:'User not found'});
-    const userData=userSnap.data();
-    if(!verifyPassword(currentPassword,userData.passwordHash,userData.passwordSalt))return res.json({ok:false,error:'Password is incorrect'});
-    const dupCheck=await db.collection('users').where('emailNormalized','==',newNormalized).limit(1).get();
-    if(!dupCheck.empty)return res.json({ok:false,error:'This email is already registered'});
-    const newDoc=await db.collection('users').doc(newUid).get();
-    if(newDoc.exists&&newDoc.data().passwordHash)return res.json({ok:false,error:'This email is already registered'});
-    await db.collection('users').doc(newUid).set({...userData,email:newEmailLower,emailNormalized:newNormalized,updatedAt:new Date()},{merge:true});
+    const s=await db.collection('users').doc(req.session.user.id).get();
+    if(!s.exists)return res.json({ok:false,error:'User not found'});
+    const ud=s.data();
+    if(!verifyPassword(currentPassword,ud.passwordHash,ud.passwordSalt))return res.json({ok:false,error:'Password is incorrect'});
+    const dup=await db.collection('users').where('emailNormalized','==',newNormalized).limit(1).get();
+    if(!dup.empty)return res.json({ok:false,error:'This email is already registered'});
+    const nd=await db.collection('users').doc(newUid).get();
+    if(nd.exists&&nd.data().passwordHash)return res.json({ok:false,error:'This email is already registered'});
+    await db.collection('users').doc(newUid).set({...ud,email:newEmailLower,emailNormalized:newNormalized,updatedAt:new Date()},{merge:true});
     await db.collection('users').doc(req.session.user.id).delete();
-    const bannedOld=await db.collection('bannedUsers').doc(req.session.user.id).get();
-    if(bannedOld.exists)await db.collection('bannedUsers').doc(newUid).set(bannedOld.data());
+    const bo=await db.collection('bannedUsers').doc(req.session.user.id).get();
+    if(bo.exists)await db.collection('bannedUsers').doc(newUid).set(bo.data());
     req.session.user={...req.session.user,id:newUid,email:newEmailLower,isAdmin:newEmailLower===ADMIN_EMAIL};
     res.json({ok:true,user:req.session.user,message:'Email changed successfully'});
   }catch(e){res.json({ok:false,error:e.message});}
 });
 
-/* ============ NEW: USER PREFERENCES ============ */
 app.get('/api/user-preferences',authRequired,async(req,res)=>{
-  try{
-    const d=await getUserData(req.session.user.id);
-    const prefs=d.preferences||{language:'en',timezone:'Asia/Karachi',dateFormat:'DD/MM/YYYY',timeFormat:'12h'};
-    res.json({ok:true,preferences:prefs});
-  }catch(e){res.json({ok:false,error:e.message});}
+  try{const d=await getUserData(req.session.user.id);res.json({ok:true,preferences:d.preferences||{language:'en',timezone:'Asia/Karachi',dateFormat:'DD/MM/YYYY',timeFormat:'12h'}});}catch(e){res.json({ok:false,error:e.message});}
 });
 app.post('/api/user-preferences',authRequired,async(req,res)=>{
   try{
     const {language,timezone,dateFormat,timeFormat}=req.body||{};
-    const allowedLangs=['en','ur','hi','ar','es','fr'];
-    const allowedTimezones=['Asia/Karachi','Asia/Dubai','Asia/Kolkata','Asia/Riyadh','Europe/London','Europe/Paris','America/New_York','America/Los_Angeles','UTC'];
-    const allowedDateFormats=['DD/MM/YYYY','MM/DD/YYYY','YYYY-MM-DD','DD MMM YYYY','MMM DD, YYYY'];
-    const allowedTimeFormats=['12h','24h'];
-    const prefs={language:allowedLangs.includes(language)?language:'en',timezone:allowedTimezones.includes(timezone)?timezone:'Asia/Karachi',dateFormat:allowedDateFormats.includes(dateFormat)?dateFormat:'DD/MM/YYYY',timeFormat:allowedTimeFormats.includes(timeFormat)?timeFormat:'12h',updatedAt:new Date()};
+    const AL=['en','ur','hi','ar','es','fr'];
+    const AT=['Asia/Karachi','Asia/Dubai','Asia/Kolkata','Asia/Riyadh','Europe/London','Europe/Paris','America/New_York','America/Los_Angeles','UTC'];
+    const AD=['DD/MM/YYYY','MM/DD/YYYY','YYYY-MM-DD','DD MMM YYYY','MMM DD, YYYY'];
+    const ATF=['12h','24h'];
+    const prefs={language:AL.includes(language)?language:'en',timezone:AT.includes(timezone)?timezone:'Asia/Karachi',dateFormat:AD.includes(dateFormat)?dateFormat:'DD/MM/YYYY',timeFormat:ATF.includes(timeFormat)?timeFormat:'12h',updatedAt:new Date()};
     await db.collection('users').doc(req.session.user.id).update({preferences:prefs});
     res.json({ok:true,preferences:prefs});
   }catch(e){res.json({ok:false,error:e.message});}
 });
 
-/* ============ SMTP ============ */
+/* ===== SMTP ===== */
 app.post('/api/smtp/connect',authRequired,async(req,res)=>{
   try{
     const {appPassword,alsoEnableImap}=req.body||{};
     if(!appPassword||appPassword.replace(/\s/g,'').length<16)return res.json({ok:false,error:'App password must be 16 characters.'});
     const cleanPass=appPassword.replace(/\s/g,'');
     const userEmail=req.session.user.email;
-    const transporter=createTransporter(userEmail,cleanPass);
-    try{await transporter.verify();}catch(err){return res.json({ok:false,error:'Connection failed: '+err.message});}
+    const t=createTransporter(userEmail,cleanPass);
+    try{await t.verify();}catch(err){return res.json({ok:false,error:'Connection failed: '+err.message});}
     const update={smtpAppPassword:encrypt(cleanPass),smtpEnabled:true,smtpConnectedAt:new Date()};
     if(alsoEnableImap){const test=await testImapConnection(userEmail,cleanPass);if(test.ok){update.imapAppPassword=encrypt(cleanPass);update.imapEnabled=true;update.imapConnectedAt=new Date();}}
     await db.collection('users').doc(req.session.user.id).update(update);
-    cacheDel('quota:'+req.session.user.id);
-    cacheDel('status:'+req.session.user.id);
+    cacheDel('quota:'+req.session.user.id);cacheDel('status:'+req.session.user.id);
     res.json({ok:true,message:'Gmail connected successfully',imapEnabled:!!update.imapEnabled});
   }catch(e){res.json({ok:false,error:'Connection failed: '+e.message});}
 });
 app.get('/api/smtp/status',authRequired,async(req,res)=>{
-  try{const ck='status:'+req.session.user.id;const cached=cacheGet(ck);if(cached)return res.json(cached);const u=await getUserData(req.session.user.id);const out={ok:true,connected:!!u.smtpEnabled,connectedAt:u.smtpConnectedAt||null,imapEnabled:!!u.imapEnabled};cacheSet(ck,out,CACHE_TTL.status);res.json(out);}catch(e){res.json({ok:false,error:e.message});}
+  try{const ck='status:'+req.session.user.id;const c=cacheGet(ck);if(c)return res.json(c);const u=await getUserData(req.session.user.id);const out={ok:true,connected:!!u.smtpEnabled,connectedAt:u.smtpConnectedAt||null,imapEnabled:!!u.imapEnabled};cacheSet(ck,out,CACHE_TTL.status);res.json(out);}catch(e){res.json({ok:false,error:e.message});}
 });
 app.post('/api/smtp/disconnect',authRequired,async(req,res)=>{
   try{await db.collection('users').doc(req.session.user.id).update({smtpAppPassword:null,smtpEnabled:false});cacheDel('quota:'+req.session.user.id);cacheDel('status:'+req.session.user.id);res.json({ok:true});}catch(e){res.json({ok:false,error:e.message});}
 });
 
-/* ============ IMAP ============ */
+/* ===== IMAP ===== */
 app.post('/api/imap/connect',authRequired,async(req,res)=>{
   try{
     const {appPassword,useStored}=req.body||{};
     let cleanPass='';
-    if(useStored){const stored=await resolveAppPassword(req.session.user.id);if(!stored)return res.json({ok:false,error:'No stored password found'});cleanPass=stored;}
+    if(useStored){const s=await resolveAppPassword(req.session.user.id);if(!s)return res.json({ok:false,error:'No stored password found'});cleanPass=s;}
     else{if(!appPassword||appPassword.replace(/\s/g,'').length<16)return res.json({ok:false,error:'App password must be 16 characters.'});cleanPass=appPassword.replace(/\s/g,'');}
     const test=await testImapConnection(req.session.user.email,cleanPass);
     if(!test.ok)return res.json({ok:false,error:'Connection failed: '+test.error});
     await db.collection('users').doc(req.session.user.id).update({imapAppPassword:encrypt(cleanPass),imapEnabled:true,imapConnectedAt:new Date()});
-    cacheDel('quota:'+req.session.user.id);
-    cacheDel('status:'+req.session.user.id);
+    cacheDel('quota:'+req.session.user.id);cacheDel('status:'+req.session.user.id);
     res.json({ok:true,message:'Inbox connected successfully'});
   }catch(e){res.json({ok:false,error:e.message});}
 });
 app.get('/api/imap/status',authRequired,async(req,res)=>{
-  try{const u=await getUserData(req.session.user.id);res.json({ok:true,connected:!!u.imapEnabled,connectedAt:u.imapConnectedAt||null,lastSync:u.imapLastSync||null,totalSynced:u.imapTotalSynced||0,hasSmtpPass:!!u.smtpEnabled});}catch(e){res.json({ok:false,error:e.message});}
+  try{const u=await getUserData(req.session.user.id);res.json({ok:true,connected:!!u.imapEnabled,connectedAt:u.imapConnectedAt||null,lastSync:u.imapLastSync||null,totalSynced:u.imapTotalSynced||0,hasSmtpPass:!!u.smtpEnabled,userEmail:u.email});}catch(e){res.json({ok:false,error:e.message});}
 });
 app.post('/api/imap/disconnect',authRequired,async(req,res)=>{
   try{await db.collection('users').doc(req.session.user.id).update({imapAppPassword:null,imapEnabled:false});cacheDel('quota:'+req.session.user.id);res.json({ok:true});}catch(e){res.json({ok:false,error:e.message});}
@@ -532,7 +544,7 @@ app.post('/api/imap/inbox',authRequired,async(req,res)=>{
     for(const e of result.emails){const key=folder.replace(/[^A-Za-z0-9]/g,'_')+'_'+e.uid;writes.push(coll.doc(key).set(e,{merge:true}).catch(()=>{}));if(e.from)updateSenderMemory(uid,{from:e.from,fromName:e.fromName,subject:e.subject,textBody:''});}
     Promise.all(writes).catch(()=>{});
     db.collection('users').doc(uid).update({imapLastSync:new Date()}).catch(()=>{});
-    res.json({ok:true,emails:result.emails,total:result.total,hasMore:result.hasMore,page:result.page,pageSize:result.pageSize,folder:folder});
+    res.json({ok:true,emails:result.emails,total:result.total,hasMore:result.hasMore,page:result.page,pageSize:result.pageSize,folder:folder,userEmail:u.email});
   }catch(e){res.json({ok:false,error:e.message});}
 });
 app.post('/api/imap/body',authRequired,async(req,res)=>{
@@ -545,18 +557,19 @@ app.post('/api/imap/body',authRequired,async(req,res)=>{
     const docId=folderKey+'_'+uid;
     const ref=db.collection('users').doc(req.session.user.id).collection('imapEmails').doc(docId);
     const cached=await ref.get();
-    if(cached.exists&&cached.data().bodyFetched)return res.json({ok:true,email:{id:docId,...cached.data()}});
+    if(cached.exists&&cached.data().bodyFetched)return res.json({ok:true,email:{id:docId,...cached.data(),userEmail:u.email}});
     const result=await fetchImapBody(u.email,u.imapAppPassword,folder||'INBOX',uid);
     if(!result.ok)return res.json({ok:false,error:result.error});
     await ref.set({...result.body,bodyFetched:true,isRead:true},{merge:true});
     const fresh=await ref.get();
-    res.json({ok:true,email:{id:docId,...fresh.data()}});
+    res.json({ok:true,email:{id:docId,...fresh.data(),userEmail:u.email}});
   }catch(e){res.json({ok:false,error:e.message});}
 });
 app.delete('/api/imap/email/:id',authRequired,async(req,res)=>{
   try{await db.collection('users').doc(req.session.user.id).collection('imapEmails').doc(req.params.id).delete();res.json({ok:true});}catch(e){res.json({ok:false,error:e.message});}
 });
 
+/* ===== INBOX REPLY (FIXED: block self-reply) ===== */
 app.post('/api/inbox/reply',authRequired,async(req,res)=>{
   try{
     const {to,subject,body,inReplyTo,references}=req.body;
@@ -564,7 +577,10 @@ app.post('/api/inbox/reply',authRequired,async(req,res)=>{
     const uid=req.session.user.id;
     const u=await getUserData(uid);
     if(!u.smtpEnabled||!u.smtpAppPassword)return res.json({ok:false,error:'Connect Gmail first'});
-    const transporter=createTransporter(req.session.user.email,u.smtpAppPassword);
+    const userEmailLower=String(req.session.user.email||'').toLowerCase();
+    const toLower=String(to).toLowerCase().trim();
+    if(toLower===userEmailLower)return res.json({ok:false,error:'Cannot reply to your own email address. Ye email tumne khud ko bheji hai.'});
+    const t=createTransporter(req.session.user.email,u.smtpAppPassword);
     let sigHtml='';
     if(u.signature)sigHtml='<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">'+u.signature+'</div>';
     const bodyHtml=body.replace(/\n/g,'<br>');
@@ -572,27 +588,28 @@ app.post('/api/inbox/reply',authRequired,async(req,res)=>{
     const mailOptions={from:'"'+(u.name||'User')+'" <'+req.session.user.email+'>',to,subject:sanitizeSubject(subject),html:fullHtml};
     if(inReplyTo)mailOptions.inReplyTo=inReplyTo;
     if(references)mailOptions.references=references;
-    const info=await transporter.sendMail(mailOptions);
+    const info=await t.sendMail(mailOptions);
     cacheDel('quota:'+uid);
-    await db.collection('users').doc(uid).collection('replyLog').add({to,subject,body,sentAt:new Date(),messageId:info.messageId||'',inReplyTo:inReplyTo||''});
+    await db.collection('users').doc(uid).collection('replyLog').add({to,subject,body,sentAt:new Date(),messageId:info.messageId||'',inReplyTo:inReplyTo||'',references:references||''});
     res.json({ok:true,id:info.messageId});
   }catch(e){res.json({ok:false,error:e.message});}
 });
 
 app.get('/api/memory/senders',authRequired,async(req,res)=>{
-  try{const snap=await db.collection('users').doc(req.session.user.id).collection('senderMemory').orderBy('lastEmailAt','desc').limit(200).get();const senders=[];snap.forEach(d=>senders.push({id:d.id,...d.data()}));res.json({ok:true,senders});}catch(e){res.json({ok:false,error:e.message});}
+  try{const s=await db.collection('users').doc(req.session.user.id).collection('senderMemory').orderBy('lastEmailAt','desc').limit(200).get();const l=[];s.forEach(d=>l.push({id:d.id,...d.data()}));res.json({ok:true,senders:l});}catch(e){res.json({ok:false,error:e.message});}
 });
 
-/* ============ AI ============ */
+/* ===== AI ===== */
 app.post('/api/ai/analyze-live',authRequired,async(req,res)=>{
   try{
     const {subject,body}=req.body;
     if(!subject&&!body)return res.json({ok:true,empty:true});
-    try{const cleanBody=(body||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().substring(0,1200);const prompt=`Analyze this email for spam score. Return ONLY JSON.\nSubject: "${(subject||'').substring(0,200)}"\nBody: "${cleanBody}"\nReturn: {"score":0-100,"prediction":"EXCELLENT"|"GOOD"|"RISKY"|"SPAM","inboxProbability":0-100,"issues":[{"severity":"low"|"medium"|"high","message":"string"}],"suggestions":["string"],"tone":"string"}`;const text=await callAI(prompt,req.session.user.id);const parsed=safeParseJSON(text);if(parsed&&typeof parsed.score==='number')return res.json({ok:true,...parsed,aiPowered:true});}catch(aiErr){}
+    try{const cb=(body||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().substring(0,1200);const p=`Analyze this email for spam score. Return ONLY JSON.\nSubject: "${(subject||'').substring(0,200)}"\nBody: "${cb}"\nReturn: {"score":0-100,"prediction":"EXCELLENT"|"GOOD"|"RISKY"|"SPAM","inboxProbability":0-100,"issues":[{"severity":"low"|"medium"|"high","message":"string"}],"suggestions":["string"],"tone":"string"}`;const t=await callAI(p,req.session.user.id);const parsed=safeParseJSON(t);if(parsed&&typeof parsed.score==='number')return res.json({ok:true,...parsed,aiPowered:true});}catch(aiErr){}
     res.json({ok:true,...localAnalysis(subject,body),aiPowered:false});
   }catch(e){res.json({ok:false,error:e.message});}
 });
 
+/* ===== AI SMART REPLY (WORLD-CLASS PROMPT) ===== */
 app.post('/api/ai/smart-reply',authRequired,async(req,res)=>{
   try{
     const {originalSubject,originalBody,originalFrom,instruction}=req.body;
@@ -604,13 +621,59 @@ app.post('/api/ai/smart-reply',authRequired,async(req,res)=>{
     const userPos=aiProfile.designation||(u.sigFields?.pos)||'';
     const userTone=aiProfile.tone||'professional';
     const userAbout=aiProfile.aboutMe||'';
+    const userIndustry=aiProfile.industry||'';
     const hasSignature=!!(u.signature&&u.signature.trim().length>20);
-    const sigInstruction=hasSignature?'Signature will be auto-appended by the app. Do NOT include any sign-off, name, or contact info.':`Write a clean professional sign-off at the end. Include name "${userName}"${userPos?', '+userPos:''}${userCompany?' at '+userCompany:''}. Keep it minimal.`;
-    const prompt=`You are an expert email assistant writing AS ${userName}. The incoming email may be in ANY language. Understand the MEANING and write a reply in professional ENGLISH.\n\nSENDER PROFILE:\nName: ${userName}\n${userPos?'Position: '+userPos:''}\n${userCompany?'Company: '+userCompany:''}\n${userAbout?'About: '+userAbout:''}\nPreferred Tone: ${userTone}\n\nINCOMING EMAIL:\nFrom: ${originalFrom||'Unknown'}\nSubject: ${originalSubject||'(no subject)'}\nBody: """${(originalBody||'').substring(0,4000)}"""\n\n${instruction?'EXTRA INSTRUCTION: '+instruction:''}\n\nRULES:\n- Write in FIRST PERSON as ${userName}\n- Match tone: ${userTone}\n- Address EVERY point\n- Reply in professional ENGLISH only\n- 2-4 paragraphs\n- ${sigInstruction}\n- Do NOT invent facts\n\nReturn ONLY JSON: {"subject":"Re: ...","body":"complete reply with \\n\\n"}`;
-    try{const text=await callAI(prompt,req.session.user.id);const parsed=safeParseJSON(text);if(parsed&&parsed.body&&parsed.body.length>20)return res.json({ok:true,subject:parsed.subject||('Re: '+originalSubject),body:stripSignature(parsed.body),aiPowered:true,hasUserSignature:hasSignature});}catch(e){}
-    const firstName=(originalFrom||'').match(/^([A-Za-z]+)/);
-    const greetName=firstName?firstName[1]:'there';
-    res.json({ok:true,subject:'Re: '+(originalSubject||''),body:`Dear ${greetName},\n\nThank you for your email. I will review it carefully and get back to you shortly.`,aiPowered:false,hasUserSignature:hasSignature});
+    const sigInstruction=hasSignature?'A professional HTML signature will be auto-appended. Do NOT include any sign-off, name, contact info, or closing line. End with the last substantive sentence.':`End with clean professional sign-off. Include name "${userName}"${userPos?', '+userPos:''}${userCompany?' at '+userCompany:''}. Keep it minimal (1-2 lines).`;
+    const prompt=`You are an expert business email assistant writing a reply on behalf of ${userName}.
+
+WRITER IDENTITY:
+- Name: ${userName}
+${userPos?'- Position: '+userPos:''}
+${userCompany?'- Company: '+userCompany:''}
+${userIndustry?'- Industry: '+userIndustry:''}
+${userAbout?'- About: '+userAbout:''}
+- Preferred Tone: ${userTone}
+
+INCOMING EMAIL (may be in ANY language — English, Urdu, Roman-Urdu, Hindi, Arabic, etc.):
+From: ${originalFrom||'Unknown Sender'}
+Subject: ${originalSubject||'(no subject)'}
+Body:
+"""
+${(originalBody||'').substring(0,4000)}
+"""
+
+${instruction?'EXTRA INSTRUCTION FROM USER: '+instruction:''}
+
+TASK: Write a thoughtful, professional reply.
+
+CRITICAL RULES:
+1. UNDERSTAND the incoming email's MEANING — do not just translate words. Grasp intent, sentiment, questions, requests.
+2. Reply in professional ENGLISH only.
+3. Write in FIRST PERSON as ${userName}.
+4. Match tone: ${userTone}.
+5. Address EVERY point, question, request.
+6. Answer questions clearly.
+7. Job application reply → offer next steps (call, meeting, timeline).
+8. Business enquiry → show enthusiasm + clear next steps.
+9. Keep it 2-4 paragraphs. Natural, warm, human, professional.
+10. ${sigInstruction}
+11. Do NOT invent facts. If unsure, say so gracefully.
+12. Avoid clichés like "I hope this email finds you well" unless truly fitting.
+13. If sender wrote in Urdu/Hindi/Roman-Urdu — reply in polished English.
+
+Return ONLY valid JSON:
+{"subject":"Re: (matching original subject)","body":"complete reply text with \\n\\n for paragraphs"}`;
+    try{
+      const t=await callAI(prompt,req.session.user.id);
+      const parsed=safeParseJSON(t);
+      if(parsed&&parsed.body&&parsed.body.length>20){
+        const cleanedBody=hasSignature?stripSignature(parsed.body):parsed.body;
+        return res.json({ok:true,subject:parsed.subject||('Re: '+originalSubject),body:cleanedBody,aiPowered:true,hasUserSignature:hasSignature});
+      }
+    }catch(e){}
+    const fn=(originalFrom||'').match(/^([A-Za-z]+)/);
+    const gn=fn?fn[1]:'there';
+    res.json({ok:true,subject:'Re: '+(originalSubject||''),body:`Hi ${gn},\n\nThank you for reaching out. I've reviewed your message and will get back to you with a detailed response shortly.\n\nLooking forward to connecting.`,aiPowered:false,hasUserSignature:hasSignature});
   }catch(e){res.json({ok:false,error:e.message});}
 });
 
@@ -624,10 +687,32 @@ app.post('/api/ai/write-email',authRequired,async(req,res)=>{
     const writerDesig=aiProfile.designation||'';
     const writerCompany=aiProfile.company||'';
     const writerAbout=aiProfile.aboutMe||'';
-    const TM={formal:'professional',friendly:'warm',casual:'casual',persuasive:'confident'};
-    const LM={short:'under 80 words',medium:'100-150 words',long:'200-250 words'};
-    const prompt=`Write a professional email. Context may be in ANY language. Return ONLY JSON.\nWriter: ${writerName}${writerDesig?', '+writerDesig:''}${writerCompany?' at '+writerCompany:''}\n${writerAbout?'About writer: '+writerAbout:''}\nContext: ${context}\nRecipient: ${recipientName||'unknown'}\nRecipient Company: ${recipientCompany||'unknown'}\nTone: ${TM[tone]||TM.formal}\nLength: ${LM[length]||LM.medium}\n\nOutput must be in professional English. STRICT: No signature, no name, no contact info at end.\nReturn: {"subject":"under 60 chars","body":"with \\n\\n breaks"}`;
-    try{const text=await callAI(prompt,req.session.user.id);const parsed=safeParseJSON(text);if(parsed&&parsed.subject&&parsed.body)return res.json({ok:true,subject:parsed.subject,body:stripSignature(parsed.body),aiPowered:true});}catch(e){}
+    const writerIndustry=aiProfile.industry||'';
+    const TM={formal:'professional and business-appropriate',friendly:'warm and approachable yet polished',casual:'relaxed but professional',persuasive:'confident and compelling'};
+    const LM={short:'80-100 words, concise',medium:'130-180 words, balanced',long:'200-280 words, detailed'};
+    const prompt=`Write a high-quality professional email.
+
+WRITER: ${writerName}${writerDesig?', '+writerDesig:''}${writerCompany?' at '+writerCompany:''}
+${writerIndustry?'Industry: '+writerIndustry:''}
+${writerAbout?'About writer: '+writerAbout:''}
+
+PURPOSE: ${context}
+RECIPIENT: ${recipientName||'unknown'}
+RECIPIENT COMPANY: ${recipientCompany||'unknown'}
+TONE: ${TM[tone]||TM.formal}
+LENGTH: ${LM[length]||LM.medium}
+
+RULES:
+- Output in professional English only
+- No sign-off, no name, no signature (auto-appended)
+- No "Dear Sir/Madam" — use name if available
+- Clear, actionable, human
+- Job application → mention relevant strengths
+- Sales/offer → focus on value
+
+Return ONLY valid JSON:
+{"subject":"under 65 chars","body":"email body with \\n\\n for paragraphs"}`;
+    try{const t=await callAI(prompt,req.session.user.id);const parsed=safeParseJSON(t);if(parsed&&parsed.subject&&parsed.body)return res.json({ok:true,subject:parsed.subject,body:stripSignature(parsed.body),aiPowered:true});}catch(e){}
     const r=recipientName||(recipientCompany?recipientCompany+' Team':'Hiring Team');
     const s=context.length>55?context.substring(0,52)+'...':context;
     res.json({ok:true,subject:s,body:`Dear ${r},\n\nI hope this message finds you well. I'm reaching out regarding ${context}.`,aiPowered:false});
@@ -638,35 +723,76 @@ app.post('/api/ai/extract-cv',authRequired,async(req,res)=>{
   try{
     const {fileId,base64,mimeType,filename}=req.body||{};
     let buf=null,fname=filename||'cv',mime=mimeType||'';
-    if(fileId){const f=await db.collection('users').doc(req.session.user.id).collection('files').doc(fileId).get();if(!f.exists)return res.json({ok:false,error:'File not found'});const meta=f.data();if(!meta.base64)return res.json({ok:false,error:'File data missing. Please re-upload.'});fname=meta.name||fname;mime=meta.mimeType||mime;buf=Buffer.from(meta.base64,'base64');}
-    else if(base64){buf=Buffer.from(base64,'base64');if(buf.length>900*1024)return res.json({ok:false,error:'Maximum file size is 900KB'});}
+    if(fileId){
+      const f=await db.collection('users').doc(req.session.user.id).collection('files').doc(fileId).get();
+      if(!f.exists)return res.json({ok:false,error:'File not found. Please re-upload your CV.'});
+      const meta=f.data();
+      if(!meta.base64||meta.base64.length<50)return res.json({ok:false,error:'This file has no data. Please delete and re-upload it.'});
+      fname=meta.name||fname;mime=meta.mimeType||mime;
+      try{buf=Buffer.from(meta.base64,'base64');}catch(e){return res.json({ok:false,error:'File data is corrupted. Please re-upload.'});}
+    }
+    else if(base64){try{buf=Buffer.from(base64,'base64');}catch(e){return res.json({ok:false,error:'Invalid file data'});}if(buf.length>900*1024)return res.json({ok:false,error:'Maximum file size is 900KB. Please compress your file.'});}
     else return res.json({ok:false,error:'No file provided'});
+    if(!buf||buf.length<20)return res.json({ok:false,error:'File is empty or corrupted.'});
     const text=await extractCvFromBuffer(buf,fname,mime);
-    if(!text||text.replace(/\s/g,'').length<30||looksLikeBinaryCv(text))return res.json({ok:false,error:'Could not read this CV. Please upload a text-based PDF, DOCX, or TXT file.'});
+    if(!text||text.replace(/\s/g,'').length<30||looksLikeBinaryCv(text)){
+      return res.json({ok:false,error:'Could not read text from this file. If it is a scanned PDF/image, please copy-paste the text manually. Otherwise, upload a text-based PDF, DOCX, or TXT file.'});
+    }
     res.json({ok:true,text:text.substring(0,20000),filename:fname,chars:text.length});
-  }catch(e){res.json({ok:false,error:e.message});}
+  }catch(e){res.json({ok:false,error:'File processing error: '+e.message});}
 });
 
 app.post('/api/ai/analyze-cv',authRequired,async(req,res)=>{
   try{
     const {cvText,targetRole,jobDescription,fileId}=req.body;
     let text=cvText||'';
-    if(fileId&&(!text||looksLikeBinaryCv(text))){try{const f=await db.collection('users').doc(req.session.user.id).collection('files').doc(fileId).get();if(f.exists){const meta=f.data();if(meta.base64&&meta.base64.length>100){text=await extractCvFromBuffer(Buffer.from(meta.base64,'base64'),meta.name||'cv',meta.mimeType||'');}}}catch(e){}}
-    if(looksLikeBinaryCv(text))return res.json({ok:false,error:'CV not readable. Please upload a text-based PDF or DOCX file.'});
-    if(!text||text.replace(/\s/g,'').length<30)return res.json({ok:false,error:'CV text is too short or empty.'});
-    const prompt=`You are an expert career coach. Analyze this CV and write a job application email.\n\nCRITICAL RULES:\n1. The CV may contain text in ANY language. Understand the MEANING regardless of language.\n2. Output MUST be in professional English only.\n\nCV:\n"""${text.substring(0,3500)}"""\n\nTarget Role: ${targetRole||'Not specified'}\nJob Description: ${jobDescription?jobDescription.substring(0,600):'Not provided'}\n\nReturn ONLY JSON: {"subject":"under 65 chars","body":"professional email body with \\n\\n, NO signature, NO name","keySkills":["s1","s2","s3","s4"],"analysis":"2-3 sentences in English","score":0-100}`;
+    if(fileId&&(!text||looksLikeBinaryCv(text))){try{const f=await db.collection('users').doc(req.session.user.id).collection('files').doc(fileId).get();if(f.exists){const m=f.data();if(m.base64&&m.base64.length>100){text=await extractCvFromBuffer(Buffer.from(m.base64,'base64'),m.name||'cv',m.mimeType||'');}}}catch(e){}}
+    if(looksLikeBinaryCv(text))return res.json({ok:false,error:'CV is not readable. Please upload a text-based PDF or DOCX file, or paste the text manually.'});
+    if(!text||text.replace(/\s/g,'').length<30)return res.json({ok:false,error:'CV text is too short or empty. Please upload a proper CV.'});
+    const u=await getUserData(req.session.user.id);
+    const aiProfile=u.aiProfile||{};
+    const writerName=aiProfile.fullName||u.name||'the applicant';
+    const writerCompany=aiProfile.company||'';
+    const prompt=`You are an expert career coach. Analyze this CV and write a compelling job application email.
+
+CRITICAL RULES:
+1. The CV may contain text in ANY language. Understand the MEANING regardless of language.
+2. Output MUST be in professional English only.
+3. Write in first person as the applicant: ${writerName}.
+${writerCompany?'4. Current company: '+writerCompany:''}
+
+CV CONTENT:
+"""
+${text.substring(0,3800)}
+"""
+
+TARGET ROLE: ${targetRole||'Not specified'}
+${jobDescription?'JOB DESCRIPTION:\n'+jobDescription.substring(0,800):'No job description provided'}
+
+TASK:
+- Extract key skills, experience, achievements
+- Match them to the target role
+- Write a compelling, personalized cover email
+
+RULES:
+- No signature, no name at bottom (auto-appended)
+- 2-3 paragraphs, professional, engaging
+- Highlight 2-3 strongest matches
+
+Return ONLY valid JSON:
+{"subject":"under 65 chars","body":"professional email with \\n\\n","keySkills":["s1","s2","s3","s4","s5"],"analysis":"2-3 sentences explaining match quality","score":0-100}`;
     const aiText=await callAI(prompt,req.session.user.id);
     const parsed=safeParseJSON(aiText);
     if(parsed&&parsed.subject&&parsed.body)return res.json({ok:true,subject:parsed.subject,body:stripSignature(parsed.body),keySkills:parsed.keySkills||[],analysis:parsed.analysis||'',score:parsed.score||70,aiPowered:true});
-    res.json({ok:false,error:'AI could not parse the CV. Please try again.'});
-  }catch(e){res.json({ok:false,error:e.message});}
+    res.json({ok:false,error:'AI could not parse the CV. Please try again with a clearer file.'});
+  }catch(e){res.json({ok:false,error:'Analysis failed: '+e.message});}
 });
 
 app.post('/api/ai/generate-subjects',authRequired,async(req,res)=>{
   try{
     const {context}=req.body;
-    const prompt=`Generate 5 email subject lines (max 60 chars, English). Return ONLY JSON.\nContext: ${context||'professional outreach'}\nReturn: {"subjects":["s1","s2","s3","s4","s5"]}`;
-    try{const text=await callAI(prompt,req.session.user.id);const parsed=safeParseJSON(text);if(parsed&&parsed.subjects&&parsed.subjects.length>=3)return res.json({ok:true,subjects:parsed.subjects,aiPowered:true});}catch(e){}
+    const prompt=`Generate 5 high-quality email subject lines. Return ONLY JSON.\nRules: max 60 chars each, English, compelling, no spam trigger words, no ALL CAPS, no excessive punctuation.\nContext: ${context||'professional outreach'}\nReturn: {"subjects":["s1","s2","s3","s4","s5"]}`;
+    try{const t=await callAI(prompt,req.session.user.id);const parsed=safeParseJSON(t);if(parsed&&parsed.subjects&&parsed.subjects.length>=3)return res.json({ok:true,subjects:parsed.subjects,aiPowered:true});}catch(e){}
     const c=(context||'Professional Outreach').substring(0,50);
     res.json({ok:true,subjects:[c,'Quick question about '+c,'Following up on '+c],aiPowered:false});
   }catch(e){res.json({ok:false,error:e.message});}
@@ -675,8 +801,26 @@ app.post('/api/ai/generate-subjects',authRequired,async(req,res)=>{
 app.post('/api/ai/improve-email',authRequired,async(req,res)=>{
   try{
     const {subject,body}=req.body;
-    const prompt=`Improve this email for inbox placement. Return ONLY JSON.\nSubject: "${subject||''}"\nBody: "${(body||'').substring(0,800)}"\nSTRICT: No signature, sign-off.\nReturn: {"improvedSubject":"...","improvedBody":"...","beforeScore":50,"afterScore":85}`;
-    try{const text=await callAI(prompt,req.session.user.id);const parsed=safeParseJSON(text);if(parsed&&parsed.improvedSubject)return res.json({ok:true,improvedSubject:parsed.improvedSubject,improvedBody:stripSignature(parsed.improvedBody||''),beforeScore:parsed.beforeScore||50,afterScore:parsed.afterScore||85,aiPowered:true});}catch(e){}
+    const prompt=`Improve this email for better inbox placement and readability.
+
+CURRENT:
+Subject: "${subject||''}"
+Body:
+"""
+${(body||'').substring(0,1500)}
+"""
+
+IMPROVE:
+- Fix grammar and clarity
+- Make more professional and engaging
+- Reduce spam trigger words
+- Improve subject line (max 60 chars)
+- Keep same core message
+- STRICT: No signature, no sign-off, no name
+
+Return ONLY valid JSON:
+{"improvedSubject":"...","improvedBody":"...","beforeScore":50,"afterScore":85}`;
+    try{const t=await callAI(prompt,req.session.user.id);const parsed=safeParseJSON(t);if(parsed&&parsed.improvedSubject)return res.json({ok:true,improvedSubject:parsed.improvedSubject,improvedBody:stripSignature(parsed.improvedBody||''),beforeScore:parsed.beforeScore||50,afterScore:parsed.afterScore||85,aiPowered:true});}catch(e){}
     res.json({ok:true,improvedSubject:subject,improvedBody:body,beforeScore:50,afterScore:75,aiPowered:false});
   }catch(e){res.json({ok:false,error:e.message});}
 });
@@ -684,15 +828,15 @@ app.post('/api/ai/improve-email',authRequired,async(req,res)=>{
 app.get('/api/ai/best-time',authRequired,async(req,res)=>{
   try{
     const uid=req.session.user.id;
-    const snap=await db.collection('users').doc(uid).collection('emailLog').orderBy('sentAt','desc').limit(100).get();
+    const s=await db.collection('users').doc(uid).collection('emailLog').orderBy('sentAt','desc').limit(100).get();
     const hs={};
-    snap.forEach(d=>{const data=d.data();const ms=data.sentAt?._seconds?data.sentAt._seconds*1000:new Date(data.sentAt).getTime();const h=new Date(ms).getHours();if(!hs[h])hs[h]={sent:0};hs[h].sent++;});
-    try{const hist=Object.entries(hs).map(([h,s])=>`Hour ${h}: sent=${s.sent}`).join('\n');const prompt=`Recommend 3 best hours (0-23). Return ONLY JSON.\nHistory:\n${hist||'No data'}\nReturn: {"bestHours":[h1,h2,h3],"reasoning":"short"}`;const text=await callAI(prompt,uid);const parsed=safeParseJSON(text);if(parsed&&parsed.bestHours)return res.json({ok:true,...parsed,aiPowered:true});}catch(e){}
-    res.json({ok:true,bestHours:[9,11,14],reasoning:'Default business hours',aiPowered:false});
+    s.forEach(d=>{const data=d.data();const ms=data.sentAt?._seconds?data.sentAt._seconds*1000:new Date(data.sentAt).getTime();const h=new Date(ms).getHours();if(!hs[h])hs[h]={sent:0};hs[h].sent++;});
+    try{const hist=Object.entries(hs).map(([h,s])=>`Hour ${h}: sent=${s.sent}`).join('\n');const p=`Recommend 3 best hours (0-23) for B2B emails. Return ONLY JSON.\nUser history:\n${hist||'No data'}\nReturn: {"bestHours":[h1,h2,h3],"reasoning":"short"}`;const t=await callAI(p,uid);const parsed=safeParseJSON(t);if(parsed&&parsed.bestHours)return res.json({ok:true,...parsed,aiPowered:true});}catch(e){}
+    res.json({ok:true,bestHours:[9,11,14],reasoning:'Default business hours (Tue-Thu highest engagement)',aiPowered:false});
   }catch(e){res.json({ok:true,bestHours:[9,11,14],reasoning:'Default',aiPowered:false});}
 });
 
-/* ============ TEMPLATES ============ */
+/* ===== TEMPLATES ===== */
 app.get('/api/templates',authRequired,async(req,res)=>{
   try{const s=await db.collection('users').doc(req.session.user.id).collection('templates').get();const l=[];s.forEach(d=>l.push({id:d.id,...d.data()}));res.json({ok:true,templates:l});}catch(e){res.json({ok:false,error:e.message});}
 });
@@ -702,24 +846,23 @@ app.post('/api/templates',authRequired,async(req,res)=>{
     if(!name||!subject||!body)return res.json({ok:false,error:'Name, subject, and body are required'});
     const ref=db.collection('users').doc(req.session.user.id).collection('templates');
     if(id){await ref.doc(id).set({name,subject,body,updatedAt:new Date()},{merge:true});res.json({ok:true,id,name});}
-    else{const existing=await ref.get();const names=[];existing.forEach(d=>{const n=d.data().name;if(n)names.push(n);});let fn=name;if(names.includes(name)){let c=1;while(names.includes(name+' '+c))c++;fn=name+' '+c;}const d=await ref.add({name:fn,subject,body,createdAt:new Date()});res.json({ok:true,id:d.id,name:fn,renamed:fn!==name});}
+    else{const ex=await ref.get();const names=[];ex.forEach(d=>{const n=d.data().name;if(n)names.push(n);});let fn=name;if(names.includes(name)){let c=1;while(names.includes(name+' '+c))c++;fn=name+' '+c;}const d=await ref.add({name:fn,subject,body,createdAt:new Date()});res.json({ok:true,id:d.id,name:fn,renamed:fn!==name});}
   }catch(e){res.json({ok:false,error:e.message});}
 });
 app.delete('/api/templates/:id',authRequired,async(req,res)=>{
   try{await db.collection('users').doc(req.session.user.id).collection('templates').doc(req.params.id).delete();res.json({ok:true});}catch(e){res.json({ok:false,error:e.message});}
 });
 
-/* ============ RECIPIENTS ============ */
+/* ===== RECIPIENTS ===== */
 app.get('/api/recipients',authRequired,async(req,res)=>{
   try{
     const uid=req.session.user.id;
     const ck='recipients:'+uid;
-    const cached=cacheGet(ck);
-    if(cached)return res.json(cached);
+    const c=cacheGet(ck);if(c)return res.json(c);
     const s=await db.collection('users').doc(uid).collection('recipients').orderBy('createdAt','desc').limit(1000).get();
     const ls=await db.collection('users').doc(uid).collection('emailLog').get();
-    const c={};ls.forEach(d=>{const r=d.data().recipientId;c[r]=(c[r]||0)+1;});
-    let l=[];s.forEach(d=>{const da=d.data();l.push({id:d.id,...da,sendCount:c[d.id]||0});});
+    const cnt={};ls.forEach(d=>{const r=d.data().recipientId;cnt[r]=(cnt[r]||0)+1;});
+    let l=[];s.forEach(d=>{const da=d.data();l.push({id:d.id,...da,sendCount:cnt[d.id]||0});});
     const out={ok:true,recipients:l};
     cacheSet(ck,out,15*1000);
     res.json(out);
@@ -734,8 +877,7 @@ app.post('/api/recipients',authRequired,async(req,res)=>{
     let a=0;
     for(const r of list){if(!r.email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email))continue;const doc=ref.doc();batch.set(doc,{company:(r.company||'').trim(),email:r.email.toLowerCase(),templateId:templateId||'',status:'Pending',sentAt:null,openedAt:null,everOpened:false,createdAt:new Date()});a++;}
     await batch.commit();
-    cacheDel('recipients:'+req.session.user.id);
-    cacheDel('stats:'+req.session.user.id);
+    cacheDel('recipients:'+req.session.user.id);cacheDel('stats:'+req.session.user.id);
     res.json({ok:true,added:a});
   }catch(e){res.json({ok:false,error:e.message});}
 });
@@ -743,17 +885,7 @@ app.delete('/api/recipients/:id',authRequired,async(req,res)=>{
   try{await db.collection('users').doc(req.session.user.id).collection('recipients').doc(req.params.id).delete();cacheDel('recipients:'+req.session.user.id);cacheDel('stats:'+req.session.user.id);res.json({ok:true});}catch(e){res.json({ok:false,error:e.message});}
 });
 app.post('/api/recipients/bulk-delete',authRequired,async(req,res)=>{
-  try{
-    const {ids}=req.body;
-    if(!ids||!ids.length)return res.json({ok:false});
-    const b=db.batch();
-    const r=db.collection('users').doc(req.session.user.id).collection('recipients');
-    ids.forEach(id=>b.delete(r.doc(id)));
-    await b.commit();
-    cacheDel('recipients:'+req.session.user.id);
-    cacheDel('stats:'+req.session.user.id);
-    res.json({ok:true,deleted:ids.length});
-  }catch(e){res.json({ok:false,error:e.message});}
+  try{const {ids}=req.body;if(!ids||!ids.length)return res.json({ok:false});const b=db.batch();const r=db.collection('users').doc(req.session.user.id).collection('recipients');ids.forEach(id=>b.delete(r.doc(id)));await b.commit();cacheDel('recipients:'+req.session.user.id);cacheDel('stats:'+req.session.user.id);res.json({ok:true,deleted:ids.length});}catch(e){res.json({ok:false,error:e.message});}
 });
 
 app.get('/api/recipient/:id/history',authRequired,async(req,res)=>{
@@ -765,16 +897,7 @@ app.get('/api/recipient/:id/history',authRequired,async(req,res)=>{
     const rec=recSnap.data();
     const allEmails=[];
     let lastDoc=null,more=true,it=0;
-    while(more&&it<40){
-      it++;
-      let q=db.collection('users').doc(uid).collection('emailLog').where('recipientId','==',recipientId).limit(500);
-      if(lastDoc)q=q.startAfter(lastDoc);
-      const snap=await q.get();
-      if(snap.empty){more=false;break;}
-      snap.forEach(d=>allEmails.push({id:d.id,...d.data()}));
-      lastDoc=snap.docs[snap.docs.length-1];
-      if(snap.size<500)more=false;
-    }
+    while(more&&it<40){it++;let q=db.collection('users').doc(uid).collection('emailLog').where('recipientId','==',recipientId).limit(500);if(lastDoc)q=q.startAfter(lastDoc);const snap=await q.get();if(snap.empty){more=false;break;}snap.forEach(d=>allEmails.push({id:d.id,...d.data()}));lastDoc=snap.docs[snap.docs.length-1];if(snap.size<500)more=false;}
     allEmails.sort((a,b)=>{const ta=a.sentAt&&a.sentAt._seconds?a.sentAt._seconds*1000:new Date(a.sentAt||0).getTime();const tb=b.sentAt&&b.sentAt._seconds?b.sentAt._seconds*1000:new Date(b.sentAt||0).getTime();return tb-ta;});
     const totalSent=allEmails.length;
     const totalOpened=allEmails.filter(e=>!!e.openedAt).length;
@@ -790,7 +913,7 @@ app.get('/api/recipient/:id/gmail-history',authRequired,async(req,res)=>{
     const recipientId=req.params.id;
     const force=req.query.force==='1';
     const ck='history:'+uid+':'+recipientId;
-    if(!force){const cached=cacheGet(ck);if(cached)return res.json(cached);}
+    if(!force){const c=cacheGet(ck);if(c)return res.json(c);}
     const recSnap=await db.collection('users').doc(uid).collection('recipients').doc(recipientId).get();
     if(!recSnap.exists)return res.json({ok:false,error:'Recipient not found'});
     const u=await getUserData(uid);
@@ -809,17 +932,9 @@ app.get('/api/recipient/:id/gmail-history',authRequired,async(req,res)=>{
   }catch(e){res.json({ok:false,error:e.message});}
 });
 
-/* ============ FILES ============ */
+/* ===== FILES ===== */
 app.post('/api/upload-file',authRequired,async(req,res)=>{
-  try{
-    const {base64,mimeType,filename}=req.body;
-    if(!base64||!filename)return res.json({ok:false,error:'Missing file data'});
-    const buf=Buffer.from(base64,'base64');
-    if(buf.length>900*1024)return res.json({ok:false,error:'Maximum file size is 900KB (Firestore limit).'});
-    const fd={base64,name:filename,mimeType:mimeType||'application/octet-stream',size:buf.length,uploadedAt:new Date()};
-    const doc=await db.collection('users').doc(req.session.user.id).collection('files').add(fd);
-    res.json({ok:true,file:{id:doc.id,name:fd.name,mimeType:fd.mimeType,size:fd.size,uploadedAt:fd.uploadedAt}});
-  }catch(e){res.json({ok:false,error:e.message});}
+  try{const {base64,mimeType,filename}=req.body;if(!base64||!filename)return res.json({ok:false,error:'Missing file data'});const buf=Buffer.from(base64,'base64');if(buf.length>900*1024)return res.json({ok:false,error:'Maximum file size is 900KB (Firestore limit).'});const fd={base64,name:filename,mimeType:mimeType||'application/octet-stream',size:buf.length,uploadedAt:new Date()};const doc=await db.collection('users').doc(req.session.user.id).collection('files').add(fd);res.json({ok:true,file:{id:doc.id,name:fd.name,mimeType:fd.mimeType,size:fd.size,uploadedAt:fd.uploadedAt}});}catch(e){res.json({ok:false,error:e.message});}
 });
 app.get('/api/files',authRequired,async(req,res)=>{
   try{const s=await db.collection('users').doc(req.session.user.id).collection('files').orderBy('uploadedAt','desc').get();const l=[];s.forEach(d=>{const dd=d.data();l.push({id:d.id,name:dd.name,mimeType:dd.mimeType,size:dd.size,uploadedAt:dd.uploadedAt});});res.json({ok:true,files:l});}catch(e){res.json({ok:false,error:e.message});}
@@ -828,19 +943,9 @@ app.delete('/api/files/:id',authRequired,async(req,res)=>{
   try{await db.collection('users').doc(req.session.user.id).collection('files').doc(req.params.id).delete();res.json({ok:true});}catch(e){res.json({ok:false,error:e.message});}
 });
 
-/* ============ LOGO ============ */
+/* ===== LOGO ===== */
 app.post('/api/upload-logo',authRequired,async(req,res)=>{
-  try{
-    const {base64,mimeType,filename}=req.body;
-    if(!base64)return res.json({ok:false,error:'No image data'});
-    const allowed=['image/png','image/jpeg','image/jpg','image/gif','image/svg+xml','image/webp'];
-    if(!allowed.includes(mimeType))return res.json({ok:false,error:'Invalid image type'});
-    const buf=Buffer.from(base64,'base64');
-    if(buf.length>500*1024)return res.json({ok:false,error:'Maximum logo size is 500KB'});
-    const dataUrl='data:'+mimeType+';base64,'+base64;
-    await db.collection('users').doc(req.session.user.id).update({logoUrl:dataUrl,logoUrlAlt:dataUrl,logoBase64:base64,logoMimeType:mimeType});
-    res.json({ok:true,url:dataUrl,urlAlt:dataUrl});
-  }catch(e){res.json({ok:false,error:e.message});}
+  try{const {base64,mimeType,filename}=req.body;if(!base64)return res.json({ok:false,error:'No image data'});const allowed=['image/png','image/jpeg','image/jpg','image/gif','image/svg+xml','image/webp'];if(!allowed.includes(mimeType))return res.json({ok:false,error:'Invalid image type'});const buf=Buffer.from(base64,'base64');if(buf.length>500*1024)return res.json({ok:false,error:'Maximum logo size is 500KB'});const url='data:'+mimeType+';base64,'+base64;await db.collection('users').doc(req.session.user.id).update({logoUrl:url,logoUrlAlt:url,logoBase64:base64,logoMimeType:mimeType});res.json({ok:true,url,urlAlt:url});}catch(e){res.json({ok:false,error:e.message});}
 });
 app.post('/api/remove-logo',authRequired,async(req,res)=>{
   try{await db.collection('users').doc(req.session.user.id).update({logoUrl:'',logoUrlAlt:'',logoBase64:null,logoMimeType:null});res.json({ok:true});}catch(e){res.json({ok:false,error:e.message});}
@@ -849,23 +954,12 @@ app.get('/api/logo',authRequired,async(req,res)=>{
   try{const d=await getUserData(req.session.user.id);res.json({ok:true,url:d.logoUrl||'',urlAlt:d.logoUrlAlt||''});}catch(e){res.json({ok:false,error:e.message});}
 });
 
-/* ============ PROFILE PIC ============ */
+/* ===== PROFILE PIC ===== */
 app.post('/api/profile/picture',authRequired,async(req,res)=>{
-  try{
-    const {base64,mimeType}=req.body;
-    if(!base64)return res.json({ok:false,error:'No image provided'});
-    const allowed=['image/png','image/jpeg','image/jpg','image/webp'];
-    if(allowed.indexOf(mimeType)===-1)return res.json({ok:false,error:'Only PNG/JPG/WEBP allowed'});
-    const buf=Buffer.from(base64,'base64');
-    if(buf.length>500*1024)return res.json({ok:false,error:'Maximum size is 500KB'});
-    const url='data:'+mimeType+';base64,'+base64;
-    await db.collection('users').doc(req.session.user.id).update({profilePicture:url});
-    if(req.session.user)req.session.user.picture=url;
-    res.json({ok:true,url});
-  }catch(e){res.json({ok:false,error:e.message});}
+  try{const {base64,mimeType}=req.body;if(!base64)return res.json({ok:false,error:'No image provided'});const allowed=['image/png','image/jpeg','image/jpg','image/webp'];if(allowed.indexOf(mimeType)===-1)return res.json({ok:false,error:'Only PNG/JPG/WEBP allowed'});const buf=Buffer.from(base64,'base64');if(buf.length>500*1024)return res.json({ok:false,error:'Maximum size is 500KB'});const url='data:'+mimeType+';base64,'+base64;await db.collection('users').doc(req.session.user.id).update({profilePicture:url});if(req.session.user)req.session.user.picture=url;res.json({ok:true,url});}catch(e){res.json({ok:false,error:e.message});}
 });
 
-/* ============ PROFILE ============ */
+/* ===== PROFILE ===== */
 app.get('/api/profile',authRequired,async(req,res)=>{
   try{const d=await getUserData(req.session.user.id);res.json({ok:true,profile:{name:d.name||'',email:d.email||'',picture:d.profilePicture||'',appAccountId:d.appAccountId||'',createdAt:d.createdAt||null,lastLogin:d.lastLogin||null,hasSmtp:!!d.smtpEnabled,authType:d.authType||'email',preferences:d.preferences||{language:'en',timezone:'Asia/Karachi',dateFormat:'DD/MM/YYYY',timeFormat:'12h'}}});}catch(e){res.json({ok:false,error:e.message});}
 });
@@ -878,10 +972,10 @@ app.get('/api/ai/usage',authRequired,async(req,res)=>{
     const uid=req.session.user.id;
     const today=new Date().toISOString().split('T')[0];
     const month=today.substring(0,7);
-    const [daySnap,monthSnap,totalSnap]=await Promise.all([db.collection('users').doc(uid).collection('aiUsage').doc(today).get(),db.collection('users').doc(uid).collection('aiUsage').doc('month_'+month).get(),db.collection('users').doc(uid).collection('aiUsage').doc('total').get()]);
-    const day=daySnap.exists?daySnap.data():{calls:0,totalTokens:0,providers:{}};
-    const mon=monthSnap.exists?monthSnap.data():{calls:0,totalTokens:0,providers:{}};
-    const tot=totalSnap.exists?totalSnap.data():{calls:0,totalTokens:0,providers:{}};
+    const [ds,ms,ts]=await Promise.all([db.collection('users').doc(uid).collection('aiUsage').doc(today).get(),db.collection('users').doc(uid).collection('aiUsage').doc('month_'+month).get(),db.collection('users').doc(uid).collection('aiUsage').doc('total').get()]);
+    const day=ds.exists?ds.data():{calls:0,totalTokens:0,providers:{}};
+    const mon=ms.exists?ms.data():{calls:0,totalTokens:0,providers:{}};
+    const tot=ts.exists?ts.data():{calls:0,totalTokens:0,providers:{}};
     const avgPerCall=tot.calls>0?Math.round(tot.totalTokens/tot.calls):500;
     let totalBudget=TOTAL_AI_BUDGET;
     if(!totalBudget)totalBudget=Object.values(PROVIDER_BUDGETS).reduce((a,b)=>a+(b||0),0);
@@ -901,7 +995,6 @@ app.post('/api/ai-profile',authRequired,async(req,res)=>{
   }catch(e){res.json({ok:false,error:e.message});}
 });
 
-/* ============ SIGNATURE / PREFS / STATS ============ */
 app.get('/api/signature',authRequired,async(req,res)=>{
   try{const d=await getUserData(req.session.user.id);res.json({ok:true,signature:d.signature||'',fields:d.sigFields||{}});}catch(e){res.json({ok:false,error:e.message});}
 });
@@ -924,35 +1017,30 @@ app.post('/api/prefs',authRequired,async(req,res)=>{
   }catch(e){res.json({ok:false,error:e.message});}
 });
 
+/* ===== STATS (FIXED: opened now matches Email History) ===== */
 app.get('/api/stats',authRequired,async(req,res)=>{
   try{
     const uid=req.session.user.id;
     const ck='stats:'+uid;
-    const cached=cacheGet(ck);
-    if(cached)return res.json(cached);
-    const t=await db.collection('users').doc(uid).collection('recipients').count().get();
-    const s=await db.collection('users').doc(uid).collection('recipients').where('status','in',['Sent','Opened']).count().get();
-    const p=await db.collection('users').doc(uid).collection('recipients').where('status','==','Pending').count().get();
-    const ts=await db.collection('users').doc(uid).collection('emailLog').count().get();
-    const openLogs=await db.collection('users').doc(uid).collection('emailLog').where('openedAt','!=',null).limit(5000).get();
-    const openedSet=new Set();
-    openLogs.forEach(d=>{const r=d.data().recipientId;if(r)openedSet.add(r);});
-    const out={ok:true,stats:{total:t.data().count,sent:s.data().count,opened:openedSet.size,pending:p.data().count,totalSends:ts.data().count}};
-    cacheSet(ck,out,15*1000);
-    res.json(out);
-  }catch(e){
+    const c=cacheGet(ck);if(c)return res.json(c);
+    const [t,s,p,ts]=await Promise.all([
+      db.collection('users').doc(uid).collection('recipients').count().get(),
+      db.collection('users').doc(uid).collection('recipients').where('status','in',['Sent','Opened']).count().get(),
+      db.collection('users').doc(uid).collection('recipients').where('status','==','Pending').count().get(),
+      db.collection('users').doc(uid).collection('emailLog').count().get()
+    ]);
+    let openedSends=0;
     try{
-      const uid=req.session.user.id;
-      const t=await db.collection('users').doc(uid).collection('recipients').count().get();
-      const s=await db.collection('users').doc(uid).collection('recipients').where('status','in',['Sent','Opened']).count().get();
-      const p=await db.collection('users').doc(uid).collection('recipients').where('status','==','Pending').count().get();
-      const ts=await db.collection('users').doc(uid).collection('emailLog').count().get();
-      const allLogs=await db.collection('users').doc(uid).collection('emailLog').limit(5000).get();
-      const openedSet=new Set();
-      allLogs.forEach(d=>{const da=d.data();if(da.openedAt&&da.recipientId)openedSet.add(da.recipientId);});
-      res.json({ok:true,stats:{total:t.data().count,sent:s.data().count,opened:openedSet.size,pending:p.data().count,totalSends:ts.data().count}});
-    }catch(e2){res.json({ok:false,error:e2.message});}
-  }
+      const ol=await db.collection('users').doc(uid).collection('emailLog').where('openedAt','!=',null).limit(10000).get();
+      openedSends=ol.size;
+    }catch(e){
+      const al=await db.collection('users').doc(uid).collection('emailLog').limit(10000).get();
+      al.forEach(d=>{if(d.data().openedAt)openedSends++;});
+    }
+    const out={ok:true,stats:{total:t.data().count,sent:s.data().count,opened:openedSends,pending:p.data().count,totalSends:ts.data().count}};
+    cacheSet(ck,out,CACHE_TTL.stats);
+    res.json(out);
+  }catch(e){res.json({ok:false,error:e.message});}
 });
 
 app.get('/api/my-emails',authRequired,async(req,res)=>{
@@ -971,7 +1059,7 @@ app.get('/api/my-emails',authRequired,async(req,res)=>{
   }catch(e){res.json({ok:false,error:e.message});}
 });
 
-/* ============ SEND ============ */
+/* ===== SEND ===== */
 async function sendOne(userId,userEmail,recipientId,options){
   options=options||{};
   const u=await getUserData(userId);
@@ -987,11 +1075,9 @@ async function sendOne(userId,userEmail,recipientId,options){
   const rec=r.data();
   if(u.lastSendTime&&!options.skipDelay){
     const l=u.lastSendTime._seconds?u.lastSendTime._seconds*1000:new Date(u.lastSendTime).getTime();
-    const delaySec=u.sendDelay!==undefined?Number(u.sendDelay):DEFAULT_SEND_DELAY;
-    const delayMs=Math.max(0,delaySec*1000);
-    const jitter=Math.floor(Math.random()*1000);
-    const el=Date.now()-l;
-    const mg=delayMs+jitter;
+    const ds=u.sendDelay!==undefined?Number(u.sendDelay):DEFAULT_SEND_DELAY;
+    const dm=Math.max(0,ds*1000);const j=Math.floor(Math.random()*1000);
+    const el=Date.now()-l;const mg=dm+j;
     if(el<mg)await sleep(mg-el);
   }
   let t=null;
@@ -1006,8 +1092,8 @@ async function sendOne(userId,userEmail,recipientId,options){
   const recipientEmail=rec.email||'';
   let subject=t.subject||'';
   let body=t.body||'';
-  const replacements={'{name}':recipientName,'{company}':recipientCompany,'{email}':recipientEmail,'{firstName}':recipientName};
-  for(const [k,v] of Object.entries(replacements)){subject=subject.split(k).join(v);body=body.split(k).join(v);}
+  const reps={'{name}':recipientName,'{company}':recipientCompany,'{email}':recipientEmail,'{firstName}':recipientName};
+  for(const [k,v] of Object.entries(reps)){subject=subject.split(k).join(v);body=body.split(k).join(v);}
   let sigHtml='';
   const hasSignature=!!(u.signature&&u.signature.trim().length>20);
   if(hasSignature&&options.includeSignature!==false){let sig=u.signature;if(options.includeLogo===false)sig=sig.replace(/<td[^>]*>\s*<img[\s\S]*?<\/td>/gi,'').replace(/<img[^>]*>/gi,'').replace(/<td[^>]*>\s*<\/td>/gi,'');sigHtml='<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">'+sig+'</div>';}
@@ -1015,18 +1101,17 @@ async function sendOne(userId,userEmail,recipientId,options){
   const fullHtml='<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">'+bodyHtml+sigHtml+'</div>';
   const lp=localAnalysis(subject,fullHtml);
   const sendTrackToken=crypto.randomBytes(16).toString('hex');
-  const atts=[];
-  const attNames=[];
+  const atts=[];const attNames=[];
   if(options.includeAttachments!==false){const fs=await db.collection('users').doc(userId).collection('files').get();const selectedIds=options.selectedFileIds;for(const fd of fs.docs){if(selectedIds&&selectedIds.length>0&&selectedIds.indexOf(fd.id)===-1)continue;const f=fd.data();if(f.base64){atts.push({filename:f.name,content:Buffer.from(f.base64,'base64'),contentType:f.mimeType||'application/octet-stream'});attNames.push(f.name);}}}
   const logRef=await db.collection('users').doc(userId).collection('emailLog').add({recipientId,recipientEmail:rec.email,company:rec.company||'',subject,sentAt:new Date(),attachmentsCount:atts.length,attachmentNames:attNames,aiPrediction:lp.prediction,aiScore:lp.score,aiInboxProb:lp.inboxProbability,sendTrackToken,openedAt:null,hasSignature:hasSignature,templateName:t.name||''});
   const logId=logRef.id;
   const trackUrl=BACKEND_URL+'/track/'+logId+'?u='+userId+'&t='+sendTrackToken;
   const pix='<img src="'+trackUrl+'" width="1" height="1" alt="" style="border:0;display:block;width:1px;height:1px">';
   const finalHtml=fullHtml+pix;
-  const transporter=createTransporter(userEmail,u.smtpAppPassword);
+  const t2=createTransporter(userEmail,u.smtpAppPassword);
   const mailOptions={from:'"'+(u.name||'MailFlow User')+'" <'+userEmail+'>',to:rec.email,subject:sanitizeSubject(subject),html:finalHtml,headers:{'List-Unsubscribe':'<mailto:'+userEmail+'?subject=unsubscribe>','List-Unsubscribe-Post':'List-Unsubscribe=One-Click','Precedence':'bulk'}};
   if(atts.length>0)mailOptions.attachments=atts;
-  await transporter.sendMail(mailOptions);
+  await t2.sendMail(mailOptions);
   const everOpenedFlag=rec.everOpened===true||rec.status==='Opened';
   await db.collection('users').doc(userId).collection('recipients').doc(recipientId).update({status:'Sent',lastSentAt:new Date(),sentAt:new Date(),everOpened:everOpenedFlag});
   await db.collection('users').doc(userId).update({lastSendTime:new Date()});
@@ -1034,9 +1119,7 @@ async function sendOne(userId,userEmail,recipientId,options){
   const sr=db.collection('users').doc(userId).collection('stats').doc(todayKey);
   const sd2=await sr.get();
   await sr.set({sent:((sd2.exists?sd2.data().sent:0)+1),updatedAt:new Date()},{merge:true});
-  cacheDel('quota:'+userId);
-  cacheDel('stats:'+userId);
-  cacheDel('recipients:'+userId);
+  cacheDel('quota:'+userId);cacheDel('stats:'+userId);cacheDel('recipients:'+userId);
   return rec.email;
 }
 
@@ -1072,8 +1155,7 @@ app.get('/track/:id',async(req,res)=>{
             await db.collection('users').doc(u).collection('emailLog').doc(req.params.id).update({openedAt:new Date()});
             const recId=r.data().recipientId;
             if(recId){const rec=await db.collection('users').doc(u).collection('recipients').doc(recId).get();if(rec.exists)await db.collection('users').doc(u).collection('recipients').doc(recId).update({status:'Opened',openedAt:new Date(),everOpened:true});}
-            cacheDel('stats:'+u);
-            cacheDel('recipients:'+u);
+            cacheDel('stats:'+u);cacheDel('recipients:'+u);
           }
         }
       }
@@ -1083,7 +1165,7 @@ app.get('/track/:id',async(req,res)=>{
   res.set('Content-Type','image/gif');res.send(px);
 });
 
-/* ============ AUTO-SEND ============ */
+/* ===== AUTO-SEND ===== */
 async function runAutoSend(uid,ue,ud){
   if(isQuietHours(ud))return {skipped:true};
   const bs=Number(ud.autoSendBatchSize)||5;
@@ -1125,33 +1207,40 @@ app.post('/api/auto-send-check',authRequired,async(req,res)=>{
   }catch(e){res.json({ok:false,error:e.message});}
 });
 
-/* ============ QUOTA ============ */
+/* ===== QUOTA (FIXED: mailflowSent from today's emailLog count) ===== */
 app.get('/api/quota',authRequired,async(req,res)=>{
   try{
     const userId=req.session.user.id;
     const force=req.query.force==='1';
     const ck='quota:'+userId;
-    if(!force){const cached=cacheGet(ck);if(cached)return res.json(cached);}
+    if(!force){const c=cacheGet(ck);if(c)return res.json(c);}
     const u=await getUserData(userId);
     if(!u||!u.smtpEnabled)return res.json({ok:false,error:'Gmail not connected',noTokens:true});
-    const today=new Date().toISOString().split('T')[0];
-    const sd=await db.collection('users').doc(userId).collection('stats').doc(today).get();
-    const mailflowSent=sd.exists?(sd.data().sent||0):0;
+    const todayStart=new Date();
+    todayStart.setHours(0,0,0,0);
+    let mailflowSentToday=0;
+    try{
+      const tSnap=await db.collection('users').doc(userId).collection('emailLog').where('sentAt','>=',todayStart).count().get();
+      mailflowSentToday=tSnap.data().count;
+    }catch(e){
+      const tSnap=await db.collection('users').doc(userId).collection('emailLog').limit(2000).get();
+      tSnap.forEach(d=>{const da=d.data();if(da.sentAt){const t=da.sentAt._seconds?da.sentAt._seconds*1000:new Date(da.sentAt).getTime();if(t>=todayStart.getTime())mailflowSentToday++;}});
+    }
     const limit=u.dailyLimit||500;
     let gmailSentToday=null;
     let gmailSource='unavailable';
     let imapAvailable=false;
     if(u.imapEnabled&&u.imapAppPassword){imapAvailable=true;try{const g=await fetchGmailSentTodayCount(u.email,u.imapAppPassword);if(g.ok){gmailSentToday=g.count;gmailSource='imap_sent_folder';}}catch(e){}}
-    let totalSentToday=mailflowSent;
-    if(gmailSentToday!==null)totalSentToday=Math.max(mailflowSent,gmailSentToday);
+    let totalSentToday=mailflowSentToday;
+    if(gmailSentToday!==null)totalSentToday=Math.max(mailflowSentToday,gmailSentToday);
     const remaining=Math.max(0,limit-totalSentToday);
-    const out={ok:true,sent:totalSentToday,mailflowSent:mailflowSent,gmailSent:gmailSentToday,gmailSource:gmailSource,imapAvailable:imapAvailable,limit:limit,remaining:remaining,timestamp:new Date().toISOString(),live:gmailSentToday!==null};
+    const out={ok:true,sent:totalSentToday,mailflowSent:mailflowSentToday,gmailSent:gmailSentToday,gmailSource:gmailSource,imapAvailable:imapAvailable,limit:limit,remaining:remaining,timestamp:new Date().toISOString(),live:gmailSentToday!==null};
     cacheSet(ck,out,CACHE_TTL.quota);
     res.json(out);
   }catch(e){res.json({ok:false,error:e.message});}
 });
 
-/* ============ TEST LAB ============ */
+/* ===== TEST LAB ===== */
 app.get('/api/test/stats',adminRequired,async(req,res)=>{
   try{
     const uid=req.session.user.id;
@@ -1188,12 +1277,8 @@ app.post('/api/test/recipients/bulk-delete',adminRequired,async(req,res)=>{
 });
 app.post('/api/test/clear',adminRequired,async(req,res)=>{
   try{
-    const uid=req.session.user.id;
-    let totalDeleted=0;
-    for(const coll of ['testRecipients','testLog']){
-      let more=true;
-      while(more){const r=await db.collection('users').doc(uid).collection(coll).limit(400).get();if(r.empty){more=false;break;}const b=db.batch();r.forEach(d=>b.delete(d.ref));await b.commit();totalDeleted+=r.size;if(r.size<400)more=false;}
-    }
+    const uid=req.session.user.id;let totalDeleted=0;
+    for(const coll of ['testRecipients','testLog']){let more=true;while(more){const r=await db.collection('users').doc(uid).collection(coll).limit(400).get();if(r.empty){more=false;break;}const b=db.batch();r.forEach(d=>b.delete(d.ref));await b.commit();totalDeleted+=r.size;if(r.size<400)more=false;}}
     res.json({ok:true,deleted:totalDeleted});
   }catch(e){res.json({ok:false,error:e.message});}
 });
@@ -1209,26 +1294,24 @@ app.post('/api/test/send',adminRequired,async(req,res)=>{
     const uid=req.session.user.id;
     const u=await getUserData(uid);
     if(!u.smtpEnabled||!u.smtpAppPassword)return res.json({ok:false,error:'Connect Gmail first'});
-    const transporter=createTransporter(u.email,u.smtpAppPassword);
-    let targetEmail=to;
-    let recId=recipientId||'';
+    const t=createTransporter(u.email,u.smtpAppPassword);
+    let targetEmail=to;let recId=recipientId||'';
     if(recId){const r=await db.collection('users').doc(uid).collection('testRecipients').doc(recId).get();if(r.exists)targetEmail=r.data().email;}
     if(!targetEmail||!subject||!body)return res.json({ok:false,error:'Missing fields'});
     let sigHtml='';
     const sigToUse=useTestSignature?(u.testSignature||u.signature):(u.signature||u.testSignature);
     if(sigToUse&&includeSignature!==false){let sig=sigToUse;if(includeLogo===false)sig=sig.replace(/<td[^>]*>\s*<img[\s\S]*?<\/td>/gi,'').replace(/<img[^>]*>/gi,'').replace(/<td[^>]*>\s*<\/td>/gi,'');sigHtml='<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">'+sig+'</div>';}
     let pix='';
-    if(recId){const trackTok=crypto.randomBytes(16).toString('hex');await db.collection('users').doc(uid).collection('testRecipients').doc(recId).update({trackToken:trackTok});const tu=BACKEND_URL+'/track/'+recId+'?u='+uid+'&t='+trackTok+'&type=test';pix='<img src="'+tu+'" width="1" height="1" alt="" style="border:0;display:block;width:1px;height:1px">';}
+    if(recId){const tt=crypto.randomBytes(16).toString('hex');await db.collection('users').doc(uid).collection('testRecipients').doc(recId).update({trackToken:tt});const tu=BACKEND_URL+'/track/'+recId+'?u='+uid+'&t='+tt+'&type=test';pix='<img src="'+tu+'" width="1" height="1" alt="" style="border:0;display:block;width:1px;height:1px">';}
     const bodyHtml=body.replace(/\n/g,'<br>');
     const full='<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">'+bodyHtml+sigHtml+pix+'</div>';
-    const atts=[];
-    const attNames=[];
+    const atts=[];const attNames=[];
     if(selectedFileIds&&selectedFileIds.length>0){const fs=await db.collection('users').doc(uid).collection('files').get();for(const fd of fs.docs){if(selectedFileIds.indexOf(fd.id)===-1)continue;const f=fd.data();if(f.base64){atts.push({filename:f.name,content:Buffer.from(f.base64,'base64'),contentType:f.mimeType||'application/octet-stream'});attNames.push(f.name);}}}
     const mailOptions={from:'"'+(u.name||'User')+'" <'+u.email+'>',to:targetEmail,subject:sanitizeSubject(subject),html:full};
     if(atts.length>0)mailOptions.attachments=atts;
-    await transporter.sendMail(mailOptions);
+    await t.sendMail(mailOptions);
     await db.collection('users').doc(uid).collection('testLog').add({recipientEmail:targetEmail,subject,body,sentAt:new Date(),recipientId:recId||'',attachmentsCount:atts.length,attachmentNames:attNames});
-    if(recId){const rec=await db.collection('users').doc(uid).collection('testRecipients').doc(recId).get();const wasOpened=rec.exists&&rec.data().everOpened===true;await db.collection('users').doc(uid).collection('testRecipients').doc(recId).update({status:'Sent',lastSentAt:new Date(),sentAt:new Date(),everOpened:wasOpened});}
+    if(recId){const rec=await db.collection('users').doc(uid).collection('testRecipients').doc(recId).get();const wo=rec.exists&&rec.data().everOpened===true;await db.collection('users').doc(uid).collection('testRecipients').doc(recId).update({status:'Sent',lastSentAt:new Date(),sentAt:new Date(),everOpened:wo});}
     cacheDel('quota:'+uid);
     res.json({ok:true,email:targetEmail});
   }catch(e){res.json({ok:false,error:e.message});}
@@ -1249,31 +1332,31 @@ app.post('/api/test/automation/run',adminRequired,async(req,res)=>{
     const uid=req.session.user.id;
     const u=await getUserData(uid);
     if(!u.smtpEnabled||!u.smtpAppPassword)return res.json({ok:false,error:'Connect Gmail first'});
-    const batchSize=Number(req.body.batchSize)||5;
-    const delay=Number(req.body.delay)||20;
-    const ps=await db.collection('users').doc(uid).collection('testRecipients').where('status','==','Pending').limit(batchSize).get();
+    const bs=Number(req.body.batchSize)||5;
+    const dl=Number(req.body.delay)||20;
+    const ps=await db.collection('users').doc(uid).collection('testRecipients').where('status','==','Pending').limit(bs).get();
     if(ps.empty)return res.json({ok:true,sent:0,message:'No pending recipients'});
     let sent=0,failed=0;
-    const transporter=createTransporter(u.email,u.smtpAppPassword);
+    const t=createTransporter(u.email,u.smtpAppPassword);
     for(const r of ps.docs){
       try{
         const rec=r.data();
-        const subject='Test Email from MailFlow Pro';
-        const bodyText='Hello,\n\nThis is an automated test email.\n\nThank you.';
+        const subj='Test Email from MailFlow Pro';
+        const bt='Hello,\n\nThis is an automated test email.\n\nThank you.';
         const sig=u.testSignature||u.signature||'';
-        const bodyHtml=bodyText.replace(/\n/g,'<br>');
+        const bodyHtml=bt.replace(/\n/g,'<br>');
         const sigHtml=sig?'<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">'+sig+'</div>':'';
         const tok=crypto.randomBytes(16).toString('hex');
         await db.collection('users').doc(uid).collection('testRecipients').doc(r.id).update({trackToken:tok});
         const tu=BACKEND_URL+'/track/'+r.id+'?u='+uid+'&t='+tok+'&type=test';
         const pix='<img src="'+tu+'" width="1" height="1" alt="" style="border:0;display:block;width:1px;height:1px">';
         const full='<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">'+bodyHtml+sigHtml+pix+'</div>';
-        await transporter.sendMail({from:'"'+(u.name||'User')+'" <'+u.email+'>',to:rec.email,subject,html:full});
-        await db.collection('users').doc(uid).collection('testLog').add({recipientEmail:rec.email,subject,body:bodyText,sentAt:new Date(),recipientId:r.id,attachmentsCount:0});
-        const wasOpened=rec.everOpened===true;
-        await db.collection('users').doc(uid).collection('testRecipients').doc(r.id).update({status:'Sent',sentAt:new Date(),everOpened:wasOpened});
+        await t.sendMail({from:'"'+(u.name||'User')+'" <'+u.email+'>',to:rec.email,subject:subj,html:full});
+        await db.collection('users').doc(uid).collection('testLog').add({recipientEmail:rec.email,subject:subj,body:bt,sentAt:new Date(),recipientId:r.id,attachmentsCount:0});
+        const wo=rec.everOpened===true;
+        await db.collection('users').doc(uid).collection('testRecipients').doc(r.id).update({status:'Sent',sentAt:new Date(),everOpened:wo});
         sent++;
-        if(delay>0&&sent<batchSize)await sleep(delay*1000);
+        if(dl>0&&sent<bs)await sleep(dl*1000);
       }catch(e){failed++;}
     }
     const upd=await getUserData(uid);
@@ -1283,7 +1366,7 @@ app.post('/api/test/automation/run',adminRequired,async(req,res)=>{
   }catch(e){res.json({ok:false,error:e.message});}
 });
 
-/* ============ ADMIN ============ */
+/* ===== ADMIN ===== */
 app.get('/api/admin/dashboard',adminRequired,async(req,res)=>{
   try{
     const us=await db.collection('users').get();
@@ -1293,9 +1376,7 @@ app.get('/api/admin/dashboard',adminRequired,async(req,res)=>{
       const [t,p,s]=await Promise.all([db.collection('users').doc(u.id).collection('recipients').count().get(),db.collection('users').doc(u.id).collection('recipients').where('status','==','Pending').count().get(),db.collection('users').doc(u.id).collection('emailLog').count().get()]);
       totalEmails+=t.data().count;totalPending+=p.data().count;totalSends+=s.data().count;
       const logs=await db.collection('users').doc(u.id).collection('emailLog').limit(2000).get();
-      const openedSet=new Set();
-      logs.forEach(d=>{const da=d.data();if(da.openedAt&&da.recipientId)openedSet.add(da.recipientId);});
-      totalOpened+=openedSet.size;
+      logs.forEach(d=>{const da=d.data();if(da.openedAt)totalOpened++;});
     }
     res.json({ok:true,stats:{totalUsers,totalEmails,totalOpened,totalPending,totalSends}});
   }catch(e){res.json({ok:false,error:e.message});}
@@ -1343,10 +1424,10 @@ app.get('/api/admin/ai-usage',adminRequired,async(req,res)=>{
     let totalToday=0,totalMonth=0,totalLifetime=0,totalUsersWithAI=0,totalCalls=0;
     for(const u of us.docs){
       const d=u.data();
-      const [dSnap,mSnap,tSnap]=await Promise.all([db.collection('users').doc(u.id).collection('aiUsage').doc(today).get(),db.collection('users').doc(u.id).collection('aiUsage').doc('month_'+month).get(),db.collection('users').doc(u.id).collection('aiUsage').doc('total').get()]);
-      const day=dSnap.exists?dSnap.data():{calls:0,totalTokens:0,providers:{}};
-      const mon=mSnap.exists?mSnap.data():{calls:0,totalTokens:0,providers:{}};
-      const tot=tSnap.exists?tSnap.data():{calls:0,totalTokens:0,providers:{}};
+      const [ds,ms,ts]=await Promise.all([db.collection('users').doc(u.id).collection('aiUsage').doc(today).get(),db.collection('users').doc(u.id).collection('aiUsage').doc('month_'+month).get(),db.collection('users').doc(u.id).collection('aiUsage').doc('total').get()]);
+      const day=ds.exists?ds.data():{calls:0,totalTokens:0,providers:{}};
+      const mon=ms.exists?ms.data():{calls:0,totalTokens:0,providers:{}};
+      const tot=ts.exists?ts.data():{calls:0,totalTokens:0,providers:{}};
       if((tot.calls||0)>0)totalUsersWithAI++;
       totalToday+=day.totalTokens||0;totalMonth+=mon.totalTokens||0;totalLifetime+=tot.totalTokens||0;totalCalls+=tot.calls||0;
       rows.push({id:u.id,email:d.email,name:d.name,appAccountId:d.appAccountId||'N/A',todayCalls:day.calls||0,todayTokens:day.totalTokens||0,monthCalls:mon.calls||0,monthTokens:mon.totalTokens||0,totalCalls:tot.calls||0,totalTokens:tot.totalTokens||0,totalProviders:tot.providers||{}});
@@ -1376,20 +1457,20 @@ app.post('/api/admin/user/:id/unban',adminRequired,async(req,res)=>{
   try{await db.collection('bannedUsers').doc(req.params.id).delete();res.json({ok:true,unbanned:true});}catch(e){res.json({ok:false,error:e.message});}
 });
 app.get('/api/admin/banned-users',adminRequired,async(req,res)=>{
-  try{const snap=await db.collection('bannedUsers').orderBy('bannedAt','desc').get();const banned=[];snap.forEach(d=>banned.push({id:d.id,...d.data()}));res.json({ok:true,banned});}catch(e){res.json({ok:false,error:e.message});}
+  try{const s=await db.collection('bannedUsers').orderBy('bannedAt','desc').get();const b=[];s.forEach(d=>b.push({id:d.id,...d.data()}));res.json({ok:true,banned:b});}catch(e){res.json({ok:false,error:e.message});}
 });
 app.get('/api/admin/access-requests',adminRequired,async(req,res)=>{
-  try{const snap=await db.collection('accessRequests').orderBy('requestedAt','desc').limit(200).get();const requests=[];snap.forEach(d=>requests.push({id:d.id,...d.data()}));res.json({ok:true,requests});}catch(e){res.json({ok:false,error:e.message});}
+  try{const s=await db.collection('accessRequests').orderBy('requestedAt','desc').limit(200).get();const r=[];s.forEach(d=>r.push({id:d.id,...d.data()}));res.json({ok:true,requests:r});}catch(e){res.json({ok:false,error:e.message});}
 });
 app.post('/api/admin/access-requests/:id/approve',adminRequired,async(req,res)=>{
   try{
     const ref=db.collection('accessRequests').doc(req.params.id);
     const snap=await ref.get();
     if(!snap.exists)return res.json({ok:false,error:'Not found'});
-    const reqData=snap.data();
-    if(reqData.oldEmail&&reqData.oldEmail!==reqData.email){const oldUid=emailUid(reqData.oldEmail);await db.collection('bannedUsers').doc(oldUid).delete().catch(()=>{});}
-    const newUid=emailUid(reqData.email);
-    await db.collection('bannedUsers').doc(newUid).delete().catch(()=>{});
+    const rd=snap.data();
+    if(rd.oldEmail&&rd.oldEmail!==rd.email){const ou=emailUid(rd.oldEmail);await db.collection('bannedUsers').doc(ou).delete().catch(()=>{});}
+    const nu=emailUid(rd.email);
+    await db.collection('bannedUsers').doc(nu).delete().catch(()=>{});
     await ref.update({status:'approved',approvedAt:new Date(),approvedBy:req.session.user.email});
     res.json({ok:true});
   }catch(e){res.json({ok:false,error:e.message});}
@@ -1408,10 +1489,9 @@ app.get('/api/admin/user/:id/details',adminRequired,async(req,res)=>{
     const month=today.substring(0,7);
     const [t,s,p,sd,aiT,aiM,aiAll]=await Promise.all([db.collection('users').doc(uid).collection('recipients').count().get(),db.collection('users').doc(uid).collection('recipients').where('status','in',['Sent','Opened']).count().get(),db.collection('users').doc(uid).collection('recipients').where('status','==','Pending').count().get(),db.collection('users').doc(uid).collection('emailLog').count().get(),db.collection('users').doc(uid).collection('aiUsage').doc(today).get(),db.collection('users').doc(uid).collection('aiUsage').doc('month_'+month).get(),db.collection('users').doc(uid).collection('aiUsage').doc('total').get()]);
     const logs=await db.collection('users').doc(uid).collection('emailLog').limit(2000).get();
-    const openedSet=new Set();
-    logs.forEach(x=>{const da=x.data();if(da.openedAt&&da.recipientId)openedSet.add(da.recipientId);});
+    let openedSends=0;logs.forEach(x=>{if(x.data().openedAt)openedSends++;});
     const aiUsage={today:aiT.exists?(aiT.data().totalTokens||0):0,todayCalls:aiT.exists?(aiT.data().calls||0):0,month:aiM.exists?(aiM.data().totalTokens||0):0,monthCalls:aiM.exists?(aiM.data().calls||0):0,total:aiAll.exists?(aiAll.data().totalTokens||0):0,calls:aiAll.exists?(aiAll.data().calls||0):0,providers:aiAll.exists?(aiAll.data().providers||{}):{}};
-    res.json({ok:true,user:{id:uid,email:data.email,name:data.name,picture:data.profilePicture||'',appAccountId:data.appAccountId||'N/A',createdAt:data.createdAt?(data.createdAt.toDate?data.createdAt.toDate().toISOString():data.createdAt):null,lastLogin:data.lastLogin?(data.lastLogin.toDate?data.lastLogin.toDate().toISOString():data.lastLogin):null,authType:data.authType||'email',hasSmtp:!!data.smtpEnabled,hasImap:!!data.imapEnabled,autoSend:!!data.autoSend,banned:banned.exists,banReason:banned.exists?banned.data().reason:'',aiUsage,stats:{total:t.data().count,sent:s.data().count,opened:openedSet.size,pending:p.data().count,totalSends:sd.data().count}}});
+    res.json({ok:true,user:{id:uid,email:data.email,name:data.name,picture:data.profilePicture||'',appAccountId:data.appAccountId||'N/A',createdAt:data.createdAt?(data.createdAt.toDate?data.createdAt.toDate().toISOString():data.createdAt):null,lastLogin:data.lastLogin?(data.lastLogin.toDate?data.lastLogin.toDate().toISOString():data.lastLogin):null,authType:data.authType||'email',hasSmtp:!!data.smtpEnabled,hasImap:!!data.imapEnabled,autoSend:!!data.autoSend,banned:banned.exists,banReason:banned.exists?banned.data().reason:'',aiUsage,stats:{total:t.data().count,sent:s.data().count,opened:openedSends,pending:p.data().count,totalSends:sd.data().count}}});
   }catch(e){res.json({ok:false,error:e.message});}
 });
 app.delete('/api/admin/user/:id',adminRequired,async(req,res)=>{
