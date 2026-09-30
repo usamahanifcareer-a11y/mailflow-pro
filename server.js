@@ -19,7 +19,8 @@ const DEFAULT_SEND_DELAY = 20;
 const IS_VERCEL = !!process.env.VERCEL;
 const CRON_SECRET = process.env.CRON_SECRET || '';
 const BACKEND_URL = process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org';
-const APP_VERSION = '1.8.3';
+const APP_VERSION = '1.8.4';
+const OCR_SPACE_API_KEY = process.env.OCR_SPACE_API_KEY || 'helloworld';
 
 if (!process.env.SESSION_SECRET) { console.error('FATAL: SESSION_SECRET missing!'); process.exit(1); }
 if (!process.env.ENCRYPTION_KEY) { console.error('FATAL: ENCRYPTION_KEY missing!'); process.exit(1); }
@@ -62,7 +63,6 @@ async function fetchWithTimeout(url,opts,ms){const ctrl=new AbortController();co
 function replaceInlineLogoWithPublicUrl(html, uid){
   if(!html || !uid) return html;
   try{
-    // Replace any src="data:image/xxx;base64,..." with public logo URL
     return html.replace(/src\s*=\s*["']data:image\/[^;]+;base64,[^"']+["']/gi, 'src="' + BACKEND_URL + '/logo/' + uid + '"');
   }catch(e){ return html; }
 }
@@ -370,7 +370,56 @@ async function extractCvFromBuffer(buf, filename, mimeType) {
   return '';
 }
 
-app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL, version: APP_VERSION, method: 'smtp' }));
+app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL, version: APP_VERSION, method: 'smtp', ocrKeySet: OCR_SPACE_API_KEY !== 'helloworld' }));
+
+/* ============ OCR SERVER FALLBACK (OCR.space cloud API) ============ */
+app.post('/api/ocr/extract', authRequired, async (req, res) => {
+  try {
+    const { base64, mimeType } = req.body || {};
+    if (!base64 || base64.length < 50) return res.json({ ok: false, error: 'No image data provided' });
+    let buf;
+    try { buf = Buffer.from(base64, 'base64'); } catch (e) { return res.json({ ok: false, error: 'Invalid image data' }); }
+    if (buf.length > 1500 * 1024) return res.json({ ok: false, error: 'Image too large (1.5MB max)' });
+    const mime = (mimeType || 'image/jpeg').toLowerCase();
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp', 'image/tiff'];
+    const safeMime = allowed.indexOf(mime) !== -1 ? mime : 'image/jpeg';
+    const params = new URLSearchParams();
+    params.append('base64Image', 'data:' + safeMime + ';base64,' + base64);
+    params.append('language', 'eng');
+    params.append('isOverlayRequired', 'false');
+    params.append('OCREngine', '2');
+    params.append('scale', 'true');
+    params.append('isTable', 'false');
+    params.append('detectOrientation', 'true');
+    let ocrRes;
+    try {
+      ocrRes = await fetchWithTimeout('https://api.ocr.space/parse/image', {
+        method: 'POST',
+        headers: { 'apikey': OCR_SPACE_API_KEY, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString()
+      }, 45000);
+    } catch (netErr) {
+      return res.json({ ok: false, error: 'OCR service unreachable: ' + netErr.message });
+    }
+    if (!ocrRes.ok) return res.json({ ok: false, error: 'OCR service error (HTTP ' + ocrRes.status + ')' });
+    let ocrData;
+    try { ocrData = await ocrRes.json(); } catch (e) { return res.json({ ok: false, error: 'Invalid OCR response' }); }
+    if (ocrData.IsErroredOnProcessing) {
+      const errMsg = (ocrData.ErrorMessage && Array.isArray(ocrData.ErrorMessage)) ? ocrData.ErrorMessage.join(' ') : (ocrData.ErrorMessage || 'OCR processing failed');
+      if (errMsg.indexOf('limit') !== -1 || errMsg.indexOf('Limit') !== -1) {
+        return res.json({ ok: false, error: 'OCR monthly limit reached. Please try again next month.' });
+      }
+      return res.json({ ok: false, error: errMsg });
+    }
+    if (!ocrData.ParsedResults || !ocrData.ParsedResults.length) return res.json({ ok: false, error: 'No text detected in this image' });
+    const text = ocrData.ParsedResults.map(r => r.ParsedText || '').join('\n').trim();
+    if (!text || text.length < 2) return res.json({ ok: false, error: 'No readable text found' });
+    res.json({ ok: true, text: text.substring(0, 20000), chars: text.length });
+  } catch (e) {
+    console.error('OCR error:', e.message);
+    res.json({ ok: false, error: 'OCR failed: ' + e.message });
+  }
+});
 
 /* ============ AUTH ============ */
 app.post('/api/auth/register', async (req, res) => {
@@ -603,7 +652,7 @@ app.delete('/api/imap/email/:id', authRequired, async (req, res) => {
   try { await db.collection('users').doc(req.session.user.id).collection('imapEmails').doc(req.params.id).delete(); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ INBOX REPLY (v1.8.3: public logo URL to prevent clipping) ============ */
+/* ============ INBOX REPLY (v1.8.4: public logo URL to prevent clipping) ============ */
 app.post('/api/inbox/reply', authRequired, async (req, res) => {
   try {
     const { to, subject, body, inReplyTo, references, includeSignature, includeLogo, includeAttachments, selectedFileIds } = req.body;
@@ -620,10 +669,8 @@ app.post('/api/inbox/reply', authRequired, async (req, res) => {
     if (hasSignature && includeSignature !== false) {
       let sig = u.signature;
       if (includeLogo === false) {
-        // Strip logo entirely
         sig = sig.replace(/<td[^>]*>\s*<img[\s\S]*?<\/td>/gi, '').replace(/<img[^>]*>/gi, '').replace(/<td[^>]*>\s*<\/td>/gi, '');
       } else {
-        // Replace base64 logo with PUBLIC URL (huge fix — prevents Gmail clipping)
         sig = replaceInlineLogoWithPublicUrl(sig, uid);
       }
       sigHtml = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>';
@@ -1122,7 +1169,7 @@ app.get('/api/my-emails', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ SEND (v1.8.3: public logo URL) ============ */
+/* ============ SEND (v1.8.4: public logo URL) ============ */
 async function sendOne(userId, userEmail, recipientId, options) {
   options = options || {};
   const u = await getUserData(userId);
@@ -1166,7 +1213,6 @@ async function sendOne(userId, userEmail, recipientId, options) {
     if (options.includeLogo === false) {
       sig = sig.replace(/<td[^>]*>\s*<img[\s\S]*?<\/td>/gi, '').replace(/<img[^>]*>/gi, '').replace(/<td[^>]*>\s*<\/td>/gi, '');
     } else {
-      // CRITICAL FIX: Replace base64 logo with public URL to prevent Gmail clipping
       sig = replaceInlineLogoWithPublicUrl(sig, userId);
     }
     sigHtml = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>';
@@ -1583,4 +1629,4 @@ app.delete('/api/admin/user/:id', adminRequired, async (req, res) => {
 app.use((err, req, res, next) => { console.error('Unhandled:', err.message); if (res.headersSent) return next(err); res.status(500).json({ ok: false, error: 'Internal server error' }); });
 app.use((req, res, next) => { if (req.method === 'GET' && !req.path.startsWith('/api') && !req.path.startsWith('/auth') && !req.path.startsWith('/track') && !req.path.startsWith('/logo')) { return res.sendFile(path.join(__dirname, 'public', 'index.html')); } next(); });
 
-if (process.env.VERCEL) { module.exports = app; } else { app.listen(PORT, () => console.log('✅ MailFlow Pro v' + APP_VERSION + ' running on port ' + PORT)); }
+if (process.env.VERCEL) { module.exports = app; } else { app.listen(PORT, () => console.log('✅ MailFlow Pro v' + APP_VERSION + ' running on port ' + PORT + ' | OCR: ' + (OCR_SPACE_API_KEY !== 'helloworld' ? 'key set' : 'fallback'))); }
