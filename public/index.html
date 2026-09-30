@@ -13,6 +13,9 @@
 <script defer src="/_vercel/insights/script.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script>
+window.__OCR_CFG__={workerPath:'https://cdn.jsdelivr.net/npm/tesseract.js@4.1.4/dist/worker.min.js',corePath:'https://cdn.jsdelivr.net/npm/tesseract.js-core@4.0.4/tesseract-core.wasm.js',langPath:'https://tessdata.projectnaptha.com/4.0.0'};
+</script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.4/dist/tesseract.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -508,7 +511,7 @@ input,textarea,select{min-height:44px;font-size:16px}
 <svg viewBox="0 0 64 64"><defs><linearGradient id="mfGradM" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset=".5" stop-color="#6366f1"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="14" fill="url(#mfGradM)"/><path d="M14 22 L32 34 L50 22 L50 46 Q50 48 48 48 L16 48 Q14 48 14 46 Z" fill="#fff" opacity=".97"/><path d="M14 22 L32 34 L50 22" stroke="url(#mfGradM)" stroke-width="1.8" fill="none" stroke-linejoin="round"/><circle cx="49" cy="15" r="5.5" fill="#fbbf24"/></svg>
 </div>
 <span class="brand-text">MailFlow Pro</span>
-<span style="font-size:9px;color:var(--text3);font-weight:500;padding:2px 6px;background:rgba(56,189,248,.1);border-radius:6px;margin-left:4px">v1.8.2</span>
+<span style="font-size:9px;color:var(--text3);font-weight:500;padding:2px 6px;background:rgba(56,189,248,.1);border-radius:6px;margin-left:4px">v1.8.3</span>
 </div>
 <div class="user-chip">
 <img id="userAvatar" class="user-avatar" src="" style="display:none" alt="" onclick="openProfileModal()">
@@ -1279,10 +1282,10 @@ var adminEmailsPage=1,adminEmailsSearchQuery='',adminEmailsSearchTimer=null;
 var OCR_FILES=[];
 var OCR_QUEUE=[];
 var OCR_PROCESSING=false;
-var OCR_MAX_RETRIES=3;
-var OCR_WORKER=null;
+var OCR_MAX_RETRIES=4;
 var REPLY_TARGET_EMAIL='';
 var REPLY_SELECTED_FILES={};
+var OCR_LANG_DATA_READY=false;
 
 function $(id){return document.getElementById(id);}
 function toast(m,t){var el=$('toast');el.innerText=m;el.className='toast show '+(t||'ok');clearTimeout(el._t);el._t=setTimeout(function(){el.className='toast'},4500);}
@@ -1415,7 +1418,7 @@ function startHourlyAutoSend(){setTimeout(function(){runAutoCheck();},8000);if(H
 function runAutoCheck(){api('/api/auto-send-check','POST').then(function(r){if(r.ok&&r.sent>0){toast('🤖 Auto-sent: '+r.sent+' emails');loadAll();loadQuota(true);loadMyEmails();loadQuickAuto();}}).catch(function(){});}
 
 /* ============ QUOTA ============ */
-function loadQuota(force){var url='/api/quota'+(force?'?force=1':'');api(url).then(function(r){if(!r.ok){if(r.noTokens){$('quotaMailflowSent').innerText='—';$('quotaGmailSent').innerText='—';$('quotaSent').innerText='—';}return;}MY_QUOTA={sent:r.sent,limit:r.limit,remaining:r.remaining,mailflowSent:r.mailflowSent,gmailSent:r.gmailSent};$('quotaMailflowSent').innerText=r.mailflowSent!==undefined?r.mailflowSent:'—';$('quotaGmailSent').innerText=r.gmailSent!==null&&r.gmailSent!==undefined?r.gmailSent:(r.imapAvailable===false?'N/A (enable Inbox)':'—');$('quotaSent').innerText=r.sent;$('quotaLimit').innerText=r.limit;$('quotaRemaining').innerText=r.remaining;var li=$('quotaLiveIndicator');if(r.live){li.className='quota-live';li.innerHTML='<span class="dot"></span>Live';}else{li.className='quota-live offline';li.innerHTML='⚡ MailFlow only';}var pct=(r.sent/r.limit)*100;$('quotaFill').style.width=Math.min(100,pct)+'%';$('quotaFill').className='quota-fill'+(pct>90?' crit':(pct>70?' warn':''));if(r.live){$('quotaHint').innerHTML='✅ Real-time from Gmail Sent folder. MailFlow sends are a subset of Gmail total.';}else{$('quotaHint').innerHTML='⚠️ Connect Inbox (IMAP) to see real Gmail daily count (includes manual Gmail sends).';}}).catch(function(){});}
+function loadQuota(force){var url='/api/quota'+(force?'?force=1':'');api(url).then(function(r){if(!r.ok){if(r.noTokens){$('quotaMailflowSent').innerText='—';$('quotaGmailSent').innerText='—';$('quotaSent').innerText='—';}return;}MY_QUOTA={sent:r.sent,limit:r.limit,remaining:r.remaining,mailflowSent:r.mailflowSent,gmailSent:r.gmailSent};$('quotaMailflowSent').innerText=r.mailflowSent!==undefined?r.mailflowSent:'—';$('quotaGmailSent').innerText=r.gmailSent!==null&&r.gmailSent!==undefined?r.gmailSent:(r.imapAvailable===false?'N/A (enable Inbox)':'—');$('quotaSent').innerText=r.sent;$('quotaLimit').innerText=r.limit;$('quotaRemaining').innerText=r.remaining;var li=$('quotaLiveIndicator');if(r.live){li.className='quota-live';li.innerHTML='<span class="dot"></span>Live';}else{li.className='quota-live offline';li.innerHTML='⚡ MailFlow only';}var pct=(r.sent/r.limit)*100;$('quotaFill').style.width=Math.min(100,pct)+'%';$('quotaFill').className='quota-fill'+(pct>90?' crit':(pct>70?' warn':''));if(r.live){$('quotaHint').innerHTML='✅ Real-time from Gmail Sent folder.';}else{$('quotaHint').innerHTML='⚠️ Connect Inbox (IMAP) to see real Gmail daily count.';}}).catch(function(){});}
 
 /* ============ AI ANALYSIS ============ */
 function scheduleAnalysis(){if(analysisTimer)clearTimeout(analysisTimer);$('aiLiveStatus').innerText='Typing...';analysisTimer=setTimeout(runLiveAnalysis,1500);}
@@ -1462,8 +1465,8 @@ function previewSig(){var h=buildSigHtmlFrom(getSigFields(),LOGO_URL);if(!h||h.l
 function saveSig(){var h=buildSigHtmlFrom(getSigFields(),LOGO_URL);if(!h||h.length<20)return toast('Please fill in at least one field','err');api('/api/signature','POST',{signature:h,fields:getSigFields()}).then(function(r){if(!r.ok)return toast('Error saving signature','err');toast('✅ Signature saved');previewSig();});}
 async function resetSig(){var ok=await showConfirm({icon:'🗑',title:'Reset signature?',message:'This will clear all fields',okText:'Reset'});if(!ok)return;['sbName','sbPos','sbCompany','sbPhone','sbEmail','sbLinkedin'].forEach(function(id){if($(id))$(id).value='';});$('sigPreviewContent').innerHTML='';$('sigPreviewBox').classList.remove('show');}
 function loadSignature(){api('/api/signature').then(function(r){if(!r.ok)return;var f=r.fields||{};['name','pos','company','phone','email','linkedin'].forEach(function(k){var id='sb'+k.charAt(0).toUpperCase()+k.slice(1);if(f[k]&&$(id))$(id).value=f[k];});if(r.signature){$('sigPreviewContent').innerHTML=r.signature;$('sigPreviewBox').classList.add('show');}});}
-function loadLogo(){api('/api/logo').then(function(r){if(r.ok&&r.url){LOGO_URL=r.url;LOGO_URL_ALT=r.urlAlt||'';var img=$('logoImg');img.onerror=function(){this.style.display='none';$('logoPh').style.display='block';};img.onload=function(){this.style.display='block';$('logoPh').style.display='none';};img.src=r.url;$('logoTitle').innerText='Logo uploaded';$('logoActions').style.display='block';}});}
-document.getElementById('logoInput').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;var ok=['image/png','image/jpeg','image/jpg','image/gif','image/svg+xml','image/webp'];if(ok.indexOf(f.type)===-1)return toast('Invalid image type','err');if(f.size>500*1024)return toast('Maximum size is 500KB','err');var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading logo...');api('/api/upload-logo','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){if(!r.ok)return toast('Upload failed','err');LOGO_URL=r.url;var img=$('logoImg');img.src=r.url;img.style.display='block';$('logoPh').style.display='none';$('logoTitle').innerText='Logo uploaded';$('logoActions').style.display='block';toast('✅ Logo uploaded');previewSig();});};rd.readAsDataURL(f);});
+function loadLogo(){api('/api/logo').then(function(r){if(r.ok&&(r.url||r.urlAlt)){LOGO_URL=r.url||r.urlAlt;LOGO_URL_ALT=r.urlAlt||'';var img=$('logoImg');img.onerror=function(){this.style.display='none';$('logoPh').style.display='block';};img.onload=function(){this.style.display='block';$('logoPh').style.display='none';};img.src=LOGO_URL;$('logoTitle').innerText='Logo uploaded';$('logoActions').style.display='block';}});}
+document.getElementById('logoInput').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;var ok=['image/png','image/jpeg','image/jpg','image/gif','image/svg+xml','image/webp'];if(ok.indexOf(f.type)===-1)return toast('Invalid image type','err');if(f.size>500*1024)return toast('Maximum size is 500KB','err');var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading logo...');api('/api/upload-logo','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){if(!r.ok)return toast('Upload failed','err');LOGO_URL=r.url||r.urlAlt;var img=$('logoImg');img.src=LOGO_URL;img.style.display='block';$('logoPh').style.display='none';$('logoTitle').innerText='Logo uploaded';$('logoActions').style.display='block';toast('✅ Logo uploaded');previewSig();});};rd.readAsDataURL(f);});
 async function removeLogo(){var ok=await showConfirm({icon:'🗑',title:'Remove logo?',message:'',okText:'Remove'});if(!ok)return;api('/api/remove-logo','POST',{}).then(function(r){if(r.ok){toast('Logo removed');LOGO_URL='';$('logoImg').style.display='none';$('logoPh').style.display='block';$('logoTitle').innerText='Click to upload your logo';$('logoActions').style.display='none';previewSig();}});}
 
 /* ============ FILES ============ */
@@ -1520,20 +1523,31 @@ function clearBulk(){$('bulkInput').value='';updateBulk();}
 function submitBulk(){var r=parseBulk($('bulkInput').value);if(!r.valid.length)return toast('No valid emails found','err');sendBulkRecipients(r.valid);}
 function sendBulkRecipients(items){api('/api/recipients','POST',{list:items,templateId:$('tplSelect').value}).then(function(res){if(res.ok){toast('✅ '+res.added+' recipients added');$('bulkInput').value='';updateBulk();loadAll();loadQuickAuto();switchTab('manual');}else toast('Error adding recipients','err');});}
 
-/* ============ OCR (v1.8.2 — persistent worker for mobile) ============ */
-async function getOCRWorker(){
-  if(OCR_WORKER)return OCR_WORKER;
-  if(typeof Tesseract==='undefined'){throw new Error('OCR library not loaded. Check internet connection.');}
+/* ============ OCR v1.8.3 — FRESH WORKER PER IMAGE (mobile-safe) ============ */
+async function createFreshWorker(){
+  if(typeof Tesseract==='undefined'){throw new Error('OCR library not loaded. Check internet.');}
+  var cfg=window.__OCR_CFG__||{};
+  var opts={
+    workerPath: cfg.workerPath,
+    corePath: cfg.corePath,
+    langPath: cfg.langPath,
+    logger: function(m){/*silent*/},
+    errorHandler: function(e){console.warn('[OCR worker err]',e&&e.message?e.message:e);}
+  };
+  // Tesseract.js v4: createWorker(lang, oem, options) → Promise<Worker>
+  var worker;
   try{
-    OCR_WORKER=await Tesseract.createWorker('eng');
-    return OCR_WORKER;
-  }catch(e){
-    OCR_WORKER=null;
-    throw e;
+    worker=await Tesseract.createWorker('eng',1,opts);
+  }catch(e1){
+    // Fallback: older signature createWorker(options)
+    try{ worker=await Tesseract.createWorker('eng',1,opts); }
+    catch(e2){ throw new Error('Failed to start OCR engine: '+(e2&&e2.message?e2.message:'unknown')); }
   }
+  return worker;
 }
-async function killOCRWorker(){
-  if(OCR_WORKER){try{await OCR_WORKER.terminate();}catch(e){}OCR_WORKER=null;}
+async function terminateSafe(worker){
+  if(!worker)return;
+  try{ await worker.terminate(); }catch(e){}
 }
 document.getElementById('ocrInput').addEventListener('change',function(e){var files=e.target.files;if(!files||!files.length)return;for(var i=0;i<files.length;i++){enqueueOCRFile(files[i]);}e.target.value='';});
 document.addEventListener('paste',function(e){if($('ocrTab').classList.contains('hidden'))return;var items=e.clipboardData&&e.clipboardData.items;if(!items)return;var found=false;for(var i=0;i<items.length;i++){if(items[i].type.indexOf('image')!==-1){var blob=items[i].getAsFile();if(blob){enqueueOCRFile(blob);found=true;}}}if(found)toast('📋 Screenshot added to queue');});
@@ -1556,10 +1570,10 @@ async function processOCRQueue(){
   while(OCR_QUEUE.length>0){
     var idx=OCR_QUEUE.shift();
     await processOCRItem(idx);
-    await new Promise(function(r){setTimeout(r,400);});
+    // Short pause between images so mobile browser can breathe
+    await new Promise(function(r){setTimeout(r,700);});
   }
   OCR_PROCESSING=false;
-  // Keep worker alive for next batch — do not terminate
   updateOCRStatus(true);
 }
 async function processOCRItem(idx){
@@ -1571,12 +1585,16 @@ async function processOCRItem(idx){
   renderOCRResultCards();
   updateOCRStatus();
   for(var attempt=1; attempt<=OCR_MAX_RETRIES; attempt++){
+    var worker=null;
     try{
-      var processedFile=await resizeImageIfNeeded(item.file, 1200);
-      var worker=await getOCRWorker();
+      // Mobile-safe resize: smaller dims = less memory
+      var processedFile=await resizeImageIfNeeded(item.file, 1000);
+      // FRESH worker per image — this is the mobile fix
+      worker=await createFreshWorker();
       var result=await worker.recognize(processedFile);
+      await terminateSafe(worker); worker=null;
       var text=((result&&result.data&&result.data.text)||'').trim();
-      if(!text||text.length<3){throw new Error('No text detected in image');}
+      if(!text||text.length<3){throw new Error('No text detected in this image');}
       item.text=text;
       item.status='done';
       item.error='';
@@ -1585,12 +1603,11 @@ async function processOCRItem(idx){
       updateOCRStatus();
       return;
     }catch(err){
+      await terminateSafe(worker); worker=null;
       var msg=(err&&err.message)?err.message:String(err);
-      // If worker is dead, kill it so next attempt creates a fresh one
-      if(msg.indexOf('terminated')!==-1||msg.indexOf('worker')!==-1||msg.indexOf('Worker')!==-1||msg.indexOf('code 0')!==-1||msg.indexOf('Code=0')!==-1){
-        await killOCRWorker();
+      if(msg.toLowerCase().indexOf('runtime')!==-1 || msg.indexOf('abort')!==-1 || msg.indexOf('Code=0')!==-1 || msg.indexOf('code 0')!==-1 || msg.indexOf('memory')!==-1){
+        msg='Engine memory issue — retrying';
       }
-      if(msg.indexOf('Cannot read property')!==-1)msg='Processing error — retrying';
       console.warn('OCR SS #'+(idx+1)+' attempt '+attempt+' failed:', msg);
       item.retries=attempt;
       item.error=msg;
@@ -1599,6 +1616,7 @@ async function processOCRItem(idx){
         renderOCRThumbs();
         renderOCRResultCards();
         updateOCRStatus();
+        // Exponential backoff — important for mobile
         await new Promise(function(r){setTimeout(r, 1500*attempt);});
       }else{
         item.status='failed';
@@ -1618,7 +1636,8 @@ function resizeImageIfNeeded(file, maxDim){
       var finish=function(out){ if(done)return; done=true; try{URL.revokeObjectURL(url);}catch(e){}; resolve(out); };
       img.onload=function(){
         var w=img.width, h=img.height;
-        var maxFileSize=1000*1024;
+        // Aggressive target for mobile stability
+        var maxFileSize=900*1024;
         var targetMax=maxDim;
         if(w<=targetMax && h<=targetMax && file.size<maxFileSize){ finish(file); return; }
         var scale=Math.min(targetMax/w, targetMax/h, 1);
@@ -1633,7 +1652,7 @@ function resizeImageIfNeeded(file, maxDim){
         canvas.toBlob(function(blob){
           if(!blob){ finish(file); return; }
           finish(blob);
-        }, 'image/jpeg', 0.85);
+        }, 'image/jpeg', 0.82);
       };
       img.onerror=function(){ finish(file); };
       img.src=url;
@@ -1747,7 +1766,7 @@ async function delRec(id){var ok=await showConfirm({icon:'🗑',title:'Delete re
 async function resendSelected(){var ids=Object.keys(SELECTED);if(!ids.length)return toast('Please select recipients first','err');if(!TEMPLATES.length)return toast('Create a template first','err');var ok=await showConfirm({icon:'🔁',title:'Bulk Resend to '+ids.length+' recipients?',message:'Uses your first template for all.',okText:'Continue',primary:true});if(!ok)return;var done=0,err=0;var selFiles=Object.keys(SELECTED_FILES);var firstTemplate=TEMPLATES[0].id;toast('Starting bulk resend...');var next=function(i){if(i>=ids.length){toast('✅ '+done+' emails sent');clearSelection();loadAll();loadQuota(true);loadMyEmails();return;}setTimeout(function(){api('/api/resend','POST',{recipientId:ids[i],templateId:firstTemplate,selectedFileIds:selFiles}).then(function(r){if(r.ok)done++;else if(r.error==='DAILY_LIMIT_REACHED'){toast('❌ Daily limit reached','err');clearSelection();loadAll();return;}else err++;next(i+1);}).catch(function(){err++;next(i+1);});},800);};next(0);}
 async function deleteSelected(){var ids=Object.keys(SELECTED);if(!ids.length)return toast('Please select recipients first','err');var ok=await showConfirm({icon:'⚠️',title:'Delete '+ids.length+' recipients?',message:'This cannot be undone.',okText:'Delete All'});if(!ok)return;api('/api/recipients/bulk-delete','POST',{ids:ids}).then(function(r){if(r.ok){toast('✅ '+r.deleted+' recipients deleted');clearSelection();loadAll();loadQuickAuto();}});}
 
-/* ============ MY EMAILS (v1.8.2: shows replies) ============ */
+/* ============ MY EMAILS ============ */
 function loadMyEmails(){var range=$('myEmailRange')?$('myEmailRange').value:'all';api('/api/my-emails?range='+encodeURIComponent(range)).then(function(r){if(!r.ok)return;MY_EMAILS=(r.emails||[]).sort(function(a,b){var ta=a.sentAt&&a.sentAt._seconds?a.sentAt._seconds*1000:new Date(a.sentAt||0).getTime();var tb=b.sentAt&&b.sentAt._seconds?b.sentAt._seconds*1000:new Date(b.sentAt||0).getTime();return tb-ta;});renderMyEmails();});}
 function renderMyEmails(){var w=$('myEmailsWrap');var q=($('myEmailSearch').value||'').toLowerCase();var filtered=MY_EMAILS.filter(function(e){return !q||(e.recipientEmail||'').toLowerCase().indexOf(q)!==-1||(e.subject||'').toLowerCase().indexOf(q)!==-1;});if($('myEmailCount'))$('myEmailCount').innerText=filtered.length+' shown';if(!filtered.length){w.innerHTML='<div class="empty"><div class="ico">📧</div>No email history yet</div>';return;}var h='<table class="data-table"><thead><tr><th>Type</th><th>Recipient</th><th>Subject</th><th>Sent</th><th>Status</th><th>Opened</th><th>Files</th></tr></thead><tbody>';filtered.slice(0,300).forEach(function(e){var opened=!!e.openedAt;var isReply=!!e.isReply;var stCls=opened?'opened':(isReply?'reply-badge':'sent');var stIcon=opened?'👁':(isReply?'📩':'📤');var stLbl=opened?'Opened':(isReply?'Reply':'Sent');var typeBadge=isReply?'<span class="badge reply-badge">📩 Reply</span>':'<span class="badge sent">📤 Send</span>';var attCell='—';if(e.attachmentNames&&e.attachmentNames.length>0)attCell='<div class="attachment-list">'+e.attachmentNames.map(function(n){return '<span class="attachment-name">📎 '+esc(n)+'</span>';}).join('')+'</div>';else if((e.attachmentsCount||0)>0)attCell='<span class="badge attach">📎 '+e.attachmentsCount+'</span>';h+='<tr><td>'+typeBadge+'</td><td style="word-break:break-all;font-size:11px">'+esc(e.recipientEmail)+'</td><td style="font-size:11px">'+esc(e.subject||'—')+'</td><td style="font-size:10px">'+fmtDate(e.sentAt)+'</td><td><span class="badge '+stCls+'">'+stIcon+' '+stLbl+'</span></td><td style="font-size:10px">'+(opened?fmtDate(e.openedAt):'—')+'</td><td>'+attCell+'</td></tr>';});h+='</tbody></table>';w.innerHTML=h;}
 function loadPrefs(){api('/api/prefs').then(function(r){if(!r.ok)return;});}
@@ -1763,7 +1782,7 @@ function renderInboxList(){var h='';INBOX_EMAILS.forEach(function(e,i){h+='<div 
 function openIMAPEmail(i){var e=INBOX_EMAILS[i];if(!e)return;ACTIVE_EMAIL=e;document.querySelectorAll('.inbox-item').forEach(function(el){el.classList.remove('active');if(parseInt(el.getAttribute('data-idx'))===i)el.classList.add('active');});$('inboxEmpty').classList.add('hidden');$('inboxViewerContent').classList.remove('hidden');$('inboxViewerContent').style.display='flex';$('viewSubject').innerText=e.subject||'(no subject)';$('viewFrom').innerText=(e.fromName||'')+' <'+(e.from||'')+'>';$('viewTo').innerText=e.to||'';$('viewDate').innerText=fmtEmailDate(e.date||e.receivedAt);var bodyContainer=$('viewBody');bodyContainer.innerHTML='<div class="loading"><div class="spin"></div><span>Loading...</span></div>';api('/api/imap/body','POST',{folder:e.folder||'INBOX',uid:e.uid}).then(function(r){if(!r.ok){bodyContainer.innerHTML='<div class="plain-body">Failed to load email</div>';return;}var email=r.email;if(email.userEmail)USER_EMAIL_LOWER=String(email.userEmail).toLowerCase();ACTIVE_EMAIL=Object.assign({},e,email);bodyContainer.innerHTML='';if(email.htmlBody&&email.htmlBody.trim().length>0){var iframe=document.createElement('iframe');iframe.style.cssText='width:100%;border:none;background:#fff;display:block;';iframe.setAttribute('sandbox','allow-same-origin allow-popups');bodyContainer.appendChild(iframe);try{var doc=iframe.contentDocument||iframe.contentWindow.document;doc.open();doc.write('<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:20px;font-family:-apple-system,sans-serif;font-size:14px;line-height:1.6;color:#222;word-break:break-word;background:#fff}img{max-width:100%;height:auto}a{color:#1a73e8}</style></head><body>'+email.htmlBody+'</body></html>');doc.close();setTimeout(function(){try{var hh=doc.body.scrollHeight;iframe.style.height=Math.max(400,Math.min(hh+60,1500))+'px';}catch(err){iframe.style.height='500px';}},200);}catch(err){bodyContainer.innerHTML='<div class="plain-body">'+esc(email.textBody||email.snippet||'')+'</div>';}}else bodyContainer.innerHTML='<div class="plain-body">'+esc(email.textBody||email.snippet||'')+'</div>';});}
 async function deleteIMAPEmail(){if(!ACTIVE_EMAIL)return;var ok=await showConfirm({icon:'🗑',title:'Delete email?',message:'Removes from MailFlow only.',okText:'Delete'});if(!ok)return;api('/api/imap/email/'+encodeURIComponent(ACTIVE_EMAIL.id),'DELETE').then(function(r){if(r.ok){toast('✅ Deleted');INBOX_EMAILS=INBOX_EMAILS.filter(function(e){return e.id!==ACTIVE_EMAIL.id;});ACTIVE_EMAIL=null;$('inboxViewerContent').classList.add('hidden');$('inboxEmpty').classList.remove('hidden');renderInboxList();}});}
 
-/* ============ REPLY (v1.8.2: options + tracking) ============ */
+/* ============ REPLY ============ */
 function extractEmailFromString(s){
   if(!s)return '';
   var m=String(s).match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);

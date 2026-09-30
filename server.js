@@ -19,7 +19,7 @@ const DEFAULT_SEND_DELAY = 20;
 const IS_VERCEL = !!process.env.VERCEL;
 const CRON_SECRET = process.env.CRON_SECRET || '';
 const BACKEND_URL = process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org';
-const APP_VERSION = '1.8.2';
+const APP_VERSION = '1.8.3';
 
 if (!process.env.SESSION_SECRET) { console.error('FATAL: SESSION_SECRET missing!'); process.exit(1); }
 if (!process.env.ENCRYPTION_KEY) { console.error('FATAL: ENCRYPTION_KEY missing!'); process.exit(1); }
@@ -57,6 +57,15 @@ function setCachedResponse(prompt,uid,t){if(aiCache.size>800){const k=aiCache.ke
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 function safeParseJSON(text){if(!text)return null;let c=text.trim().replace(/^```(?:json)?\s*/i,'').replace(/```\s*$/i,'').trim();const fb=c.indexOf('{'),lb=c.lastIndexOf('}');if(fb===-1||lb===-1)return null;try{return JSON.parse(c.substring(fb,lb+1));}catch(e){return null;}}
 async function fetchWithTimeout(url,opts,ms){const ctrl=new AbortController();const t=setTimeout(()=>ctrl.abort(),ms||20000);try{const r=await fetch(url,{...opts,signal:ctrl.signal});clearTimeout(t);return r;}catch(e){clearTimeout(t);throw e;}}
+
+/* ===== SIGNATURE LOGO FIX: replace base64 logo with public URL to prevent Gmail clipping ===== */
+function replaceInlineLogoWithPublicUrl(html, uid){
+  if(!html || !uid) return html;
+  try{
+    // Replace any src="data:image/xxx;base64,..." with public logo URL
+    return html.replace(/src\s*=\s*["']data:image\/[^;]+;base64,[^"']+["']/gi, 'src="' + BACKEND_URL + '/logo/' + uid + '"');
+  }catch(e){ return html; }
+}
 
 function stripSignature(text){
   if(!text)return text;
@@ -121,6 +130,24 @@ let serviceAccount = {};
 try { if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) serviceAccount = JSON.parse(Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf8')); else if (process.env.FIREBASE_SERVICE_ACCOUNT) serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT); } catch (e) { console.error('Firebase parse error:', e.message); }
 try { if (!Object.keys(serviceAccount).length) throw new Error('Firebase service account missing'); initializeApp({ credential: cert(serviceAccount) }); } catch (e) { console.error('Firebase init error:', e.message); }
 const db = getFirestore();
+
+/* ===== PUBLIC LOGO ENDPOINT — serves user's logo image to prevent Gmail clipping ===== */
+app.get('/logo/:uid', async (req, res) => {
+  try {
+    const uid = req.params.uid;
+    if (!uid || uid.length > 64) return res.status(404).end();
+    const snap = await db.collection('users').doc(uid).get();
+    if (!snap.exists) return res.status(404).end();
+    const data = snap.data();
+    if (!data.logoBase64) return res.status(404).end();
+    let buf;
+    try { buf = Buffer.from(data.logoBase64, 'base64'); } catch (e) { return res.status(500).end(); }
+    const mime = data.logoMimeType || 'image/png';
+    res.set('Content-Type', mime);
+    res.set('Cache-Control', 'public, max-age=604800, immutable');
+    res.send(buf);
+  } catch (e) { res.status(500).end(); }
+});
 
 function createTransporter(email, appPassword) { return nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user: email, pass: appPassword }, connectionTimeout: 30000, greetingTimeout: 30000, socketTimeout: 60000 }); }
 function createImapClient(email, appPassword) { return new ImapFlow({ host: 'imap.gmail.com', port: 993, secure: true, auth: { user: email, pass: appPassword }, logger: false, tls: { rejectUnauthorized: false } }); }
@@ -576,7 +603,7 @@ app.delete('/api/imap/email/:id', authRequired, async (req, res) => {
   try { await db.collection('users').doc(req.session.user.id).collection('imapEmails').doc(req.params.id).delete(); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ INBOX REPLY (v1.8.2 — tracking + options + emailLog) ============ */
+/* ============ INBOX REPLY (v1.8.3: public logo URL to prevent clipping) ============ */
 app.post('/api/inbox/reply', authRequired, async (req, res) => {
   try {
     const { to, subject, body, inReplyTo, references, includeSignature, includeLogo, includeAttachments, selectedFileIds } = req.body;
@@ -588,15 +615,19 @@ app.post('/api/inbox/reply', authRequired, async (req, res) => {
     const toLower = String(to).toLowerCase().trim();
     if (toLower === userEmailLower) return res.json({ ok: false, error: 'Cannot reply to your own email address.' });
     const transporter = createTransporter(req.session.user.email, u.smtpAppPassword);
-    // Signature (with optional logo strip)
     let sigHtml = '';
     const hasSignature = !!(u.signature && u.signature.trim().length > 20);
     if (hasSignature && includeSignature !== false) {
       let sig = u.signature;
-      if (includeLogo === false) sig = sig.replace(/<td[^>]*>\s*<img[\s\S]*?<\/td>/gi, '').replace(/<img[^>]*>/gi, '').replace(/<td[^>]*>\s*<\/td>/gi, '');
+      if (includeLogo === false) {
+        // Strip logo entirely
+        sig = sig.replace(/<td[^>]*>\s*<img[\s\S]*?<\/td>/gi, '').replace(/<img[^>]*>/gi, '').replace(/<td[^>]*>\s*<\/td>/gi, '');
+      } else {
+        // Replace base64 logo with PUBLIC URL (huge fix — prevents Gmail clipping)
+        sig = replaceInlineLogoWithPublicUrl(sig, uid);
+      }
       sigHtml = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>';
     }
-    // Attachments
     const atts = []; const attNames = [];
     if (includeAttachments === true && selectedFileIds && selectedFileIds.length > 0) {
       const fs = await db.collection('users').doc(uid).collection('files').get();
@@ -608,7 +639,6 @@ app.post('/api/inbox/reply', authRequired, async (req, res) => {
     }
     const bodyHtml = body.replace(/\n/g, '<br>');
     const fullHtml = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">' + bodyHtml + sigHtml + '</div>';
-    // Log to emailLog FIRST so we can create a tracking token + record opens
     const sendTrackToken = crypto.randomBytes(16).toString('hex');
     const logRef = await db.collection('users').doc(uid).collection('emailLog').add({
       recipientId: null,
@@ -671,7 +701,7 @@ app.post('/api/ai/smart-reply', authRequired, async (req, res) => {
     const userAbout = aiProfile.aboutMe || '';
     const userIndustry = aiProfile.industry || '';
     const hasSignature = !!(u.signature && u.signature.trim().length > 20);
-    const sigInstruction = hasSignature ? 'A professional HTML signature will be auto-appended. Do NOT include any sign-off, name, contact info, or closing line. End with the last substantive sentence.' : `End with clean professional sign-off. Include name "${userName}"${userPos ? ', ' + userPos : ''}${userCompany ? ' at ' + userCompany : ''}. Keep it minimal (1-2 lines).`;
+    const sigInstruction = hasSignature ? 'A professional HTML signature will be auto-appended. Do NOT include any sign-off, name, contact info, or closing line.' : `End with clean professional sign-off. Include name "${userName}"${userPos ? ', ' + userPos : ''}${userCompany ? ' at ' + userCompany : ''}.`;
     const prompt = `You are an expert business email assistant writing a reply on behalf of ${userName}.
 
 WRITER IDENTITY:
@@ -700,12 +730,9 @@ CRITICAL RULES:
 3. Write in FIRST PERSON as ${userName}.
 4. Match tone: ${userTone}.
 5. Address EVERY point, question, request.
-6. Job application reply → offer next steps.
-7. Business enquiry → show enthusiasm + clear next steps.
-8. Keep 2-4 paragraphs. Natural, warm, human, professional.
-9. ${sigInstruction}
-10. Do NOT invent facts.
-11. Avoid clichés like "I hope this email finds you well".
+6. Keep 2-4 paragraphs. Natural, warm, human.
+7. ${sigInstruction}
+8. Do NOT invent facts.
 
 Return ONLY valid JSON:
 {"subject":"Re: (matching original subject)","body":"complete reply text with \\n\\n for paragraphs"}`;
@@ -779,7 +806,7 @@ app.post('/api/ai/extract-cv', authRequired, async (req, res) => {
     if (!buf || buf.length < 20) return res.json({ ok: false, error: 'File is empty or corrupted.' });
     const text = await extractCvFromBuffer(buf, fname, mime);
     if (!text || text.replace(/\s/g, '').length < 30 || looksLikeBinaryCv(text)) {
-      return res.json({ ok: false, error: 'Could not read text from this file. If it is a scanned PDF/image, please copy-paste the text manually. Otherwise, upload a text-based PDF, DOCX, or TXT file.' });
+      return res.json({ ok: false, error: 'Could not read text from this file. If it is a scanned PDF/image, please copy-paste the text manually.' });
     }
     res.json({ ok: true, text: text.substring(0, 20000), filename: fname, chars: text.length });
   } catch (e) { res.json({ ok: false, error: 'File processing error: ' + e.message }); }
@@ -790,8 +817,8 @@ app.post('/api/ai/analyze-cv', authRequired, async (req, res) => {
     const { cvText, targetRole, jobDescription, fileId } = req.body;
     let text = cvText || '';
     if (fileId && (!text || looksLikeBinaryCv(text))) { try { const f = await db.collection('users').doc(req.session.user.id).collection('files').doc(fileId).get(); if (f.exists) { const meta = f.data(); if (meta.base64 && meta.base64.length > 100) { text = await extractCvFromBuffer(Buffer.from(meta.base64, 'base64'), meta.name || 'cv', meta.mimeType || ''); } } } catch (e) { } }
-    if (looksLikeBinaryCv(text)) return res.json({ ok: false, error: 'CV is not readable. Please upload a text-based PDF or DOCX file, or paste the text manually.' });
-    if (!text || text.replace(/\s/g, '').length < 30) return res.json({ ok: false, error: 'CV text is too short or empty. Please upload a proper CV.' });
+    if (looksLikeBinaryCv(text)) return res.json({ ok: false, error: 'CV is not readable.' });
+    if (!text || text.replace(/\s/g, '').length < 30) return res.json({ ok: false, error: 'CV text is too short or empty.' });
     const u = await getUserData(req.session.user.id);
     const aiProfile = u.aiProfile || {};
     const writerName = aiProfile.fullName || u.name || 'the applicant';
@@ -799,7 +826,7 @@ app.post('/api/ai/analyze-cv', authRequired, async (req, res) => {
     const prompt = `You are an expert career coach. Analyze this CV and write a compelling job application email.
 
 CRITICAL RULES:
-1. The CV may contain text in ANY language. Understand the MEANING regardless of language.
+1. The CV may contain text in ANY language.
 2. Output MUST be in professional English only.
 3. Write in first person as the applicant: ${writerName}.
 ${writerCompany ? '4. Current company: ' + writerCompany : ''}
@@ -812,29 +839,19 @@ ${text.substring(0, 3800)}
 TARGET ROLE: ${targetRole || 'Not specified'}
 ${jobDescription ? 'JOB DESCRIPTION:\n' + jobDescription.substring(0, 800) : 'No job description provided'}
 
-TASK:
-- Extract key skills, experience, and achievements
-- Match them to the target role
-- Write a compelling, personalized cover email
-
-RULES:
-- No signature, no name at bottom (system auto-appends)
-- 2-3 paragraphs, professional, engaging
-- Highlight 2-3 strongest matches
-
 Return ONLY valid JSON:
 {"subject":"under 65 chars","body":"professional email with \\n\\n","keySkills":["s1","s2","s3","s4","s5"],"analysis":"2-3 sentences","score":0-100}`;
     const aiText = await callAI(prompt, req.session.user.id);
     const parsed = safeParseJSON(aiText);
     if (parsed && parsed.subject && parsed.body) return res.json({ ok: true, subject: parsed.subject, body: stripSignature(parsed.body), keySkills: parsed.keySkills || [], analysis: parsed.analysis || '', score: parsed.score || 70, aiPowered: true });
-    res.json({ ok: false, error: 'AI could not parse the CV. Please try again with a clearer file.' });
+    res.json({ ok: false, error: 'AI could not parse the CV.' });
   } catch (e) { res.json({ ok: false, error: 'Analysis failed: ' + e.message }); }
 });
 
 app.post('/api/ai/generate-subjects', authRequired, async (req, res) => {
   try {
     const { context } = req.body;
-    const prompt = `Generate 5 high-quality email subject lines. Return ONLY JSON.\nRules: max 60 chars each, English, compelling, no spam trigger words, no ALL CAPS, no excessive punctuation.\nContext: ${context || 'professional outreach'}\nReturn: {"subjects":["s1","s2","s3","s4","s5"]}`;
+    const prompt = `Generate 5 high-quality email subject lines. Return ONLY JSON.\nRules: max 60 chars each, English, compelling, no spam trigger words.\nContext: ${context || 'professional outreach'}\nReturn: {"subjects":["s1","s2","s3","s4","s5"]}`;
     try { const text = await callAI(prompt, req.session.user.id); const parsed = safeParseJSON(text); if (parsed && parsed.subjects && parsed.subjects.length >= 3) return res.json({ ok: true, subjects: parsed.subjects, aiPowered: true }); } catch (e) { }
     const c = (context || 'Professional Outreach').substring(0, 50);
     res.json({ ok: true, subjects: [c, 'Quick question about ' + c, 'Following up on ' + c], aiPowered: false });
@@ -844,7 +861,7 @@ app.post('/api/ai/generate-subjects', authRequired, async (req, res) => {
 app.post('/api/ai/improve-email', authRequired, async (req, res) => {
   try {
     const { subject, body, isReply } = req.body;
-    const prompt = `Improve this ${isReply ? 'email reply' : 'email'} for better clarity, professionalism, and readability.
+    const prompt = `Improve this ${isReply ? 'email reply' : 'email'}.
 
 CURRENT:
 Subject: "${subject || ''}"
@@ -854,9 +871,9 @@ ${(body || '').substring(0, 1500)}
 """
 
 IMPROVE:
-- Fix grammar, typos, and clarity
+- Fix grammar, typos, clarity
 - Make more professional and engaging
-- Keep same core message and meaning
+- Keep same core message
 - Improve subject line (max 60 chars)
 - Preserve paragraph breaks
 - STRICT: No signature, no sign-off, no name
@@ -978,7 +995,7 @@ app.get('/api/recipient/:id/gmail-history', authRequired, async (req, res) => {
 
 /* ============ FILES ============ */
 app.post('/api/upload-file', authRequired, async (req, res) => {
-  try { const { base64, mimeType, filename } = req.body; if (!base64 || !filename) return res.json({ ok: false, error: 'Missing file data' }); const buf = Buffer.from(base64, 'base64'); if (buf.length > 900 * 1024) return res.json({ ok: false, error: 'Maximum file size is 900KB (Firestore limit).' }); const fd = { base64, name: filename, mimeType: mimeType || 'application/octet-stream', size: buf.length, uploadedAt: new Date() }; const doc = await db.collection('users').doc(req.session.user.id).collection('files').add(fd); res.json({ ok: true, file: { id: doc.id, name: fd.name, mimeType: fd.mimeType, size: fd.size, uploadedAt: fd.uploadedAt } }); } catch (e) { res.json({ ok: false, error: e.message }); }
+  try { const { base64, mimeType, filename } = req.body; if (!base64 || !filename) return res.json({ ok: false, error: 'Missing file data' }); const buf = Buffer.from(base64, 'base64'); if (buf.length > 900 * 1024) return res.json({ ok: false, error: 'Maximum file size is 900KB.' }); const fd = { base64, name: filename, mimeType: mimeType || 'application/octet-stream', size: buf.length, uploadedAt: new Date() }; const doc = await db.collection('users').doc(req.session.user.id).collection('files').add(fd); res.json({ ok: true, file: { id: doc.id, name: fd.name, mimeType: fd.mimeType, size: fd.size, uploadedAt: fd.uploadedAt } }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.get('/api/files', authRequired, async (req, res) => {
   try { const s = await db.collection('users').doc(req.session.user.id).collection('files').orderBy('uploadedAt', 'desc').get(); const l = []; s.forEach(d => { const dd = d.data(); l.push({ id: d.id, name: dd.name, mimeType: dd.mimeType, size: dd.size, uploadedAt: dd.uploadedAt }); }); res.json({ ok: true, files: l }); } catch (e) { res.json({ ok: false, error: e.message }); }
@@ -989,13 +1006,13 @@ app.delete('/api/files/:id', authRequired, async (req, res) => {
 
 /* ============ LOGO ============ */
 app.post('/api/upload-logo', authRequired, async (req, res) => {
-  try { const { base64, mimeType, filename } = req.body; if (!base64) return res.json({ ok: false, error: 'No image data' }); const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/svg+xml', 'image/webp']; if (!allowed.includes(mimeType)) return res.json({ ok: false, error: 'Invalid image type' }); const buf = Buffer.from(base64, 'base64'); if (buf.length > 500 * 1024) return res.json({ ok: false, error: 'Maximum logo size is 500KB' }); const dataUrl = 'data:' + mimeType + ';base64,' + base64; await db.collection('users').doc(req.session.user.id).update({ logoUrl: dataUrl, logoUrlAlt: dataUrl, logoBase64: base64, logoMimeType: mimeType }); res.json({ ok: true, url: dataUrl, urlAlt: dataUrl }); } catch (e) { res.json({ ok: false, error: e.message }); }
+  try { const { base64, mimeType, filename } = req.body; if (!base64) return res.json({ ok: false, error: 'No image data' }); const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/svg+xml', 'image/webp']; if (!allowed.includes(mimeType)) return res.json({ ok: false, error: 'Invalid image type' }); const buf = Buffer.from(base64, 'base64'); if (buf.length > 500 * 1024) return res.json({ ok: false, error: 'Maximum logo size is 500KB' }); const uid = req.session.user.id; const dataUrl = 'data:' + mimeType + ';base64,' + base64; await db.collection('users').doc(uid).update({ logoUrl: dataUrl, logoUrlAlt: BACKEND_URL + '/logo/' + uid, logoBase64: base64, logoMimeType: mimeType }); res.json({ ok: true, url: BACKEND_URL + '/logo/' + uid, urlAlt: dataUrl }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.post('/api/remove-logo', authRequired, async (req, res) => {
   try { await db.collection('users').doc(req.session.user.id).update({ logoUrl: '', logoUrlAlt: '', logoBase64: null, logoMimeType: null }); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.get('/api/logo', authRequired, async (req, res) => {
-  try { const d = await getUserData(req.session.user.id); res.json({ ok: true, url: d.logoUrl || '', urlAlt: d.logoUrlAlt || '' }); } catch (e) { res.json({ ok: false, error: e.message }); }
+  try { const d = await getUserData(req.session.user.id); const uid = req.session.user.id; const publicUrl = d.logoBase64 ? (BACKEND_URL + '/logo/' + uid) : ''; res.json({ ok: true, url: publicUrl, urlAlt: d.logoUrl || '' }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
 /* ============ PROFILE PIC ============ */
@@ -1062,7 +1079,7 @@ app.post('/api/prefs', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ STATS (FIXED) ============ */
+/* ============ STATS ============ */
 app.get('/api/stats', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -1105,7 +1122,7 @@ app.get('/api/my-emails', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ SEND ============ */
+/* ============ SEND (v1.8.3: public logo URL) ============ */
 async function sendOne(userId, userEmail, recipientId, options) {
   options = options || {};
   const u = await getUserData(userId);
@@ -1130,11 +1147,11 @@ async function sendOne(userId, userEmail, recipientId, options) {
   }
   let t = null;
   const templateIdToUse = options.templateId || rec.templateId;
-  if (templateIdToUse) { const tt = await db.collection('users').doc(userId).collection('templates').doc(templateIdToUse).get(); if (tt.exists) t = tt.data(); else if (options.templateId) throw new Error('Selected template was not found. Please pick another one.'); }
+  if (templateIdToUse) { const tt = await db.collection('users').doc(userId).collection('templates').doc(templateIdToUse).get(); if (tt.exists) t = tt.data(); else if (options.templateId) throw new Error('Selected template was not found.'); }
   if (!t) { const ts = await db.collection('users').doc(userId).collection('templates').limit(1).get(); if (!ts.empty) t = ts.docs[0].data(); }
-  if (!t) throw new Error('No template available. Please create a template first.');
-  if (!t.subject || !String(t.subject).trim()) throw new Error('Template "' + (t.name || 'Untitled') + '" has no subject. Please edit the template.');
-  if (!t.body || !String(t.body).trim()) throw new Error('Template "' + (t.name || 'Untitled') + '" has no body. Please edit the template.');
+  if (!t) throw new Error('No template available.');
+  if (!t.subject || !String(t.subject).trim()) throw new Error('Template has no subject.');
+  if (!t.body || !String(t.body).trim()) throw new Error('Template has no body.');
   const recipientName = (rec.company || '').split(' ')[0] || 'there';
   const recipientCompany = rec.company || '';
   const recipientEmail = rec.email || '';
@@ -1144,7 +1161,16 @@ async function sendOne(userId, userEmail, recipientId, options) {
   for (const [k, v] of Object.entries(replacements)) { subject = subject.split(k).join(v); body = body.split(k).join(v); }
   let sigHtml = '';
   const hasSignature = !!(u.signature && u.signature.trim().length > 20);
-  if (hasSignature && options.includeSignature !== false) { let sig = u.signature; if (options.includeLogo === false) sig = sig.replace(/<td[^>]*>\s*<img[\s\S]*?<\/td>/gi, '').replace(/<img[^>]*>/gi, '').replace(/<td[^>]*>\s*<\/td>/gi, ''); sigHtml = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>'; }
+  if (hasSignature && options.includeSignature !== false) {
+    let sig = u.signature;
+    if (options.includeLogo === false) {
+      sig = sig.replace(/<td[^>]*>\s*<img[\s\S]*?<\/td>/gi, '').replace(/<img[^>]*>/gi, '').replace(/<td[^>]*>\s*<\/td>/gi, '');
+    } else {
+      // CRITICAL FIX: Replace base64 logo with public URL to prevent Gmail clipping
+      sig = replaceInlineLogoWithPublicUrl(sig, userId);
+    }
+    sigHtml = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>';
+  }
   const bodyHtml = body.replace(/\n/g, '<br>');
   const fullHtml = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">' + bodyHtml + sigHtml + '</div>';
   const lp = localAnalysis(subject, fullHtml);
@@ -1343,7 +1369,7 @@ app.post('/api/test/send', adminRequired, async (req, res) => {
     if (!targetEmail || !subject || !body) return res.json({ ok: false, error: 'Missing fields' });
     let sigHtml = '';
     const sigToUse = useTestSignature ? (u.testSignature || u.signature) : (u.signature || u.testSignature);
-    if (sigToUse && includeSignature !== false) { let sig = sigToUse; if (includeLogo === false) sig = sig.replace(/<td[^>]*>\s*<img[\s\S]*?<\/td>/gi, '').replace(/<img[^>]*>/gi, '').replace(/<td[^>]*>\s*<\/td>/gi, ''); sigHtml = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>'; }
+    if (sigToUse && includeSignature !== false) { let sig = sigToUse; if (includeLogo === false) sig = sig.replace(/<td[^>]*>\s*<img[\s\S]*?<\/td>/gi, '').replace(/<img[^>]*>/gi, '').replace(/<td[^>]*>\s*<\/td>/gi, ''); else sig = replaceInlineLogoWithPublicUrl(sig, uid); sigHtml = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>'; }
     let pix = '';
     if (recId) { const trackTok = crypto.randomBytes(16).toString('hex'); await db.collection('users').doc(uid).collection('testRecipients').doc(recId).update({ trackToken: trackTok }); const tu = BACKEND_URL + '/track/' + recId + '?u=' + uid + '&t=' + trackTok + '&type=test'; pix = '<img src="' + tu + '" width="1" height="1" alt="" style="border:0;display:block;width:1px;height:1px">'; }
     const bodyHtml = body.replace(/\n/g, '<br>');
@@ -1386,7 +1412,8 @@ app.post('/api/test/automation/run', adminRequired, async (req, res) => {
         const rec = r.data();
         const subject = 'Test Email from MailFlow Pro';
         const bodyText = 'Hello,\n\nThis is an automated test email.\n\nThank you.';
-        const sig = u.testSignature || u.signature || '';
+        let sig = u.testSignature || u.signature || '';
+        sig = replaceInlineLogoWithPublicUrl(sig, uid);
         const bodyHtml = bodyText.replace(/\n/g, '<br>');
         const sigHtml = sig ? '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>' : '';
         const tok = crypto.randomBytes(16).toString('hex');
@@ -1554,6 +1581,6 @@ app.delete('/api/admin/user/:id', adminRequired, async (req, res) => {
 });
 
 app.use((err, req, res, next) => { console.error('Unhandled:', err.message); if (res.headersSent) return next(err); res.status(500).json({ ok: false, error: 'Internal server error' }); });
-app.use((req, res, next) => { if (req.method === 'GET' && !req.path.startsWith('/api') && !req.path.startsWith('/auth') && !req.path.startsWith('/track')) { return res.sendFile(path.join(__dirname, 'public', 'index.html')); } next(); });
+app.use((req, res, next) => { if (req.method === 'GET' && !req.path.startsWith('/api') && !req.path.startsWith('/auth') && !req.path.startsWith('/track') && !req.path.startsWith('/logo')) { return res.sendFile(path.join(__dirname, 'public', 'index.html')); } next(); });
 
 if (process.env.VERCEL) { module.exports = app; } else { app.listen(PORT, () => console.log('✅ MailFlow Pro v' + APP_VERSION + ' running on port ' + PORT)); }
