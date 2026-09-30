@@ -369,9 +369,10 @@ table.data-table tr.clickable{cursor:pointer}
 .ocr-thumb.failed{border-color:var(--red)}
 .ocr-thumb.queued{border-color:var(--text3)}
 .ocr-thumb .status{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.75);color:white;font-size:9px;padding:3px;text-align:center;font-weight:700}
-.ocr-progress{margin-top:12px;background:#1e293b;border-radius:8px;height:8px;overflow:hidden;display:none}
+.ocr-progress{margin-top:12px;background:#1e293b;border-radius:8px;height:8px;overflow:hidden;display:none;position:relative}
 .ocr-progress.show{display:block}
 .ocr-progress-fill{height:100%;background:var(--grad);width:0%;transition:.3s}
+.ocr-progress-info{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:11px;color:var(--text2);flex-wrap:wrap;gap:8px}
 .ocr-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px}
 .ocr-card .head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
 .ocr-card .head .num{font-size:12px;font-weight:800;color:#7dd3fc;background:rgba(56,189,248,.12);padding:4px 10px;border-radius:8px;font-family:monospace}
@@ -408,6 +409,14 @@ table.data-table tr.clickable{cursor:pointer}
 .reply-warning::before{content:'⚠️';flex-shrink:0}
 .reply-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .reply-actions .btn{flex:1;min-width:140px}
+.monitor-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px}
+@media(min-width:700px){.monitor-grid{grid-template-columns:repeat(4,1fr)}}
+.monitor-card{background:linear-gradient(135deg,rgba(56,189,248,.08),rgba(168,85,247,.06));border:1px solid rgba(56,189,248,.25);border-radius:12px;padding:14px;text-align:center}
+.monitor-card .lbl{font-size:10px;color:var(--text2);text-transform:uppercase;font-weight:700;margin-bottom:6px}
+.monitor-card .val{font-size:22px;font-weight:800;color:var(--cyan)}
+.monitor-card.green .val{color:#86efac}
+.monitor-card.red .val{color:#fca5a5}
+.monitor-card.amber .val{color:#fcd34d}
 @media(max-width:768px){
 .maintabs{position:fixed;bottom:0;top:auto;left:0;right:0;padding:6px 8px;z-index:2000;border-top:1px solid var(--border);border-bottom:none;justify-content:space-around;box-shadow:0 -10px 30px rgba(0,0,0,.5);padding-bottom:calc(6px + env(safe-area-inset-bottom));background:rgba(10,14,26,.98)}
 .maintab{flex:1;text-align:center;font-size:10px;padding:8px 4px}
@@ -671,7 +680,7 @@ input,textarea,select{min-height:44px;font-size:16px}
 <h2>✍️ Email Signature <span>Appears in every email</span></h2>
 <div class="upload-area">
 <input type="file" id="logoInput" accept="image/*">
-<label for="logoInput"><div class="preview-box"><div class="ph" id="logoPh">📷</div><img id="logoImg" src="" style="display:none"></div><div class="upload-info"><div class="t" id="logoTitle">Click to upload your logo</div><div class="s" id="logoSub">PNG / JPG / SVG — max 500KB</div></div></label>
+<label for="logoInput"><div class="preview-box"><div class="ph" id="logoPh">📷</div><img id="logoImg" src="" style="display:none"></div><div class="upload-info"><div class="t" id="logoTitle">Click to upload your logo</div><div class="s" id="logoSub">PNG / JPG / SVG — max 2MB</div></div></label>
 </div>
 <div id="logoActions" style="display:none;margin-bottom:12px"><button class="btn danger small" onclick="removeLogo()">🗑 Remove Logo</button></div>
 <div class="sig-fields">
@@ -691,10 +700,10 @@ input,textarea,select{min-height:44px;font-size:16px}
 </div>
 
 <div class="panel" id="filesPanel">
-<h2>📎 Attachments <span>Max 900KB per file</span></h2>
+<h2>📎 Attachments <span>Max 3MB per file</span></h2>
 <div class="upload-area">
 <input type="file" id="fileInput" multiple>
-<label for="fileInput"><div class="preview-box"><div class="ph">📎</div></div><div class="upload-info"><div class="t">Click to upload files</div><div class="s">PDF, DOC, DOCX, TXT, images — max 900KB each</div></div></label>
+<label for="fileInput"><div class="preview-box"><div class="ph">📎</div></div><div class="upload-info"><div class="t">Click to upload files</div><div class="s">PDF, DOC, DOCX, TXT, images — max 3MB each</div></div></label>
 </div>
 <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
 <button class="btn ghost small" onclick="selectAllFiles()">☑️ Select All</button>
@@ -730,16 +739,19 @@ input,textarea,select{min-height:44px;font-size:16px}
 </div>
 </div>
 <div id="ocrTab" class="hidden">
-<div class="bulk-help" style="background:linear-gradient(135deg,rgba(34,197,94,.1),rgba(56,189,248,.08));border-color:rgba(34,197,94,.4);color:#86efac">📸 <div><b>Screenshot to Text</b> — Cloud OCR (100% reliable). Supports any device & any image.</div></div>
+<div class="bulk-help" style="background:linear-gradient(135deg,rgba(34,197,94,.1),rgba(56,189,248,.08));border-color:rgba(34,197,94,.4);color:#86efac">📸 <div><b>Screenshot to Text (Bulk Mode)</b> — 17-18 screenshots ek saath upload karo. Rate-limit safe.</div></div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
 <input type="file" id="ocrInput" accept="image/*" multiple style="display:none">
 <button class="btn ghost" onclick="document.getElementById('ocrInput').click()" style="border:1px dashed var(--cyan);color:#7dd3fc;flex:1">📁 Choose Files</button>
 <button class="btn ghost" onclick="openCameraCapture()" style="border:1px dashed var(--cyan);color:#7dd3fc;flex:1">📷 Use Camera</button>
 </div>
-<div class="ocr-drop" onclick="document.getElementById('ocrInput').click()"><span class="ico">📸</span><div class="t">Click to upload or paste (Ctrl+V)</div><div class="s">PNG, JPG, WEBP — max 5MB each</div></div>
+<div class="ocr-drop" onclick="document.getElementById('ocrInput').click()"><span class="ico">📸</span><div class="t">Click to upload multiple screenshots</div><div class="s">PNG, JPG, WEBP — max 8MB each (auto-compressed)</div></div>
 <div class="ocr-multi-grid" id="ocrThumbs"></div>
 <div id="ocrProgress" class="ocr-progress"><div class="ocr-progress-fill" id="ocrProgressFill"></div></div>
-<div id="ocrStatus" style="font-size:11px;color:var(--text2);margin-top:10px;text-align:center"></div>
+<div class="ocr-progress-info" id="ocrProgressInfo" style="display:none">
+<div id="ocrStatus"></div>
+<div id="ocrETA"></div>
+</div>
 <div id="ocrResultWrap" style="display:none;margin-top:14px">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
 <div style="font-size:12px;font-weight:700;color:#7dd3fc">📝 Extracted Text — edit if needed</div>
@@ -749,6 +761,8 @@ input,textarea,select{min-height:44px;font-size:16px}
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
 <button class="btn success" onclick="sendOCRToBulk()" style="flex:1">📋 Send All to Bulk</button>
 <button class="btn ghost" onclick="copyOCRText()">📋 Copy</button>
+<button class="btn warn" onclick="retryAllFailedOCR()" id="ocrRetryFailedBtn" style="display:none">🔄 Retry Failed</button>
+<button class="btn ghost" onclick="cancelOCRQueue()" id="ocrCancelBtn" style="display:none;border-color:var(--amber);color:#fcd34d">⏹ Cancel Queue</button>
 <button class="btn ghost" onclick="clearOCR()">🗑 Clear</button>
 </div>
 </div>
@@ -942,6 +956,38 @@ input,textarea,select{min-height:44px;font-size:16px}
 <div class="stat s4"><div class="label">Pending</div><div class="value" id="adTotalPending">0</div></div>
 <div class="stat s5"><div class="label">Sends</div><div class="value" id="adTotalSends">0</div></div>
 </div>
+
+<div class="panel" style="background:linear-gradient(135deg,rgba(56,189,248,.06),rgba(168,85,247,.06));border-color:rgba(56,189,248,.3)">
+<h2>🔍 OCR & AI Monitor <span style="color:var(--green);font-size:11px">● Live</span></h2>
+<div class="monitor-grid">
+<div class="monitor-card"><div class="lbl">OCR Total</div><div class="val" id="monOcrTotal">0</div></div>
+<div class="monitor-card green"><div class="lbl">OCR Success</div><div class="val" id="monOcrSuccess">0</div></div>
+<div class="monitor-card red"><div class="lbl">OCR Failed</div><div class="val" id="monOcrFailed">0</div></div>
+<div class="monitor-card amber"><div class="lbl">Chars Extracted</div><div class="val" id="monOcrChars">0</div></div>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+<div style="font-size:12px;font-weight:700;color:#7dd3fc">📸 Per-User OCR Usage</div>
+<button class="btn ghost small" onclick="loadOcrMonitor()" style="font-size:11px;padding:5px 12px">🔄 Refresh</button>
+</div>
+<div id="ocrMonitorTable" class="tbl-wrap"></div>
+
+<div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+<div style="font-size:12px;font-weight:700;color:#fcd34d">⚠️ AI Provider Errors (today)</div>
+<span id="aiErrSummary" style="font-size:11px;color:var(--text3)"></span>
+</div>
+<div id="aiErrorTable" class="tbl-wrap"></div>
+</div>
+
+<div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+<div style="font-size:12px;font-weight:700;color:#c4b5fd">📜 Latest OCR Attempts (all users)</div>
+<button class="btn ghost small" onclick="loadOcrLog()" style="font-size:11px;padding:5px 12px">🔄 Refresh</button>
+</div>
+<div id="ocrLogTable" class="tbl-wrap"></div>
+</div>
+</div>
+
 <div class="panel">
 <h2>🧠 AI Usage <span id="adminAIUsageSummary"></span></h2>
 <div class="ai-usage-grid">
@@ -1270,23 +1316,25 @@ var INBOX_EMAILS=[],ACTIVE_EMAIL=null,MY_QUOTA={sent:0,limit:500,remaining:500,m
 var SENDERS=[],IMAP_CONNECTED=false,imapPage=1,USER_EMAIL_LOWER='';
 var POLL_TIMER=null,HOURLY_TIMER=null,analysisTimer=null,lastAnalyzedHash='',LIVE_INBOX_TIMER=null,lastInboxHash='';
 var ADMIN_LIVE_TIMER=null,ADMIN_EMAIL_LIVE_TIMER=null;
-var MAX_UPLOAD_SIZE=900*1024;
+var MAX_UPLOAD_SIZE=3*1024*1024;
 var _currentSendId=null,_currentResendId=null,CV_SELECTED_FILE_ID=null;
 var BANNED_USER_EMAIL='',_banTargetUid=null,_banTargetEmail='';
 var adminPage=1,adminSearchQuery='',adminSearchTimer=null;
 var adminEmailsPage=1,adminEmailsSearchQuery='',adminEmailsSearchTimer=null;
 var OCR_FILES=[];var OCR_QUEUE=[];var OCR_PROCESSING=false;var OCR_MAX_RETRIES=3;
+var OCR_LAST_REQUEST_TIME=0;var OCR_MIN_INTERVAL_MS=2600;var OCR_CANCELLED=false;var OCR_STARTED_AT=0;var OCR_DONE_AT_QUEUE_START=0;
 var REPLY_TARGET_EMAIL='';var REPLY_SELECTED_FILES={};
 
 function $(id){return document.getElementById(id);}
+function api(p,m,b){return fetch(p,{method:m||'GET',credentials:'include',headers:{'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined}).then(function(r){return r.text().then(function(t){try{return JSON.parse(t);}catch(e){return {ok:false,error:'Server error '+r.status};}});}).catch(function(e){var msg;if(e&&e.message)msg=e.message;else if(e&&e.type)msg='Network '+e.type;else msg='Network error';return {ok:false,error:msg};});}
 function toast(m,t){var el=$('toast');el.innerText=m;el.className='toast show '+(t||'ok');clearTimeout(el._t);el._t=setTimeout(function(){el.className='toast'},4500);}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-function api(p,m,b){return fetch(p,{method:m||'GET',credentials:'include',headers:{'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined}).then(function(r){return r.text().then(function(t){try{return JSON.parse(t);}catch(e){return {ok:false,error:'Server error '+r.status};}});}).catch(function(e){return {ok:false,error:'Network: '+e.message};});}
 function fmtSize(b){if(!b)return '—';if(b<1024)return b+' B';if(b<1048576)return (b/1024).toFixed(1)+' KB';return (b/1048576).toFixed(2)+' MB';}
 function fmtNum(n){if(!n||n===0)return '0';if(n<1000)return String(n);if(n<1000000)return (n/1000).toFixed(1)+'K';return (n/1000000).toFixed(2)+'M';}
 function fmtDate(d){if(!d)return '—';try{var t=d._seconds?d._seconds*1000:(d.seconds?d.seconds*1000:new Date(d).getTime());var dt=new Date(t);return dt.toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'})+' · '+dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});}catch(e){return '—';}}
 function fmtEmailDate(dateISO){if(!dateISO)return '—';try{var d=new Date(dateISO);if(isNaN(d.getTime()))return '—';var now=new Date();var timeStr=d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});var dateStr=d.toLocaleDateString('en-US',{day:'numeric',month:'short'});if(d.toDateString()===now.toDateString())return timeStr;return dateStr+' · '+timeStr;}catch(e){return '—';}}
 function fmtTimeAgo(dateISO){if(!dateISO)return '—';try{var d=new Date(dateISO);var diff=Date.now()-d.getTime();var min=Math.floor(diff/60000);if(min<1)return 'Just now';if(min<60)return min+'m ago';var hr=Math.floor(min/60);if(hr<24)return hr+'h ago';return Math.floor(hr/24)+'d ago';}catch(e){return '—';}}
+function fmtDuration(ms){if(ms<1000)return '<1s';var s=Math.floor(ms/1000);if(s<60)return s+'s';var m=Math.floor(s/60);var rs=s%60;return m+'m '+rs+'s';}
 function fileIcon(name,mime){mime=mime||'';name=(name||'').toLowerCase();if(mime.startsWith('image/'))return '🖼️';if(mime.includes('pdf')||name.endsWith('.pdf'))return '📄';if(mime.includes('word')||/\.(doc|docx)$/i.test(name))return '📝';return '📎';}
 function isCvFile(f){var n=(f.name||'').toLowerCase();var m=(f.mimeType||'').toLowerCase();return n.endsWith('.pdf')||n.endsWith('.docx')||n.endsWith('.doc')||n.endsWith('.txt')||n.endsWith('.rtf')||m.includes('pdf')||m.includes('word')||m.includes('text');}
 function showConfirm(opts){return new Promise(function(resolve){$('confirmIcon').innerText=opts.icon||'⚠️';$('confirmTitle').innerText=opts.title||'Are you sure?';$('confirmMessage').innerText=opts.message||'';var ok=$('confirmOk'),cancel=$('confirmCancel');ok.innerText=opts.okText||'Confirm';ok.className='confirm-btn'+(opts.primary?' primary':'');$('confirmBackdrop').classList.remove('hidden');var cleanup=function(){$('confirmBackdrop').classList.add('hidden');ok.onclick=null;cancel.onclick=null;};ok.onclick=function(){cleanup();resolve(true);};cancel.onclick=function(){cleanup();resolve(false);};});}
@@ -1312,8 +1360,8 @@ function closeGmailConnectModal(){$('gmailConnectModal').classList.add('hidden')
 async function connectGmail(){var pass=$('smtpAppPassword').value.trim();if(!pass||pass.replace(/\s/g,'').length<16){return toast('App password must be 16 characters','err');}var btn=$('gmailConnectBtn');setBtnLoading(btn,'🔌 Testing connection...');try{var alsoImap=$('alsoEnableImap')?$('alsoEnableImap').checked:false;var r=await api('/api/smtp/connect','POST',{appPassword:pass,alsoEnableImap:alsoImap});if(r.ok){toast('✅ Gmail connected'+(r.imapEnabled?' + Inbox enabled':''));$('smtpAppPassword').value='';closeGmailConnectModal();checkGmailStatus();loadQuota(true);checkIMAPStatus();}else{toast('Error: '+r.error,'err');}}catch(e){toast('Connection failed','err');}resetBtn(btn);}
 function startAutoRefresh(){if(POLL_TIMER)clearInterval(POLL_TIMER);POLL_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('myView').classList.contains('hidden')){loadQuota();loadAll();loadMyEmails();}},30000);}
 function startLiveInbox(){if(LIVE_INBOX_TIMER)clearInterval(LIVE_INBOX_TIMER);LIVE_INBOX_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('inboxView').classList.contains('hidden')&&IMAP_CONNECTED){loadIMAPInbox(true);}},3000);}
-function switchMain(t){['myView','inboxView','aiprofileView','testView','testDashView','adminView'].forEach(function(v){$(v).classList.add('hidden');});document.querySelectorAll('.maintab').forEach(function(el){el.classList.remove('active');});if(t==='my'){$('myView').classList.remove('hidden');$('tabMy').classList.add('active');loadAll();loadQuota();loadMyEmails();loadQuickAuto();loadSignature();loadFiles();}else if(t==='inbox'){$('inboxView').classList.remove('hidden');$('tabInbox').classList.add('active');checkIMAPStatus();}else if(t==='aiprofile'){$('aiprofileView').classList.remove('hidden');$('tabAIP').classList.add('active');loadAIProfile();}else if(t==='test'){$('testView').classList.remove('hidden');$('tabTest').classList.add('active');loadAIPredictions();loadSenders();}else if(t==='testdash'){$('testDashView').classList.remove('hidden');$('tabTestDash').classList.add('active');loadTestDashboard();}else if(t==='admin'){$('adminView').classList.remove('hidden');$('tabAdmin').classList.add('active');loadAdmin();loadAdminAIUsage();loadAdminBanned();loadAdminRequests();loadAdminUsersPage(1);loadAdminEmailsPage(1);startAdminLive();}}
-function startAdminLive(){if(ADMIN_LIVE_TIMER)clearInterval(ADMIN_LIVE_TIMER);ADMIN_LIVE_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('adminView').classList.contains('hidden')){loadAdminUsersPage(adminPage,true);loadAdminAIUsage();loadAdminBanned();loadAdminRequests();}},15000);if(ADMIN_EMAIL_LIVE_TIMER)clearInterval(ADMIN_EMAIL_LIVE_TIMER);ADMIN_EMAIL_LIVE_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('adminView').classList.contains('hidden')){loadAdminEmailsPage(adminEmailsPage,true);}},20000);}
+function switchMain(t){['myView','inboxView','aiprofileView','testView','testDashView','adminView'].forEach(function(v){$(v).classList.add('hidden');});document.querySelectorAll('.maintab').forEach(function(el){el.classList.remove('active');});if(t==='my'){$('myView').classList.remove('hidden');$('tabMy').classList.add('active');loadAll();loadQuota();loadMyEmails();loadQuickAuto();loadSignature();loadFiles();}else if(t==='inbox'){$('inboxView').classList.remove('hidden');$('tabInbox').classList.add('active');checkIMAPStatus();}else if(t==='aiprofile'){$('aiprofileView').classList.remove('hidden');$('tabAIP').classList.add('active');loadAIProfile();}else if(t==='test'){$('testView').classList.remove('hidden');$('tabTest').classList.add('active');loadAIPredictions();loadSenders();}else if(t==='testdash'){$('testDashView').classList.remove('hidden');$('tabTestDash').classList.add('active');loadTestDashboard();}else if(t==='admin'){$('adminView').classList.remove('hidden');$('tabAdmin').classList.add('active');loadAdmin();loadAdminAIUsage();loadAdminBanned();loadAdminRequests();loadAdminUsersPage(1);loadAdminEmailsPage(1);loadOcrMonitor();loadOcrLog();startAdminLive();}}
+function startAdminLive(){if(ADMIN_LIVE_TIMER)clearInterval(ADMIN_LIVE_TIMER);ADMIN_LIVE_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('adminView').classList.contains('hidden')){loadAdminUsersPage(adminPage,true);loadAdminAIUsage();loadAdminBanned();loadAdminRequests();loadOcrMonitor();}},15000);if(ADMIN_EMAIL_LIVE_TIMER)clearInterval(ADMIN_EMAIL_LIVE_TIMER);ADMIN_EMAIL_LIVE_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('adminView').classList.contains('hidden')){loadAdminEmailsPage(adminEmailsPage,true);loadOcrLog();}},20000);}
 function loadQuickAuto(){api('/api/prefs').then(function(r){if(!r.ok)return;var p=r.prefs;$('qAutoSend').checked=p.autoSend;$('qAutoConfig').style.display=p.autoSend?'block':'none';$('qBatchSize').value=p.autoSendBatchSize||5;$('qDelay').value=p.sendDelay!==undefined?p.sendDelay:20;$('qTotalSent').innerText=p.totalAutoSent||0;$('qLastRun').innerText=p.lastAutoSendRun?fmtTimeAgo(p.lastAutoSendRun):'Never';});api('/api/stats').then(function(r){if(!r.ok)return;$('qPending').innerText=r.stats.pending||0;});}
 function onQuickAutoToggle(v){$('qAutoConfig').style.display=v?'block':'none';}
 function saveQuickAuto(){var bs=parseInt($('qBatchSize').value)||5;var sd=parseInt($('qDelay').value);if(isNaN(sd)||sd<0)sd=20;if(sd>120)sd=120;api('/api/prefs','POST',{autoSend:$('qAutoSend').checked,autoSendBatchSize:bs,sendDelay:sd,quietEnabled:false,quietStart:22,quietEnd:7}).then(function(r){if(r.ok){toast('✅ Automation settings saved');loadQuickAuto();}else toast('Error saving settings','err');});}
@@ -1321,7 +1369,7 @@ function openProfileModal(){$('profileModal').classList.remove('hidden');loadPro
 function closeProfileModal(){$('profileModal').classList.add('hidden');}
 function loadProfile(){api('/api/profile').then(function(r){if(!r.ok)return;var p=r.profile;$('profileNameDisplay').innerText=p.name||'User';$('profileEmailDisplay').innerText=p.email||'';$('profileAvatar').src=p.picture||'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';$('profileAppId').innerText=p.appAccountId||'MFP-XXXXXX';if(p.createdAt){try{var d=p.createdAt._seconds?new Date(p.createdAt._seconds*1000):new Date(p.createdAt);$('profileJoined').innerText=d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}catch(e){}}$('editProfileName').value=p.name||'';});api('/api/ai/usage').then(function(r){if(!r.ok)return;$('profileAIToday').innerText=fmtNum(r.today.totalTokens||0);$('profileAIMonth').innerText=fmtNum(r.month.totalTokens||0);$('profileAITotal').innerText=fmtNum(r.total.totalTokens||0);$('profileAICalls').innerText=fmtNum(r.total.calls||0);$('profileAIRemaining').innerText=r.remainingTokens!==null&&r.remainingTokens!==undefined?fmtNum(r.remainingTokens):'—';$('profileAICallsLeft').innerText=r.estimatedRemainingCalls!==null&&r.estimatedRemainingCalls!==undefined?fmtNum(r.estimatedRemainingCalls):'—';});}
 function saveProfileName(){var name=$('editProfileName').value.trim();if(!name)return toast('Please enter a name','err');api('/api/profile','POST',{name:name}).then(function(r){if(r.ok){toast('✅ Name updated');$('topName').innerText=name;$('profileNameDisplay').innerText=name;if(USER)USER.name=name;}else toast('Error updating name','err');});}
-document.getElementById('profilePicInput').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;if(f.size>500*1024){toast('Maximum size is 500KB','err');return;}var ok=['image/png','image/jpeg','image/jpg','image/webp'];if(ok.indexOf(f.type)===-1)return toast('PNG, JPG, or WEBP only','err');var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading...');api('/api/profile/picture','POST',{base64:b,mimeType:f.type}).then(function(r){if(r.ok){toast('✅ Profile picture updated');$('profileAvatar').src=r.url;if($('userAvatar')){$('userAvatar').src=r.url;$('userAvatar').style.display='block';}}else toast('Error uploading','err');});};rd.readAsDataURL(f);e.target.value='';});
+document.getElementById('profilePicInput').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;if(f.size>1024*1024){toast('Maximum size is 1MB','err');return;}var ok=['image/png','image/jpeg','image/jpg','image/webp'];if(ok.indexOf(f.type)===-1)return toast('PNG, JPG, or WEBP only','err');var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading...');api('/api/profile/picture','POST',{base64:b,mimeType:f.type}).then(function(r){if(r.ok){toast('✅ Profile picture updated');$('profileAvatar').src=r.url;if($('userAvatar')){$('userAvatar').src=r.url;$('userAvatar').style.display='block';}}else toast('Error uploading','err');});};rd.readAsDataURL(f);e.target.value='';});
 function openSettingsModal(){$('settingsModal').classList.remove('hidden');loadSettings();}
 function closeSettingsModal(){$('settingsModal').classList.add('hidden');}
 function switchSettingsTab(t){['Account','Security','Preferences','Danger'].forEach(function(x){var el=$('setTab'+x);if(el)el.classList.remove('active');var tab=$('set'+x+'Tab');if(tab)tab.classList.add('hidden');});var map={'account':'Account','security':'Security','preferences':'Preferences','danger':'Danger'};$('setTab'+map[t]).classList.add('active');$('set'+map[t]+'Tab').classList.remove('hidden');if(t==='preferences')loadUserPreferences();}
@@ -1356,7 +1404,7 @@ function closeCVAnalyzer(){$('cvAnalyzerModal').classList.add('hidden');}
 function renderCVFileList(){var w=$('cvFileList');var cvs=FILES.filter(isCvFile);if(!cvs.length){w.innerHTML='<div style="padding:14px;color:var(--text3);font-size:12px;text-align:center">No CV files uploaded yet</div>';return;}w.innerHTML=cvs.map(function(f){var sel=CV_SELECTED_FILE_ID===f.id?' selected':'';var icon=fileIcon(f.name,f.mimeType);return '<div class="cv-file-pick'+sel+'" data-id="'+f.id+'"><div class="ico">'+icon+'</div><div style="flex:1;min-width:0"><div class="nm">'+esc(f.name)+'</div><div class="mt">'+fmtSize(f.size)+'</div></div><button class="del-cv" onclick="event.stopPropagation();deleteCVFile(\''+f.id+'\',\''+esc(f.name).replace(/'/g,"\\'")+'\')" title="Delete file">✕</button></div>';}).join('');w.querySelectorAll('.cv-file-pick').forEach(function(el){el.onclick=function(){CV_SELECTED_FILE_ID=this.getAttribute('data-id');renderCVFileList();loadCvTextFromFile(CV_SELECTED_FILE_ID);};});}
 async function deleteCVFile(fileId,fname){var ok=await showConfirm({icon:'🗑',title:'Delete File?',message:'Permanently delete "'+fname+'"?',okText:'Delete'});if(!ok)return;api('/api/files/'+fileId,'DELETE').then(function(r){if(r.ok){toast('✅ File deleted');delete SELECTED_FILES[fileId];if(CV_SELECTED_FILE_ID===fileId){CV_SELECTED_FILE_ID=null;$('cvTextWrap').style.display='none';$('cvText').value='';}$('cvUploadStatus').innerText='';loadFiles();renderCVFileList();}else toast('Error deleting file','err');});}
 function loadCvTextFromFile(fileId){$('cvUploadStatus').innerHTML='<span style="color:#7dd3fc">📄 Extracting text...</span>';$('cvTextWrap').style.display='block';$('cvText').value='';api('/api/ai/extract-cv','POST',{fileId:fileId}).then(function(r){if(!r.ok){$('cvUploadStatus').innerHTML='<span style="color:#fca5a5">❌ '+esc(r.error||'Failed to extract')+'</span>';return;}$('cvText').value=r.text||'';$('cvUploadStatus').innerHTML='<span style="color:#86efac">✅ '+r.chars+' characters extracted</span>';});}
-document.getElementById('cvFileInput').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;if(f.size>MAX_UPLOAD_SIZE){toast('Maximum size is 900KB','err');return;}$('cvUploadStatus').innerHTML='<span style="color:#7dd3fc">📤 Uploading...</span>';$('cvTextWrap').style.display='block';$('cvText').value='';var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];api('/api/upload-file','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(up){if(!up.ok){$('cvUploadStatus').innerHTML='<span style="color:#fca5a5">❌ '+esc(up.error||'Upload failed')+'</span>';return;}CV_SELECTED_FILE_ID=up.file.id;loadFiles();loadCvTextFromFile(up.file.id);});};rd.readAsDataURL(f);e.target.value='';});
+document.getElementById('cvFileInput').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;if(f.size>MAX_UPLOAD_SIZE){toast('Maximum size is 3MB','err');return;}$('cvUploadStatus').innerHTML='<span style="color:#7dd3fc">📤 Uploading...</span>';$('cvTextWrap').style.display='block';$('cvText').value='';var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];api('/api/upload-file','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(up){if(!up.ok){$('cvUploadStatus').innerHTML='<span style="color:#fca5a5">❌ '+esc(up.error||'Upload failed')+'</span>';return;}CV_SELECTED_FILE_ID=up.file.id;loadFiles();loadCvTextFromFile(up.file.id);});};rd.readAsDataURL(f);e.target.value='';});
 async function runCVAnalysis(){var cvText=$('cvText').value.trim();if(cvText.length<30)return toast('CV text is empty or too short','err');var btn=$('cvAnalyzeBtn');setBtnLoading(btn,'🤖 Analyzing...');$('cvAnalysisResult').style.display='none';try{var r=await api('/api/ai/analyze-cv','POST',{cvText:cvText,targetRole:$('cvTargetRole').value.trim(),jobDescription:$('cvJobDesc').value.trim(),fileId:CV_SELECTED_FILE_ID});if(r.ok){$('composerSubject').value=r.subject||'';$('composerBody').value=r.body||'';var skills=(r.keySkills||[]).map(function(s){return '<span class="badge sent" style="margin:2px">'+esc(s)+'</span>';}).join('');var scoreColor=(r.score||0)>=80?'#86efac':(r.score||0)>=60?'#7dd3fc':'#fcd34d';$('cvAnalysisResult').innerHTML='<div style="font-weight:700;color:#7dd3fc;margin-bottom:8px">✅ Match Score: <span style="color:'+scoreColor+'">'+(r.score||0)+'/100</span></div><div style="margin-bottom:8px">'+esc(r.analysis||'')+'</div><div><b>Key Skills:</b> '+skills+'</div>';$('cvAnalysisResult').style.display='block';toast('✅ Email generated successfully');lastAnalyzedHash='';runLiveAnalysis();setTimeout(function(){closeCVAnalyzer();switchMain('my');},1500);}else toast('Error: '+r.error,'err');}catch(e){toast('Analysis failed','err');}resetBtn(btn);}
 function loadAIProfile(){api('/api/ai-profile').then(function(r){if(!r.ok)return;var p=r.profile||{};if($('aipFullName'))$('aipFullName').value=p.fullName||'';if($('aipIndustry'))$('aipIndustry').value=p.industry||'';if($('aipTone'))$('aipTone').value=p.tone||'professional';if($('aipAboutMe'))$('aipAboutMe').value=p.aboutMe||'';if($('aipCommonPhrases'))$('aipCommonPhrases').value=p.commonPhrases||'';});}
 function saveAIProfile(){var payload={fullName:$('aipFullName').value.trim(),industry:$('aipIndustry').value.trim(),tone:$('aipTone').value,aboutMe:$('aipAboutMe').value.trim(),commonPhrases:$('aipCommonPhrases').value.trim()};api('/api/ai-profile','POST',payload).then(function(r){if(r.ok)toast('✅ AI profile saved');else toast('Error saving','err');});}
@@ -1371,9 +1419,9 @@ function saveSig(){var h=buildSigHtmlFrom(getSigFields(),LOGO_URL);if(!h||h.leng
 async function resetSig(){var ok=await showConfirm({icon:'🗑',title:'Reset signature?',message:'This will clear all fields',okText:'Reset'});if(!ok)return;['sbName','sbPos','sbCompany','sbPhone','sbEmail','sbLinkedin'].forEach(function(id){if($(id))$(id).value='';});$('sigPreviewContent').innerHTML='';$('sigPreviewBox').classList.remove('show');}
 function loadSignature(){api('/api/signature').then(function(r){if(!r.ok)return;var f=r.fields||{};['name','pos','company','phone','email','linkedin'].forEach(function(k){var id='sb'+k.charAt(0).toUpperCase()+k.slice(1);if(f[k]&&$(id))$(id).value=f[k];});if(r.signature){$('sigPreviewContent').innerHTML=r.signature;$('sigPreviewBox').classList.add('show');}});}
 function loadLogo(){api('/api/logo').then(function(r){if(r.ok&&(r.url||r.urlAlt)){LOGO_URL=r.url||r.urlAlt;LOGO_URL_ALT=r.urlAlt||'';var img=$('logoImg');img.onerror=function(){this.style.display='none';$('logoPh').style.display='block';};img.onload=function(){this.style.display='block';$('logoPh').style.display='none';};img.src=LOGO_URL;$('logoTitle').innerText='Logo uploaded';$('logoActions').style.display='block';}});}
-document.getElementById('logoInput').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;var ok=['image/png','image/jpeg','image/jpg','image/gif','image/svg+xml','image/webp'];if(ok.indexOf(f.type)===-1)return toast('Invalid image type','err');if(f.size>500*1024)return toast('Maximum size is 500KB','err');var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading logo...');api('/api/upload-logo','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){if(!r.ok)return toast('Upload failed','err');LOGO_URL=r.url||r.urlAlt;var img=$('logoImg');img.src=LOGO_URL;img.style.display='block';$('logoPh').style.display='none';$('logoTitle').innerText='Logo uploaded';$('logoActions').style.display='block';toast('✅ Logo uploaded');previewSig();});};rd.readAsDataURL(f);});
+document.getElementById('logoInput').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;var ok=['image/png','image/jpeg','image/jpg','image/gif','image/svg+xml','image/webp'];if(ok.indexOf(f.type)===-1)return toast('Invalid image type','err');if(f.size>2*1024*1024)return toast('Maximum size is 2MB','err');var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading logo...');api('/api/upload-logo','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){if(!r.ok)return toast('Upload failed','err');LOGO_URL=r.url||r.urlAlt;var img=$('logoImg');img.src=LOGO_URL;img.style.display='block';$('logoPh').style.display='none';$('logoTitle').innerText='Logo uploaded';$('logoActions').style.display='block';toast('✅ Logo uploaded');previewSig();});};rd.readAsDataURL(f);});
 async function removeLogo(){var ok=await showConfirm({icon:'🗑',title:'Remove logo?',message:'',okText:'Remove'});if(!ok)return;api('/api/remove-logo','POST',{}).then(function(r){if(r.ok){toast('Logo removed');LOGO_URL='';$('logoImg').style.display='none';$('logoPh').style.display='block';$('logoTitle').innerText='Click to upload your logo';$('logoActions').style.display='none';previewSig();}});}
-document.getElementById('fileInput').addEventListener('change',function(e){var files=e.target.files;if(!files.length)return;var up=function(i){if(i>=files.length){loadFiles();toast('✅ Files uploaded');return;}var f=files[i];if(f.size>MAX_UPLOAD_SIZE){toast(f.name+' is too large (900KB max)','err');up(i+1);return;}var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];api('/api/upload-file','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){if(!r.ok)toast('Error uploading '+f.name,'err');up(i+1);});};rd.readAsDataURL(f);};up(0);e.target.value='';});
+document.getElementById('fileInput').addEventListener('change',function(e){var files=e.target.files;if(!files.length)return;var up=function(i){if(i>=files.length){loadFiles();toast('✅ Files uploaded');return;}var f=files[i];if(f.size>MAX_UPLOAD_SIZE){toast(f.name+' is too large (3MB max)','err');up(i+1);return;}var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];api('/api/upload-file','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){if(!r.ok)toast('Error uploading '+f.name,'err');up(i+1);});};rd.readAsDataURL(f);};up(0);e.target.value='';});
 function loadFiles(){api('/api/files').then(function(r){if(!r.ok)return;FILES=r.files||[];renderFilesList();if($('cvAnalyzerModal')&&!$('cvAnalyzerModal').classList.contains('hidden'))renderCVFileList();if($('replyOptAttachments')&&$('replyOptAttachments').checked)renderReplyFilesList();});}
 function renderFilesList(){var w=$('filesList');if(!w)return;if(!FILES.length){w.innerHTML='<div class="empty"><div class="ico">📎</div>No files uploaded yet</div>';updateFileSelectInfo();return;}w.innerHTML=FILES.map(function(f){var sel=SELECTED_FILES[f.id]?' selected':'';var icon=fileIcon(f.name,f.mimeType);return '<div class="file-item'+sel+'" onclick="toggleFile(\''+f.id+'\')"><input type="checkbox" class="cbox" '+(SELECTED_FILES[f.id]?'checked':'')+' onclick="event.stopPropagation();toggleFile(\''+f.id+'\')"><div class="icon">'+icon+'</div><div class="info"><div class="fname">'+esc(f.name)+'</div><div class="fmeta">'+fmtSize(f.size)+'</div></div><div class="actions"><button onclick="event.stopPropagation();delFile(\''+f.id+'\')">Delete</button></div></div>';}).join('');updateFileSelectInfo();}
 function updateFileSelectInfo(){var el=$('fileSelectInfo');if(!el)return;var count=Object.keys(SELECTED_FILES).length;el.innerText=count>0?(count+' selected'):'';}
@@ -1398,14 +1446,14 @@ function clearBulk(){$('bulkInput').value='';updateBulk();}
 function submitBulk(){var r=parseBulk($('bulkInput').value);if(!r.valid.length)return toast('No valid emails found','err');sendBulkRecipients(r.valid);}
 function sendBulkRecipients(items){api('/api/recipients','POST',{list:items,templateId:$('tplSelect').value}).then(function(res){if(res.ok){toast('✅ '+res.added+' recipients added');$('bulkInput').value='';updateBulk();loadAll();loadQuickAuto();switchTab('manual');}else toast('Error adding recipients','err');});}
 
-/* ============ OCR v1.8.4 — SERVER-SIDE (100% RELIABLE) ============ */
+/* ============ OCR v1.8.4 — BULK-OPTIMIZED (17-18 images, rate-limit safe) ============ */
 document.getElementById('ocrInput').addEventListener('change',function(e){var files=e.target.files;if(!files||!files.length)return;for(var i=0;i<files.length;i++){enqueueOCRFile(files[i]);}e.target.value='';});
 document.addEventListener('paste',function(e){if($('ocrTab').classList.contains('hidden'))return;var items=e.clipboardData&&e.clipboardData.items;if(!items)return;var found=false;for(var i=0;i<items.length;i++){if(items[i].type.indexOf('image')!==-1){var blob=items[i].getAsFile();if(blob){enqueueOCRFile(blob);found=true;}}}if(found)toast('📋 Screenshot added to queue');});
 function openCameraCapture(){var inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.capture='environment';inp.onchange=function(e){var f=e.target.files[0];if(f)enqueueOCRFile(f);};inp.click();}
 
 async function enqueueOCRFile(file){
   if(!file)return;
-  if(file.size>5*1024*1024){toast('Maximum image size is 5MB','err');return;}
+  if(file.size>8*1024*1024){toast('Max 8MB per image','err');return;}
   var idx=OCR_FILES.length;
   var previewUrl=URL.createObjectURL(file);
   OCR_FILES.push({file:file,previewUrl:previewUrl,status:'queued',text:'',retries:0,error:''});
@@ -1419,13 +1467,65 @@ async function enqueueOCRFile(file){
 async function processOCRQueue(){
   if(OCR_PROCESSING)return;
   OCR_PROCESSING=true;
-  while(OCR_QUEUE.length>0){
+  OCR_CANCELLED=false;
+  OCR_STARTED_AT=Date.now();
+  updateOCRCancelBtn();
+  while(OCR_QUEUE.length>0 && !OCR_CANCELLED){
     var idx=OCR_QUEUE.shift();
     await processOCRItem(idx);
-    await new Promise(function(r){setTimeout(r,400);});
+    // Rate-limit safety: wait between OCR.space requests
+    var sinceLast=Date.now()-OCR_LAST_REQUEST_TIME;
+    if(sinceLast<OCR_MIN_INTERVAL_MS){
+      await new Promise(function(r){setTimeout(r, OCR_MIN_INTERVAL_MS-sinceLast);});
+    }
   }
   OCR_PROCESSING=false;
   updateOCRStatus(true);
+  updateOCRCancelBtn();
+}
+
+function updateOCRCancelBtn(){
+  var btn=$('ocrCancelBtn');
+  if(!btn)return;
+  if(OCR_PROCESSING){btn.style.display='inline-flex';}
+  else{btn.style.display='none';}
+  var rfb=$('ocrRetryFailedBtn');
+  if(rfb){
+    var failed=OCR_FILES.filter(function(x){return x.status==='failed';}).length;
+    rfb.style.display=failed>0?'inline-flex':'none';
+  }
+}
+
+function cancelOCRQueue(){
+  if(!OCR_PROCESSING)return;
+  OCR_CANCELLED=true;
+  OCR_QUEUE=[];
+  toast('⏹ Queue cancelled','warn');
+  updateOCRCancelBtn();
+}
+
+function retryAllFailedOCR(){
+  var failedIdx=[];
+  OCR_FILES.forEach(function(x,i){if(x.status==='failed'){x.status='queued';x.error='';x.retries=0;failedIdx.push(i);}});
+  if(!failedIdx.length)return toast('No failed items','warn');
+  OCR_QUEUE=OCR_QUEUE.concat(failedIdx);
+  renderOCRThumbs();
+  renderOCRResultCards();
+  updateOCRStatus();
+  toast('🔄 Retrying '+failedIdx.length+' failed');
+  if(!OCR_PROCESSING)processOCRQueue();
+}
+
+/* Extract real error message from any error object (fixes [object ProgressEvent]) */
+function extractErrorMessage(err){
+  if(!err) return 'Unknown error';
+  if(typeof err==='string') return err;
+  if(err.message) return String(err.message);
+  if(err.type) return 'Network '+err.type;
+  if(err.name) return String(err.name);
+  if(err.code) return 'Code '+err.name;
+  try{var s=String(err);if(s&&s!=='[object Object]'&&s!=='[object ProgressEvent]')return s;}catch(e){}
+  return 'Network error (request failed)';
 }
 
 async function processOCRItem(idx){
@@ -1437,14 +1537,48 @@ async function processOCRItem(idx){
   renderOCRResultCards();
   updateOCRStatus();
 
+  // 4-stage progressive compression. Each retry → smaller image.
+  var stages=[
+    {dim:1400, q:0.72, maxBase64KB:500},
+    {dim:1100, q:0.65, maxBase64KB:400},
+    {dim:900,  q:0.58, maxBase64KB:320},
+    {dim:700,  q:0.50, maxBase64KB:260}
+  ];
+
   for(var attempt=1; attempt<=OCR_MAX_RETRIES; attempt++){
+    var stage=stages[Math.min(attempt-1, stages.length-1)];
     try{
-      var processedFile=await compressForOCR(item.file, 1600);
+      var processedFile=await compressForOCR(item.file, stage.dim, stage.q);
       var base64=await fileToBase64(processedFile);
-      var mimeType=processedFile.type||item.file.type||'image/jpeg';
-      var r=await api('/api/ocr/extract','POST',{base64:base64,mimeType:mimeType});
-      if(!r.ok){throw new Error(r.error||'OCR failed');}
-      if(!r.text||r.text.length<2){throw new Error('No text detected in image');}
+      var sizeKB=Math.round(base64.length/1024);
+
+      // If still too big, one more pass at next stage size
+      if(sizeKB>stage.maxBase64KB+80){
+        var nextStage=stages[Math.min(attempt, stages.length-1)];
+        processedFile=await compressForOCR(item.file, nextStage.dim, nextStage.q);
+        base64=await fileToBase64(processedFile);
+        sizeKB=Math.round(base64.length/1024);
+      }
+
+      // Absolute hard cap: 1.5MB base64 (Vercel body limit safe zone)
+      if(sizeKB>1500){
+        throw new Error('Image too large after compression ('+sizeKB+'KB). Try a smaller screenshot.');
+      }
+
+      OCR_LAST_REQUEST_TIME=Date.now();
+      var mimeType=processedFile.type||'image/jpeg';
+      var r=await api('/api/ocr/extract','POST',{base64:base64,mimeType:mimeType,filename:item.file.name||''});
+
+      if(!r.ok){
+        // Detect rate-limit / 429
+        var em=(r.error||'').toLowerCase();
+        if(em.indexOf('429')!==-1 || em.indexOf('rate')!==-1 || em.indexOf('too many')!==-1){
+          throw new Error('RATE_LIMIT');
+        }
+        throw new Error(r.error||'OCR failed');
+      }
+      if(!r.text||r.text.length<2) throw new Error('No text detected in image');
+
       item.text=r.text;
       item.status='done';
       item.error='';
@@ -1452,9 +1586,10 @@ async function processOCRItem(idx){
       renderOCRResultCards();
       updateOCRStatus();
       return;
+
     }catch(err){
-      var msg=(err&&err.message)?err.message:String(err);
-      console.warn('OCR SS #'+(idx+1)+' attempt '+attempt+' failed:', msg);
+      var msg=extractErrorMessage(err);
+      console.warn('OCR SS#'+(idx+1)+' attempt '+attempt+':', msg);
       item.retries=attempt;
       item.error=msg;
       if(attempt<OCR_MAX_RETRIES){
@@ -1462,9 +1597,12 @@ async function processOCRItem(idx){
         renderOCRThumbs();
         renderOCRResultCards();
         updateOCRStatus();
-        await new Promise(function(r){setTimeout(r, 1500*attempt);});
+        // Rate-limit → longer pause
+        var waitMs = (msg==='RATE_LIMIT') ? (5000*attempt) : (2000*attempt);
+        await new Promise(function(r){setTimeout(r, waitMs);});
       }else{
         item.status='failed';
+        if(msg==='RATE_LIMIT') item.error='Rate limit — try again in a minute';
       }
     }
   }
@@ -1477,12 +1615,13 @@ function fileToBase64(file){
   return new Promise(function(resolve,reject){
     var reader=new FileReader();
     reader.onload=function(){var result=reader.result;var base64=String(result).split(',')[1]||'';resolve(base64);};
-    reader.onerror=reject;
+    reader.onerror=function(e){reject(new Error('File read failed'));};
     reader.readAsDataURL(file);
   });
 }
 
-function compressForOCR(file, maxDim){
+function compressForOCR(file, maxDim, quality){
+  quality=quality||0.72;
   return new Promise(function(resolve){
     try{
       var img=new Image();
@@ -1491,8 +1630,8 @@ function compressForOCR(file, maxDim){
       var finish=function(out){if(done)return;done=true;try{URL.revokeObjectURL(url);}catch(e){}resolve(out);};
       img.onload=function(){
         var w=img.width,h=img.height;
-        var maxFileSize=1200*1024;
-        if(w<=maxDim&&h<=maxDim&&file.size<maxFileSize){finish(file);return;}
+        // Skip re-compress if already small
+        if(w<=maxDim && h<=maxDim && file.size<500*1024){finish(file);return;}
         var scale=Math.min(maxDim/w,maxDim/h,1);
         var newW=Math.max(1,Math.round(w*scale));
         var newH=Math.max(1,Math.round(h*scale));
@@ -1506,7 +1645,7 @@ function compressForOCR(file, maxDim){
           if(!blob){finish(file);return;}
           try{blob.name=file.name||('screenshot-'+Date.now()+'.jpg');}catch(e){}
           finish(blob);
-        },'image/jpeg',0.85);
+        },'image/jpeg',quality);
       };
       img.onerror=function(){finish(file);};
       img.src=url;
@@ -1516,20 +1655,41 @@ function compressForOCR(file, maxDim){
 
 function updateOCRStatus(done){
   var total=OCR_FILES.length;
-  if(total===0){$('ocrStatus').innerHTML='';$('ocrProgress').classList.remove('show');return;}
+  var info=$('ocrProgressInfo');
+  if(total===0){$('ocrStatus').innerHTML='';$('ocrETA').innerHTML='';$('ocrProgress').classList.remove('show');if(info)info.style.display='none';return;}
   var queued=OCR_FILES.filter(function(x){return x.status==='queued';}).length;
   var processing=OCR_FILES.filter(function(x){return x.status==='processing'||x.status==='retrying';}).length;
   var doneCount=OCR_FILES.filter(function(x){return x.status==='done';}).length;
   var failed=OCR_FILES.filter(function(x){return x.status==='failed';}).length;
+  var finished=doneCount+failed;
+
   $('ocrProgress').classList.add('show');
-  $('ocrProgressFill').style.width=Math.round((doneCount+failed)/total*100)+'%';
+  $('ocrProgressFill').style.width=Math.round(finished/total*100)+'%';
+  if(info)info.style.display='flex';
+
   var msg='';
-  if(queued>0 && processing===0) msg='⏳ '+queued+' in queue · '+doneCount+' done';
-  else if(processing>0) msg='☁️ Processing SS #'+(doneCount+failed+1)+' of '+total;
-  else if(doneCount+failed===total) msg='<span style="color:#86efac">✅ Complete: '+doneCount+' succeeded'+(failed>0?', <span style="color:#fca5a5">'+failed+' failed</span>':'')+'</span>';
+  if(OCR_CANCELLED) msg='<span style="color:#fcd34d">⏹ Cancelled — '+finished+'/'+total+' processed</span>';
+  else if(queued>0 && processing===0) msg='⏳ '+queued+' in queue · '+doneCount+' done'+(failed>0?' · <span style="color:#fca5a5">'+failed+' failed</span>':'');
+  else if(processing>0) msg='☁️ Processing SS#'+(finished+1)+' of '+total+' · '+doneCount+' ✓'+(failed>0?' <span style="color:#fca5a5">'+failed+' ✗</span>':'');
+  else if(finished===total) msg='<span style="color:#86efac">✅ Complete: '+doneCount+' succeeded'+(failed>0?', <span style="color:#fca5a5">'+failed+' failed</span>':'')+'</span>';
   else msg=doneCount+'/'+total+' done';
   $('ocrStatus').innerHTML=msg;
+
+  // ETA calculation
+  var eta='';
+  if(OCR_PROCESSING && !OCR_CANCELLED && finished>0){
+    var elapsed=Date.now()-OCR_STARTED_AT;
+    var avgPerItem=elapsed/finished;
+    var remaining=queued+processing;
+    if(remaining>0){
+      var etaMs=avgPerItem*remaining;
+      eta='<span style="font-size:11px;color:var(--text3)">⏱ ~'+fmtDuration(etaMs)+' left</span>';
+    }
+  }
+  $('ocrETA').innerHTML=eta;
+
   if(doneCount>0)$('ocrResultWrap').style.display='block';
+  updateOCRCancelBtn();
 }
 
 function renderOCRThumbs(){
@@ -1537,7 +1697,7 @@ function renderOCRThumbs(){
   if(!OCR_FILES.length){w.innerHTML='';return;}
   w.innerHTML=OCR_FILES.map(function(x,i){
     var cls=x.status==='done'?'done':((x.status==='processing'||x.status==='retrying')?'processing':(x.status==='failed'?'failed':'queued'));
-    var lbl=x.status==='done'?'✓ Done':(x.status==='processing'?'... OCR':(x.status==='retrying'?'↻ Retry '+x.retries+'/'+OCR_MAX_RETRIES:(x.status==='queued'?'Queued':'✗ Failed')));
+    var lbl=x.status==='done'?'✓ Done':(x.status==='processing'?'... OCR':(x.status==='retrying'?'↻ '+x.retries+'/'+OCR_MAX_RETRIES:(x.status==='queued'?'Queued':'✗ Failed')));
     return '<div class="ocr-thumb '+cls+'" title="'+esc(x.file.name||'')+'"><img src="'+x.previewUrl+'"><div class="status">'+(i+1)+'. '+lbl+'</div></div>';
   }).join('');
 }
@@ -1569,7 +1729,7 @@ function collectOCRTextFromCards(){
 }
 function sendOCRToBulk(){var text=collectOCRTextFromCards();if(!text.trim())return toast('No extracted text to send','err');$('bulkInput').value=text;updateBulk();switchTab('bulk');toast('📋 Text sent to Bulk tab');}
 function copyOCRText(){var t=collectOCRTextFromCards();if(!t)return toast('Nothing to copy','err');if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){toast('✅ Copied to clipboard');});else{var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('✅ Copied');}}
-function clearOCR(){OCR_FILES.forEach(function(x){try{URL.revokeObjectURL(x.previewUrl);}catch(e){}});OCR_FILES=[];OCR_QUEUE=[];OCR_PROCESSING=false;$('ocrThumbs').innerHTML='';if($('ocrResultCards'))$('ocrResultCards').innerHTML='';$('ocrResultWrap').style.display='none';$('ocrProgress').classList.remove('show');$('ocrProgressFill').style.width='0%';$('ocrStatus').innerHTML='';}
+function clearOCR(){if(OCR_PROCESSING){OCR_CANCELLED=true;OCR_QUEUE=[];}OCR_FILES.forEach(function(x){try{URL.revokeObjectURL(x.previewUrl);}catch(e){}});OCR_FILES=[];OCR_QUEUE=[];OCR_PROCESSING=false;$('ocrThumbs').innerHTML='';if($('ocrResultCards'))$('ocrResultCards').innerHTML='';$('ocrResultWrap').style.display='none';$('ocrProgress').classList.remove('show');$('ocrProgressFill').style.width='0%';$('ocrStatus').innerHTML='';if($('ocrETA'))$('ocrETA').innerHTML='';if($('ocrProgressInfo'))$('ocrProgressInfo').style.display='none';updateOCRCancelBtn();}
 document.addEventListener('DOMContentLoaded',function(){var ta=$('bulkInput');if(ta)ta.addEventListener('input',updateBulk);});
 
 function loadAll(isManual){if(isManual)toast('🔄 Refreshing...');api('/api/stats').then(function(r){if(!r.ok)return;$('stTotal').innerText=r.stats.total;$('stSent').innerText=r.stats.sent;$('stOpened').innerText=r.stats.opened;$('stPending').innerText=r.stats.pending;$('stTotalSends').innerText=r.stats.totalSends||0;});api('/api/recipients').then(function(r){if(!r.ok)return;CURRENT_ROWS=(r.recipients||[]).sort(function(a,b){var ta=a.createdAt&&a.createdAt._seconds?a.createdAt._seconds*1000:new Date(a.createdAt||0).getTime();var tb=b.createdAt&&b.createdAt._seconds?b.createdAt._seconds*1000:new Date(b.createdAt||0).getTime();return tb-ta;});ALL_ROWS=CURRENT_ROWS.slice();renderRecipients();});}
@@ -1629,6 +1789,63 @@ async function clearTestData(){var ok=await showConfirm({icon:'⚠️',title:'Cl
 function sendTestEmail(){var to=$('testTo').value.trim(),subject=$('testSubject').value.trim(),body=$('testBody').value.trim();if(!to||!subject||!body)return toast('Please fill in all fields','err');toast('Sending test email...');api('/api/test/send','POST',{to:to,subject:subject,body:body,includeSignature:true,includeLogo:false,selectedFileIds:[],useTestSignature:false}).then(function(r){if(r.ok){toast('✅ Test email sent');loadTestDashboard();}else toast('Error: '+r.error,'err');});}
 async function runTestAutomation(){var bs=parseInt($('testAutoBatchSize').value)||5;var delay=parseInt($('testAutoDelay').value)||20;var ok=await showConfirm({icon:'▶️',title:'Run automation?',message:bs+' emails with '+delay+'s delay',okText:'Run',primary:true});if(!ok)return;toast('⏳ Running automation...');api('/api/test/automation/run','POST',{batchSize:bs,delay:delay}).then(function(r){if(r.ok){if(r.sent>0)toast('✅ '+r.sent+' emails sent');else toast(r.message||'No pending recipients','warn');loadTestDashboard();}});}
 function loadAdmin(){$('adminUsersList').innerHTML='<div class="empty">Loading...</div>';api('/api/admin/dashboard').then(function(r){if(!r.ok)return;$('adTotalUsers').innerText=r.stats.totalUsers;$('adTotalEmails').innerText=r.stats.totalEmails;$('adTotalOpened').innerText=r.stats.totalOpened;$('adTotalPending').innerText=r.stats.totalPending;$('adTotalSends').innerText=r.stats.totalSends||0;});}
+
+function loadOcrMonitor(){
+  api('/api/admin/ocr-usage').then(function(r){
+    if(!r.ok)return;
+    var s=r.summary||{};
+    $('monOcrTotal').innerText=fmtNum(s.grandTotal||0);
+    $('monOcrSuccess').innerText=fmtNum(s.grandSuccess||0);
+    $('monOcrFailed').innerText=fmtNum(s.grandFailed||0);
+    $('monOcrChars').innerText=fmtNum(s.grandChars||0);
+    var rows=r.rows||[];
+    var w=$('ocrMonitorTable');
+    if(!rows.length){w.innerHTML='<div class="empty" style="padding:20px">No OCR usage yet</div>';}
+    else{
+      var h='<table class="data-table"><thead><tr><th>User</th><th>App ID</th><th>Today</th><th>✓</th><th>✗</th><th>Chars</th><th>All-Time</th><th>Success Rate</th></tr></thead><tbody>';
+      rows.slice(0,50).forEach(function(row){
+        var sr = row.total>0 ? Math.round((row.success/row.total)*100) : 0;
+        var src = sr>=80?'#86efac':sr>=50?'#fcd34d':'#fca5a5';
+        h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(row.email)+'</td><td style="font-size:10px"><span class="app-id-pill">'+esc(row.appAccountId)+'</span></td><td style="font-size:12px;text-align:center;font-weight:700">'+fmtNum(row.todayTotal)+'</td><td style="font-size:12px;text-align:center;color:#86efac">'+fmtNum(row.todaySuccess)+'</td><td style="font-size:12px;text-align:center;color:#fca5a5">'+fmtNum(row.todayFailed)+'</td><td style="font-size:11px;text-align:center">'+fmtNum(row.todayChars)+'</td><td style="font-size:11px;text-align:center;color:#fbbf24;font-weight:800">'+fmtNum(row.total)+'</td><td style="font-size:11px;text-align:center;color:'+src+';font-weight:800">'+sr+'%</td></tr>';
+      });
+      h+='</tbody></table>';
+      w.innerHTML=h;
+    }
+  });
+  api('/api/admin/ai-errors').then(function(r){
+    if(!r.ok)return;
+    var s=r.summary||{};
+    var provs=Object.entries(s.providerTotals||{}).map(function(kv){return '<span class="badge pending" style="font-size:10px;margin:2px">'+esc(kv[0])+': '+kv[1]+'</span>';}).join('');
+    $('aiErrSummary').innerHTML='Total today: <b>'+(s.grandTotal||0)+'</b> '+provs;
+    var rows=r.rows||[];
+    var w=$('aiErrorTable');
+    if(!rows.length){w.innerHTML='<div class="empty" style="padding:16px">No AI errors today ✅</div>';}
+    else{
+      var h='<table class="data-table"><thead><tr><th>User</th><th>Errors</th><th>Providers</th><th>Last Error</th></tr></thead><tbody>';
+      rows.slice(0,30).forEach(function(row){
+        var pv=Object.entries(row.providers||{}).map(function(kv){return '<span class="badge banned" style="font-size:9px;margin:1px">'+esc(kv[0])+' ('+kv[1]+')</span>';}).join('');
+        h+='<tr><td style="font-size:11px;word-break:break-all">'+esc(row.email)+'</td><td style="font-size:13px;text-align:center;color:#fca5a5;font-weight:800">'+row.todayTotal+'</td><td>'+pv+'</td><td style="font-size:10px;color:var(--text3);max-width:300px;word-break:break-word">'+esc((row.lastError||'').substring(0,120))+'</td></tr>';
+      });
+      h+='</tbody></table>';
+      w.innerHTML=h;
+    }
+  });
+}
+function loadOcrLog(){
+  api('/api/admin/ocr-log?limit=200').then(function(r){
+    if(!r.ok)return;
+    var w=$('ocrLogTable');
+    var logs=r.logs||[];
+    if(!logs.length){w.innerHTML='<div class="empty" style="padding:16px">No OCR attempts logged yet</div>';return;}
+    var h='<table class="data-table"><thead><tr><th>Time</th><th>User</th><th>File</th><th>Status</th><th>Chars</th><th>Error</th></tr></thead><tbody>';
+    logs.slice(0,100).forEach(function(l){
+      var st = l.success?'<span class="badge opened">✓ Success</span>':'<span class="badge banned">✗ Failed</span>';
+      h+='<tr><td style="font-size:10px;white-space:nowrap">'+fmtTimeAgo(l.at?new Date(l.at).toISOString():null)+'</td><td style="font-size:10px;word-break:break-all">'+esc(l.userEmail)+'</td><td style="font-size:10px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(l.fileName||'—')+'</td><td>'+st+'</td><td style="font-size:11px;text-align:center">'+fmtNum(l.chars||0)+'</td><td style="font-size:10px;color:#fca5a5;max-width:250px;word-break:break-word">'+esc((l.error||'').substring(0,80))+'</td></tr>';
+    });
+    h+='</tbody></table>';
+    w.innerHTML=h;
+  });
+}
 function loadAdminUsersPage(p,silent){if(p<1)p=1;adminPage=p;if(!silent)$('adminUsersList').innerHTML='<div class="empty">Loading...</div>';$('adminPagination').style.display='none';api('/api/admin/users/paginated?page='+adminPage+'&limit=15&search='+encodeURIComponent(adminSearchQuery)).then(function(r){if(!r.ok){if(!silent)$('adminUsersList').innerHTML='<div class="empty">Error loading users</div>';return;}var users=r.users||[];var pag=r.pagination||{page:1,totalPages:1,total:0};if(!users.length){if(!silent){$('adminUsersList').innerHTML='<div class="empty">'+(adminSearchQuery?'No matching users':'No users yet')+'</div>';}$('adminPagination').style.display='none';return;}var h='';users.forEach(function(u){h+='<div class="user-card '+(u.banned?'banned':'')+'"><div class="top"><div style="flex:1;min-width:0"><div class="name">'+esc(u.name||'(no name)')+(u.banned?' <span class="badge banned">🚫</span>':'')+(u.hasSmtp?' <span class="badge sent">📧</span>':'')+'</div><div class="email">'+esc(u.email)+'</div></div><span class="app-id-pill">'+esc(u.appAccountId||'N/A')+'</span></div>';h+='<div style="font-size:11px;color:var(--text3);margin-top:6px">Reg: '+fmtDate(u.createdAt)+' · Auth: '+(u.authType||'email')+'</div>';h+='<div class="actions-row"><button class="btn ghost small" onclick="viewAdminUser(\''+esc(u.id)+'\')">👁 Details</button>';if(u.email.toLowerCase()!==(USER.email||'').toLowerCase()){if(u.banned){h+='<button class="btn success small" onclick="unbanUser(\''+esc(u.id)+'\')">✓ Unban</button>';}else{h+='<button class="btn warn small" onclick="openBanModal(\''+esc(u.id)+'\',\''+esc(u.email)+'\')">🚫 Ban</button>';}h+='<button class="btn danger small" onclick="deleteUserAccount(\''+esc(u.id)+'\',\''+esc(u.email)+'\')">🗑 Delete</button>';}h+='</div></div>';});$('adminUsersList').innerHTML=h;if(pag.totalPages>1){$('adminPagination').style.display='flex';$('adminPageInfo').innerText='Page '+pag.page+' of '+pag.totalPages+' ('+pag.total+' total)';$('adminPrevBtn').disabled=pag.page<=1;$('adminNextBtn').disabled=pag.page>=pag.totalPages;}else $('adminPagination').style.display='none';});}
 function onAdminSearchChange(){if(adminSearchTimer)clearTimeout(adminSearchTimer);adminSearchTimer=setTimeout(function(){adminSearchQuery=$('adminSearch').value.trim();loadAdminUsersPage(1);},400);}
 function loadAdminEmailsPage(p,silent){if(p<1)p=1;adminEmailsPage=p;if(!silent)$('adminAllEmailsWrap').innerHTML='<div class="empty">Loading...</div>';$('adminEmailsPagination').style.display='none';api('/api/admin/all-emails-paginated?page='+adminEmailsPage+'&limit=15&search='+encodeURIComponent(adminEmailsSearchQuery)).then(function(r){if(!r.ok){if(!silent)$('adminAllEmailsWrap').innerHTML='<div class="empty">Error</div>';return;}var emails=r.emails||[];var pag=r.pagination||{page:1,totalPages:1,total:0};if(!emails.length){if(!silent){$('adminAllEmailsWrap').innerHTML='<div class="empty">No emails found</div>';}$('adminEmailsPagination').style.display='none';return;}var h='<table class="data-table"><thead><tr><th>Type</th><th>User</th><th>Recipient</th><th>Subject</th><th>Sent</th></tr></thead><tbody>';emails.forEach(function(e){var typeBadge=e.isReply?'<span class="badge reply-badge">📩</span>':'<span class="badge sent">📤</span>';h+='<tr><td>'+typeBadge+'</td><td style="font-size:10px;word-break:break-all">'+esc(e.userEmail)+'</td><td style="font-size:11px;word-break:break-all">'+esc(e.recipientEmail)+'</td><td style="font-size:10px">'+esc(e.subject||'—')+'</td><td style="font-size:10px;white-space:nowrap">'+fmtDate(e.sentAt)+'</td></tr>';});h+='</tbody></table>';$('adminAllEmailsWrap').innerHTML=h;if(pag.totalPages>1){$('adminEmailsPagination').style.display='flex';$('adminEmailsPageInfo').innerText='Page '+pag.page+' of '+pag.totalPages+' ('+pag.total+' total)';$('adminEmailsPrevBtn').disabled=pag.page<=1;$('adminEmailsNextBtn').disabled=pag.page>=pag.totalPages;}else $('adminEmailsPagination').style.display='none';});}
@@ -1643,7 +1860,7 @@ function openBanModal(uid,email){_banTargetUid=uid;_banTargetEmail=email;$('banU
 function closeBanModal(){$('banUserModal').classList.add('hidden');_banTargetUid=null;_banTargetEmail='';}
 async function confirmBanUser(){if(!_banTargetUid)return;var reason=$('banReason').value.trim()||'Violation of terms of service';var banIP=$('banIP').checked;var btn=event.target;setBtnLoading(btn,'🚫 Banning...');try{var r=await api('/api/admin/user/'+_banTargetUid+'/ban','POST',{reason:reason,banIP:banIP});if(r.ok){toast('✅ User banned');closeBanModal();loadAdmin();loadAdminBanned();loadAdminUsersPage(adminPage);}else toast('Error: '+r.error,'err');}catch(e){toast('Error banning user','err');}resetBtn(btn);}
 async function deleteUserAccount(uid,email){var ok=await showConfirm({icon:'⚠️',title:'Delete User?',message:'Delete '+email+' and ALL their data?',okText:'Delete'});if(!ok)return;var ok2=await showConfirm({icon:'🚨',title:'FINAL CONFIRMATION',message:'Really delete '+email+'? This cannot be undone.',okText:'Yes, Delete'});if(!ok2)return;toast('Deleting user...');api('/api/admin/user/'+uid,'DELETE').then(function(r){if(r.ok){toast('✅ User deleted');loadAdmin();loadAdminAIUsage();loadAdminBanned();loadAdminUsersPage(adminPage);}else toast('Error deleting','err');});}
-function viewAdminUser(uid){$('adminUserContent').innerHTML='<div class="empty">Loading...</div>';$('adminUserModal').classList.remove('hidden');api('/api/admin/user/'+uid+'/details').then(function(r){if(!r.ok){$('adminUserContent').innerHTML='<div class="empty">Error loading user</div>';return;}var u=r.user;var ai=u.aiUsage||{today:0,month:0,total:0,calls:0,providers:{}};var h='<div class="info-box" style="margin:0"><div class="row"><span class="k">Name:</span><span class="v">'+esc(u.name||'—')+'</span></div><div class="row"><span class="k">Email:</span><span class="v" style="font-size:12px">'+esc(u.email)+'</span></div><div class="row"><span class="k">App ID:</span><span class="v"><span class="app-id-pill">'+esc(u.appAccountId)+'</span></span></div><div class="row"><span class="k">Auth:</span><span class="v">'+esc(u.authType||'email')+'</span></div><div class="row"><span class="k">Gmail:</span><span class="v">'+(u.hasSmtp?'✅ Connected':'❌ Not connected')+'</span></div><div class="row"><span class="k">Inbox:</span><span class="v">'+(u.hasImap?'✅ Connected':'❌ Not connected')+'</span></div><div class="row"><span class="k">Registered:</span><span class="v" style="font-size:12px">'+fmtDate(u.createdAt)+'</span></div><div class="row"><span class="k">Last Login:</span><span class="v" style="font-size:12px">'+fmtDate(u.lastLogin)+'</span></div><div class="row"><span class="k">Status:</span><span class="v">'+(u.banned?'<span class="badge banned">🚫 BANNED</span>':'<span class="badge opened">✅ Active</span>')+'</span></div></div>';var s=u.stats;h+='<div class="recipient-stat-grid" style="margin-top:16px"><div class="recipient-stat total"><div class="label">Recipients</div><div class="value">'+s.total+'</div></div><div class="recipient-stat sent"><div class="label">Sent</div><div class="value">'+s.sent+'</div></div><div class="recipient-stat opened"><div class="label">Opened</div><div class="value">'+s.opened+'</div></div><div class="recipient-stat pending"><div class="label">Pending</div><div class="value">'+s.pending+'</div></div></div>';h+='<div style="font-size:13px;font-weight:700;margin-top:20px;margin-bottom:12px;color:var(--cyan)">🤖 AI Usage</div><div class="ai-usage-grid"><div class="ai-usage-card"><div class="lbl">Today</div><div class="val">'+fmtNum(ai.today)+'</div></div><div class="ai-usage-card"><div class="lbl">Month</div><div class="val">'+fmtNum(ai.month)+'</div></div><div class="ai-usage-card highlight"><div class="lbl">Lifetime</div><div class="val">'+fmtNum(ai.total)+'</div></div><div class="ai-usage-card"><div class="lbl">Calls</div><div class="val">'+fmtNum(ai.calls)+'</div></div></div>';var provs=Object.keys(ai.providers||{}).map(function(k){return '<span class="badge sent" style="font-size:10px;margin:2px">'+esc(k)+' ('+ai.providers[k]+')</span>';}).join('');if(provs)h+='<div style="margin-top:12px"><b style="font-size:11px;color:var(--text2)">Providers:</b><div style="margin-top:6px">'+provs+'</div></div>';$('adminUserContent').innerHTML=h;});}
+function viewAdminUser(uid){$('adminUserContent').innerHTML='<div class="empty">Loading...</div>';$('adminUserModal').classList.remove('hidden');api('/api/admin/user/'+uid+'/details').then(function(r){if(!r.ok){$('adminUserContent').innerHTML='<div class="empty">Error loading user</div>';return;}var u=r.user;var ai=u.aiUsage||{today:0,month:0,total:0,calls:0,providers:{}};var ocr=u.ocrUsage||{todayTotal:0,todaySuccess:0,todayFailed:0,totalTotal:0,totalSuccess:0,totalFailed:0,totalChars:0};var h='<div class="info-box" style="margin:0"><div class="row"><span class="k">Name:</span><span class="v">'+esc(u.name||'—')+'</span></div><div class="row"><span class="k">Email:</span><span class="v" style="font-size:12px">'+esc(u.email)+'</span></div><div class="row"><span class="k">App ID:</span><span class="v"><span class="app-id-pill">'+esc(u.appAccountId)+'</span></span></div><div class="row"><span class="k">Auth:</span><span class="v">'+esc(u.authType||'email')+'</span></div><div class="row"><span class="k">Gmail:</span><span class="v">'+(u.hasSmtp?'✅ Connected':'❌ Not connected')+'</span></div><div class="row"><span class="k">Inbox:</span><span class="v">'+(u.hasImap?'✅ Connected':'❌ Not connected')+'</span></div><div class="row"><span class="k">Registered:</span><span class="v" style="font-size:12px">'+fmtDate(u.createdAt)+'</span></div><div class="row"><span class="k">Last Login:</span><span class="v" style="font-size:12px">'+fmtDate(u.lastLogin)+'</span></div><div class="row"><span class="k">Status:</span><span class="v">'+(u.banned?'<span class="badge banned">🚫 BANNED</span>':'<span class="badge opened">✅ Active</span>')+'</span></div></div>';var s=u.stats;h+='<div class="recipient-stat-grid" style="margin-top:16px"><div class="recipient-stat total"><div class="label">Recipients</div><div class="value">'+s.total+'</div></div><div class="recipient-stat sent"><div class="label">Sent</div><div class="value">'+s.sent+'</div></div><div class="recipient-stat opened"><div class="label">Opened</div><div class="value">'+s.opened+'</div></div><div class="recipient-stat pending"><div class="label">Pending</div><div class="value">'+s.pending+'</div></div></div>';h+='<div style="font-size:13px;font-weight:700;margin-top:20px;margin-bottom:12px;color:var(--cyan)">🤖 AI Usage</div><div class="ai-usage-grid"><div class="ai-usage-card"><div class="lbl">Today</div><div class="val">'+fmtNum(ai.today)+'</div></div><div class="ai-usage-card"><div class="lbl">Month</div><div class="val">'+fmtNum(ai.month)+'</div></div><div class="ai-usage-card highlight"><div class="lbl">Lifetime</div><div class="val">'+fmtNum(ai.total)+'</div></div><div class="ai-usage-card"><div class="lbl">Calls</div><div class="val">'+fmtNum(ai.calls)+'</div></div></div>';var provs=Object.keys(ai.providers||{}).map(function(k){return '<span class="badge sent" style="font-size:10px;margin:2px">'+esc(k)+' ('+ai.providers[k]+')</span>';}).join('');if(provs)h+='<div style="margin-top:12px"><b style="font-size:11px;color:var(--text2)">Providers:</b><div style="margin-top:6px">'+provs+'</div></div>';h+='<div style="font-size:13px;font-weight:700;margin-top:20px;margin-bottom:12px;color:#7dd3fc">📸 OCR Usage</div><div class="ai-usage-grid"><div class="ai-usage-card"><div class="lbl">Today Total</div><div class="val">'+fmtNum(ocr.todayTotal)+'</div></div><div class="ai-usage-card green"><div class="lbl">Today Success</div><div class="val">'+fmtNum(ocr.todaySuccess)+'</div></div><div class="ai-usage-card"><div class="lbl">Today Failed</div><div class="val" style="color:#fca5a5">'+fmtNum(ocr.todayFailed)+'</div></div><div class="ai-usage-card highlight"><div class="lbl">Total Chars</div><div class="val">'+fmtNum(ocr.totalChars)+'</div></div></div>';$('adminUserContent').innerHTML=h;});}
 function closeAdminUser(){$('adminUserModal').classList.add('hidden');}
 </script>
 </body>

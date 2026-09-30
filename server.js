@@ -22,6 +22,12 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org';
 const APP_VERSION = '1.8.4';
 const OCR_SPACE_API_KEY = process.env.OCR_SPACE_API_KEY || 'helloworld';
 
+/* ===== FILE SIZE LIMITS (increased) ===== */
+const MAX_FILE_SIZE = 3 * 1024 * 1024;       // 3MB for attachments
+const MAX_LOGO_SIZE = 2 * 1024 * 1024;       // 2MB for logo
+const MAX_PROFILE_PIC_SIZE = 1 * 1024 * 1024; // 1MB for profile pic
+const MAX_OCR_IMAGE_SIZE = 1500 * 1024;      // 1.5MB for OCR (OCR.space limit)
+
 if (!process.env.SESSION_SECRET) { console.error('FATAL: SESSION_SECRET missing!'); process.exit(1); }
 if (!process.env.ENCRYPTION_KEY) { console.error('FATAL: ENCRYPTION_KEY missing!'); process.exit(1); }
 
@@ -59,7 +65,6 @@ function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 function safeParseJSON(text){if(!text)return null;let c=text.trim().replace(/^```(?:json)?\s*/i,'').replace(/```\s*$/i,'').trim();const fb=c.indexOf('{'),lb=c.lastIndexOf('}');if(fb===-1||lb===-1)return null;try{return JSON.parse(c.substring(fb,lb+1));}catch(e){return null;}}
 async function fetchWithTimeout(url,opts,ms){const ctrl=new AbortController();const t=setTimeout(()=>ctrl.abort(),ms||20000);try{const r=await fetch(url,{...opts,signal:ctrl.signal});clearTimeout(t);return r;}catch(e){clearTimeout(t);throw e;}}
 
-/* ===== SIGNATURE LOGO FIX: replace base64 logo with public URL to prevent Gmail clipping ===== */
 function replaceInlineLogoWithPublicUrl(html, uid){
   if(!html || !uid) return html;
   try{
@@ -109,18 +114,71 @@ async function logAIUsage(uid,provider,model,usage){
   }catch(e){}
 }
 
+/* ===== OCR USAGE LOGGING ===== */
+async function logOcrUsage(uid, success, chars, errorMsg, fileName) {
+  if (!uid) return;
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const dayRef = db.collection('users').doc(uid).collection('ocrUsage').doc(today);
+    const totalRef = db.collection('users').doc(uid).collection('ocrUsage').doc('total');
+    const batch = db.batch();
+    batch.set(dayRef, {
+      date: today,
+      total: FieldValue.increment(1),
+      success: FieldValue.increment(success ? 1 : 0),
+      failed: FieldValue.increment(success ? 0 : 1),
+      charsExtracted: FieldValue.increment(chars || 0),
+      lastError: errorMsg ? String(errorMsg).substring(0, 200) : '',
+      lastFileName: fileName ? String(fileName).substring(0, 120) : '',
+      updatedAt: new Date()
+    }, { merge: true });
+    batch.set(totalRef, {
+      total: FieldValue.increment(1),
+      success: FieldValue.increment(success ? 1 : 0),
+      failed: FieldValue.increment(success ? 0 : 1),
+      charsExtracted: FieldValue.increment(chars || 0),
+      updatedAt: new Date()
+    }, { merge: true });
+    const logRef = db.collection('users').doc(uid).collection('ocrLog').doc();
+    batch.set(logRef, {
+      success: !!success,
+      chars: chars || 0,
+      error: errorMsg ? String(errorMsg).substring(0, 300) : '',
+      fileName: fileName ? String(fileName).substring(0, 120) : '',
+      at: new Date()
+    });
+    await batch.commit();
+  } catch (e) { }
+}
+
+/* ===== AI ERROR LOGGING ===== */
+async function logAIError(uid, provider, errorMessage) {
+  if (!uid) return;
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const ref = db.collection('users').doc(uid).collection('aiErrors').doc(today);
+    await ref.set({
+      date: today,
+      total: FieldValue.increment(1),
+      providers: { [provider]: FieldValue.increment(1) },
+      lastError: String(errorMessage || '').substring(0, 250),
+      updatedAt: new Date()
+    }, { merge: true });
+  } catch (e) { }
+}
+
 async function callGroq(prompt,uid){if(!GROQ_KEY)throw new Error('No key');const models=['openai/gpt-oss-120b','llama-3.3-70b-versatile','llama-3.1-8b-instant','llama3-70b-8192','mixtral-8x7b-32768','gemma2-9b-it'];let lastErr=null;for(const model of models){try{const r=await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+GROQ_KEY},body:JSON.stringify({model,messages:[{role:'user',content:prompt}],temperature:0.75,max_tokens:2000})},25000);if(!r.ok){lastErr=new Error('Groq '+model+' HTTP '+r.status);continue;}const d=await r.json();const content=(d.choices?.[0]?.message?.content||'').trim();if(content&&content.length>5){logAIUsage(uid,'groq',model,d.usage||{});return content;}lastErr=new Error('Groq '+model+' empty');}catch(e){lastErr=e;}}throw lastErr||new Error('All Groq models failed');}
 async function callGemini(prompt,uid){if(!GEMINI_KEY)throw new Error('No key');const models=['gemini-2.0-flash-exp','gemini-2.0-flash','gemini-1.5-flash','gemini-1.5-flash-latest','gemini-1.5-pro'];let lastErr=null;for(const modelName of models){try{const client=new GoogleGenerativeAI(GEMINI_KEY);const model=client.getGenerativeModel({model:modelName});const result=await model.generateContent(prompt);const text=result.response.text().trim();if(text&&text.length>5){const um=result.response.usageMetadata||{};logAIUsage(uid,'gemini',modelName,{promptTokens:um.promptTokenCount||0,completionTokens:um.candidatesTokenCount||0,totalTokens:um.totalTokenCount||0});return text;}lastErr=new Error('Gemini '+modelName+' empty');}catch(e){lastErr=new Error('Gemini '+modelName+': '+e.message);}}throw lastErr||new Error('All Gemini models failed');}
 async function callOpenRouter(prompt,uid){if(!OPENROUTER_KEY)throw new Error('No key');const models=['meta-llama/llama-3.3-70b-instruct:free','meta-llama/llama-3.1-8b-instruct:free','google/gemini-flash-1.5-8b:free','mistralai/mistral-7b-instruct:free','qwen/qwen-2.5-7b-instruct:free'];let lastErr=null;for(const model of models){try{const r=await fetchWithTimeout('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+OPENROUTER_KEY,'HTTP-Referer':BACKEND_URL,'X-Title':'MailFlow Pro'},body:JSON.stringify({model,messages:[{role:'user',content:prompt+'\nReturn valid JSON only.'}],temperature:0.7,max_tokens:2000})},25000);if(!r.ok){lastErr=new Error('OR '+model+' HTTP '+r.status);continue;}const d=await r.json();const content=(d.choices?.[0]?.message?.content||'').trim();if(content&&content.length>5){logAIUsage(uid,'openrouter',model,d.usage||{});return content;}lastErr=new Error('OR '+model+' empty');}catch(e){lastErr=e;}}throw lastErr||new Error('All OpenRouter models failed');}
 async function callMistral(prompt,uid){if(!MISTRAL_KEY)throw new Error('No key');const doFetch=async()=>{const r=await fetchWithTimeout('https://api.mistral.ai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+MISTRAL_KEY},body:JSON.stringify({model:'mistral-small-latest',messages:[{role:'user',content:prompt}],temperature:0.7,max_tokens:2000})},25000);if(r.status===429){const e=new Error('Rate limited');e.retryAfter=parseInt(r.headers.get('retry-after')||'5',10);throw e;}if(!r.ok)throw new Error('Mistral '+r.status);const d=await r.json();const content=(d.choices?.[0]?.message?.content||'').trim();if(content)logAIUsage(uid,'mistral','mistral-small-latest',d.usage||{});return content;};let lastErr;for(let attempt=0;attempt<3;attempt++){try{return await doFetch();}catch(e){lastErr=e;if(e.retryAfter!==undefined||e.message.includes('429'))await sleep((e.retryAfter||Math.pow(2,attempt))*1000);else throw e;}}throw lastErr;}
 async function callOmniRoute(prompt,uid){const OMNIROUTE_URL=process.env.OMNIROUTE_URL||'';const OMNIROUTE_KEY=process.env.OMNIROUTE_KEY||'';if(!OMNIROUTE_URL||!OMNIROUTE_KEY)throw new Error('No OmniRoute config');const r=await fetchWithTimeout(OMNIROUTE_URL.replace(/\/$/,'')+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+OMNIROUTE_KEY},body:JSON.stringify({model:'auto',messages:[{role:'user',content:prompt}],temperature:0.7,max_tokens:2000})},30000);if(!r.ok)throw new Error('OmniRoute HTTP '+r.status);const d=await r.json();const content=(d.choices?.[0]?.message?.content||'').trim();if(!content||content.length<5)throw new Error('OmniRoute empty');logAIUsage(uid,'omniroute',d.model||'auto',d.usage||{});return content;}
-async function callAI(prompt,uid){const cached=getCachedResponse(prompt,uid);if(cached)return cached;const providers=[{n:'omniroute',f:callOmniRoute},{n:'groq',f:callGroq},{n:'gemini',f:callGemini},{n:'openrouter',f:callOpenRouter},{n:'mistral',f:callMistral}];const errs=[];for(const p of providers){try{const text=await p.f(prompt,uid);if(!text||text.length<5)continue;setCachedResponse(prompt,uid,text);return text;}catch(e){errs.push(p.n+': '+e.message);}}throw new Error('All AI failed: '+errs.join(' | '));}
+async function callAI(prompt,uid){const cached=getCachedResponse(prompt,uid);if(cached)return cached;const providers=[{n:'omniroute',f:callOmniRoute},{n:'groq',f:callGroq},{n:'gemini',f:callGemini},{n:'openrouter',f:callOpenRouter},{n:'mistral',f:callMistral}];const errs=[];for(const p of providers){try{const text=await p.f(prompt,uid);if(!text||text.length<5)continue;setCachedResponse(prompt,uid,text);return text;}catch(e){errs.push(p.n+': '+e.message);logAIError(uid, p.n, e.message);}}throw new Error('All AI failed: '+errs.join(' | '));}
 
 app.set('trust proxy',1);
 app.use((req,res,next)=>{res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('X-Frame-Options','SAMEORIGIN');res.setHeader('X-XSS-Protection','1; mode=block');res.setHeader('Referrer-Policy','strict-origin-when-cross-origin');res.setHeader('Strict-Transport-Security','max-age=31536000; includeSubDomains');next();});
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map(x => x.trim()).filter(Boolean);
 app.use(cors({origin:function(origin,cb){if(!origin)return cb(null,true);if(ALLOWED_ORIGINS.length===0)return cb(null,true);if(ALLOWED_ORIGINS.indexOf(origin)!==-1)return cb(null,true);cb(null,false);},credentials:true}));
-app.use(express.json({limit:'20mb'}));
+app.use(express.json({limit:'10mb'}));
 app.use(cookieSession({name:'mf_session',keys:[process.env.SESSION_SECRET],maxAge:SESSION_DAYS_LONG*24*60*60*1000,secure:IS_VERCEL,sameSite:IS_VERCEL?'none':'lax',httpOnly:true,signed:true,overwrite:true}));
 app.use(express.static(path.join(__dirname,'public')));
 app.get('/privacy',(req,res)=>res.sendFile(path.join(__dirname,'public','privacy.html')));
@@ -131,7 +189,6 @@ try { if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) serviceAccount = JSON.par
 try { if (!Object.keys(serviceAccount).length) throw new Error('Firebase service account missing'); initializeApp({ credential: cert(serviceAccount) }); } catch (e) { console.error('Firebase init error:', e.message); }
 const db = getFirestore();
 
-/* ===== PUBLIC LOGO ENDPOINT — serves user's logo image to prevent Gmail clipping ===== */
 app.get('/logo/:uid', async (req, res) => {
   try {
     const uid = req.params.uid;
@@ -372,14 +429,26 @@ async function extractCvFromBuffer(buf, filename, mimeType) {
 
 app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL, version: APP_VERSION, method: 'smtp', ocrKeySet: OCR_SPACE_API_KEY !== 'helloworld' }));
 
-/* ============ OCR SERVER FALLBACK (OCR.space cloud API) ============ */
+/* ============ OCR SERVER ============ */
 app.post('/api/ocr/extract', authRequired, async (req, res) => {
+  const uid = req.session.user.id;
+  let fileName = '';
   try {
-    const { base64, mimeType } = req.body || {};
-    if (!base64 || base64.length < 50) return res.json({ ok: false, error: 'No image data provided' });
+    const { base64, mimeType, filename } = req.body || {};
+    fileName = filename || '';
+    if (!base64 || base64.length < 50) {
+      await logOcrUsage(uid, false, 0, 'No image data provided', fileName);
+      return res.json({ ok: false, error: 'No image data provided' });
+    }
     let buf;
-    try { buf = Buffer.from(base64, 'base64'); } catch (e) { return res.json({ ok: false, error: 'Invalid image data' }); }
-    if (buf.length > 1500 * 1024) return res.json({ ok: false, error: 'Image too large (1.5MB max)' });
+    try { buf = Buffer.from(base64, 'base64'); } catch (e) {
+      await logOcrUsage(uid, false, 0, 'Invalid base64', fileName);
+      return res.json({ ok: false, error: 'Invalid image data. Please re-upload the screenshot.' });
+    }
+    if (buf.length > MAX_OCR_IMAGE_SIZE) {
+      await logOcrUsage(uid, false, 0, 'Image too large: ' + Math.round(buf.length/1024) + 'KB', fileName);
+      return res.json({ ok: false, error: 'Image too large (' + Math.round(buf.length/1024) + 'KB). Please try a smaller or lower-resolution screenshot.' });
+    }
     const mime = (mimeType || 'image/jpeg').toLowerCase();
     const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp', 'image/tiff'];
     const safeMime = allowed.indexOf(mime) !== -1 ? mime : 'image/jpeg';
@@ -399,24 +468,40 @@ app.post('/api/ocr/extract', authRequired, async (req, res) => {
         body: params.toString()
       }, 45000);
     } catch (netErr) {
-      return res.json({ ok: false, error: 'OCR service unreachable: ' + netErr.message });
+      await logOcrUsage(uid, false, 0, 'Network: ' + netErr.message, fileName);
+      return res.json({ ok: false, error: 'OCR service unreachable. Please try again in a moment.' });
     }
-    if (!ocrRes.ok) return res.json({ ok: false, error: 'OCR service error (HTTP ' + ocrRes.status + ')' });
+    if (!ocrRes.ok) {
+      await logOcrUsage(uid, false, 0, 'OCR HTTP ' + ocrRes.status, fileName);
+      return res.json({ ok: false, error: 'OCR service error (HTTP ' + ocrRes.status + '). Please try again.' });
+    }
     let ocrData;
-    try { ocrData = await ocrRes.json(); } catch (e) { return res.json({ ok: false, error: 'Invalid OCR response' }); }
+    try { ocrData = await ocrRes.json(); } catch (e) {
+      await logOcrUsage(uid, false, 0, 'Invalid OCR response', fileName);
+      return res.json({ ok: false, error: 'Invalid response from OCR service. Please retry.' });
+    }
     if (ocrData.IsErroredOnProcessing) {
       const errMsg = (ocrData.ErrorMessage && Array.isArray(ocrData.ErrorMessage)) ? ocrData.ErrorMessage.join(' ') : (ocrData.ErrorMessage || 'OCR processing failed');
+      await logOcrUsage(uid, false, 0, errMsg, fileName);
       if (errMsg.indexOf('limit') !== -1 || errMsg.indexOf('Limit') !== -1) {
         return res.json({ ok: false, error: 'OCR monthly limit reached. Please try again next month.' });
       }
       return res.json({ ok: false, error: errMsg });
     }
-    if (!ocrData.ParsedResults || !ocrData.ParsedResults.length) return res.json({ ok: false, error: 'No text detected in this image' });
+    if (!ocrData.ParsedResults || !ocrData.ParsedResults.length) {
+      await logOcrUsage(uid, false, 0, 'No text detected', fileName);
+      return res.json({ ok: false, error: 'No text detected in this image. Try a clearer screenshot.' });
+    }
     const text = ocrData.ParsedResults.map(r => r.ParsedText || '').join('\n').trim();
-    if (!text || text.length < 2) return res.json({ ok: false, error: 'No readable text found' });
+    if (!text || text.length < 2) {
+      await logOcrUsage(uid, false, 0, 'No readable text', fileName);
+      return res.json({ ok: false, error: 'No readable text found in image.' });
+    }
+    await logOcrUsage(uid, true, text.length, '', fileName);
     res.json({ ok: true, text: text.substring(0, 20000), chars: text.length });
   } catch (e) {
     console.error('OCR error:', e.message);
+    await logOcrUsage(uid, false, 0, 'Server: ' + e.message, fileName);
     res.json({ ok: false, error: 'OCR failed: ' + e.message });
   }
 });
@@ -567,7 +652,7 @@ app.post('/api/user-preferences', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ SMTP ============ */
+/* ============ SMTP / IMAP ============ */
 app.post('/api/smtp/connect', authRequired, async (req, res) => {
   try {
     const { appPassword, alsoEnableImap } = req.body || {};
@@ -591,7 +676,6 @@ app.post('/api/smtp/disconnect', authRequired, async (req, res) => {
   try { await db.collection('users').doc(req.session.user.id).update({ smtpAppPassword: null, smtpEnabled: false }); cacheDel('quota:' + req.session.user.id); cacheDel('status:' + req.session.user.id); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ IMAP ============ */
 app.post('/api/imap/connect', authRequired, async (req, res) => {
   try {
     const { appPassword, useStored } = req.body || {};
@@ -652,7 +736,6 @@ app.delete('/api/imap/email/:id', authRequired, async (req, res) => {
   try { await db.collection('users').doc(req.session.user.id).collection('imapEmails').doc(req.params.id).delete(); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ INBOX REPLY (v1.8.4: public logo URL to prevent clipping) ============ */
 app.post('/api/inbox/reply', authRequired, async (req, res) => {
   try {
     const { to, subject, body, inReplyTo, references, includeSignature, includeLogo, includeAttachments, selectedFileIds } = req.body;
@@ -668,11 +751,8 @@ app.post('/api/inbox/reply', authRequired, async (req, res) => {
     const hasSignature = !!(u.signature && u.signature.trim().length > 20);
     if (hasSignature && includeSignature !== false) {
       let sig = u.signature;
-      if (includeLogo === false) {
-        sig = sig.replace(/<td[^>]*>\s*<img[\s\S]*?<\/td>/gi, '').replace(/<img[^>]*>/gi, '').replace(/<td[^>]*>\s*<\/td>/gi, '');
-      } else {
-        sig = replaceInlineLogoWithPublicUrl(sig, uid);
-      }
+      if (includeLogo === false) sig = sig.replace(/<td[^>]*>\s*<img[\s\S]*?<\/td>/gi, '').replace(/<img[^>]*>/gi, '').replace(/<td[^>]*>\s*<\/td>/gi, '');
+      else sig = replaceInlineLogoWithPublicUrl(sig, uid);
       sigHtml = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>';
     }
     const atts = []; const attNames = [];
@@ -687,24 +767,7 @@ app.post('/api/inbox/reply', authRequired, async (req, res) => {
     const bodyHtml = body.replace(/\n/g, '<br>');
     const fullHtml = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">' + bodyHtml + sigHtml + '</div>';
     const sendTrackToken = crypto.randomBytes(16).toString('hex');
-    const logRef = await db.collection('users').doc(uid).collection('emailLog').add({
-      recipientId: null,
-      recipientEmail: to,
-      company: '',
-      subject: sanitizeSubject(subject),
-      sentAt: new Date(),
-      attachmentsCount: atts.length,
-      attachmentNames: attNames,
-      aiPrediction: 'GOOD',
-      aiScore: 20,
-      aiInboxProb: 80,
-      sendTrackToken,
-      openedAt: null,
-      hasSignature: hasSignature,
-      templateName: '',
-      isReply: true,
-      inReplyTo: inReplyTo || ''
-    });
+    const logRef = await db.collection('users').doc(uid).collection('emailLog').add({ recipientId: null, recipientEmail: to, company: '', subject: sanitizeSubject(subject), sentAt: new Date(), attachmentsCount: atts.length, attachmentNames: attNames, aiPrediction: 'GOOD', aiScore: 20, aiInboxProb: 80, sendTrackToken, openedAt: null, hasSignature: hasSignature, templateName: '', isReply: true, inReplyTo: inReplyTo || '' });
     const logId = logRef.id;
     const trackUrl = BACKEND_URL + '/track/' + logId + '?u=' + uid + '&t=' + sendTrackToken;
     const pix = '<img src="' + trackUrl + '" width="1" height="1" alt="" style="border:0;display:block;width:1px;height:1px">';
@@ -848,13 +911,11 @@ app.post('/api/ai/extract-cv', authRequired, async (req, res) => {
       fname = meta.name || fname; mime = meta.mimeType || mime;
       try { buf = Buffer.from(meta.base64, 'base64'); } catch (e) { return res.json({ ok: false, error: 'File data is corrupted. Please re-upload.' }); }
     }
-    else if (base64) { try { buf = Buffer.from(base64, 'base64'); } catch (e) { return res.json({ ok: false, error: 'Invalid file data' }); } if (buf.length > 900 * 1024) return res.json({ ok: false, error: 'Maximum file size is 900KB. Please compress your file.' }); }
+    else if (base64) { try { buf = Buffer.from(base64, 'base64'); } catch (e) { return res.json({ ok: false, error: 'Invalid file data' }); } if (buf.length > MAX_FILE_SIZE) return res.json({ ok: false, error: 'Maximum file size is 3MB. Please compress your file.' }); }
     else return res.json({ ok: false, error: 'No file provided' });
     if (!buf || buf.length < 20) return res.json({ ok: false, error: 'File is empty or corrupted.' });
     const text = await extractCvFromBuffer(buf, fname, mime);
-    if (!text || text.replace(/\s/g, '').length < 30 || looksLikeBinaryCv(text)) {
-      return res.json({ ok: false, error: 'Could not read text from this file. If it is a scanned PDF/image, please copy-paste the text manually.' });
-    }
+    if (!text || text.replace(/\s/g, '').length < 30 || looksLikeBinaryCv(text)) return res.json({ ok: false, error: 'Could not read text from this file. If it is a scanned PDF/image, please copy-paste the text manually.' });
     res.json({ ok: true, text: text.substring(0, 20000), filename: fname, chars: text.length });
   } catch (e) { res.json({ ok: false, error: 'File processing error: ' + e.message }); }
 });
@@ -1040,9 +1101,17 @@ app.get('/api/recipient/:id/gmail-history', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ FILES ============ */
+/* ============ FILES (3MB limit) ============ */
 app.post('/api/upload-file', authRequired, async (req, res) => {
-  try { const { base64, mimeType, filename } = req.body; if (!base64 || !filename) return res.json({ ok: false, error: 'Missing file data' }); const buf = Buffer.from(base64, 'base64'); if (buf.length > 900 * 1024) return res.json({ ok: false, error: 'Maximum file size is 900KB.' }); const fd = { base64, name: filename, mimeType: mimeType || 'application/octet-stream', size: buf.length, uploadedAt: new Date() }; const doc = await db.collection('users').doc(req.session.user.id).collection('files').add(fd); res.json({ ok: true, file: { id: doc.id, name: fd.name, mimeType: fd.mimeType, size: fd.size, uploadedAt: fd.uploadedAt } }); } catch (e) { res.json({ ok: false, error: e.message }); }
+  try {
+    const { base64, mimeType, filename } = req.body;
+    if (!base64 || !filename) return res.json({ ok: false, error: 'Missing file data' });
+    const buf = Buffer.from(base64, 'base64');
+    if (buf.length > MAX_FILE_SIZE) return res.json({ ok: false, error: 'Maximum file size is 3MB. Please compress your file.' });
+    const fd = { base64, name: filename, mimeType: mimeType || 'application/octet-stream', size: buf.length, uploadedAt: new Date() };
+    const doc = await db.collection('users').doc(req.session.user.id).collection('files').add(fd);
+    res.json({ ok: true, file: { id: doc.id, name: fd.name, mimeType: fd.mimeType, size: fd.size, uploadedAt: fd.uploadedAt } });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.get('/api/files', authRequired, async (req, res) => {
   try { const s = await db.collection('users').doc(req.session.user.id).collection('files').orderBy('uploadedAt', 'desc').get(); const l = []; s.forEach(d => { const dd = d.data(); l.push({ id: d.id, name: dd.name, mimeType: dd.mimeType, size: dd.size, uploadedAt: dd.uploadedAt }); }); res.json({ ok: true, files: l }); } catch (e) { res.json({ ok: false, error: e.message }); }
@@ -1051,9 +1120,20 @@ app.delete('/api/files/:id', authRequired, async (req, res) => {
   try { await db.collection('users').doc(req.session.user.id).collection('files').doc(req.params.id).delete(); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ LOGO ============ */
+/* ============ LOGO (2MB limit) ============ */
 app.post('/api/upload-logo', authRequired, async (req, res) => {
-  try { const { base64, mimeType, filename } = req.body; if (!base64) return res.json({ ok: false, error: 'No image data' }); const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/svg+xml', 'image/webp']; if (!allowed.includes(mimeType)) return res.json({ ok: false, error: 'Invalid image type' }); const buf = Buffer.from(base64, 'base64'); if (buf.length > 500 * 1024) return res.json({ ok: false, error: 'Maximum logo size is 500KB' }); const uid = req.session.user.id; const dataUrl = 'data:' + mimeType + ';base64,' + base64; await db.collection('users').doc(uid).update({ logoUrl: dataUrl, logoUrlAlt: BACKEND_URL + '/logo/' + uid, logoBase64: base64, logoMimeType: mimeType }); res.json({ ok: true, url: BACKEND_URL + '/logo/' + uid, urlAlt: dataUrl }); } catch (e) { res.json({ ok: false, error: e.message }); }
+  try {
+    const { base64, mimeType, filename } = req.body;
+    if (!base64) return res.json({ ok: false, error: 'No image data' });
+    const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/svg+xml', 'image/webp'];
+    if (!allowed.includes(mimeType)) return res.json({ ok: false, error: 'Invalid image type' });
+    const buf = Buffer.from(base64, 'base64');
+    if (buf.length > MAX_LOGO_SIZE) return res.json({ ok: false, error: 'Maximum logo size is 2MB' });
+    const uid = req.session.user.id;
+    const dataUrl = 'data:' + mimeType + ';base64,' + base64;
+    await db.collection('users').doc(uid).update({ logoUrl: dataUrl, logoUrlAlt: BACKEND_URL + '/logo/' + uid, logoBase64: base64, logoMimeType: mimeType });
+    res.json({ ok: true, url: BACKEND_URL + '/logo/' + uid, urlAlt: dataUrl });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.post('/api/remove-logo', authRequired, async (req, res) => {
   try { await db.collection('users').doc(req.session.user.id).update({ logoUrl: '', logoUrlAlt: '', logoBase64: null, logoMimeType: null }); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); }
@@ -1062,9 +1142,20 @@ app.get('/api/logo', authRequired, async (req, res) => {
   try { const d = await getUserData(req.session.user.id); const uid = req.session.user.id; const publicUrl = d.logoBase64 ? (BACKEND_URL + '/logo/' + uid) : ''; res.json({ ok: true, url: publicUrl, urlAlt: d.logoUrl || '' }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ PROFILE PIC ============ */
+/* ============ PROFILE PIC (1MB limit) ============ */
 app.post('/api/profile/picture', authRequired, async (req, res) => {
-  try { const { base64, mimeType } = req.body; if (!base64) return res.json({ ok: false, error: 'No image provided' }); const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']; if (allowed.indexOf(mimeType) === -1) return res.json({ ok: false, error: 'Only PNG/JPG/WEBP allowed' }); const buf = Buffer.from(base64, 'base64'); if (buf.length > 500 * 1024) return res.json({ ok: false, error: 'Maximum size is 500KB' }); const url = 'data:' + mimeType + ';base64,' + base64; await db.collection('users').doc(req.session.user.id).update({ profilePicture: url }); if (req.session.user) req.session.user.picture = url; res.json({ ok: true, url }); } catch (e) { res.json({ ok: false, error: e.message }); }
+  try {
+    const { base64, mimeType } = req.body;
+    if (!base64) return res.json({ ok: false, error: 'No image provided' });
+    const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+    if (allowed.indexOf(mimeType) === -1) return res.json({ ok: false, error: 'Only PNG/JPG/WEBP allowed' });
+    const buf = Buffer.from(base64, 'base64');
+    if (buf.length > MAX_PROFILE_PIC_SIZE) return res.json({ ok: false, error: 'Maximum size is 1MB' });
+    const url = 'data:' + mimeType + ';base64,' + base64;
+    await db.collection('users').doc(req.session.user.id).update({ profilePicture: url });
+    if (req.session.user) req.session.user.picture = url;
+    res.json({ ok: true, url });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
 /* ============ PROFILE ============ */
@@ -1126,7 +1217,6 @@ app.post('/api/prefs', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ STATS ============ */
 app.get('/api/stats', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -1169,7 +1259,7 @@ app.get('/api/my-emails', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ SEND (v1.8.4: public logo URL) ============ */
+/* ============ SEND ============ */
 async function sendOne(userId, userEmail, recipientId, options) {
   options = options || {};
   const u = await getUserData(userId);
@@ -1210,11 +1300,8 @@ async function sendOne(userId, userEmail, recipientId, options) {
   const hasSignature = !!(u.signature && u.signature.trim().length > 20);
   if (hasSignature && options.includeSignature !== false) {
     let sig = u.signature;
-    if (options.includeLogo === false) {
-      sig = sig.replace(/<td[^>]*>\s*<img[\s\S]*?<\/td>/gi, '').replace(/<img[^>]*>/gi, '').replace(/<td[^>]*>\s*<\/td>/gi, '');
-    } else {
-      sig = replaceInlineLogoWithPublicUrl(sig, userId);
-    }
+    if (options.includeLogo === false) sig = sig.replace(/<td[^>]*>\s*<img[\s\S]*?<\/td>/gi, '').replace(/<img[^>]*>/gi, '').replace(/<td[^>]*>\s*<\/td>/gi, '');
+    else sig = replaceInlineLogoWithPublicUrl(sig, userId);
     sigHtml = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>';
   }
   const bodyHtml = body.replace(/\n/g, '<br>');
@@ -1274,8 +1361,7 @@ app.get('/track/:id', async (req, res) => {
             await db.collection('users').doc(u).collection('emailLog').doc(req.params.id).update({ openedAt: new Date() });
             const recId = r.data().recipientId;
             if (recId) { const rec = await db.collection('users').doc(u).collection('recipients').doc(recId).get(); if (rec.exists) await db.collection('users').doc(u).collection('recipients').doc(recId).update({ status: 'Opened', openedAt: new Date(), everOpened: true }); }
-            cacheDel('stats:' + u);
-            cacheDel('recipients:' + u);
+            cacheDel('stats:' + u); cacheDel('recipients:' + u);
           }
         }
       }
@@ -1497,6 +1583,83 @@ app.get('/api/admin/dashboard', adminRequired, async (req, res) => {
     res.json({ ok: true, stats: { totalUsers, totalEmails, totalOpened, totalPending, totalSends } });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
+
+/* ===== NEW: OCR USAGE MONITOR ===== */
+app.get('/api/admin/ocr-usage', adminRequired, async (req, res) => {
+  try {
+    const us = await db.collection('users').get();
+    const today = new Date().toISOString().split('T')[0];
+    const rows = [];
+    let grandTotal = 0, grandSuccess = 0, grandFailed = 0, grandChars = 0;
+    for (const u of us.docs) {
+      const d = u.data();
+      const [daySnap, totalSnap] = await Promise.all([
+        db.collection('users').doc(u.id).collection('ocrUsage').doc(today).get(),
+        db.collection('users').doc(u.id).collection('ocrUsage').doc('total').get()
+      ]);
+      const day = daySnap.exists ? daySnap.data() : { total: 0, success: 0, failed: 0, charsExtracted: 0 };
+      const tot = totalSnap.exists ? totalSnap.data() : { total: 0, success: 0, failed: 0, charsExtracted: 0 };
+      if ((tot.total || 0) > 0) {
+        rows.push({
+          id: u.id, email: d.email, name: d.name, appAccountId: d.appAccountId || 'N/A',
+          todayTotal: day.total || 0, todaySuccess: day.success || 0, todayFailed: day.failed || 0, todayChars: day.charsExtracted || 0, todayLastError: day.lastError || '',
+          total: tot.total || 0, success: tot.success || 0, failed: tot.failed || 0, chars: tot.charsExtracted || 0
+        });
+        grandTotal += tot.total || 0;
+        grandSuccess += tot.success || 0;
+        grandFailed += tot.failed || 0;
+        grandChars += tot.charsExtracted || 0;
+      }
+    }
+    rows.sort((a, b) => b.total - a.total);
+    res.json({ ok: true, rows, summary: { totalUsers: us.size, activeUsers: rows.length, grandTotal, grandSuccess, grandFailed, grandChars, successRate: grandTotal > 0 ? Math.round((grandSuccess / grandTotal) * 100) : 0 } });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/admin/ocr-log', adminRequired, async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 200, 500);
+    const us = await db.collection('users').get();
+    const all = [];
+    for (const u of us.docs) {
+      const d = u.data();
+      const snaps = await db.collection('users').doc(u.id).collection('ocrLog').orderBy('at', 'desc').limit(50).get();
+      snaps.forEach(s => {
+        const dd = s.data();
+        const at = dd.at && dd.at._seconds ? dd.at._seconds * 1000 : new Date(dd.at || 0).getTime();
+        all.push({ id: s.id, userId: u.id, userEmail: d.email, userAppId: d.appAccountId || 'N/A', success: !!dd.success, chars: dd.chars || 0, error: dd.error || '', fileName: dd.fileName || '', at });
+      });
+    }
+    all.sort((a, b) => b.at - a.at);
+    res.json({ ok: true, logs: all.slice(0, limit) });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+/* ===== NEW: AI ERROR MONITOR ===== */
+app.get('/api/admin/ai-errors', adminRequired, async (req, res) => {
+  try {
+    const us = await db.collection('users').get();
+    const today = new Date().toISOString().split('T')[0];
+    const rows = [];
+    let grandTotal = 0;
+    const providerTotals = {};
+    for (const u of us.docs) {
+      const d = u.data();
+      const snap = await db.collection('users').doc(u.id).collection('aiErrors').doc(today).get();
+      if (!snap.exists) continue;
+      const dd = snap.data();
+      if ((dd.total || 0) === 0) continue;
+      rows.push({ id: u.id, email: d.email, name: d.name, appAccountId: d.appAccountId || 'N/A', todayTotal: dd.total || 0, providers: dd.providers || {}, lastError: dd.lastError || '' });
+      grandTotal += dd.total || 0;
+      for (const [k, v] of Object.entries(dd.providers || {})) {
+        providerTotals[k] = (providerTotals[k] || 0) + (typeof v === 'number' ? v : 0);
+      }
+    }
+    rows.sort((a, b) => b.todayTotal - a.todayTotal);
+    res.json({ ok: true, rows, summary: { date: today, grandTotal, providerTotals } });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
 app.get('/api/admin/users/paginated', adminRequired, async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -1603,11 +1766,22 @@ app.get('/api/admin/user/:id/details', adminRequired, async (req, res) => {
     const banned = await db.collection('bannedUsers').doc(uid).get();
     const today = new Date().toISOString().split('T')[0];
     const month = today.substring(0, 7);
-    const [t, s, p, sd, aiT, aiM, aiAll] = await Promise.all([db.collection('users').doc(uid).collection('recipients').count().get(), db.collection('users').doc(uid).collection('recipients').where('status', 'in', ['Sent', 'Opened']).count().get(), db.collection('users').doc(uid).collection('recipients').where('status', '==', 'Pending').count().get(), db.collection('users').doc(uid).collection('emailLog').count().get(), db.collection('users').doc(uid).collection('aiUsage').doc(today).get(), db.collection('users').doc(uid).collection('aiUsage').doc('month_' + month).get(), db.collection('users').doc(uid).collection('aiUsage').doc('total').get()]);
+    const [t, s, p, sd, aiT, aiM, aiAll, ocrT, ocrAll] = await Promise.all([
+      db.collection('users').doc(uid).collection('recipients').count().get(),
+      db.collection('users').doc(uid).collection('recipients').where('status', 'in', ['Sent', 'Opened']).count().get(),
+      db.collection('users').doc(uid).collection('recipients').where('status', '==', 'Pending').count().get(),
+      db.collection('users').doc(uid).collection('emailLog').count().get(),
+      db.collection('users').doc(uid).collection('aiUsage').doc(today).get(),
+      db.collection('users').doc(uid).collection('aiUsage').doc('month_' + month).get(),
+      db.collection('users').doc(uid).collection('aiUsage').doc('total').get(),
+      db.collection('users').doc(uid).collection('ocrUsage').doc(today).get(),
+      db.collection('users').doc(uid).collection('ocrUsage').doc('total').get()
+    ]);
     const logs = await db.collection('users').doc(uid).collection('emailLog').limit(2000).get();
     let openedSends = 0; logs.forEach(x => { if (x.data().openedAt) openedSends++; });
     const aiUsage = { today: aiT.exists ? (aiT.data().totalTokens || 0) : 0, todayCalls: aiT.exists ? (aiT.data().calls || 0) : 0, month: aiM.exists ? (aiM.data().totalTokens || 0) : 0, monthCalls: aiM.exists ? (aiM.data().calls || 0) : 0, total: aiAll.exists ? (aiAll.data().totalTokens || 0) : 0, calls: aiAll.exists ? (aiAll.data().calls || 0) : 0, providers: aiAll.exists ? (aiAll.data().providers || {}) : {} };
-    res.json({ ok: true, user: { id: uid, email: data.email, name: data.name, picture: data.profilePicture || '', appAccountId: data.appAccountId || 'N/A', createdAt: data.createdAt ? (data.createdAt.toDate ? data.createdAt.toDate().toISOString() : data.createdAt) : null, lastLogin: data.lastLogin ? (data.lastLogin.toDate ? data.lastLogin.toDate().toISOString() : data.lastLogin) : null, authType: data.authType || 'email', hasSmtp: !!data.smtpEnabled, hasImap: !!data.imapEnabled, autoSend: !!data.autoSend, banned: banned.exists, banReason: banned.exists ? banned.data().reason : '', aiUsage, stats: { total: t.data().count, sent: s.data().count, opened: openedSends, pending: p.data().count, totalSends: sd.data().count } } });
+    const ocrUsage = { todayTotal: ocrT.exists ? (ocrT.data().total || 0) : 0, todaySuccess: ocrT.exists ? (ocrT.data().success || 0) : 0, todayFailed: ocrT.exists ? (ocrT.data().failed || 0) : 0, totalTotal: ocrAll.exists ? (ocrAll.data().total || 0) : 0, totalSuccess: ocrAll.exists ? (ocrAll.data().success || 0) : 0, totalFailed: ocrAll.exists ? (ocrAll.data().failed || 0) : 0, totalChars: ocrAll.exists ? (ocrAll.data().charsExtracted || 0) : 0 };
+    res.json({ ok: true, user: { id: uid, email: data.email, name: data.name, picture: data.profilePicture || '', appAccountId: data.appAccountId || 'N/A', createdAt: data.createdAt ? (data.createdAt.toDate ? data.createdAt.toDate().toISOString() : data.createdAt) : null, lastLogin: data.lastLogin ? (data.lastLogin.toDate ? data.lastLogin.toDate().toISOString() : data.lastLogin) : null, authType: data.authType || 'email', hasSmtp: !!data.smtpEnabled, hasImap: !!data.imapEnabled, autoSend: !!data.autoSend, banned: banned.exists, banReason: banned.exists ? banned.data().reason : '', aiUsage, ocrUsage, stats: { total: t.data().count, sent: s.data().count, opened: openedSends, pending: p.data().count, totalSends: sd.data().count } } });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.delete('/api/admin/user/:id', adminRequired, async (req, res) => {
@@ -1618,7 +1792,7 @@ app.delete('/api/admin/user/:id', adminRequired, async (req, res) => {
     if (!target.exists) return res.json({ ok: false, error: 'User not found' });
     const email = (target.data().email || '').toLowerCase();
     if (email === ADMIN_EMAIL) return res.json({ ok: false, error: 'Cannot delete admin account' });
-    const subcollections = ['recipients', 'templates', 'emailLog', 'files', 'stats', 'senderMemory', 'imapEmails', 'testRecipients', 'testLog', 'aiUsage', 'replyLog'];
+    const subcollections = ['recipients', 'templates', 'emailLog', 'files', 'stats', 'senderMemory', 'imapEmails', 'testRecipients', 'testLog', 'aiUsage', 'replyLog', 'ocrUsage', 'ocrLog', 'aiErrors'];
     for (const coll of subcollections) { let more = true; while (more) { const snap = await db.collection('users').doc(uid).collection(coll).limit(400).get(); if (snap.empty) { more = false; break; } const b = db.batch(); snap.forEach(d => b.delete(d.ref)); await b.commit(); if (snap.size < 400) more = false; } }
     await db.collection('users').doc(uid).delete();
     await db.collection('bannedUsers').doc(uid).delete().catch(() => { });
