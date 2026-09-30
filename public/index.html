@@ -13,9 +13,6 @@
 <script defer src="/_vercel/insights/script.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<script>
-window.__OCR_CFG__={workerPath:'https://cdn.jsdelivr.net/npm/tesseract.js@4.1.4/dist/worker.min.js',corePath:'https://cdn.jsdelivr.net/npm/tesseract.js-core@4.0.4/tesseract-core.wasm.js',langPath:'https://tessdata.projectnaptha.com/4.0.0'};
-</script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.4/dist/tesseract.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -1285,7 +1282,6 @@ var OCR_PROCESSING=false;
 var OCR_MAX_RETRIES=4;
 var REPLY_TARGET_EMAIL='';
 var REPLY_SELECTED_FILES={};
-var OCR_LANG_DATA_READY=false;
 
 function $(id){return document.getElementById(id);}
 function toast(m,t){var el=$('toast');el.innerText=m;el.className='toast show '+(t||'ok');clearTimeout(el._t);el._t=setTimeout(function(){el.className='toast'},4500);}
@@ -1523,31 +1519,25 @@ function clearBulk(){$('bulkInput').value='';updateBulk();}
 function submitBulk(){var r=parseBulk($('bulkInput').value);if(!r.valid.length)return toast('No valid emails found','err');sendBulkRecipients(r.valid);}
 function sendBulkRecipients(items){api('/api/recipients','POST',{list:items,templateId:$('tplSelect').value}).then(function(res){if(res.ok){toast('✅ '+res.added+' recipients added');$('bulkInput').value='';updateBulk();loadAll();loadQuickAuto();switchTab('manual');}else toast('Error adding recipients','err');});}
 
-/* ============ OCR v1.8.3 — FRESH WORKER PER IMAGE (mobile-safe) ============ */
-async function createFreshWorker(){
+/* ============ OCR v1.8.3 PERMANENT FIX — workerBlobURL:false ============ */
+/* THE FIX: Tesseract.js workerBlobURL:false forces direct script load (mobile-safe) */
+async function createOCRWorker(){
   if(typeof Tesseract==='undefined'){throw new Error('OCR library not loaded. Check internet.');}
-  var cfg=window.__OCR_CFG__||{};
+  // v4.x signature: createWorker(lang, oem, options)
   var opts={
-    workerPath: cfg.workerPath,
-    corePath: cfg.corePath,
-    langPath: cfg.langPath,
-    logger: function(m){/*silent*/},
-    errorHandler: function(e){console.warn('[OCR worker err]',e&&e.message?e.message:e);}
+    workerPath:'https://cdn.jsdelivr.net/npm/tesseract.js@4.1.4/dist/worker.min.js',
+    corePath:'https://cdn.jsdelivr.net/npm/tesseract.js-core@4.0.4/tesseract-core.wasm.js',
+    langPath:'https://tessdata.projectnaptha.com/4.0.0',
+    workerBlobURL:false,
+    logger:function(){},
+    errorHandler:function(e){console.warn('[OCR worker]',(e&&e.message)?e.message:e);}
   };
-  // Tesseract.js v4: createWorker(lang, oem, options) → Promise<Worker>
-  var worker;
-  try{
-    worker=await Tesseract.createWorker('eng',1,opts);
-  }catch(e1){
-    // Fallback: older signature createWorker(options)
-    try{ worker=await Tesseract.createWorker('eng',1,opts); }
-    catch(e2){ throw new Error('Failed to start OCR engine: '+(e2&&e2.message?e2.message:'unknown')); }
-  }
+  var worker=await Tesseract.createWorker('eng',1,opts);
   return worker;
 }
-async function terminateSafe(worker){
-  if(!worker)return;
-  try{ await worker.terminate(); }catch(e){}
+async function terminateOCRWorker(w){
+  if(!w)return;
+  try{await w.terminate();}catch(e){}
 }
 document.getElementById('ocrInput').addEventListener('change',function(e){var files=e.target.files;if(!files||!files.length)return;for(var i=0;i<files.length;i++){enqueueOCRFile(files[i]);}e.target.value='';});
 document.addEventListener('paste',function(e){if($('ocrTab').classList.contains('hidden'))return;var items=e.clipboardData&&e.clipboardData.items;if(!items)return;var found=false;for(var i=0;i<items.length;i++){if(items[i].type.indexOf('image')!==-1){var blob=items[i].getAsFile();if(blob){enqueueOCRFile(blob);found=true;}}}if(found)toast('📋 Screenshot added to queue');});
@@ -1570,8 +1560,8 @@ async function processOCRQueue(){
   while(OCR_QUEUE.length>0){
     var idx=OCR_QUEUE.shift();
     await processOCRItem(idx);
-    // Short pause between images so mobile browser can breathe
-    await new Promise(function(r){setTimeout(r,700);});
+    // Pause between images — mobile browser needs breathing room
+    await new Promise(function(r){setTimeout(r,800);});
   }
   OCR_PROCESSING=false;
   updateOCRStatus(true);
@@ -1587,14 +1577,15 @@ async function processOCRItem(idx){
   for(var attempt=1; attempt<=OCR_MAX_RETRIES; attempt++){
     var worker=null;
     try{
-      // Mobile-safe resize: smaller dims = less memory
+      // Aggressive resize for mobile stability
       var processedFile=await resizeImageIfNeeded(item.file, 1000);
-      // FRESH worker per image — this is the mobile fix
-      worker=await createFreshWorker();
+      // FRESH worker per image with workerBlobURL:false
+      worker=await createOCRWorker();
       var result=await worker.recognize(processedFile);
-      await terminateSafe(worker); worker=null;
+      await terminateOCRWorker(worker);
+      worker=null;
       var text=((result&&result.data&&result.data.text)||'').trim();
-      if(!text||text.length<3){throw new Error('No text detected in this image');}
+      if(!text||text.length<3){throw new Error('No text detected in image');}
       item.text=text;
       item.status='done';
       item.error='';
@@ -1603,10 +1594,11 @@ async function processOCRItem(idx){
       updateOCRStatus();
       return;
     }catch(err){
-      await terminateSafe(worker); worker=null;
+      await terminateOCRWorker(worker);
+      worker=null;
       var msg=(err&&err.message)?err.message:String(err);
-      if(msg.toLowerCase().indexOf('runtime')!==-1 || msg.indexOf('abort')!==-1 || msg.indexOf('Code=0')!==-1 || msg.indexOf('code 0')!==-1 || msg.indexOf('memory')!==-1){
-        msg='Engine memory issue — retrying';
+      if(msg.toLowerCase().indexOf('runtime')!==-1||msg.indexOf('abort')!==-1||msg.indexOf('Code=0')!==-1||msg.indexOf('code 0')!==-1||msg.indexOf('memory')!==-1){
+        msg='Engine restart — retrying';
       }
       console.warn('OCR SS #'+(idx+1)+' attempt '+attempt+' failed:', msg);
       item.retries=attempt;
@@ -1616,7 +1608,7 @@ async function processOCRItem(idx){
         renderOCRThumbs();
         renderOCRResultCards();
         updateOCRStatus();
-        // Exponential backoff — important for mobile
+        // Exponential backoff — critical for mobile
         await new Promise(function(r){setTimeout(r, 1500*attempt);});
       }else{
         item.status='failed';
@@ -1636,8 +1628,7 @@ function resizeImageIfNeeded(file, maxDim){
       var finish=function(out){ if(done)return; done=true; try{URL.revokeObjectURL(url);}catch(e){}; resolve(out); };
       img.onload=function(){
         var w=img.width, h=img.height;
-        // Aggressive target for mobile stability
-        var maxFileSize=900*1024;
+        var maxFileSize=800*1024;
         var targetMax=maxDim;
         if(w<=targetMax && h<=targetMax && file.size<maxFileSize){ finish(file); return; }
         var scale=Math.min(targetMax/w, targetMax/h, 1);
@@ -1652,7 +1643,7 @@ function resizeImageIfNeeded(file, maxDim){
         canvas.toBlob(function(blob){
           if(!blob){ finish(file); return; }
           finish(blob);
-        }, 'image/jpeg', 0.82);
+        }, 'image/jpeg', 0.80);
       };
       img.onerror=function(){ finish(file); };
       img.src=url;
