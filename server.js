@@ -19,7 +19,7 @@ const DEFAULT_SEND_DELAY = 20;
 const IS_VERCEL = !!process.env.VERCEL;
 const CRON_SECRET = process.env.CRON_SECRET || '';
 const BACKEND_URL = process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org';
-const APP_VERSION = '1.8.4';
+const APP_VERSION = '1.8.5';
 const OCR_SPACE_API_KEY = process.env.OCR_SPACE_API_KEY || 'helloworld';
 const OCR_FREE_MONTHLY_LIMIT = 25000;
 
@@ -114,32 +114,60 @@ async function logAIUsage(uid,provider,model,usage){
   }catch(e){}
 }
 
-/* ===== OCR USAGE LOGGING (per-user + global monthly quota) ===== */
-async function logOcrUsage(uid, success, chars, errorMsg, fileName) {
+/* ===== OCR USAGE LOGGING (per-user + global monthly quota + client errors) ===== */
+async function logOcrUsage(uid, success, chars, errorMsg, fileName, isClientError, stage) {
   if (!uid) return;
   try {
     const today = new Date().toISOString().split('T')[0];
     const month = today.substring(0, 7);
     const batch = db.batch();
     const dayRef = db.collection('users').doc(uid).collection('ocrUsage').doc(today);
-    batch.set(dayRef, { date: today, total: FieldValue.increment(1), success: FieldValue.increment(success ? 1 : 0), failed: FieldValue.increment(success ? 0 : 1), charsExtracted: FieldValue.increment(chars || 0), lastError: errorMsg ? String(errorMsg).substring(0, 200) : '', lastFileName: fileName ? String(fileName).substring(0, 120) : '', updatedAt: new Date() }, { merge: true });
+    const dayUpdate = { date: today, updatedAt: new Date() };
+    if (isClientError) {
+      // Client errors don't count in OCR.space quota but should be visible
+      dayUpdate.clientErrors = FieldValue.increment(1);
+    } else {
+      dayUpdate.total = FieldValue.increment(1);
+      dayUpdate.success = FieldValue.increment(success ? 1 : 0);
+      dayUpdate.failed = FieldValue.increment(success ? 0 : 1);
+      dayUpdate.charsExtracted = FieldValue.increment(chars || 0);
+    }
+    if (errorMsg) dayUpdate.lastError = String(errorMsg).substring(0, 200);
+    if (fileName) dayUpdate.lastFileName = String(fileName).substring(0, 120);
+    batch.set(dayRef, dayUpdate, { merge: true });
+    
     const totalRef = db.collection('users').doc(uid).collection('ocrUsage').doc('total');
-    batch.set(totalRef, { total: FieldValue.increment(1), success: FieldValue.increment(success ? 1 : 0), failed: FieldValue.increment(success ? 0 : 1), charsExtracted: FieldValue.increment(chars || 0), updatedAt: new Date() }, { merge: true });
+    if (isClientError) {
+      batch.set(totalRef, { clientErrors: FieldValue.increment(1), updatedAt: new Date() }, { merge: true });
+    } else {
+      batch.set(totalRef, { total: FieldValue.increment(1), success: FieldValue.increment(success ? 1 : 0), failed: FieldValue.increment(success ? 0 : 1), charsExtracted: FieldValue.increment(chars || 0), updatedAt: new Date() }, { merge: true });
+    }
+    
     const logRef = db.collection('users').doc(uid).collection('ocrLog').doc();
-    batch.set(logRef, { success: !!success, chars: chars || 0, error: errorMsg ? String(errorMsg).substring(0, 300) : '', fileName: fileName ? String(fileName).substring(0, 120) : '', at: new Date() });
-    const globalRef = db.collection('globalStats').doc('ocrQuota_' + month);
-    batch.set(globalRef, { month, total: FieldValue.increment(1), success: FieldValue.increment(success ? 1 : 0), failed: FieldValue.increment(success ? 0 : 1), charsExtracted: FieldValue.increment(chars || 0), updatedAt: new Date() }, { merge: true });
+    batch.set(logRef, { success: !!success, chars: chars || 0, error: errorMsg ? String(errorMsg).substring(0, 300) : '', fileName: fileName ? String(fileName).substring(0, 120) : '', isClientError: !!isClientError, stage: stage ? String(stage).substring(0, 50) : '', at: new Date() });
+    
+    if (!isClientError) {
+      const globalRef = db.collection('globalStats').doc('ocrQuota_' + month);
+      batch.set(globalRef, { month, total: FieldValue.increment(1), success: FieldValue.increment(success ? 1 : 0), failed: FieldValue.increment(success ? 0 : 1), charsExtracted: FieldValue.increment(chars || 0), updatedAt: new Date() }, { merge: true });
+    }
     await batch.commit();
   } catch (e) { }
 }
 
-/* ===== AI ERROR LOGGING ===== */
+/* ===== AI ERROR LOGGING — FIXED: dot notation for nested increment ===== */
 async function logAIError(uid, provider, errorMessage) {
-  if (!uid) return;
+  if (!uid || !provider) return;
   try {
     const today = new Date().toISOString().split('T')[0];
     const ref = db.collection('users').doc(uid).collection('aiErrors').doc(today);
-    await ref.set({ date: today, total: FieldValue.increment(1), providers: { [provider]: FieldValue.increment(1) }, lastError: String(errorMessage || '').substring(0, 250), updatedAt: new Date() }, { merge: true });
+    const update = {
+      date: today,
+      total: FieldValue.increment(1),
+      lastError: String(errorMessage || '').substring(0, 250),
+      updatedAt: new Date()
+    };
+    update['providers.' + provider] = FieldValue.increment(1);
+    await ref.set(update, { merge: true });
   } catch (e) { }
 }
 
@@ -413,16 +441,16 @@ app.post('/api/ocr/extract', authRequired, async (req, res) => {
     const { base64, mimeType, filename } = req.body || {};
     fileName = filename || '';
     if (!base64 || base64.length < 50) {
-      await logOcrUsage(uid, false, 0, 'No image data provided', fileName);
+      await logOcrUsage(uid, false, 0, 'No image data provided', fileName, false, '');
       return res.json({ ok: false, error: 'No image data provided' });
     }
     let buf;
     try { buf = Buffer.from(base64, 'base64'); } catch (e) {
-      await logOcrUsage(uid, false, 0, 'Invalid base64', fileName);
+      await logOcrUsage(uid, false, 0, 'Invalid base64', fileName, false, '');
       return res.json({ ok: false, error: 'Invalid image data. Please re-upload the screenshot.' });
     }
     if (buf.length > MAX_OCR_IMAGE_SIZE) {
-      await logOcrUsage(uid, false, 0, 'Image too large: ' + Math.round(buf.length/1024) + 'KB', fileName);
+      await logOcrUsage(uid, false, 0, 'Image too large: ' + Math.round(buf.length/1024) + 'KB', fileName, false, '');
       return res.json({ ok: false, error: 'Image too large (' + Math.round(buf.length/1024) + 'KB). Please try a smaller or lower-resolution screenshot.' });
     }
     const mime = (mimeType || 'image/jpeg').toLowerCase();
@@ -444,42 +472,55 @@ app.post('/api/ocr/extract', authRequired, async (req, res) => {
         body: params.toString()
       }, 45000);
     } catch (netErr) {
-      await logOcrUsage(uid, false, 0, 'Network: ' + netErr.message, fileName);
+      await logOcrUsage(uid, false, 0, 'Network: ' + netErr.message, fileName, false, '');
       return res.json({ ok: false, error: 'OCR service unreachable. Please try again in a moment.' });
     }
     if (!ocrRes.ok) {
-      await logOcrUsage(uid, false, 0, 'OCR HTTP ' + ocrRes.status, fileName);
+      await logOcrUsage(uid, false, 0, 'OCR HTTP ' + ocrRes.status, fileName, false, '');
       return res.json({ ok: false, error: 'OCR service error (HTTP ' + ocrRes.status + '). Please try again.' });
     }
     let ocrData;
     try { ocrData = await ocrRes.json(); } catch (e) {
-      await logOcrUsage(uid, false, 0, 'Invalid OCR response', fileName);
+      await logOcrUsage(uid, false, 0, 'Invalid OCR response', fileName, false, '');
       return res.json({ ok: false, error: 'Invalid response from OCR service. Please retry.' });
     }
     if (ocrData.IsErroredOnProcessing) {
       const errMsg = (ocrData.ErrorMessage && Array.isArray(ocrData.ErrorMessage)) ? ocrData.ErrorMessage.join(' ') : (ocrData.ErrorMessage || 'OCR processing failed');
-      await logOcrUsage(uid, false, 0, errMsg, fileName);
+      await logOcrUsage(uid, false, 0, errMsg, fileName, false, '');
       if (errMsg.indexOf('limit') !== -1 || errMsg.indexOf('Limit') !== -1) {
         return res.json({ ok: false, error: 'OCR monthly limit reached. Please try again next month.' });
       }
       return res.json({ ok: false, error: errMsg });
     }
     if (!ocrData.ParsedResults || !ocrData.ParsedResults.length) {
-      await logOcrUsage(uid, false, 0, 'No text detected', fileName);
+      await logOcrUsage(uid, false, 0, 'No text detected', fileName, false, '');
       return res.json({ ok: false, error: 'No text detected in this image. Try a clearer screenshot.' });
     }
     const text = ocrData.ParsedResults.map(r => r.ParsedText || '').join('\n').trim();
     if (!text || text.length < 2) {
-      await logOcrUsage(uid, false, 0, 'No readable text', fileName);
+      await logOcrUsage(uid, false, 0, 'No readable text', fileName, false, '');
       return res.json({ ok: false, error: 'No readable text found in image.' });
     }
-    await logOcrUsage(uid, true, text.length, '', fileName);
+    await logOcrUsage(uid, true, text.length, '', fileName, false, '');
     res.json({ ok: true, text: text.substring(0, 20000), chars: text.length });
   } catch (e) {
     console.error('OCR error:', e.message);
-    await logOcrUsage(uid, false, 0, 'Server: ' + e.message, fileName);
+    await logOcrUsage(uid, false, 0, 'Server: ' + e.message, fileName, false, '');
     res.json({ ok: false, error: 'OCR failed: ' + e.message });
   }
+});
+
+/* ============ OCR CLIENT-SIDE ERROR (NEW v1.8.5) ============ */
+app.post('/api/ocr/client-error', authRequired, async (req, res) => {
+  try {
+    const uid = req.session.user.id;
+    const { error, fileName, stage } = req.body || {};
+    const msg = String(error || 'Client error').substring(0, 200);
+    const fname = String(fileName || '').substring(0, 120);
+    const stg = String(stage || 'client').substring(0, 50);
+    await logOcrUsage(uid, false, 0, msg, fname, true, stg);
+    res.json({ ok: true });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
 /* ============ AUTH ============ */
@@ -1560,27 +1601,36 @@ app.get('/api/admin/dashboard', adminRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+/* ===== OCR USAGE MONITOR (v1.8.5 — includes clientErrors) ===== */
 app.get('/api/admin/ocr-usage', adminRequired, async (req, res) => {
   try {
     const us = await db.collection('users').get();
     const today = new Date().toISOString().split('T')[0];
     const rows = [];
-    let grandTotal = 0, grandSuccess = 0, grandFailed = 0, grandChars = 0;
+    let grandTotal = 0, grandSuccess = 0, grandFailed = 0, grandChars = 0, grandClientErrors = 0;
     for (const u of us.docs) {
       const d = u.data();
       const [daySnap, totalSnap] = await Promise.all([
         db.collection('users').doc(u.id).collection('ocrUsage').doc(today).get(),
         db.collection('users').doc(u.id).collection('ocrUsage').doc('total').get()
       ]);
-      const day = daySnap.exists ? daySnap.data() : { total: 0, success: 0, failed: 0, charsExtracted: 0 };
-      const tot = totalSnap.exists ? totalSnap.data() : { total: 0, success: 0, failed: 0, charsExtracted: 0 };
-      if ((tot.total || 0) > 0) {
-        rows.push({ id: u.id, email: d.email, name: d.name, appAccountId: d.appAccountId || 'N/A', todayTotal: day.total || 0, todaySuccess: day.success || 0, todayFailed: day.failed || 0, todayChars: day.charsExtracted || 0, todayLastError: day.lastError || '', total: tot.total || 0, success: tot.success || 0, failed: tot.failed || 0, chars: tot.charsExtracted || 0 });
-        grandTotal += tot.total || 0; grandSuccess += tot.success || 0; grandFailed += tot.failed || 0; grandChars += tot.charsExtracted || 0;
+      const day = daySnap.exists ? daySnap.data() : { total: 0, success: 0, failed: 0, charsExtracted: 0, clientErrors: 0 };
+      const tot = totalSnap.exists ? totalSnap.data() : { total: 0, success: 0, failed: 0, charsExtracted: 0, clientErrors: 0 };
+      if ((tot.total || 0) > 0 || (tot.clientErrors || 0) > 0) {
+        rows.push({
+          id: u.id, email: d.email, name: d.name, appAccountId: d.appAccountId || 'N/A',
+          todayTotal: day.total || 0, todaySuccess: day.success || 0, todayFailed: day.failed || 0, todayChars: day.charsExtracted || 0, todayClientErrors: day.clientErrors || 0, todayLastError: day.lastError || '',
+          total: tot.total || 0, success: tot.success || 0, failed: tot.failed || 0, chars: tot.charsExtracted || 0, clientErrors: tot.clientErrors || 0
+        });
+        grandTotal += tot.total || 0;
+        grandSuccess += tot.success || 0;
+        grandFailed += tot.failed || 0;
+        grandChars += tot.charsExtracted || 0;
+        grandClientErrors += tot.clientErrors || 0;
       }
     }
-    rows.sort((a, b) => b.total - a.total);
-    res.json({ ok: true, rows, summary: { totalUsers: us.size, activeUsers: rows.length, grandTotal, grandSuccess, grandFailed, grandChars, successRate: grandTotal > 0 ? Math.round((grandSuccess / grandTotal) * 100) : 0 } });
+    rows.sort((a, b) => (b.total + b.clientErrors) - (a.total + a.clientErrors));
+    res.json({ ok: true, rows, summary: { totalUsers: us.size, activeUsers: rows.length, grandTotal, grandSuccess, grandFailed, grandChars, grandClientErrors, successRate: grandTotal > 0 ? Math.round((grandSuccess / grandTotal) * 100) : 0 } });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -1609,7 +1659,7 @@ app.get('/api/admin/ocr-log', adminRequired, async (req, res) => {
       snaps.forEach(s => {
         const dd = s.data();
         const at = dd.at && dd.at._seconds ? dd.at._seconds * 1000 : new Date(dd.at || 0).getTime();
-        all.push({ id: s.id, userId: u.id, userEmail: d.email, userAppId: d.appAccountId || 'N/A', success: !!dd.success, chars: dd.chars || 0, error: dd.error || '', fileName: dd.fileName || '', at });
+        all.push({ id: s.id, userId: u.id, userEmail: d.email, userAppId: d.appAccountId || 'N/A', success: !!dd.success, chars: dd.chars || 0, error: dd.error || '', fileName: dd.fileName || '', isClientError: !!dd.isClientError, stage: dd.stage || '', at });
       });
     }
     all.sort((a, b) => b.at - a.at);
@@ -1617,6 +1667,7 @@ app.get('/api/admin/ocr-log', adminRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+/* ===== AI ERROR MONITOR (v1.8.5 — dot notation fix) ===== */
 app.get('/api/admin/ai-errors', adminRequired, async (req, res) => {
   try {
     const us = await db.collection('users').get();
@@ -1759,7 +1810,7 @@ app.get('/api/admin/user/:id/details', adminRequired, async (req, res) => {
     const logs = await db.collection('users').doc(uid).collection('emailLog').limit(2000).get();
     let openedSends = 0; logs.forEach(x => { if (x.data().openedAt) openedSends++; });
     const aiUsage = { today: aiT.exists ? (aiT.data().totalTokens || 0) : 0, todayCalls: aiT.exists ? (aiT.data().calls || 0) : 0, month: aiM.exists ? (aiM.data().totalTokens || 0) : 0, monthCalls: aiM.exists ? (aiM.data().calls || 0) : 0, total: aiAll.exists ? (aiAll.data().totalTokens || 0) : 0, calls: aiAll.exists ? (aiAll.data().calls || 0) : 0, providers: aiAll.exists ? (aiAll.data().providers || {}) : {} };
-    const ocrUsage = { todayTotal: ocrT.exists ? (ocrT.data().total || 0) : 0, todaySuccess: ocrT.exists ? (ocrT.data().success || 0) : 0, todayFailed: ocrT.exists ? (ocrT.data().failed || 0) : 0, totalTotal: ocrAll.exists ? (ocrAll.data().total || 0) : 0, totalSuccess: ocrAll.exists ? (ocrAll.data().success || 0) : 0, totalFailed: ocrAll.exists ? (ocrAll.data().failed || 0) : 0, totalChars: ocrAll.exists ? (ocrAll.data().charsExtracted || 0) : 0 };
+    const ocrUsage = { todayTotal: ocrT.exists ? (ocrT.data().total || 0) : 0, todaySuccess: ocrT.exists ? (ocrT.data().success || 0) : 0, todayFailed: ocrT.exists ? (ocrT.data().failed || 0) : 0, todayClientErrors: ocrT.exists ? (ocrT.data().clientErrors || 0) : 0, totalTotal: ocrAll.exists ? (ocrAll.data().total || 0) : 0, totalSuccess: ocrAll.exists ? (ocrAll.data().success || 0) : 0, totalFailed: ocrAll.exists ? (ocrAll.data().failed || 0) : 0, totalClientErrors: ocrAll.exists ? (ocrAll.data().clientErrors || 0) : 0, totalChars: ocrAll.exists ? (ocrAll.data().charsExtracted || 0) : 0 };
     res.json({ ok: true, user: { id: uid, email: data.email, name: data.name, picture: data.profilePicture || '', appAccountId: data.appAccountId || 'N/A', createdAt: data.createdAt ? (data.createdAt.toDate ? data.createdAt.toDate().toISOString() : data.createdAt) : null, lastLogin: data.lastLogin ? (data.lastLogin.toDate ? data.lastLogin.toDate().toISOString() : data.lastLogin) : null, authType: data.authType || 'email', hasSmtp: !!data.smtpEnabled, hasImap: !!data.imapEnabled, autoSend: !!data.autoSend, banned: banned.exists, banReason: banned.exists ? banned.data().reason : '', aiUsage, ocrUsage, stats: { total: t.data().count, sent: s.data().count, opened: openedSends, pending: p.data().count, totalSends: sd.data().count } } });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
