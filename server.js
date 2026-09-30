@@ -19,7 +19,7 @@ const DEFAULT_SEND_DELAY = 20;
 const IS_VERCEL = !!process.env.VERCEL;
 const CRON_SECRET = process.env.CRON_SECRET || '';
 const BACKEND_URL = process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org';
-const APP_VERSION = '1.6.0';
+const APP_VERSION = '1.6.1';
 
 if (!process.env.SESSION_SECRET) { console.error('FATAL: SESSION_SECRET missing!'); process.exit(1); }
 if (!process.env.ENCRYPTION_KEY) { console.error('FATAL: ENCRYPTION_KEY missing!'); process.exit(1); }
@@ -28,12 +28,12 @@ const ENC_KEY = crypto.createHash('sha256').update(process.env.ENCRYPTION_KEY).d
 const SESSION_DAYS_SHORT = 3;
 const SESSION_DAYS_LONG  = 30;
 
-// ============ FAST CACHE (per-user, prevents lag) ============
+// ============ CACHE LAYER (prevents lag) ============
 const userCache = new Map();
 const CACHE_TTL = {
-  quota: 90 * 1000,        // 90s - Gmail sent today count
-  history: 5 * 60 * 1000,  // 5 min - Gmail sent history per recipient
-  status: 30 * 1000        // 30s - connection status
+  quota: 90 * 1000,        // 90s
+  history: 5 * 60 * 1000,  // 5 min
+  status: 30 * 1000        // 30s
 };
 function cacheGet(key) {
   const e = userCache.get(key);
@@ -546,7 +546,7 @@ async function fetchImapBody(email, appPassword, folder, uid) {
   } catch (e) { try { await client.close(); } catch (err) {} return { ok: false, error: e.message }; }
 }
 
-// ============ REAL-TIME GMAIL DAILY SENT COUNT (from Sent folder) ============
+// ============ REAL-TIME GMAIL DAILY SENT COUNT ============
 async function fetchGmailSentTodayCount(email, appPassword) {
   const client = createImapClient(email, appPassword);
   try {
@@ -557,19 +557,16 @@ async function fetchGmailSentTodayCount(email, appPassword) {
       try { await client.mailboxOpen(f); opened = true; break; } catch (e) {}
     }
     if (!opened) { await client.logout(); return { ok: false, error: 'No Sent folder' }; }
-    // Build today's date (search by SINCE today midnight)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     let uids = [];
-    try {
-      uids = await client.search({ since: today }, { uid: true });
-    } catch (e) { uids = []; }
+    try { uids = await client.search({ since: today }, { uid: true }); } catch (e) { uids = []; }
     await client.logout();
     return { ok: true, count: uids ? uids.length : 0, since: today.toISOString() };
   } catch (e) { try { await client.close(); } catch (err) {} return { ok: false, error: e.message }; }
 }
 
-// ============ ALL-TIME GMAIL SENT HISTORY - NO LIMIT ============
+// ============ ALL-TIME GMAIL SENT HISTORY (NO LIMIT) ============
 async function fetchImapSentForRecipient(email, appPassword, recipientEmail, maxResults) {
   const client = createImapClient(email, appPassword);
   const results = [];
@@ -599,13 +596,11 @@ async function fetchImapSentForRecipient(email, appPassword, recipientEmail, max
 
     if (!searchRes || !searchRes.length) { await client.logout(); return { ok: true, emails: [], total: 0 }; }
 
-    // NO LIMIT — fetch everything
     let uids = searchRes;
     if (maxResults && maxResults > 0 && uids.length > maxResults) {
       uids = uids.slice(-maxResults);
     }
 
-    // Fetch in chunks of 500 to prevent memory issues
     const CHUNK = 500;
     const fetched = [];
     for (let i = 0; i < uids.length; i += CHUNK) {
@@ -921,8 +916,7 @@ app.get('/api/smtp/status', authRequired, async (req, res) => {
     const out = { ok: true, connected: !!u.smtpEnabled, connectedAt: u.smtpConnectedAt || null, imapEnabled: !!u.imapEnabled };
     cacheSet(ck, out, CACHE_TTL.status);
     res.json(out);
-  }
-  catch (e) { res.json({ ok: false, error: e.message }); }
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.post('/api/smtp/disconnect', authRequired, async (req, res) => {
   try {
@@ -930,8 +924,7 @@ app.post('/api/smtp/disconnect', authRequired, async (req, res) => {
     cacheDel('quota:' + req.session.user.id);
     cacheDel('status:' + req.session.user.id);
     res.json({ ok: true });
-  }
-  catch (e) { res.json({ ok: false, error: e.message }); }
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
 /* ============ IMAP ============ */
@@ -956,16 +949,17 @@ app.post('/api/imap/connect', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.get('/api/imap/status', authRequired, async (req, res) => {
-  try { const u = await getUserData(req.session.user.id); res.json({ ok: true, connected: !!u.imapEnabled, connectedAt: u.imapConnectedAt || null, lastSync: u.imapLastSync || null, totalSynced: u.imapTotalSynced || 0, hasSmtpPass: !!u.smtpEnabled }); }
-  catch (e) { res.json({ ok: false, error: e.message }); }
+  try {
+    const u = await getUserData(req.session.user.id);
+    res.json({ ok: true, connected: !!u.imapEnabled, connectedAt: u.imapConnectedAt || null, lastSync: u.imapLastSync || null, totalSynced: u.imapTotalSynced || 0, hasSmtpPass: !!u.smtpEnabled });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.post('/api/imap/disconnect', authRequired, async (req, res) => {
   try {
     await db.collection('users').doc(req.session.user.id).update({ imapAppPassword: null, imapEnabled: false });
     cacheDel('quota:' + req.session.user.id);
     res.json({ ok: true });
-  }
-  catch (e) { res.json({ ok: false, error: e.message }); }
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.post('/api/imap/inbox', authRequired, async (req, res) => {
   try {
@@ -1073,7 +1067,7 @@ app.post('/api/ai/smart-reply', authRequired, async (req, res) => {
     const sigInstruction = hasSignature
       ? 'Signature will be auto-appended by the app. Do NOT include any sign-off, name, or contact info.'
       : `Write a clean professional sign-off at the end. Include name "${userName}"${userPos ? ', ' + userPos : ''}${userCompany ? ' at ' + userCompany : ''}. Keep it minimal.`;
-    const prompt = `You are an expert email assistant writing AS ${userName}. The incoming email may be in ANY language (English, Urdu, Hindi, Arabic, Roman-Urdu, etc.). Understand the MEANING and write a reply in professional ENGLISH.\n\nSENDER PROFILE:\nName: ${userName}\n${userPos ? 'Position: ' + userPos : ''}\n${userCompany ? 'Company: ' + userCompany : ''}\n${userAbout ? 'About: ' + userAbout : ''}\nPreferred Tone: ${userTone}\n\nINCOMING EMAIL:\nFrom: ${originalFrom || 'Unknown'}\nSubject: ${originalSubject || '(no subject)'}\nBody: """${(originalBody || '').substring(0, 4000)}"""\n\n${instruction ? 'EXTRA INSTRUCTION: ' + instruction : ''}\n\nRULES:\n- Write in FIRST PERSON as ${userName}\n- Match tone: ${userTone}\n- Address EVERY point\n- Reply in professional ENGLISH only\n- 2-4 paragraphs\n- ${sigInstruction}\n- Do NOT invent facts\n\nReturn ONLY JSON: {"subject":"Re: ...","body":"complete reply with \\n\\n"}`;
+    const prompt = `You are an expert email assistant writing AS ${userName}. The incoming email may be in ANY language. Understand the MEANING and write a reply in professional ENGLISH.\n\nSENDER PROFILE:\nName: ${userName}\n${userPos ? 'Position: ' + userPos : ''}\n${userCompany ? 'Company: ' + userCompany : ''}\n${userAbout ? 'About: ' + userAbout : ''}\nPreferred Tone: ${userTone}\n\nINCOMING EMAIL:\nFrom: ${originalFrom || 'Unknown'}\nSubject: ${originalSubject || '(no subject)'}\nBody: """${(originalBody || '').substring(0, 4000)}"""\n\n${instruction ? 'EXTRA INSTRUCTION: ' + instruction : ''}\n\nRULES:\n- Write in FIRST PERSON as ${userName}\n- Match tone: ${userTone}\n- Address EVERY point\n- Reply in professional ENGLISH only\n- 2-4 paragraphs\n- ${sigInstruction}\n- Do NOT invent facts\n\nReturn ONLY JSON: {"subject":"Re: ...","body":"complete reply with \\n\\n"}`;
     try {
       const text = await callAI(prompt, req.session.user.id);
       const parsed = safeParseJSON(text);
@@ -1097,7 +1091,7 @@ app.post('/api/ai/write-email', authRequired, async (req, res) => {
     const writerAbout = aiProfile.aboutMe || '';
     const TM = { formal: 'professional', friendly: 'warm', casual: 'casual', persuasive: 'confident' };
     const LM = { short: 'under 80 words', medium: '100-150 words', long: '200-250 words' };
-    const prompt = `Write a professional email. The user's context may be written in ANY language (English, Urdu, Roman-Urdu, Hindi, Arabic, etc.). Understand the INTENT and produce a polished professional email in ENGLISH.\n\nReturn ONLY JSON.\nWriter: ${writerName}${writerDesig ? ', ' + writerDesig : ''}${writerCompany ? ' at ' + writerCompany : ''}\n${writerAbout ? 'About writer: ' + writerAbout : ''}\nContext (may be in any language): ${context}\nRecipient: ${recipientName || 'unknown'}\nRecipient Company: ${recipientCompany || 'unknown'}\nTone: ${TM[tone] || TM.formal}\nLength: ${LM[length] || LM.medium}\n\nOutput must be in professional English. STRICT: No signature, no name, no contact info at end.\nReturn: {"subject":"under 60 chars","body":"with \\n\\n breaks"}`;
+    const prompt = `Write a professional email. Context may be in ANY language. Return ONLY JSON.\nWriter: ${writerName}${writerDesig ? ', ' + writerDesig : ''}${writerCompany ? ' at ' + writerCompany : ''}\n${writerAbout ? 'About writer: ' + writerAbout : ''}\nContext: ${context}\nRecipient: ${recipientName || 'unknown'}\nRecipient Company: ${recipientCompany || 'unknown'}\nTone: ${TM[tone] || TM.formal}\nLength: ${LM[length] || LM.medium}\n\nOutput must be in professional English. STRICT: No signature, no name, no contact info at end.\nReturn: {"subject":"under 60 chars","body":"with \\n\\n breaks"}`;
     try {
       const text = await callAI(prompt, req.session.user.id);
       const parsed = safeParseJSON(text);
@@ -1147,7 +1141,7 @@ app.post('/api/ai/analyze-cv', authRequired, async (req, res) => {
     }
     if (looksLikeBinaryCv(text)) return res.json({ ok: false, error: 'CV not readable. Please upload a text-based PDF or DOCX file.' });
     if (!text || text.replace(/\s/g, '').length < 30) return res.json({ ok: false, error: 'CV text is too short or empty.' });
-    const prompt = `You are an expert career coach. Analyze this CV and write a job application email.\n\nCRITICAL RULES:\n1. The CV may contain text in ANY language (Urdu, Hindi, Arabic, Roman-Urdu, mixed). Understand the MEANING regardless of language.\n2. Output MUST be in professional English only.\n3. If CV has Roman-Urdu/mixed language, translate intent to formal English.\n\nCV:\n"""${text.substring(0, 3500)}"""\n\nTarget Role: ${targetRole || 'Not specified'}\nJob Description: ${jobDescription ? jobDescription.substring(0, 600) : 'Not provided'}\n\nReturn ONLY JSON: {"subject":"under 65 chars","body":"professional email body with \\n\\n, NO signature, NO name","keySkills":["s1","s2","s3","s4"],"analysis":"2-3 sentences in English","score":0-100}`;
+    const prompt = `You are an expert career coach. Analyze this CV and write a job application email.\n\nCRITICAL RULES:\n1. The CV may contain text in ANY language. Understand the MEANING regardless of language.\n2. Output MUST be in professional English only.\n\nCV:\n"""${text.substring(0, 3500)}"""\n\nTarget Role: ${targetRole || 'Not specified'}\nJob Description: ${jobDescription ? jobDescription.substring(0, 600) : 'Not provided'}\n\nReturn ONLY JSON: {"subject":"under 65 chars","body":"professional email body with \\n\\n, NO signature, NO name","keySkills":["s1","s2","s3","s4"],"analysis":"2-3 sentences in English","score":0-100}`;
     const aiText = await callAI(prompt, req.session.user.id);
     const parsed = safeParseJSON(aiText);
     if (parsed && parsed.subject && parsed.body) return res.json({ ok: true, subject: parsed.subject, body: stripSignature(parsed.body), keySkills: parsed.keySkills || [], analysis: parsed.analysis || '', score: parsed.score || 70, aiPowered: true });
@@ -1158,7 +1152,7 @@ app.post('/api/ai/analyze-cv', authRequired, async (req, res) => {
 app.post('/api/ai/generate-subjects', authRequired, async (req, res) => {
   try {
     const { context } = req.body;
-    const prompt = `Generate 5 email subject lines (max 60 chars, English). Return ONLY JSON.\nContext (may be in any language): ${context || 'professional outreach'}\nReturn: {"subjects":["s1","s2","s3","s4","s5"]}`;
+    const prompt = `Generate 5 email subject lines (max 60 chars, English). Return ONLY JSON.\nContext: ${context || 'professional outreach'}\nReturn: {"subjects":["s1","s2","s3","s4","s5"]}`;
     try {
       const text = await callAI(prompt, req.session.user.id);
       const parsed = safeParseJSON(text);
@@ -1172,7 +1166,7 @@ app.post('/api/ai/generate-subjects', authRequired, async (req, res) => {
 app.post('/api/ai/improve-email', authRequired, async (req, res) => {
   try {
     const { subject, body } = req.body;
-    const prompt = `Improve this email for inbox placement. If subject/body is in any language other than English, translate to professional English. Return ONLY JSON.\nSubject: "${subject || ''}"\nBody: "${(body || '').substring(0, 800)}"\nSTRICT: No signature, sign-off.\nReturn: {"improvedSubject":"...","improvedBody":"...","beforeScore":50,"afterScore":85}`;
+    const prompt = `Improve this email for inbox placement. Return ONLY JSON.\nSubject: "${subject || ''}"\nBody: "${(body || '').substring(0, 800)}"\nSTRICT: No signature, sign-off.\nReturn: {"improvedSubject":"...","improvedBody":"...","beforeScore":50,"afterScore":85}`;
     try {
       const text = await callAI(prompt, req.session.user.id);
       const parsed = safeParseJSON(text);
@@ -1266,8 +1260,7 @@ app.delete('/api/recipients/:id', authRequired, async (req, res) => {
     cacheDel('recipients:' + req.session.user.id);
     cacheDel('stats:' + req.session.user.id);
     res.json({ ok: true });
-  }
-  catch (e) { res.json({ ok: false, error: e.message }); }
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.post('/api/recipients/bulk-delete', authRequired, async (req, res) => {
   try {
@@ -1313,14 +1306,14 @@ app.get('/api/recipient/:id/history', authRequired, async (req, res) => {
     const openRate = totalSent > 0 ? Math.round((totalOpened / totalSent) * 100) : 0;
     res.json({
       ok: true,
-      recipient: { id: recipientId, email: rec.email, company: rec.company || '', status: rec.status || 'Pending', everOpened: rec.everOpened === true, openedAt: rec.openedAt || null },
+      recipient: { id: recipientId, email: rec.email, company: rec.company || '', status: rec.status || 'Pending', everOpened: rec.everOpened === true, openedAt: rec.openedAt || null, templateId: rec.templateId || '' },
       stats: { totalSent, totalOpened, totalNotOpened, openRate, firstSent: allEmails.length ? allEmails[allEmails.length - 1].sentAt : null, lastSent: allEmails.length ? allEmails[0].sentAt : null },
       emails: allEmails
     });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ALL-TIME Gmail sent (NO LIMIT, cached for 5 min)
+// ALL-TIME Gmail history WITH DEDUPE (removes MailFlow-sent duplicates)
 app.get('/api/recipient/:id/gmail-history', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -1335,10 +1328,35 @@ app.get('/api/recipient/:id/gmail-history', authRequired, async (req, res) => {
     if (!recSnap.exists) return res.json({ ok: false, error: 'Recipient not found' });
     const u = await getUserData(uid);
     if (!u.imapEnabled || !u.imapAppPassword) return res.json({ ok: false, error: 'Please connect your Inbox (IMAP) first', needsImap: true });
-    // 0 = unlimited
     const result = await fetchImapSentForRecipient(u.email, u.imapAppPassword, recSnap.data().email, 0);
     if (!result.ok) return res.json({ ok: false, error: result.error });
-    const out = { ok: true, emails: result.emails || [], count: (result.emails || []).length, fetchedAt: new Date().toISOString() };
+
+    // DEDUPE against MailFlow sends (same subject + same minute = same email)
+    const mfLogs = await db.collection('users').doc(uid).collection('emailLog').where('recipientId', '==', recipientId).get();
+    const mfKeys = new Set();
+    mfLogs.forEach(d => {
+      const da = d.data();
+      const dt = da.sentAt && da.sentAt._seconds ? da.sentAt._seconds * 1000 : new Date(da.sentAt || 0).getTime();
+      const key = (da.subject || '').substring(0, 60).toLowerCase().trim() + '|' + Math.floor(dt / 60000);
+      mfKeys.add(key);
+    });
+    const allGmail = result.emails || [];
+    const deduped = allGmail.filter(e => {
+      if (!e.date) return true;
+      const dt = new Date(e.date).getTime();
+      const key = (e.subject || '').substring(0, 60).toLowerCase().trim() + '|' + Math.floor(dt / 60000);
+      return !mfKeys.has(key);
+    });
+    const duplicatesRemoved = allGmail.length - deduped.length;
+
+    const out = {
+      ok: true,
+      emails: deduped,
+      count: deduped.length,
+      duplicatesRemoved: duplicatesRemoved,
+      totalInGmail: allGmail.length,
+      fetchedAt: new Date().toISOString()
+    };
     cacheSet(ck, out, CACHE_TTL.history);
     res.json(out);
   } catch (e) { res.json({ ok: false, error: e.message }); }
@@ -1409,7 +1427,7 @@ app.post('/api/profile/picture', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ PROFILE ============ */
+/* ============ PROFILE / AI PROFILE ============ */
 app.get('/api/profile', authRequired, async (req, res) => {
   try {
     const d = await getUserData(req.session.user.id);
@@ -1511,8 +1529,7 @@ app.get('/api/stats', authRequired, async (req, res) => {
     const s = await db.collection('users').doc(uid).collection('recipients').where('status', 'in', ['Sent', 'Opened']).count().get();
     const p = await db.collection('users').doc(uid).collection('recipients').where('status', '==', 'Pending').count().get();
     const ts = await db.collection('users').doc(uid).collection('emailLog').count().get();
-    const openLogs = await db.collection('users').doc(uid).collection('emailLog')
-      .where('openedAt', '!=', null).limit(5000).get();
+    const openLogs = await db.collection('users').doc(uid).collection('emailLog').where('openedAt', '!=', null).limit(5000).get();
     const openedSet = new Set();
     openLogs.forEach(d => { const r = d.data().recipientId; if (r) openedSet.add(r); });
     const out = { ok: true, stats: { total: t.data().count, sent: s.data().count, opened: openedSet.size, pending: p.data().count, totalSends: ts.data().count } };
@@ -1556,7 +1573,7 @@ app.get('/api/my-emails', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ SEND ============ */
+/* ============ SEND (with template override + validation) ============ */
 async function sendOne(userId, userEmail, recipientId, options) {
   options = options || {};
   const u = await getUserData(userId);
@@ -1579,10 +1596,23 @@ async function sendOne(userId, userEmail, recipientId, options) {
     const mg = delayMs + jitter;
     if (el < mg) await sleep(mg - el);
   }
-  let t;
-  if (rec.templateId) { const tt = await db.collection('users').doc(userId).collection('templates').doc(rec.templateId).get(); if (tt.exists) t = tt.data(); }
-  if (!t) { const ts = await db.collection('users').doc(userId).collection('templates').limit(1).get(); if (!ts.empty) t = ts.docs[0].data(); }
-  if (!t) throw new Error('No template available');
+
+  // Template resolution: override > recipient's template > first template
+  let t = null;
+  const templateIdToUse = options.templateId || rec.templateId;
+  if (templateIdToUse) {
+    const tt = await db.collection('users').doc(userId).collection('templates').doc(templateIdToUse).get();
+    if (tt.exists) t = tt.data();
+    else if (options.templateId) throw new Error('Selected template was not found. Please pick another one.');
+  }
+  if (!t) {
+    const ts = await db.collection('users').doc(userId).collection('templates').limit(1).get();
+    if (!ts.empty) t = ts.docs[0].data();
+  }
+  if (!t) throw new Error('No template available. Please create a template first.');
+  if (!t.subject || !String(t.subject).trim()) throw new Error('Template "' + (t.name || 'Untitled') + '" has no subject. Please edit the template.');
+  if (!t.body || !String(t.body).trim()) throw new Error('Template "' + (t.name || 'Untitled') + '" has no body. Please edit the template.');
+
   const recipientName = (rec.company || '').split(' ')[0] || 'there';
   const recipientCompany = rec.company || '';
   const recipientEmail = rec.email || '';
@@ -1590,12 +1620,15 @@ async function sendOne(userId, userEmail, recipientId, options) {
   let body = t.body || '';
   const replacements = { '{name}': recipientName, '{company}': recipientCompany, '{email}': recipientEmail, '{firstName}': recipientName };
   for (const [k, v] of Object.entries(replacements)) { subject = subject.split(k).join(v); body = body.split(k).join(v); }
+
   let sigHtml = '';
-  if (u.signature && options.includeSignature !== false) {
+  const hasSignature = !!(u.signature && u.signature.trim().length > 20);
+  if (hasSignature && options.includeSignature !== false) {
     let sig = u.signature;
     if (options.includeLogo === false) sig = sig.replace(/<td[^>]*>\s*<img[\s\S]*?<\/td>/gi, '').replace(/<img[^>]*>/gi, '').replace(/<td[^>]*>\s*<\/td>/gi, '');
     sigHtml = '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">' + sig + '</div>';
   }
+
   const bodyHtml = body.replace(/\n/g, '<br>');
   const fullHtml = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">' + bodyHtml + sigHtml + '</div>';
   const lp = localAnalysis(subject, fullHtml);
@@ -1614,7 +1647,7 @@ async function sendOne(userId, userEmail, recipientId, options) {
       }
     }
   }
-  const logRef = await db.collection('users').doc(userId).collection('emailLog').add({ recipientId, recipientEmail: rec.email, company: rec.company || '', subject, sentAt: new Date(), attachmentsCount: atts.length, attachmentNames: attNames, aiPrediction: lp.prediction, aiScore: lp.score, aiInboxProb: lp.inboxProbability, sendTrackToken, openedAt: null });
+  const logRef = await db.collection('users').doc(userId).collection('emailLog').add({ recipientId, recipientEmail: rec.email, company: rec.company || '', subject, sentAt: new Date(), attachmentsCount: atts.length, attachmentNames: attNames, aiPrediction: lp.prediction, aiScore: lp.score, aiInboxProb: lp.inboxProbability, sendTrackToken, openedAt: null, hasSignature: hasSignature, templateName: t.name || '' });
   const logId = logRef.id;
   const trackUrl = BACKEND_URL + '/track/' + logId + '?u=' + userId + '&t=' + sendTrackToken;
   const pix = '<img src="' + trackUrl + '" width="1" height="1" alt="" style="border:0;display:block;width:1px;height:1px">';
@@ -1634,7 +1667,6 @@ async function sendOne(userId, userEmail, recipientId, options) {
   const sr = db.collection('users').doc(userId).collection('stats').doc(todayKey);
   const sd2 = await sr.get();
   await sr.set({ sent: ((sd2.exists ? sd2.data().sent : 0) + 1), updatedAt: new Date() }, { merge: true });
-  // Clear caches after send
   cacheDel('quota:' + userId);
   cacheDel('stats:' + userId);
   cacheDel('recipients:' + userId);
@@ -1643,7 +1675,15 @@ async function sendOne(userId, userEmail, recipientId, options) {
 
 app.post('/api/send', authRequired, async (req, res) => {
   try {
-    const e = await sendOne(req.session.user.id, req.session.user.email, req.body.recipientId, { force: req.body.force === true, skipDelay: req.body.skipDelay === true, includeSignature: req.body.includeSignature !== false, includeLogo: req.body.includeLogo !== false, includeAttachments: req.body.includeAttachments !== false, selectedFileIds: req.body.selectedFileIds });
+    const e = await sendOne(req.session.user.id, req.session.user.email, req.body.recipientId, {
+      force: req.body.force === true,
+      skipDelay: req.body.skipDelay === true,
+      includeSignature: req.body.includeSignature !== false,
+      includeLogo: req.body.includeLogo !== false,
+      includeAttachments: req.body.includeAttachments !== false,
+      selectedFileIds: req.body.selectedFileIds,
+      templateId: req.body.templateId || null
+    });
     res.json({ ok: true, email: e });
   } catch (e) {
     if (e.code === 'QUIET_HOURS') return res.json({ ok: false, error: 'QUIET_HOURS', quietEnd: e.quietEnd });
@@ -1653,7 +1693,15 @@ app.post('/api/send', authRequired, async (req, res) => {
 });
 app.post('/api/resend', authRequired, async (req, res) => {
   try {
-    const e = await sendOne(req.session.user.id, req.session.user.email, req.body.recipientId, { force: true, skipDelay: true, includeSignature: req.body.includeSignature !== false, includeLogo: req.body.includeLogo !== false, includeAttachments: req.body.includeAttachments !== false, selectedFileIds: req.body.selectedFileIds });
+    const e = await sendOne(req.session.user.id, req.session.user.email, req.body.recipientId, {
+      force: true,
+      skipDelay: true,
+      includeSignature: req.body.includeSignature !== false,
+      includeLogo: req.body.includeLogo !== false,
+      includeAttachments: req.body.includeAttachments !== false,
+      selectedFileIds: req.body.selectedFileIds,
+      templateId: req.body.templateId || null
+    });
     res.json({ ok: true, email: e });
   } catch (e) {
     if (e.code === 'DAILY_LIMIT_REACHED') return res.json({ ok: false, error: 'DAILY_LIMIT_REACHED', limit: e.limit });
@@ -1738,9 +1786,7 @@ app.post('/api/auto-send-check', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ QUOTA (REAL GMAIL + MAILFLOW) ============
-   Real Gmail daily sent count via IMAP Sent folder + MailFlow's own send count.
-   Cached 90s to avoid hammering IMAP on every request. */
+/* ============ QUOTA (REAL GMAIL + MAILFLOW) ============ */
 app.get('/api/quota', authRequired, async (req, res) => {
   try {
     const userId = req.session.user.id;
@@ -1758,10 +1804,11 @@ app.get('/api/quota', authRequired, async (req, res) => {
     const mailflowSent = sd.exists ? (sd.data().sent || 0) : 0;
     const limit = u.dailyLimit || 500;
 
-    // Real Gmail daily count via IMAP (only if IMAP enabled)
     let gmailSentToday = null;
     let gmailSource = 'unavailable';
+    let imapAvailable = false;
     if (u.imapEnabled && u.imapAppPassword) {
+      imapAvailable = true;
       try {
         const g = await fetchGmailSentTodayCount(u.email, u.imapAppPassword);
         if (g.ok) {
@@ -1771,8 +1818,6 @@ app.get('/api/quota', authRequired, async (req, res) => {
       } catch (e) { /* silent */ }
     }
 
-    // Total = max(mailflow, gmail) — because MailFlow sends are also in Gmail Sent folder.
-    // If both available, use gmailSentToday as it's the real count.
     let totalSentToday = mailflowSent;
     if (gmailSentToday !== null) {
       totalSentToday = Math.max(mailflowSent, gmailSentToday);
@@ -1785,6 +1830,7 @@ app.get('/api/quota', authRequired, async (req, res) => {
       mailflowSent: mailflowSent,
       gmailSent: gmailSentToday,
       gmailSource: gmailSource,
+      imapAvailable: imapAvailable,
       limit: limit,
       remaining: remaining,
       timestamp: new Date().toISOString(),
