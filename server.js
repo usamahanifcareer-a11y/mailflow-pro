@@ -19,7 +19,7 @@ const DEFAULT_SEND_DELAY = 20;
 const IS_VERCEL = !!process.env.VERCEL;
 const CRON_SECRET = process.env.CRON_SECRET || '';
 const BACKEND_URL = process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org';
-const APP_VERSION = '1.5.0';
+const APP_VERSION = '1.6.0';
 
 if (!process.env.SESSION_SECRET) { console.error('FATAL: SESSION_SECRET missing!'); process.exit(1); }
 if (!process.env.ENCRYPTION_KEY) { console.error('FATAL: ENCRYPTION_KEY missing!'); process.exit(1); }
@@ -27,6 +27,32 @@ if (!process.env.ENCRYPTION_KEY) { console.error('FATAL: ENCRYPTION_KEY missing!
 const ENC_KEY = crypto.createHash('sha256').update(process.env.ENCRYPTION_KEY).digest();
 const SESSION_DAYS_SHORT = 3;
 const SESSION_DAYS_LONG  = 30;
+
+// ============ FAST CACHE (per-user, prevents lag) ============
+const userCache = new Map();
+const CACHE_TTL = {
+  quota: 90 * 1000,        // 90s - Gmail sent today count
+  history: 5 * 60 * 1000,  // 5 min - Gmail sent history per recipient
+  status: 30 * 1000        // 30s - connection status
+};
+function cacheGet(key) {
+  const e = userCache.get(key);
+  if (!e) return null;
+  if (Date.now() - e.time > e.ttl) { userCache.delete(key); return null; }
+  return e.value;
+}
+function cacheSet(key, value, ttl) {
+  if (userCache.size > 500) {
+    const firstKey = userCache.keys().next().value;
+    userCache.delete(firstKey);
+  }
+  userCache.set(key, { value, time: Date.now(), ttl });
+}
+function cacheDel(prefix) {
+  for (const k of userCache.keys()) {
+    if (k.startsWith(prefix)) userCache.delete(k);
+  }
+}
 
 function encrypt(text) {
   if (!text) return text;
@@ -520,9 +546,31 @@ async function fetchImapBody(email, appPassword, folder, uid) {
   } catch (e) { try { await client.close(); } catch (err) {} return { ok: false, error: e.message }; }
 }
 
-// ============ ALL-TIME GMAIL SENT HISTORY (Real-time, paginated, accurate) ============
+// ============ REAL-TIME GMAIL DAILY SENT COUNT (from Sent folder) ============
+async function fetchGmailSentTodayCount(email, appPassword) {
+  const client = createImapClient(email, appPassword);
+  try {
+    await client.connect();
+    let opened = false;
+    const folders = ['[Gmail]/Sent Mail', '[Gmail]/Sent', 'Sent', 'Sent Items'];
+    for (const f of folders) {
+      try { await client.mailboxOpen(f); opened = true; break; } catch (e) {}
+    }
+    if (!opened) { await client.logout(); return { ok: false, error: 'No Sent folder' }; }
+    // Build today's date (search by SINCE today midnight)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let uids = [];
+    try {
+      uids = await client.search({ since: today }, { uid: true });
+    } catch (e) { uids = []; }
+    await client.logout();
+    return { ok: true, count: uids ? uids.length : 0, since: today.toISOString() };
+  } catch (e) { try { await client.close(); } catch (err) {} return { ok: false, error: e.message }; }
+}
+
+// ============ ALL-TIME GMAIL SENT HISTORY - NO LIMIT ============
 async function fetchImapSentForRecipient(email, appPassword, recipientEmail, maxResults) {
-  maxResults = maxResults || 500;
   const client = createImapClient(email, appPassword);
   const results = [];
   try {
@@ -534,8 +582,8 @@ async function fetchImapSentForRecipient(email, appPassword, recipientEmail, max
     }
     if (!opened) { await client.logout(); return { ok: false, error: 'No Sent folder found' }; }
     const target = String(recipientEmail || '').toLowerCase().trim();
-    if (!target) { await client.logout(); return { ok: true, emails: [] }; }
-    // Multiple search strategies for maximum accuracy
+    if (!target) { await client.logout(); return { ok: true, emails: [], total: 0 }; }
+
     let searchRes = [];
     const searchStrategies = [
       { to: target },
@@ -546,16 +594,29 @@ async function fetchImapSentForRecipient(email, appPassword, recipientEmail, max
       try {
         const res = await client.search(strat, { uid: true });
         if (res && res.length > searchRes.length) searchRes = res;
-        if (searchRes.length >= maxResults) break;
       } catch (e) {}
     }
-    if (!searchRes || !searchRes.length) { await client.logout(); return { ok: true, emails: [] }; }
-    const uids = searchRes.slice(-maxResults);
-    // Batch fetch envelopes
-    const fetched = [];
-    for await (const msg of client.fetch(uids.join(','), { envelope: true, flags: true, uid: true }, { uid: true })) {
-      fetched.push(msg);
+
+    if (!searchRes || !searchRes.length) { await client.logout(); return { ok: true, emails: [], total: 0 }; }
+
+    // NO LIMIT — fetch everything
+    let uids = searchRes;
+    if (maxResults && maxResults > 0 && uids.length > maxResults) {
+      uids = uids.slice(-maxResults);
     }
+
+    // Fetch in chunks of 500 to prevent memory issues
+    const CHUNK = 500;
+    const fetched = [];
+    for (let i = 0; i < uids.length; i += CHUNK) {
+      const chunk = uids.slice(i, i + CHUNK);
+      try {
+        for await (const msg of client.fetch(chunk.join(','), { envelope: true, flags: true, uid: true }, { uid: true })) {
+          fetched.push(msg);
+        }
+      } catch (e) {}
+    }
+
     for (const msg of fetched) {
       try {
         const env = msg.envelope || {};
@@ -577,7 +638,7 @@ async function fetchImapSentForRecipient(email, appPassword, recipientEmail, max
     }
     await client.logout();
     results.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-    return { ok: true, emails: results };
+    return { ok: true, emails: results, total: results.length, searched: searchRes.length };
   } catch (e) { try { await client.close(); } catch (err) {} return { ok: false, error: e.message }; }
 }
 
@@ -688,7 +749,7 @@ async function extractCvFromBuffer(buf, filename, mimeType) {
 
 app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL, version: APP_VERSION, method: 'smtp' }));
 
-/* ============ AUTH (FIXED: Duplicate email prevention) ============ */
+/* ============ AUTH ============ */
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { email, password, name } = req.body || {};
@@ -700,14 +761,11 @@ app.post('/api/auth/register', async (req, res) => {
     const uid = emailUid(emailLower);
     const ip = getClientIP(req);
 
-    // 1. Check banned by uid
     const banned = await db.collection('bannedUsers').doc(uid).get();
     if (banned.exists) return res.json({ ok: false, error: 'This email is suspended', banned: true });
-    // 2. Check banned by IP
     const ipBanned = await db.collection('bannedUsers').where('ip', '==', ip).limit(1).get();
     if (!ipBanned.empty) return res.json({ ok: false, error: 'Your IP is suspended', banned: true });
 
-    // 3. STRICT DUPLICATE CHECK - query by both original + normalized email
     const dupCheck = await db.collection('users').where('email', 'in', [emailLower, normalized]).limit(1).get();
     if (!dupCheck.empty) {
       const existingDoc = dupCheck.docs[0];
@@ -717,7 +775,6 @@ app.post('/api/auth/register', async (req, res) => {
       }
     }
 
-    // 4. Check the uid doc directly (belt & suspenders)
     const existing = await db.collection('users').doc(uid).get();
     if (existing.exists && existing.data().passwordHash) {
       return res.json({ ok: false, error: 'This email is already registered. Please login instead.' });
@@ -763,10 +820,8 @@ app.post('/api/auth/login', async (req, res) => {
     const normalized = normalizeEmail(emailLower);
     let uid = emailUid(emailLower);
 
-    // If primary uid fails, try alternate uid forms (migration safety)
     let userSnap = await db.collection('users').doc(uid).get();
     if (!userSnap.exists) {
-      // Try raw email-based uid (for legacy accounts)
       const altUid = crypto.createHash('md5').update(emailLower).digest('hex');
       if (altUid !== uid) {
         const altSnap = await db.collection('users').doc(altUid).get();
@@ -774,7 +829,6 @@ app.post('/api/auth/login', async (req, res) => {
       }
     }
     if (!userSnap.exists) {
-      // Query by normalized email field
       const q = await db.collection('users').where('emailNormalized', '==', normalized).limit(1).get();
       if (!q.empty) { userSnap = q.docs[0]; uid = q.docs[0].id; }
     }
@@ -853,15 +907,30 @@ app.post('/api/smtp/connect', authRequired, async (req, res) => {
       if (test.ok) { update.imapAppPassword = encrypt(cleanPass); update.imapEnabled = true; update.imapConnectedAt = new Date(); }
     }
     await db.collection('users').doc(req.session.user.id).update(update);
+    cacheDel('quota:' + req.session.user.id);
+    cacheDel('status:' + req.session.user.id);
     res.json({ ok: true, message: 'Gmail connected successfully', imapEnabled: !!update.imapEnabled });
   } catch (e) { res.json({ ok: false, error: 'Connection failed: ' + e.message }); }
 });
 app.get('/api/smtp/status', authRequired, async (req, res) => {
-  try { const u = await getUserData(req.session.user.id); res.json({ ok: true, connected: !!u.smtpEnabled, connectedAt: u.smtpConnectedAt || null, imapEnabled: !!u.imapEnabled }); }
+  try {
+    const ck = 'status:' + req.session.user.id;
+    const cached = cacheGet(ck);
+    if (cached) return res.json(cached);
+    const u = await getUserData(req.session.user.id);
+    const out = { ok: true, connected: !!u.smtpEnabled, connectedAt: u.smtpConnectedAt || null, imapEnabled: !!u.imapEnabled };
+    cacheSet(ck, out, CACHE_TTL.status);
+    res.json(out);
+  }
   catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.post('/api/smtp/disconnect', authRequired, async (req, res) => {
-  try { await db.collection('users').doc(req.session.user.id).update({ smtpAppPassword: null, smtpEnabled: false }); res.json({ ok: true }); }
+  try {
+    await db.collection('users').doc(req.session.user.id).update({ smtpAppPassword: null, smtpEnabled: false });
+    cacheDel('quota:' + req.session.user.id);
+    cacheDel('status:' + req.session.user.id);
+    res.json({ ok: true });
+  }
   catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -881,6 +950,8 @@ app.post('/api/imap/connect', authRequired, async (req, res) => {
     const test = await testImapConnection(req.session.user.email, cleanPass);
     if (!test.ok) return res.json({ ok: false, error: 'Connection failed: ' + test.error });
     await db.collection('users').doc(req.session.user.id).update({ imapAppPassword: encrypt(cleanPass), imapEnabled: true, imapConnectedAt: new Date() });
+    cacheDel('quota:' + req.session.user.id);
+    cacheDel('status:' + req.session.user.id);
     res.json({ ok: true, message: 'Inbox connected successfully' });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
@@ -889,7 +960,11 @@ app.get('/api/imap/status', authRequired, async (req, res) => {
   catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.post('/api/imap/disconnect', authRequired, async (req, res) => {
-  try { await db.collection('users').doc(req.session.user.id).update({ imapAppPassword: null, imapEnabled: false }); res.json({ ok: true }); }
+  try {
+    await db.collection('users').doc(req.session.user.id).update({ imapAppPassword: null, imapEnabled: false });
+    cacheDel('quota:' + req.session.user.id);
+    res.json({ ok: true });
+  }
   catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.post('/api/imap/inbox', authRequired, async (req, res) => {
@@ -956,6 +1031,7 @@ app.post('/api/inbox/reply', authRequired, async (req, res) => {
     if (inReplyTo) mailOptions.inReplyTo = inReplyTo;
     if (references) mailOptions.references = references;
     const info = await transporter.sendMail(mailOptions);
+    cacheDel('quota:' + uid);
     await db.collection('users').doc(uid).collection('replyLog').add({ to, subject, body, sentAt: new Date(), messageId: info.messageId || '', inReplyTo: inReplyTo || '' });
     res.json({ ok: true, id: info.messageId });
   } catch (e) { res.json({ ok: false, error: e.message }); }
@@ -1049,7 +1125,7 @@ app.post('/api/ai/extract-cv', authRequired, async (req, res) => {
       if (buf.length > 900 * 1024) return res.json({ ok: false, error: 'Maximum file size is 900KB' });
     } else return res.json({ ok: false, error: 'No file provided' });
     const text = await extractCvFromBuffer(buf, fname, mime);
-    if (!text || text.replace(/\s/g, '').length < 30 || looksLikeBinaryCv(text)) return res.json({ ok: false, error: 'Could not read this CV. Please upload a text-based PDF, DOCX, or TXT file. If it is a scanned image, please paste the text manually.' });
+    if (!text || text.replace(/\s/g, '').length < 30 || looksLikeBinaryCv(text)) return res.json({ ok: false, error: 'Could not read this CV. Please upload a text-based PDF, DOCX, or TXT file.' });
     res.json({ ok: true, text: text.substring(0, 20000), filename: fname, chars: text.length });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
@@ -1067,7 +1143,7 @@ app.post('/api/ai/analyze-cv', authRequired, async (req, res) => {
             text = await extractCvFromBuffer(Buffer.from(meta.base64, 'base64'), meta.name || 'cv', meta.mimeType || '');
           }
         }
-      } catch (e) { console.log('CV fetch err:', e.message); }
+      } catch (e) {}
     }
     if (looksLikeBinaryCv(text)) return res.json({ ok: false, error: 'CV not readable. Please upload a text-based PDF or DOCX file.' });
     if (!text || text.replace(/\s/g, '').length < 30) return res.json({ ok: false, error: 'CV text is too short or empty.' });
@@ -1153,11 +1229,16 @@ app.delete('/api/templates/:id', authRequired, async (req, res) => {
 app.get('/api/recipients', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
+    const ck = 'recipients:' + uid;
+    const cached = cacheGet(ck);
+    if (cached) return res.json(cached);
     const s = await db.collection('users').doc(uid).collection('recipients').orderBy('createdAt', 'desc').limit(1000).get();
     const ls = await db.collection('users').doc(uid).collection('emailLog').get();
     const c = {}; ls.forEach(d => { const r = d.data().recipientId; c[r] = (c[r] || 0) + 1; });
     let l = []; s.forEach(d => { const da = d.data(); l.push({ id: d.id, ...da, sendCount: c[d.id] || 0 }); });
-    res.json({ ok: true, recipients: l });
+    const out = { ok: true, recipients: l };
+    cacheSet(ck, out, 15 * 1000);
+    res.json(out);
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.post('/api/recipients', authRequired, async (req, res) => {
@@ -1174,11 +1255,18 @@ app.post('/api/recipients', authRequired, async (req, res) => {
       a++;
     }
     await batch.commit();
+    cacheDel('recipients:' + req.session.user.id);
+    cacheDel('stats:' + req.session.user.id);
     res.json({ ok: true, added: a });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.delete('/api/recipients/:id', authRequired, async (req, res) => {
-  try { await db.collection('users').doc(req.session.user.id).collection('recipients').doc(req.params.id).delete(); res.json({ ok: true }); }
+  try {
+    await db.collection('users').doc(req.session.user.id).collection('recipients').doc(req.params.id).delete();
+    cacheDel('recipients:' + req.session.user.id);
+    cacheDel('stats:' + req.session.user.id);
+    res.json({ ok: true });
+  }
   catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.post('/api/recipients/bulk-delete', authRequired, async (req, res) => {
@@ -1189,6 +1277,8 @@ app.post('/api/recipients/bulk-delete', authRequired, async (req, res) => {
     const r = db.collection('users').doc(req.session.user.id).collection('recipients');
     ids.forEach(id => b.delete(r.doc(id)));
     await b.commit();
+    cacheDel('recipients:' + req.session.user.id);
+    cacheDel('stats:' + req.session.user.id);
     res.json({ ok: true, deleted: ids.length });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
@@ -1230,17 +1320,27 @@ app.get('/api/recipient/:id/history', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ALL-TIME Gmail sent (real-time)
+// ALL-TIME Gmail sent (NO LIMIT, cached for 5 min)
 app.get('/api/recipient/:id/gmail-history', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
-    const recSnap = await db.collection('users').doc(uid).collection('recipients').doc(req.params.id).get();
+    const recipientId = req.params.id;
+    const force = req.query.force === '1';
+    const ck = 'history:' + uid + ':' + recipientId;
+    if (!force) {
+      const cached = cacheGet(ck);
+      if (cached) return res.json(cached);
+    }
+    const recSnap = await db.collection('users').doc(uid).collection('recipients').doc(recipientId).get();
     if (!recSnap.exists) return res.json({ ok: false, error: 'Recipient not found' });
     const u = await getUserData(uid);
     if (!u.imapEnabled || !u.imapAppPassword) return res.json({ ok: false, error: 'Please connect your Inbox (IMAP) first', needsImap: true });
-    const result = await fetchImapSentForRecipient(u.email, u.imapAppPassword, recSnap.data().email, 500);
+    // 0 = unlimited
+    const result = await fetchImapSentForRecipient(u.email, u.imapAppPassword, recSnap.data().email, 0);
     if (!result.ok) return res.json({ ok: false, error: result.error });
-    res.json({ ok: true, emails: result.emails || [], count: (result.emails || []).length, fetchedAt: new Date().toISOString() });
+    const out = { ok: true, emails: result.emails || [], count: (result.emails || []).length, fetchedAt: new Date().toISOString() };
+    cacheSet(ck, out, CACHE_TTL.history);
+    res.json(out);
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -1401,22 +1501,24 @@ app.post('/api/prefs', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// FIXED STATS: Compute "Opened" from emailLog for accuracy
 app.get('/api/stats', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
+    const ck = 'stats:' + uid;
+    const cached = cacheGet(ck);
+    if (cached) return res.json(cached);
     const t = await db.collection('users').doc(uid).collection('recipients').count().get();
     const s = await db.collection('users').doc(uid).collection('recipients').where('status', 'in', ['Sent', 'Opened']).count().get();
     const p = await db.collection('users').doc(uid).collection('recipients').where('status', '==', 'Pending').count().get();
     const ts = await db.collection('users').doc(uid).collection('emailLog').count().get();
-    // For accurate opened count, use emailLog (source of truth)
     const openLogs = await db.collection('users').doc(uid).collection('emailLog')
       .where('openedAt', '!=', null).limit(5000).get();
     const openedSet = new Set();
     openLogs.forEach(d => { const r = d.data().recipientId; if (r) openedSet.add(r); });
-    res.json({ ok: true, stats: { total: t.data().count, sent: s.data().count, opened: openedSet.size, pending: p.data().count, totalSends: ts.data().count } });
+    const out = { ok: true, stats: { total: t.data().count, sent: s.data().count, opened: openedSet.size, pending: p.data().count, totalSends: ts.data().count } };
+    cacheSet(ck, out, 15 * 1000);
+    res.json(out);
   } catch (e) {
-    // Fallback if openedAt filter fails (Firestore quirk with != null)
     try {
       const uid = req.session.user.id;
       const t = await db.collection('users').doc(uid).collection('recipients').count().get();
@@ -1532,6 +1634,10 @@ async function sendOne(userId, userEmail, recipientId, options) {
   const sr = db.collection('users').doc(userId).collection('stats').doc(todayKey);
   const sd2 = await sr.get();
   await sr.set({ sent: ((sd2.exists ? sd2.data().sent : 0) + 1), updatedAt: new Date() }, { merge: true });
+  // Clear caches after send
+  cacheDel('quota:' + userId);
+  cacheDel('stats:' + userId);
+  cacheDel('recipients:' + userId);
   return rec.email;
 }
 
@@ -1572,6 +1678,8 @@ app.get('/track/:id', async (req, res) => {
               const rec = await db.collection('users').doc(u).collection('recipients').doc(recId).get();
               if (rec.exists) await db.collection('users').doc(u).collection('recipients').doc(recId).update({ status: 'Opened', openedAt: new Date(), everOpened: true });
             }
+            cacheDel('stats:' + u);
+            cacheDel('recipients:' + u);
           }
         }
       }
@@ -1630,17 +1738,60 @@ app.post('/api/auto-send-check', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ QUOTA ============ */
+/* ============ QUOTA (REAL GMAIL + MAILFLOW) ============
+   Real Gmail daily sent count via IMAP Sent folder + MailFlow's own send count.
+   Cached 90s to avoid hammering IMAP on every request. */
 app.get('/api/quota', authRequired, async (req, res) => {
   try {
     const userId = req.session.user.id;
+    const force = req.query.force === '1';
+    const ck = 'quota:' + userId;
+    if (!force) {
+      const cached = cacheGet(ck);
+      if (cached) return res.json(cached);
+    }
     const u = await getUserData(userId);
     if (!u || !u.smtpEnabled) return res.json({ ok: false, error: 'Gmail not connected', noTokens: true });
+
     const today = new Date().toISOString().split('T')[0];
     const sd = await db.collection('users').doc(userId).collection('stats').doc(today).get();
-    const sent = sd.exists ? (sd.data().sent || 0) : 0;
+    const mailflowSent = sd.exists ? (sd.data().sent || 0) : 0;
     const limit = u.dailyLimit || 500;
-    res.json({ ok: true, sent, limit, remaining: Math.max(0, limit - sent), timestamp: new Date().toISOString(), live: true });
+
+    // Real Gmail daily count via IMAP (only if IMAP enabled)
+    let gmailSentToday = null;
+    let gmailSource = 'unavailable';
+    if (u.imapEnabled && u.imapAppPassword) {
+      try {
+        const g = await fetchGmailSentTodayCount(u.email, u.imapAppPassword);
+        if (g.ok) {
+          gmailSentToday = g.count;
+          gmailSource = 'imap_sent_folder';
+        }
+      } catch (e) { /* silent */ }
+    }
+
+    // Total = max(mailflow, gmail) — because MailFlow sends are also in Gmail Sent folder.
+    // If both available, use gmailSentToday as it's the real count.
+    let totalSentToday = mailflowSent;
+    if (gmailSentToday !== null) {
+      totalSentToday = Math.max(mailflowSent, gmailSentToday);
+    }
+
+    const remaining = Math.max(0, limit - totalSentToday);
+    const out = {
+      ok: true,
+      sent: totalSentToday,
+      mailflowSent: mailflowSent,
+      gmailSent: gmailSentToday,
+      gmailSource: gmailSource,
+      limit: limit,
+      remaining: remaining,
+      timestamp: new Date().toISOString(),
+      live: gmailSentToday !== null
+    };
+    cacheSet(ck, out, CACHE_TTL.quota);
+    res.json(out);
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -1772,6 +1923,7 @@ app.post('/api/test/send', adminRequired, async (req, res) => {
       const wasOpened = rec.exists && rec.data().everOpened === true;
       await db.collection('users').doc(uid).collection('testRecipients').doc(recId).update({ status: 'Sent', lastSentAt: new Date(), sentAt: new Date(), everOpened: wasOpened });
     }
+    cacheDel('quota:' + uid);
     res.json({ ok: true, email: targetEmail });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
@@ -1827,6 +1979,7 @@ app.post('/api/test/automation/run', adminRequired, async (req, res) => {
     }
     const upd = await getUserData(uid);
     await db.collection('users').doc(uid).update({ testLastAutoRun: new Date(), testTotalAutoSent: (upd.testTotalAutoSent || 0) + sent });
+    cacheDel('quota:' + uid);
     res.json({ ok: true, sent, failed });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
@@ -2079,5 +2232,5 @@ app.use((req, res, next) => {
 if (process.env.VERCEL) {
   module.exports = app;
 } else {
-  app.listen(PORT, () => console.log('✅ MailFlow Pro v' + APP_VERSION + ' (SMTP) running on port ' + PORT));
+  app.listen(PORT, () => console.log('✅ MailFlow Pro v' + APP_VERSION + ' running on port ' + PORT));
 }

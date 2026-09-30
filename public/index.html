@@ -10,12 +10,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="description" content="AI-powered email automation. Send personalized emails at scale from your own Gmail.">
 <title>MailFlow Pro — AI Email Automation</title>
-
 <link rel="manifest" href='data:application/manifest+json,{"name":"MailFlow Pro","short_name":"MailFlow","start_url":"/","scope":"/","display":"standalone","orientation":"portrait","background_color":"%23060912","theme_color":"%23060912","description":"AI-powered email automation","icons":[{"src":"data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 192 192%27%3E%3Cdefs%3E%3ClinearGradient id=%27g%27 x1=%270%27 y1=%270%27 x2=%271%27 y2=%271%27%3E%3Cstop offset=%270%27 stop-color=%27%2338bdf8%27/%3E%3Cstop offset=%27.5%27 stop-color=%27%236366f1%27/%3E%3Cstop offset=%271%27 stop-color=%27%23a78bfa%27/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width=%27192%27 height=%27192%27 rx=%2740%27 fill=%27url(%23g)%27/%3E%3Cpath d=%27M42 66 L96 102 L150 66 L150 138 Q150 144 144 144 L48 144 Q42 144 42 138 Z%27 fill=%27%23fff%27/%3E%3C/svg%3E","sizes":"192x192","type":"image/svg+xml"}]}'>
-
 <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
 <script defer src="/_vercel/insights/script.js"></script>
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
@@ -36,7 +33,6 @@ button,input,textarea,select{font-family:inherit;font-size:16px}
 select,option{background-color:#0a0e1a!important;color:#e2e8f0!important}
 select option{background-color:#0a0e1a!important;color:#e2e8f0!important}
 select:focus{outline:none;border-color:#38bdf8!important}
-/* AUTH */
 .auth-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;position:relative;z-index:1}
 .auth-card{background:rgba(15,23,42,.78);backdrop-filter:blur(30px);padding:44px 34px;border-radius:24px;width:100%;max-width:440px;box-shadow:0 32px 100px rgba(0,0,0,.85);border:1px solid rgba(51,65,85,.6);text-align:center}
 @media(max-width:480px){.auth-card{padding:32px 22px}}
@@ -52,7 +48,6 @@ select:focus{outline:none;border-color:#38bdf8!important}
 .auth-form .field label{display:block;font-size:10px;color:var(--text2);margin-bottom:6px;text-transform:uppercase;font-weight:700;letter-spacing:.5px}
 .auth-form .field input{width:100%;background:#0a0e1a!important;color:#e2e8f0!important;border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:15px;outline:none;transition:.2s}
 .auth-form .field input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.15)}
-.auth-form .field input:-webkit-autofill{-webkit-box-shadow:0 0 0 30px #0a0e1a inset!important;-webkit-text-fill-color:#e2e8f0!important;transition:background-color 9999s}
 .pw-wrap{position:relative;display:flex;align-items:stretch}
 .pw-wrap input{flex:1;padding-right:48px!important}
 .pw-toggle{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:#94a3b8;font-size:18px;cursor:pointer;padding:8px 10px;border-radius:8px;transition:.2s;line-height:1;display:flex;align-items:center;justify-content:center;height:38px;width:38px}
@@ -66,7 +61,6 @@ select:focus{outline:none;border-color:#38bdf8!important}
 .auth-legal{margin-top:20px;font-size:11px;color:var(--text3)}
 .auth-legal a{color:var(--cyan);text-decoration:none}
 .notice-banner{background:linear-gradient(135deg,rgba(56,189,248,.1),rgba(168,85,247,.08));border:1px solid rgba(56,189,248,.3);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#7dd3fc;line-height:1.6}
-/* TOPBAR */
 .topbar{background:rgba(10,14,26,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1000;gap:8px;flex-wrap:wrap}
 .logo-top{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:800;white-space:nowrap}
 .logo-top .mini-logo{width:34px;height:34px;filter:drop-shadow(0 4px 10px rgba(56,189,248,.5))}
@@ -184,6 +178,8 @@ table.data-table tr.clickable{cursor:pointer}
 .quota-fill.crit{background:linear-gradient(90deg,#ef4444,#991b1b)}
 .quota-live{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--green);font-weight:600}
 .quota-live .dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 1.5s infinite}
+.quota-live.offline{color:var(--text3)}
+.quota-live.offline .dot{background:var(--text3);animation:none}
 .toast{position:fixed;bottom:20px;right:20px;left:20px;background:rgba(15,23,42,.97);backdrop-filter:blur(20px);border:1px solid var(--border);padding:14px 18px;border-radius:12px;font-size:13px;z-index:10000;opacity:0;transform:translateY(20px);transition:.3s;max-width:400px;margin:0 auto;font-weight:500;pointer-events:none;box-shadow:0 8px 32px rgba(0,0,0,.5)}
 .toast.show{opacity:1;transform:translateY(0)}
 .toast.ok{border-left:4px solid var(--green)}
@@ -240,8 +236,6 @@ table.data-table tr.clickable{cursor:pointer}
 .confirm-box .confirm-btn{background:var(--grad-red);color:white}
 .confirm-box .confirm-btn:hover{filter:brightness(1.1)}
 .confirm-box .confirm-btn.primary{background:var(--grad)}
-.warning-banner{background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(239,68,68,.1));border:1px solid rgba(245,158,11,.4);border-radius:10px;padding:10px 12px;margin-top:8px;display:flex;gap:10px;font-size:11px;color:#fcd34d;line-height:1.5}
-.warning-banner .icn{font-size:16px;flex-shrink:0}
 .quiet-banner{display:none;background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(239,68,68,.1));border:1px solid rgba(245,158,11,.4);border-radius:12px;padding:12px 16px;margin-bottom:16px;align-items:center;gap:12px;flex-wrap:wrap}
 .quiet-banner.show{display:flex}
 .quiet-banner .icn{font-size:22px}
@@ -416,14 +410,12 @@ table.data-table tr.clickable{cursor:pointer}
 .imap-same-pass{display:flex;align-items:center;gap:8px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:10px 12px;margin:10px 0;cursor:pointer}
 .imap-same-pass input{accent-color:var(--green);width:16px;height:16px;cursor:pointer}
 .imap-same-pass .txt{font-size:12px;color:#86efac;line-height:1.5}
-/* PRO TIPS */
 .pro-tip-item{display:flex;gap:10px;padding:12px;background:rgba(10,14,26,.5);border-radius:10px;border:1px solid var(--border);margin-bottom:8px;transition:.2s}
 .pro-tip-item:hover{border-color:var(--border2);background:rgba(30,41,59,.5)}
 .pro-tip-item .tip-ico{font-size:20px;flex-shrink:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:rgba(56,189,248,.1);border-radius:8px;border:1px solid rgba(56,189,248,.2)}
 .pro-tip-item .tip-txt{flex:1;min-width:0}
 .pro-tip-item .tip-ttl{font-size:12px;font-weight:700;color:#7dd3fc;margin-bottom:3px}
 .pro-tip-item .tip-dsc{font-size:11px;color:#cbd5e1;line-height:1.6}
-/* MOBILE PWA */
 @media(max-width:768px){
 .maintabs{position:fixed;bottom:0;top:auto;left:0;right:0;padding:6px 8px;z-index:2000;border-top:1px solid var(--border);border-bottom:none;justify-content:space-around;box-shadow:0 -10px 30px rgba(0,0,0,.5);padding-bottom:calc(6px + env(safe-area-inset-bottom));background:rgba(10,14,26,.98)}
 .maintab{flex:1;text-align:center;font-size:10px;padding:8px 4px}
@@ -523,7 +515,7 @@ input,textarea,select{min-height:44px;font-size:16px}
 <svg viewBox="0 0 64 64"><defs><linearGradient id="mfGradM" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset=".5" stop-color="#6366f1"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="14" fill="url(#mfGradM)"/><path d="M14 22 L32 34 L50 22 L50 46 Q50 48 48 48 L16 48 Q14 48 14 46 Z" fill="#fff" opacity=".97"/><path d="M14 22 L32 34 L50 22" stroke="url(#mfGradM)" stroke-width="1.8" fill="none" stroke-linejoin="round"/><circle cx="49" cy="15" r="5.5" fill="#fbbf24"/></svg>
 </div>
 <span class="brand-text">MailFlow Pro</span>
-<span style="font-size:9px;color:var(--text3);font-weight:500;padding:2px 6px;background:rgba(56,189,248,.1);border-radius:6px;margin-left:4px">v1.5.0</span>
+<span style="font-size:9px;color:var(--text3);font-weight:500;padding:2px 6px;background:rgba(56,189,248,.1);border-radius:6px;margin-left:4px">v1.6.0</span>
 </div>
 <div class="user-chip">
 <img id="userAvatar" class="user-avatar" src="" style="display:none" alt="" onclick="openProfileModal()">
@@ -619,14 +611,19 @@ input,textarea,select{min-height:44px;font-size:16px}
 </div>
 
 <div class="panel">
-<h2>📊 Gmail Daily Sending Quota <span class="quota-live"><span class="dot"></span>Live</span></h2>
+<h2>📊 Gmail Daily Sending Quota <span class="quota-live" id="quotaLiveIndicator"><span class="dot"></span>Live</span></h2>
 <div class="info-box">
-<div class="row"><span class="k">Sent today:</span><span class="v" id="quotaSent">—</span></div>
+<div class="row"><span class="k">📤 MailFlow sends today:</span><span class="v" id="quotaMailflowSent">—</span></div>
+<div class="row"><span class="k">📧 Gmail sends today:</span><span class="v" id="quotaGmailSent">—</span></div>
+<div class="row" style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px"><span class="k"><b>Total sent today:</b></span><span class="v" id="quotaSent">—</span></div>
 <div class="row"><span class="k">Daily limit:</span><span class="v" id="quotaLimit">500</span></div>
 <div class="row"><span class="k">Remaining today:</span><span class="v" id="quotaRemaining">—</span></div>
 </div>
 <div class="quota-bar"><div class="quota-fill" id="quotaFill"></div></div>
-<div style="font-size:10px;color:var(--text3);margin-top:8px">⚠️ This reflects MailFlow sends only. Gmail may have additional limits.</div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:8px;flex-wrap:wrap">
+<div style="font-size:10px;color:var(--text3);flex:1" id="quotaHint">⚠️ Gmail sends counted from your Sent folder. MailFlow sends are separate.</div>
+<button class="btn ghost small" onclick="loadQuota(true)" style="font-size:10px;padding:4px 10px" title="Force refresh from Gmail">🔄</button>
+</div>
 </div>
 
 <div class="panel">
@@ -682,7 +679,6 @@ input,textarea,select{min-height:44px;font-size:16px}
 <div id="tplList"></div>
 </div>
 
-<!-- ============ SIGNATURE (Inline) ============ -->
 <div class="panel" id="signaturePanel">
 <h2>✍️ Email Signature <span>Appears in every email</span></h2>
 <div class="upload-area">
@@ -706,7 +702,6 @@ input,textarea,select{min-height:44px;font-size:16px}
 <div class="sig-preview-outer" id="sigPreviewBox"><div style="font-size:11px;color:var(--text2);margin-bottom:8px">📧 Preview</div><div class="sig-preview-canvas" id="sigPreviewContent"></div></div>
 </div>
 
-<!-- ============ FILES (Inline) ============ -->
 <div class="panel" id="filesPanel">
 <h2>📎 Attachments <span>Max 900KB per file</span></h2>
 <div class="upload-area">
@@ -1198,7 +1193,7 @@ input,textarea,select{min-height:44px;font-size:16px}
 <script>
 var USER=null,TEMPLATES=[],SELECTED={},CURRENT_ROWS=[],ALL_ROWS=[],FILES=[],SELECTED_FILES={},TEST_RECIPIENTS=[],TEST_SELECTED={};
 var LOGO_URL='',LOGO_URL_ALT='',ADMIN_ALL_EMAILS=[],MY_EMAILS=[],ADMIN_BANNED=[],ADMIN_REQUESTS=[];
-var INBOX_EMAILS=[],ACTIVE_EMAIL=null,MY_QUOTA={sent:0,limit:500,remaining:500};
+var INBOX_EMAILS=[],ACTIVE_EMAIL=null,MY_QUOTA={sent:0,limit:500,remaining:500,mailflowSent:0,gmailSent:null};
 var SENDERS=[],IMAP_CONNECTED=false,imapPage=1;
 var POLL_TIMER=null,HOURLY_TIMER=null,analysisTimer=null,lastAnalyzedHash='',LIVE_INBOX_TIMER=null,lastInboxHash='';
 var ADMIN_LIVE_TIMER=null,ADMIN_EMAIL_LIVE_TIMER=null;
@@ -1221,15 +1216,9 @@ function fmtTimeAgo(dateISO){if(!dateISO)return '—';try{var d=new Date(dateISO
 function fileIcon(name,mime){mime=mime||'';name=(name||'').toLowerCase();if(mime.startsWith('image/'))return '🖼️';if(mime.includes('pdf')||name.endsWith('.pdf'))return '📄';if(mime.includes('word')||/\.(doc|docx)$/i.test(name))return '📝';return '📎';}
 function isCvFile(f){var n=(f.name||'').toLowerCase();var m=(f.mimeType||'').toLowerCase();return n.endsWith('.pdf')||n.endsWith('.docx')||n.endsWith('.doc')||n.endsWith('.txt')||n.endsWith('.rtf')||m.includes('pdf')||m.includes('word')||m.includes('text');}
 function showConfirm(opts){return new Promise(function(resolve){$('confirmIcon').innerText=opts.icon||'⚠️';$('confirmTitle').innerText=opts.title||'Are you sure?';$('confirmMessage').innerText=opts.message||'';var ok=$('confirmOk'),cancel=$('confirmCancel');ok.innerText=opts.okText||'Confirm';ok.className='confirm-btn'+(opts.primary?' primary':'');$('confirmBackdrop').classList.remove('hidden');var cleanup=function(){$('confirmBackdrop').classList.add('hidden');ok.onclick=null;cancel.onclick=null;};ok.onclick=function(){cleanup();resolve(true);};cancel.onclick=function(){cleanup();resolve(false);};});}
-
-function togglePw(id, btn){
-  var inp = $(id);
-  if(!inp) return;
-  if(inp.type === 'password'){ inp.type = 'text'; btn.innerText = '🙈'; }
-  else { inp.type = 'password'; btn.innerText = '👁'; }
-}
-function getRememberedEmail(){ try { return localStorage.getItem('mf_remember_email') || ''; } catch(e) { return ''; } }
-function setRememberedEmail(email){ try { if(email) localStorage.setItem('mf_remember_email', email); else localStorage.removeItem('mf_remember_email'); } catch(e){} }
+function togglePw(id, btn){var inp=$(id);if(!inp)return;if(inp.type==='password'){inp.type='text';btn.innerText='🙈';}else{inp.type='password';btn.innerText='👁';}}
+function getRememberedEmail(){try{return localStorage.getItem('mf_remember_email')||'';}catch(e){return '';}}
+function setRememberedEmail(email){try{if(email)localStorage.setItem('mf_remember_email',email);else localStorage.removeItem('mf_remember_email');}catch(e){}}
 
 function switchAuthTab(t){if(t==='login'){$('loginTab').classList.add('active');$('registerTab').classList.remove('active');$('loginForm').classList.remove('hidden');$('registerForm').classList.add('hidden');}else{$('registerTab').classList.add('active');$('loginTab').classList.remove('active');$('registerForm').classList.remove('hidden');$('loginForm').classList.add('hidden');}$('loginError').classList.add('hidden');$('registerError').classList.add('hidden');}
 async function doEmailLogin(){
@@ -1262,78 +1251,80 @@ async function doEmailRegister(){
 var urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('banned') === '1') {$('loginView').classList.add('hidden');$('bannedView').classList.remove('hidden');}
 else {fetch('/api/me',{credentials:'include'}).then(function(r){return r.json();}).then(function(d){if(d&&d.ok&&d.user){USER=d.user;enterApp();}else{$('loginView').classList.remove('hidden');}}).catch(function(){$('loginView').classList.remove('hidden');});}
-
 document.addEventListener('DOMContentLoaded',function(){
   var rem = getRememberedEmail();
-  if(rem){
-    var inp = $('loginEmail'), chk = $('rememberMe');
-    if(inp) inp.value = rem;
-    if(chk) chk.checked = true;
-    setTimeout(function(){ var pw = $('loginPassword'); if(pw) pw.focus(); }, 200);
-  }
-  // Register service worker via Blob (PWA enable)
-  if('serviceWorker' in navigator){
-    try {
-      var swCode = "self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>self.clients.claim());self.addEventListener('fetch',function(e){var u=new URL(e.request.url);if(e.request.mode==='navigate'){e.respondWith(fetch(e.request).catch(function(){return fetch('/');}));return;}e.respondWith(fetch(e.request).catch(function(){return new Response('',{status:503});}));});";
-      var blob = new Blob([swCode], {type:'application/javascript'});
-      var swUrl = URL.createObjectURL(blob);
-      navigator.serviceWorker.register(swUrl).catch(function(){});
-    } catch(e){}
-  }
+  if(rem){var inp=$('loginEmail'),chk=$('rememberMe');if(inp)inp.value=rem;if(chk)chk.checked=true;setTimeout(function(){var pw=$('loginPassword');if(pw)pw.focus();},200);}
+  if('serviceWorker' in navigator){try{var swCode="self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>self.clients.claim());self.addEventListener('fetch',function(e){if(e.request.mode==='navigate'){e.respondWith(fetch(e.request).catch(function(){return fetch('/');}));return;}e.respondWith(fetch(e.request).catch(function(){return new Response('',{status:503});}));});";var blob=new Blob([swCode],{type:'application/javascript'});var swUrl=URL.createObjectURL(blob);navigator.serviceWorker.register(swUrl).catch(function(){});}catch(e){}}
 });
-
 function submitAccessRequest(){var name=$('reqName').value.trim(),email=$('reqEmail').value.trim(),company=$('reqCompany').value.trim(),phone=$('reqPhone').value.trim(),reason=$('reqReason').value.trim();if(!name||!email||!reason)return toast('Please fill in name, email, and reason','err');api('/api/request-access','POST',{name:name,email:email,company:company,phone:phone,reason:reason,oldEmail:BANNED_USER_EMAIL}).then(function(r){if(r.ok){toast('✅ Request submitted successfully');$('reqName').value='';$('reqEmail').value='';$('reqCompany').value='';$('reqPhone').value='';$('reqReason').value='';}else toast('Error submitting request','err');});}
 function enterApp(){$('loginView').classList.add('hidden');$('appView').classList.remove('hidden');$('topName').innerText=USER.name||USER.email;if(USER.picture){var av=$('userAvatar');av.src=USER.picture;av.style.display='block';}if(USER.appAccountId){$('myAppId').innerText=USER.appAccountId;$('myAppId').classList.remove('hidden');}if(USER.isAdmin){$('adminBadge').classList.remove('hidden');$('tabAdmin').classList.remove('hidden');$('tabTestDash').classList.remove('hidden');}addRow();addTestRow();loadAll();loadLogo();loadSignature();loadFiles();loadTemplates();loadPrefs();loadQuota();loadMyEmails();loadAIProfile();loadProfile();checkQuietStatus();checkIMAPStatus();checkGmailStatus();startHourlyAutoSend();startAutoRefresh();loadQuickAuto();}
 function logout(){api('/api/logout','POST').then(function(){location.reload();});}
 function checkGmailStatus(){api('/api/smtp/status').then(function(r){if(!r.ok)return;if(!r.connected){$('gmailBanner').classList.remove('hidden');}else{$('gmailBanner').classList.add('hidden');}});}
 function openGmailConnectModal(){$('gmailConnectModal').classList.remove('hidden');}
 function closeGmailConnectModal(){$('gmailConnectModal').classList.add('hidden');}
-async function connectGmail(){var pass=$('smtpAppPassword').value.trim();if(!pass||pass.replace(/\s/g,'').length<16){return toast('App password must be 16 characters','err');}var btn=$('gmailConnectBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Testing connection...';try{var alsoImap=$('alsoEnableImap')?$('alsoEnableImap').checked:false;var r=await api('/api/smtp/connect','POST',{appPassword:pass,alsoEnableImap:alsoImap});if(r.ok){toast('✅ Gmail connected'+(r.imapEnabled?' + Inbox enabled':''));$('smtpAppPassword').value='';closeGmailConnectModal();checkGmailStatus();loadQuota();checkIMAPStatus();}else{toast('Error: '+r.error,'err');}}catch(e){toast('Connection failed','err');}btn.disabled=false;btn.innerHTML='🔌 Connect Gmail';}
-
+async function connectGmail(){var pass=$('smtpAppPassword').value.trim();if(!pass||pass.replace(/\s/g,'').length<16){return toast('App password must be 16 characters','err');}var btn=$('gmailConnectBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Testing connection...';try{var alsoImap=$('alsoEnableImap')?$('alsoEnableImap').checked:false;var r=await api('/api/smtp/connect','POST',{appPassword:pass,alsoEnableImap:alsoImap});if(r.ok){toast('✅ Gmail connected'+(r.imapEnabled?' + Inbox enabled':''));$('smtpAppPassword').value='';closeGmailConnectModal();checkGmailStatus();loadQuota(true);checkIMAPStatus();}else{toast('Error: '+r.error,'err');}}catch(e){toast('Connection failed','err');}btn.disabled=false;btn.innerHTML='🔌 Connect Gmail';}
 function startAutoRefresh(){if(POLL_TIMER)clearInterval(POLL_TIMER);POLL_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('myView').classList.contains('hidden')){loadQuota();loadAll();loadMyEmails();}},30000);}
 function startLiveInbox(){if(LIVE_INBOX_TIMER)clearInterval(LIVE_INBOX_TIMER);LIVE_INBOX_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('inboxView').classList.contains('hidden')&&IMAP_CONNECTED){loadIMAPInbox(true);}},3000);}
 function switchMain(t){['myView','inboxView','aiprofileView','testView','testDashView','adminView'].forEach(function(v){$(v).classList.add('hidden');});document.querySelectorAll('.maintab').forEach(function(el){el.classList.remove('active');});if(t==='my'){$('myView').classList.remove('hidden');$('tabMy').classList.add('active');loadAll();loadQuota();loadMyEmails();loadQuickAuto();loadSignature();loadFiles();}else if(t==='inbox'){$('inboxView').classList.remove('hidden');$('tabInbox').classList.add('active');checkIMAPStatus();}else if(t==='aiprofile'){$('aiprofileView').classList.remove('hidden');$('tabAIP').classList.add('active');loadAIProfile();}else if(t==='test'){$('testView').classList.remove('hidden');$('tabTest').classList.add('active');loadAIPredictions();loadSenders();}else if(t==='testdash'){$('testDashView').classList.remove('hidden');$('tabTestDash').classList.add('active');loadTestDashboard();}else if(t==='admin'){$('adminView').classList.remove('hidden');$('tabAdmin').classList.add('active');loadAdmin();loadAdminAIUsage();loadAdminBanned();loadAdminRequests();loadAdminUsersPage(1);loadAdminEmailsPage(1);startAdminLive();}}
-
-function startAdminLive(){
-  if(ADMIN_LIVE_TIMER)clearInterval(ADMIN_LIVE_TIMER);
-  ADMIN_LIVE_TIMER=setInterval(function(){
-    if(document.visibilityState!=='visible')return;
-    if(!$('adminView').classList.contains('hidden')){
-      loadAdminUsersPage(adminPage,true);
-      loadAdminAIUsage();
-      loadAdminBanned();
-      loadAdminRequests();
-    }
-  },15000);
-  if(ADMIN_EMAIL_LIVE_TIMER)clearInterval(ADMIN_EMAIL_LIVE_TIMER);
-  ADMIN_EMAIL_LIVE_TIMER=setInterval(function(){
-    if(document.visibilityState!=='visible')return;
-    if(!$('adminView').classList.contains('hidden')){ loadAdminEmailsPage(adminEmailsPage,true); }
-  },20000);
-}
-
+function startAdminLive(){if(ADMIN_LIVE_TIMER)clearInterval(ADMIN_LIVE_TIMER);ADMIN_LIVE_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('adminView').classList.contains('hidden')){loadAdminUsersPage(adminPage,true);loadAdminAIUsage();loadAdminBanned();loadAdminRequests();}},15000);if(ADMIN_EMAIL_LIVE_TIMER)clearInterval(ADMIN_EMAIL_LIVE_TIMER);ADMIN_EMAIL_LIVE_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('adminView').classList.contains('hidden')){loadAdminEmailsPage(adminEmailsPage,true);}},20000);}
 function loadQuickAuto(){api('/api/prefs').then(function(r){if(!r.ok)return;var p=r.prefs;$('qAutoSend').checked=p.autoSend;$('qAutoConfig').style.display=p.autoSend?'block':'none';$('qBatchSize').value=p.autoSendBatchSize||5;$('qDelay').value=p.sendDelay!==undefined?p.sendDelay:20;$('qTotalSent').innerText=p.totalAutoSent||0;$('qLastRun').innerText=p.lastAutoSendRun?fmtTimeAgo(p.lastAutoSendRun):'Never';});api('/api/stats').then(function(r){if(!r.ok)return;$('qPending').innerText=r.stats.pending||0;});}
 function onQuickAutoToggle(v){$('qAutoConfig').style.display=v?'block':'none';}
 function saveQuickAuto(){var bs=parseInt($('qBatchSize').value)||5;var sd=parseInt($('qDelay').value);if(isNaN(sd)||sd<0)sd=20;if(sd>120)sd=120;api('/api/prefs','POST',{autoSend:$('qAutoSend').checked,autoSendBatchSize:bs,sendDelay:sd,quietEnabled:false,quietStart:22,quietEnd:7}).then(function(r){if(r.ok){toast('✅ Automation settings saved');loadQuickAuto();}else toast('Error saving settings','err');});}
-
 function openProfileModal(){$('profileModal').classList.remove('hidden');loadProfile();}
 function closeProfileModal(){$('profileModal').classList.add('hidden');}
 function loadProfile(){api('/api/profile').then(function(r){if(!r.ok)return;var p=r.profile;$('profileNameDisplay').innerText=p.name||'User';$('profileEmailDisplay').innerText=p.email||'';$('profileAvatar').src=p.picture||'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';$('profileAppId').innerText=p.appAccountId||'MFP-XXXXXX';if(p.createdAt){try{var d=p.createdAt._seconds?new Date(p.createdAt._seconds*1000):new Date(p.createdAt);$('profileJoined').innerText=d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}catch(e){}}$('editProfileName').value=p.name||'';});api('/api/ai/usage').then(function(r){if(!r.ok)return;$('profileAIToday').innerText=fmtNum(r.today.totalTokens||0);$('profileAIMonth').innerText=fmtNum(r.month.totalTokens||0);$('profileAITotal').innerText=fmtNum(r.total.totalTokens||0);$('profileAICalls').innerText=fmtNum(r.total.calls||0);$('profileAIRemaining').innerText=r.remainingTokens!==null&&r.remainingTokens!==undefined?fmtNum(r.remainingTokens):'—';$('profileAICallsLeft').innerText=r.estimatedRemainingCalls!==null&&r.estimatedRemainingCalls!==undefined?fmtNum(r.estimatedRemainingCalls):'—';});}
 function saveProfileName(){var name=$('editProfileName').value.trim();if(!name)return toast('Please enter a name','err');api('/api/profile','POST',{name:name}).then(function(r){if(r.ok){toast('✅ Name updated');$('topName').innerText=name;$('profileNameDisplay').innerText=name;if(USER)USER.name=name;}else toast('Error updating name','err');});}
 document.getElementById('profilePicInput').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;if(f.size>500*1024){toast('Maximum size is 500KB','err');return;}var ok=['image/png','image/jpeg','image/jpg','image/webp'];if(ok.indexOf(f.type)===-1)return toast('PNG, JPG, or WEBP only','err');var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading...');api('/api/profile/picture','POST',{base64:b,mimeType:f.type}).then(function(r){if(r.ok){toast('✅ Profile picture updated');$('profileAvatar').src=r.url;if($('userAvatar')){$('userAvatar').src=r.url;$('userAvatar').style.display='block';}}else toast('Error uploading','err');});};rd.readAsDataURL(f);e.target.value='';});
-
 function openSettingsModal(){$('settingsModal').classList.remove('hidden');}
 function closeSettingsModal(){$('settingsModal').classList.add('hidden');}
 function checkQuietStatus(){api('/api/quiet-status').then(function(r){if(!r.ok)return;var b=$('quietBanner');if(r.inQuiet){b.classList.add('show');$('quietMsg').innerText='Until '+((r.quietEnd%12)||12)+':00 '+(r.quietEnd<12?'AM':'PM')+'.';}else{b.classList.remove('show');}}).catch(function(){});}
 function startHourlyAutoSend(){setTimeout(function(){runAutoCheck();},8000);if(HOURLY_TIMER)clearInterval(HOURLY_TIMER);HOURLY_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;runAutoCheck();},60*60*1000);}
-function runAutoCheck(){api('/api/auto-send-check','POST').then(function(r){if(r.ok&&r.sent>0){toast('🤖 Auto-sent: '+r.sent+' emails');loadAll();loadQuota();loadMyEmails();loadQuickAuto();}}).catch(function(){});}
-function loadQuota(){api('/api/quota').then(function(r){if(!r.ok)return;MY_QUOTA={sent:r.sent,limit:r.limit,remaining:r.remaining};$('quotaSent').innerText=r.sent;$('quotaLimit').innerText=r.limit;$('quotaRemaining').innerText=r.remaining;var pct=(r.sent/r.limit)*100;$('quotaFill').style.width=Math.min(100,pct)+'%';$('quotaFill').className='quota-fill'+(pct>90?' crit':(pct>70?' warn':''));});}
+function runAutoCheck(){api('/api/auto-send-check','POST').then(function(r){if(r.ok&&r.sent>0){toast('🤖 Auto-sent: '+r.sent+' emails');loadAll();loadQuota(true);loadMyEmails();loadQuickAuto();}}).catch(function(){});}
+
+// ============ UPDATED QUOTA LOADER (v1.6.0) ============
+function loadQuota(force){
+  var url = '/api/quota' + (force ? '?force=1' : '');
+  api(url).then(function(r){
+    if(!r.ok){
+      if(r.noTokens){
+        $('quotaMailflowSent').innerText='—';
+        $('quotaGmailSent').innerText='—';
+        $('quotaSent').innerText='—';
+      }
+      return;
+    }
+    MY_QUOTA = { sent:r.sent, limit:r.limit, remaining:r.remaining, mailflowSent:r.mailflowSent, gmailSent:r.gmailSent };
+    $('quotaMailflowSent').innerText = r.mailflowSent !== undefined ? r.mailflowSent : '—';
+    $('quotaGmailSent').innerText = r.gmailSent !== null && r.gmailSent !== undefined ? r.gmailSent : (r.imapAvailable===false ? 'N/A (enable Inbox)' : '—');
+    $('quotaSent').innerText = r.sent;
+    $('quotaLimit').innerText = r.limit;
+    $('quotaRemaining').innerText = r.remaining;
+    // Live indicator
+    var li = $('quotaLiveIndicator');
+    if(r.live){
+      li.className = 'quota-live';
+      li.innerHTML = '<span class="dot"></span>Live';
+    } else {
+      li.className = 'quota-live offline';
+      li.innerHTML = '⚡ MailFlow only';
+    }
+    var pct = (r.sent/r.limit)*100;
+    $('quotaFill').style.width = Math.min(100,pct)+'%';
+    $('quotaFill').className = 'quota-fill' + (pct>90?' crit':(pct>70?' warn':''));
+    // Hint text
+    if(r.live){
+      $('quotaHint').innerHTML = '✅ Real-time from Gmail Sent folder. MailFlow sends are included in Gmail count.';
+    } else {
+      $('quotaHint').innerHTML = '⚠️ Connect Inbox (IMAP) to see real Gmail count. Currently showing MailFlow sends only.';
+    }
+  }).catch(function(){});
+}
+
 function scheduleAnalysis(){if(analysisTimer)clearTimeout(analysisTimer);$('aiLiveStatus').innerText='Typing...';analysisTimer=setTimeout(runLiveAnalysis,1500);}
 function runLiveAnalysis(){var subject=$('composerSubject').value.trim();var body=$('composerBody').value.trim();if(!subject&&!body){resetAIAnalysisUI();$('aiLiveStatus').innerText='Waiting';return;}var hash=subject+'|'+body;if(hash===lastAnalyzedHash)return;lastAnalyzedHash=hash;$('aiLiveStatus').innerText='🤖 Analyzing...';api('/api/ai/analyze-live','POST',{subject:subject,body:body}).then(function(r){if(!r.ok){$('aiLiveStatus').innerText='Error';return;}if(r.empty){resetAIAnalysisUI();return;}$('aiLiveStatus').innerText=r.aiPowered?'🤖 AI':'⚡ Local';renderAIAnalysis(r);});}
 function runDeepAIAnalysis(){var subject=$('composerSubject').value.trim();var body=$('composerBody').value.trim();if(!subject&&!body){toast('Write something first','err');return;}$('aiLiveStatus').innerText='🤖 Deep analysis...';api('/api/ai/analyze-live','POST',{subject:subject,body:body}).then(function(r){if(!r.ok)return;$('aiLiveStatus').innerText=r.aiPowered?'🤖 AI':'⚠️';renderAIAnalysis(r);toast(r.aiPowered?'✅ Analysis complete':'⚠️ Fallback used');});}
 function resetAIAnalysisUI(){$('aiScoreValue').innerText='—';$('aiScoreLabel').innerText='Waiting';$('aiScoreCircle').style.background='conic-gradient(#1e293b 0%, #1e293b 100%)';$('aiScoreValue').style.color='var(--text2)';$('aiProbValue').innerText='—';$('aiProbValue').style.color='var(--text2)';$('aiProbFill').style.width='0%';$('aiIssues').innerHTML='';$('aiSuggestions').innerHTML='';}
 function renderAIAnalysis(r){var score=r.score||0,prob=r.inboxProbability||0;var deg=Math.min(360,(score/100)*360);var color=score<=15?'#22c55e':score<=40?'#38bdf8':score<=70?'#f59e0b':'#ef4444';$('aiScoreCircle').style.background='conic-gradient('+color+' '+deg+'deg, #1e293b '+deg+'deg)';$('aiScoreValue').innerText=score;$('aiScoreLabel').innerText=(r.prediction||'Analyzing').replace('_',' ');$('aiScoreValue').style.color=color;$('aiProbValue').innerText=prob+'%';$('aiProbValue').style.color=prob>=70?'#86efac':prob>=40?'#fcd34d':'#fca5a5';$('aiProbFill').style.width=prob+'%';var ih='';if(r.issues&&r.issues.length)ih=r.issues.map(function(i){var cls=i.severity==='high'?'high':(i.severity==='low'?'low':'');return '<div class="ai-issue '+cls+'">⚠️ '+esc(i.message)+'</div>';}).join('');$('aiIssues').innerHTML=ih;var sh='';if(r.suggestions&&r.suggestions.length)sh=r.suggestions.map(function(s){return '<div class="ai-suggestion">💡 '+esc(s)+'</div>';}).join('');$('aiSuggestions').innerHTML=sh;}
-
 function openAIWriter(){$('aiWriterModal').classList.remove('hidden');}
 function closeAIWriter(){$('aiWriterModal').classList.add('hidden');}
 function runAIWriter(){var ctx=$('aiContext').value.trim();if(!ctx)return toast('Please describe the purpose','err');toast('🤖 Writing email...');api('/api/ai/write-email','POST',{context:ctx,recipientName:$('aiRecipientName').value.trim(),recipientCompany:$('aiRecipientCompany').value.trim(),tone:$('aiTone').value,length:$('aiLength').value}).then(function(r){if(r.ok){$('composerSubject').value=r.subject||'';$('composerBody').value=r.body||'';closeAIWriter();toast(r.aiPowered?'✅ Email generated':'✅ Fallback generated');lastAnalyzedHash='';runLiveAnalysis();}else toast('Error generating email','err');});}
@@ -1342,7 +1333,6 @@ function pickSubject(s){$('composerSubject').value=s;$('aiSubjectSuggestions').s
 function aiImproveEmail(){var subject=$('composerSubject').value.trim(),body=$('composerBody').value.trim();if(!subject&&!body)return toast('Write something first','err');toast('✨ Improving your email...');api('/api/ai/improve-email','POST',{subject:subject,body:body}).then(function(r){if(r.ok){$('composerSubject').value=r.improvedSubject||subject;$('composerBody').value=r.improvedBody||body;toast('✅ Email improved');lastAnalyzedHash='';runLiveAnalysis();}});}
 function saveComposerTemplate(){var name=$('composerName').value.trim(),subject=$('composerSubject').value.trim(),body=$('composerBody').value.trim();if(!name||!subject||!body)return toast('Please fill in all fields','err');api('/api/templates','POST',{name:name,subject:subject,body:body}).then(function(r){if(r.ok){toast('✅ Template saved');$('composerName').value='';loadTemplates();}else toast('Error saving template','err');});}
 function clearComposer(){$('composerName').value='';$('composerSubject').value='';$('composerBody').value='';lastAnalyzedHash='';resetAIAnalysisUI();}
-
 function openCVAnalyzer(){$('cvAnalyzerModal').classList.remove('hidden');CV_SELECTED_FILE_ID=null;renderCVFileList();$('cvTextWrap').style.display='none';$('cvText').value='';$('cvUploadStatus').innerText='';$('cvAnalysisResult').style.display='none';}
 function closeCVAnalyzer(){$('cvAnalyzerModal').classList.add('hidden');}
 function renderCVFileList(){var w=$('cvFileList');var cvs=FILES.filter(isCvFile);if(!cvs.length){w.innerHTML='<div style="padding:14px;color:var(--text3);font-size:12px;text-align:center">No CV files uploaded yet</div>';return;}w.innerHTML=cvs.map(function(f){var sel=CV_SELECTED_FILE_ID===f.id?' selected':'';var icon=fileIcon(f.name,f.mimeType);return '<div class="cv-file-pick'+sel+'" data-id="'+f.id+'"><div class="ico">'+icon+'</div><div style="flex:1;min-width:0"><div class="nm">'+esc(f.name)+'</div><div class="mt">'+fmtSize(f.size)+'</div></div><button class="del-cv" onclick="event.stopPropagation();deleteCVFile(\''+f.id+'\',\''+esc(f.name).replace(/'/g,"\\'")+'\')" title="Delete file">✕</button></div>';}).join('');w.querySelectorAll('.cv-file-pick').forEach(function(el){el.onclick=function(){CV_SELECTED_FILE_ID=this.getAttribute('data-id');renderCVFileList();loadCvTextFromFile(CV_SELECTED_FILE_ID);};});}
@@ -1350,16 +1340,12 @@ async function deleteCVFile(fileId,fname){var ok=await showConfirm({icon:'🗑',
 function loadCvTextFromFile(fileId){$('cvUploadStatus').innerHTML='<span style="color:#7dd3fc">📄 Extracting text...</span>';$('cvTextWrap').style.display='block';$('cvText').value='';api('/api/ai/extract-cv','POST',{fileId:fileId}).then(function(r){if(!r.ok){$('cvUploadStatus').innerHTML='<span style="color:#fca5a5">❌ '+esc(r.error||'Failed to extract')+'</span>';return;}$('cvText').value=r.text||'';$('cvUploadStatus').innerHTML='<span style="color:#86efac">✅ '+r.chars+' characters extracted</span>';});}
 document.getElementById('cvFileInput').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;if(f.size>MAX_UPLOAD_SIZE){toast('Maximum size is 900KB','err');return;}$('cvUploadStatus').innerHTML='<span style="color:#7dd3fc">📤 Uploading...</span>';$('cvTextWrap').style.display='block';$('cvText').value='';var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];api('/api/upload-file','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(up){if(!up.ok){$('cvUploadStatus').innerHTML='<span style="color:#fca5a5">❌ '+esc(up.error||'Upload failed')+'</span>';return;}CV_SELECTED_FILE_ID=up.file.id;loadFiles();loadCvTextFromFile(up.file.id);});};rd.readAsDataURL(f);e.target.value='';});
 async function runCVAnalysis(){var cvText=$('cvText').value.trim();if(cvText.length<30)return toast('CV text is empty or too short','err');var btn=$('cvAnalyzeBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Analyzing CV...';$('cvAnalysisResult').style.display='none';try{var r=await api('/api/ai/analyze-cv','POST',{cvText:cvText,targetRole:$('cvTargetRole').value.trim(),jobDescription:$('cvJobDesc').value.trim(),fileId:CV_SELECTED_FILE_ID});if(r.ok){$('composerSubject').value=r.subject||'';$('composerBody').value=r.body||'';var skills=(r.keySkills||[]).map(function(s){return '<span class="badge sent" style="margin:2px">'+esc(s)+'</span>';}).join('');var scoreColor=(r.score||0)>=80?'#86efac':(r.score||0)>=60?'#7dd3fc':'#fcd34d';$('cvAnalysisResult').innerHTML='<div style="font-weight:700;color:#7dd3fc;margin-bottom:8px">✅ Match Score: <span style="color:'+scoreColor+'">'+(r.score||0)+'/100</span></div><div style="margin-bottom:8px">'+esc(r.analysis||'')+'</div><div><b>Key Skills:</b> '+skills+'</div>';$('cvAnalysisResult').style.display='block';toast('✅ Email generated successfully');lastAnalyzedHash='';runLiveAnalysis();setTimeout(function(){closeCVAnalyzer();switchMain('my');},1500);} else toast('Error: '+r.error,'err');}catch(e){toast('Analysis failed','err');}btn.disabled=false;btn.innerHTML='🤖 Analyze & Generate Email';}
-
 function loadAIProfile(){api('/api/ai-profile').then(function(r){if(!r.ok)return;var p=r.profile||{};if($('aipFullName'))$('aipFullName').value=p.fullName||'';if($('aipIndustry'))$('aipIndustry').value=p.industry||'';if($('aipTone'))$('aipTone').value=p.tone||'professional';if($('aipAboutMe'))$('aipAboutMe').value=p.aboutMe||'';if($('aipCommonPhrases'))$('aipCommonPhrases').value=p.commonPhrases||'';});}
 function saveAIProfile(){var payload={fullName:$('aipFullName').value.trim(),industry:$('aipIndustry').value.trim(),tone:$('aipTone').value,aboutMe:$('aipAboutMe').value.trim(),commonPhrases:$('aipCommonPhrases').value.trim()};api('/api/ai-profile','POST',payload).then(function(r){if(r.ok)toast('✅ AI profile saved');else toast('Error saving','err');});}
-
 function loadSenders(){api('/api/memory/senders').then(function(r){if(!r.ok)return;SENDERS=r.senders||[];renderSenders();});}
 function renderSenders(){var w=$('sendersList');if(!w)return;var q=($('senderSearch').value||'').toLowerCase();var filtered=SENDERS.filter(function(s){return !q||(s.senderEmail||'').toLowerCase().indexOf(q)!==-1||(s.senderName||'').toLowerCase().indexOf(q)!==-1;});if($('sendersCount'))$('sendersCount').innerText=filtered.length+'/'+SENDERS.length;if(!filtered.length){w.innerHTML='<div class="empty"><div class="ico">🧠</div>No sender memory yet</div>';return;}w.innerHTML=filtered.slice(0,100).map(function(s){return '<div class="memory-item"><div class="top"><div class="sender">'+esc(s.senderName||s.senderEmail)+'</div><span class="count">'+s.totalEmails+'</span></div><div style="font-size:11px;color:var(--text3);word-break:break-all">'+esc(s.senderEmail)+'</div><div style="font-size:11px;color:var(--text2);margin-top:4px">Last: '+esc((s.lastSubject||'').substring(0,60))+'</div></div>';}).join('');}
-
 function loadAIPredictions(){api('/api/my-emails?range=all').then(function(r){if(!r.ok)return;var emails=r.emails||[];var w=$('aiPredictionsWrap');if(!emails.length){w.innerHTML='<div class="empty">No emails yet</div>';return;}var ex=0,good=0,risky=0,spam=0;emails.forEach(function(e){var p=e.aiPrediction||'GOOD';if(p==='EXCELLENT')ex++;else if(p==='GOOD')good++;else if(p==='RISKY')risky++;else spam++;});var s='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">';s+='<div class="info-box" style="text-align:center;margin:0"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">✅ Excellent</div><div style="font-size:22px;color:#86efac;font-weight:800">'+ex+'</div></div>';s+='<div class="info-box" style="text-align:center;margin:0"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">👍 Good</div><div style="font-size:22px;color:#7dd3fc;font-weight:800">'+good+'</div></div>';s+='<div class="info-box" style="text-align:center;margin:0"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">⚠️ Risky</div><div style="font-size:22px;color:#fcd34d;font-weight:800">'+risky+'</div></div>';s+='<div class="info-box" style="text-align:center;margin:0"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">❌ Spam</div><div style="font-size:22px;color:#fca5a5;font-weight:800">'+spam+'</div></div></div>';var h=s+'<table class="data-table"><thead><tr><th>Recipient</th><th>Subject</th><th>Sent</th><th>AI</th></tr></thead><tbody>';emails.slice(0,100).forEach(function(e){var pred=e.aiPrediction||'GOOD';var prob=e.aiInboxProb||75;var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';h+='<tr><td style="word-break:break-all;font-size:11px">'+esc(e.recipientEmail)+'</td><td style="font-size:11px">'+esc(e.subject||'—')+'</td><td style="font-size:10px">'+fmtDate(e.sentAt)+'</td><td><span style="padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:'+pc+'22;color:'+pc+'">'+pred+' '+prob+'%</span></td></tr>';});h+='</tbody></table>';w.innerHTML=h;});}
 function loadBestTime(){$('bestTimeContent').innerHTML='<div class="empty">Analyzing...</div>';api('/api/ai/best-time').then(function(r){if(!r.ok)return;var hours=r.bestHours||[9,11,14];var h='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">';hours.forEach(function(hh){var lbl=((hh%12)||12)+':00 '+(hh<12?'AM':'PM');h+='<div class="info-box" style="text-align:center;margin:0"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">Best</div><div style="font-size:18px;font-weight:800;color:var(--cyan)">'+lbl+'</div></div>';});h+='</div>';$('bestTimeContent').innerHTML=h;});}
-
 function buildSigHtmlFrom(f,logoUrl){var phoneClean=(f.phone||'').replace(/[^0-9+]/g,'');var liUrl=f.linkedin?(f.linkedin.indexOf('http')===0?f.linkedin:'https://'+f.linkedin):'';var h='<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-family:Arial,sans-serif"><tr>';if(logoUrl){h+='<td style="padding-right:18px;border-right:2px solid #d1d5db;vertical-align:middle;text-align:center;width:130px"><img src="'+logoUrl+'" width="100" style="display:block;max-width:100px;height:auto;margin:0 auto;border:0"></td>';}h+='<td style="padding-left:'+(logoUrl?'18px':'0')+';vertical-align:top">';if(f.name)h+='<div style="font-weight:bold;font-size:15px;color:#111;margin-bottom:2px">'+esc(f.name)+'</div>';if(f.pos)h+='<div style="color:#666;font-size:12px">'+esc(f.pos)+'</div>';if(f.company)h+='<div style="color:#666;font-size:12px;margin-bottom:8px">'+esc(f.company)+'</div>';var lines=[];if(f.phone)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">📞 <a href="tel:'+phoneClean+'" style="color:#1a73e8;text-decoration:none">'+esc(f.phone)+'</a></div>');if(f.email)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">✉️ <a href="mailto:'+esc(f.email)+'" style="color:#1a73e8;text-decoration:none">'+esc(f.email)+'</a></div>');if(liUrl)lines.push('<div style="font-size:12px;line-height:1.9;color:#333">🔗 <a href="'+liUrl+'" style="color:#1a73e8;text-decoration:none">'+esc(f.linkedin)+'</a></div>');if(lines.length)h+=lines.join('');h+='</td></tr></table>';return h;}
 function getSigFields(){return {name:$('sbName').value.trim(),pos:$('sbPos').value.trim(),company:$('sbCompany').value.trim(),phone:$('sbPhone').value.trim(),email:$('sbEmail').value.trim(),linkedin:$('sbLinkedin').value.trim()};}
 function previewSig(){var h=buildSigHtmlFrom(getSigFields(),LOGO_URL);if(!h||h.length<20){$('sigPreviewContent').innerHTML='<div style="padding:20px;text-align:center;color:#888;font-size:12px">Fill in the fields above to see preview</div>';$('sigPreviewBox').classList.add('show');return;}$('sigPreviewContent').innerHTML=h;$('sigPreviewBox').classList.add('show');}
@@ -1377,14 +1363,12 @@ function toggleFile(id){if(SELECTED_FILES[id])delete SELECTED_FILES[id];else SEL
 function selectAllFiles(){FILES.forEach(function(f){SELECTED_FILES[f.id]=true;});renderFilesList();}
 function unselectAllFiles(){SELECTED_FILES={};renderFilesList();}
 async function delFile(id){var ok=await showConfirm({icon:'🗑',title:'Delete file?',message:'',okText:'Delete'});if(!ok)return;api('/api/files/'+id,'DELETE').then(function(r){if(r.ok){toast('✅ File deleted');delete SELECTED_FILES[id];loadFiles();}});}
-
 function loadTemplates(){api('/api/templates').then(function(r){TEMPLATES=r.templates||[];var w=$('tplList');w.innerHTML='';$('tplCount').innerText=TEMPLATES.length+' saved';if(!TEMPLATES.length)w.innerHTML='<div class="empty"><div class="ico">📝</div>No templates yet</div>';else TEMPLATES.forEach(function(t){var d=document.createElement('div');d.className='tpl-card';d.innerHTML='<div class="info"><div class="name">📄 '+esc(t.name)+'</div><div class="sub">'+esc(t.subject)+'</div></div><button onclick="previewTemplate(\''+t.id+'\')">👁 Preview</button><button onclick="loadTemplateToComposer(\''+t.id+'\')">📋 Load</button><button class="danger" onclick="delTpl(\''+t.id+'\')">✕</button>';w.appendChild(d);});var s=$('tplSelect');s.innerHTML='';if(!TEMPLATES.length)s.innerHTML='<option value="">(None available)</option>';else TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;s.appendChild(o);});var ts=$('testTemplateSelect');if(ts){ts.innerHTML='<option value="">-- Manual Entry --</option>';TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;ts.appendChild(o);});}});}
 function previewTemplate(id){var t=TEMPLATES.filter(function(x){return x.id===id;})[0];if(!t)return;$('tplPreviewTitle').innerText='📄 '+t.name;$('tplPreviewSubject').innerText=t.subject;$('tplPreviewBody').innerText=t.body;$('tplPreviewBackdrop').classList.remove('hidden');}
 function closeTplPreview(){$('tplPreviewBackdrop').classList.add('hidden');}
 function loadTemplateToComposer(id){var t=TEMPLATES.filter(function(x){return x.id===id;})[0];if(!t)return;$('composerName').value=t.name;$('composerSubject').value=t.subject;$('composerBody').value=t.body;lastAnalyzedHash='';runLiveAnalysis();closeSettingsModal();$('composerBody').scrollIntoView({behavior:'smooth',block:'center'});}
 async function delTpl(id){var ok=await showConfirm({icon:'🗑',title:'Delete template?',message:'',okText:'Delete'});if(!ok)return;api('/api/templates/'+id,'DELETE').then(function(r){if(r.ok){toast('✅ Template deleted');loadTemplates();}});}
 function onTestTemplateChange(){var id=$('testTemplateSelect').value;if(!id)return;var t=TEMPLATES.filter(function(x){return x.id===id;})[0];if(!t)return;$('testSubject').value=t.subject||'';$('testBody').value=t.body||'';toast('✅ Template loaded');}
-
 function addRow(){var w=$('recipients'),d=document.createElement('div');d.className='recip-row';d.innerHTML='<input type="text" placeholder="Company (optional)"><input type="email" placeholder="email@example.com"><button class="del" onclick="this.parentNode.remove()">✕</button>';w.appendChild(d);}
 function submitRecipients(){var rows=$('recipients').querySelectorAll('.recip-row'),list=[];rows.forEach(function(r){var i=r.querySelectorAll('input');if(i[1].value.trim())list.push({company:i[0].value.trim(),email:i[1].value.trim()});});if(!list.length)return toast('Please add at least one email','err');api('/api/recipients','POST',{list:list,templateId:$('tplSelect').value}).then(function(r){if(r.ok){toast('✅ '+r.added+' recipients added');$('recipients').innerHTML='';addRow();loadAll();loadQuickAuto();}else toast('Error adding recipients','err');});}
 function switchTab(t){['manual','bulk','ocr'].forEach(function(x){var el=$('tab'+x.charAt(0).toUpperCase()+x.slice(1));if(el)el.classList.remove('active');var tab=$(x+'Tab');if(tab)tab.classList.add('hidden');});var map={manual:'Manual',bulk:'Bulk',ocr:'OCR'};$('tab'+map[t]).classList.add('active');$(t+'Tab').classList.remove('hidden');if(t==='bulk')updateBulk();}
@@ -1393,7 +1377,6 @@ function updateBulk(){var text=$('bulkInput').value;var r=parseBulk(text);var wr
 function clearBulk(){$('bulkInput').value='';updateBulk();}
 function submitBulk(){var r=parseBulk($('bulkInput').value);if(!r.valid.length)return toast('No valid emails found','err');sendBulkRecipients(r.valid);}
 function sendBulkRecipients(items){api('/api/recipients','POST',{list:items,templateId:$('tplSelect').value}).then(function(res){if(res.ok){toast('✅ '+res.added+' recipients added');$('bulkInput').value='';updateBulk();loadAll();loadQuickAuto();switchTab('manual');}else toast('Error adding recipients','err');});}
-
 document.getElementById('ocrInput').addEventListener('change',function(e){var files=e.target.files;if(!files||!files.length)return;for(var i=0;i<files.length;i++){processOCRFile(files[i]);}e.target.value='';});
 document.addEventListener('paste',function(e){if($('ocrTab').classList.contains('hidden'))return;var items=e.clipboardData&&e.clipboardData.items;if(!items)return;var found=false;for(var i=0;i<items.length;i++){if(items[i].type.indexOf('image')!==-1){var blob=items[i].getAsFile();if(blob){processOCRFile(blob);found=true;}}}if(found)toast('📋 Screenshot pasted');});
 function openCameraCapture(){var inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.capture='environment';inp.onchange=function(e){var f=e.target.files[0];if(f)processOCRFile(f);};inp.click();}
@@ -1409,7 +1392,6 @@ async function processOCRFile(file){
   try{
     if(typeof Tesseract==='undefined')throw new Error('OCR engine not loaded');
     var worker=await Tesseract.createWorker('eng',1,{logger:function(m){if(m.status==='recognizing text'){var p=Math.round((m.progress||0)*100);$('ocrProgressFill').style.width=(5+p*0.9)+'%';$('ocrStatus').innerHTML='🔍 Screenshot #'+(idx+1)+' — '+p+'%';}}});
-    // Improve accuracy: preserve spaces, use PSM 6 (uniform text block)
     try { await worker.setParameters({ tessedit_pageseg_mode: '6', preserve_interword_spaces: '1' }); } catch(pe){}
     var result=await worker.recognize(file);
     await worker.terminate();
@@ -1430,60 +1412,13 @@ async function processOCRFile(file){
   }
 }
 function renderOCRThumbs(){var w=$('ocrThumbs');if(!OCR_FILES.length){w.innerHTML='';return;}w.innerHTML=OCR_FILES.map(function(x,i){var url=URL.createObjectURL(x.file);var cls=x.status==='done'?'done':(x.status==='processing'?'processing':'failed');var lbl=x.status==='done'?'✓ Done':(x.status==='processing'?'... OCR':'✗ Failed');return '<div class="ocr-thumb '+cls+'" title="'+esc(x.file.name||'')+'"><img src="'+url+'"><div class="status">'+(i+1)+'. '+lbl+'</div></div>';}).join('');}
-function renderOCRResultCards(){
-  var wrap=$('ocrResultCards');
-  if(!wrap)return;
-  if(!OCR_FILES.length){wrap.innerHTML='';if($('ocrCardCount'))$('ocrCardCount').innerText='';return;}
-  var doneCount=OCR_FILES.filter(function(x){return x.status==='done';}).length;
-  if($('ocrCardCount'))$('ocrCardCount').innerText=doneCount+'/'+OCR_FILES.length+' extracted';
-  var h='';
-  OCR_FILES.forEach(function(x,i){
-    var stCls = x.status==='done'?'done':(x.status==='processing'?'processing':'failed');
-    var stTxt = x.status==='done'?'✓ Extracted':(x.status==='processing'?'... Processing':'✗ Failed');
-    h += '<div class="ocr-card">';
-    h += '<div class="head">';
-    h += '<span class="num">SS #'+(i+1)+'</span>';
-    h += '<span class="fname" title="'+esc(x.file.name||'')+'">'+esc(x.file.name||'image')+'</span>';
-    h += '<span class="st '+stCls+'">'+stTxt+'</span>';
-    h += '</div>';
-    h += '<textarea data-ocr-idx="'+i+'" oninput="onOCRCardEdit('+i+',this.value)" placeholder="Extracted text will appear here...">'+esc(x.text||'')+'</textarea>';
-    h += '</div>';
-  });
-  wrap.innerHTML=h;
-}
+function renderOCRResultCards(){var wrap=$('ocrResultCards');if(!wrap)return;if(!OCR_FILES.length){wrap.innerHTML='';if($('ocrCardCount'))$('ocrCardCount').innerText='';return;}var doneCount=OCR_FILES.filter(function(x){return x.status==='done';}).length;if($('ocrCardCount'))$('ocrCardCount').innerText=doneCount+'/'+OCR_FILES.length+' extracted';var h='';OCR_FILES.forEach(function(x,i){var stCls=x.status==='done'?'done':(x.status==='processing'?'processing':'failed');var stTxt=x.status==='done'?'✓ Extracted':(x.status==='processing'?'... Processing':'✗ Failed');h+='<div class="ocr-card">';h+='<div class="head">';h+='<span class="num">SS #'+(i+1)+'</span>';h+='<span class="fname" title="'+esc(x.file.name||'')+'">'+esc(x.file.name||'image')+'</span>';h+='<span class="st '+stCls+'">'+stTxt+'</span>';h+='</div>';h+='<textarea data-ocr-idx="'+i+'" oninput="onOCRCardEdit('+i+',this.value)" placeholder="Extracted text will appear here...">'+esc(x.text||'')+'</textarea>';h+='</div>';});wrap.innerHTML=h;}
 function onOCRCardEdit(idx, val){ if(OCR_FILES[idx]) OCR_FILES[idx].text = val; }
-function collectOCRTextFromCards(){
-  return OCR_FILES.map(function(x,i){
-    if(x.status!=='done') return '';
-    return '═══════════════════════════════\n📸 SCREENSHOT #' + (i+1) + ' — ' + (x.file.name || 'image') + '\n═══════════════════════════════\n' + (x.text||'');
-  }).filter(Boolean).join('\n\n');
-}
-function sendOCRToBulk(){
-  var text = collectOCRTextFromCards();
-  if(!text.trim()) return toast('No extracted text to send','err');
-  $('bulkInput').value=text;
-  updateBulk();
-  switchTab('bulk');
-  toast('📋 Text sent to Bulk tab');
-}
-function copyOCRText(){
-  var t = collectOCRTextFromCards();
-  if(!t) return toast('Nothing to copy','err');
-  if(navigator.clipboard) navigator.clipboard.writeText(t).then(function(){toast('✅ Copied to clipboard');});
-  else {var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('✅ Copied');}
-}
-function clearOCR(){
-  OCR_FILES=[];
-  $('ocrThumbs').innerHTML='';
-  if($('ocrResultCards')) $('ocrResultCards').innerHTML='';
-  $('ocrResultWrap').style.display='none';
-  $('ocrProgress').classList.remove('show');
-  $('ocrProgressFill').style.width='0%';
-  $('ocrStatus').innerHTML='';
-}
-
+function collectOCRTextFromCards(){return OCR_FILES.map(function(x,i){if(x.status!=='done')return '';return '═══════════════════════════════\n📸 SCREENSHOT #'+(i+1)+' — '+(x.file.name||'image')+'\n═══════════════════════════════\n'+(x.text||'');}).filter(Boolean).join('\n\n');}
+function sendOCRToBulk(){var text=collectOCRTextFromCards();if(!text.trim())return toast('No extracted text to send','err');$('bulkInput').value=text;updateBulk();switchTab('bulk');toast('📋 Text sent to Bulk tab');}
+function copyOCRText(){var t=collectOCRTextFromCards();if(!t)return toast('Nothing to copy','err');if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){toast('✅ Copied to clipboard');});else{var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('✅ Copied');}}
+function clearOCR(){OCR_FILES=[];$('ocrThumbs').innerHTML='';if($('ocrResultCards'))$('ocrResultCards').innerHTML='';$('ocrResultWrap').style.display='none';$('ocrProgress').classList.remove('show');$('ocrProgressFill').style.width='0%';$('ocrStatus').innerHTML='';}
 document.addEventListener('DOMContentLoaded',function(){var ta=$('bulkInput');if(ta)ta.addEventListener('input',updateBulk);});
-
 function loadAll(isManual){if(isManual)toast('🔄 Refreshing...');api('/api/stats').then(function(r){if(!r.ok)return;$('stTotal').innerText=r.stats.total;$('stSent').innerText=r.stats.sent;$('stOpened').innerText=r.stats.opened;$('stPending').innerText=r.stats.pending;$('stTotalSends').innerText=r.stats.totalSends||0;});api('/api/recipients').then(function(r){if(!r.ok)return;CURRENT_ROWS=(r.recipients||[]).sort(function(a,b){var ta=a.createdAt&&a.createdAt._seconds?a.createdAt._seconds*1000:new Date(a.createdAt||0).getTime();var tb=b.createdAt&&b.createdAt._seconds?b.createdAt._seconds*1000:new Date(b.createdAt||0).getTime();return tb-ta;});ALL_ROWS=CURRENT_ROWS.slice();renderRecipients();});}
 function renderRecipients(){var w=$('tableWrap');var q=($('recipSearch').value||'').toLowerCase();var stF=$('statusFilter').value;var filtered=CURRENT_ROWS.filter(function(x){if(stF!=='all'&&(x.status||'')!==stF)return false;return !q||(x.company||'').toLowerCase().indexOf(q)!==-1||(x.email||'').toLowerCase().indexOf(q)!==-1;});$('trackCount').innerText=filtered.length+' / '+CURRENT_ROWS.length;if(!CURRENT_ROWS.length){w.innerHTML='<div class="empty"><div class="ico">📭</div>No recipients yet</div>';updateBulkBar();return;}if(!filtered.length){w.innerHTML='<div class="empty">🔍 No matching recipients</div>';updateBulkBar();return;}var h='<table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" class="cbox" onchange="toggleAll(this.checked)"></th><th>Company</th><th>Email</th><th>Status</th><th>Sends</th><th>Last Sent</th><th>Actions</th></tr></thead><tbody>';filtered.forEach(function(x){var st=(x.status||'').toLowerCase();var cls='pending',lbl='Pending',icon='⏳';if(st.indexOf('opened')!==-1){cls='opened';lbl='Opened';icon='👁';}else if(st==='sent'){cls='sent';lbl='Sent';icon='📤';}h+='<tr class="clickable '+(SELECTED[x.id]?'selected':'')+'" onclick="openRecipHistory(\''+x.id+'\')"><td onclick="event.stopPropagation()"><input type="checkbox" class="cbox" '+(SELECTED[x.id]?'checked':'')+' onchange="toggleOne(\''+x.id+'\',this.checked)"></td>';h+='<td>'+esc(x.company||'—')+'</td><td style="word-break:break-all">'+esc(x.email)+'</td>';h+='<td><span class="badge '+cls+'">'+icon+' '+lbl+'</span></td>';h+='<td><span class="badge count">'+(x.sendCount||0)+'×</span></td>';h+='<td style="font-size:10px">'+fmtDate(x.lastSentAt||x.sentAt)+'</td>';h+='<td style="white-space:nowrap" onclick="event.stopPropagation()"><button class="btn ghost small" onclick="openRecipHistory(\''+x.id+'\')" title="View History">📊</button> <button class="btn ghost small" onclick="openSendOptions(\''+x.id+'\')" title="Send Email">📤</button> <button class="btn danger small" onclick="delRec(\''+x.id+'\')" title="Delete">✕</button></td></tr>';});h+='</tbody></table>';w.innerHTML=h;updateBulkBar();}
 function toggleOne(id,c){if(c)SELECTED[id]=true;else delete SELECTED[id];renderRecipients();}
@@ -1491,65 +1426,31 @@ function toggleAll(c){var q=($('recipSearch').value||'').toLowerCase();var stF=$
 function selectAll(){CURRENT_ROWS.forEach(function(r){SELECTED[r.id]=true;});renderRecipients();}
 function clearSelection(){SELECTED={};renderRecipients();}
 function updateBulkBar(){var ids=Object.keys(SELECTED);var b=$('bulkActionBar');if(ids.length>0){b.classList.add('show');$('selectedCount').innerText=ids.length+' selected';}else b.classList.remove('show');}
-
 function openRecipHistory(recipientId){$('recipHistoryTitle').innerText='📊 All-Time History';$('recipHistoryInfo').innerHTML='<div class="empty" style="padding:20px">Loading...</div>';$('recipHistoryStats').innerHTML='';$('recipHistoryList').innerHTML='';$('recipHistoryModal').classList.remove('hidden');api('/api/recipient/'+recipientId+'/history').then(function(r){if(!r.ok){$('recipHistoryInfo').innerHTML='<div class="empty">Error loading history</div>';return;}var rec=r.recipient||{},stats=r.stats||{},emails=r.emails||[];var info='<div style="font-size:14px;font-weight:700;margin-bottom:6px;word-break:break-all">'+esc(rec.email||'')+'</div>';if(rec.company)info+='<div style="font-size:12px;color:var(--text2)">Company: <b>'+esc(rec.company)+'</b></div>';info+='<div style="font-size:12px;color:var(--text2);margin-top:4px">Status: <b>'+esc(rec.status||'Pending')+'</b>';if(rec.everOpened)info+=' <span class="badge everopened">✓ Ever Opened</span>';info+='</div>';info+='<div style="font-size:11px;color:var(--green);margin-top:6px">🟢 Live sync — data refreshes when opened</div>';$('recipHistoryInfo').innerHTML=info;var s='<div class="recipient-stat-grid"><div class="recipient-stat total"><div class="label">MailFlow Sends</div><div class="value">'+(stats.totalSent||0)+'</div></div><div class="recipient-stat sent"><div class="label">Opened</div><div class="value">'+(stats.totalOpened||0)+'</div></div><div class="recipient-stat pending"><div class="label">Not Opened</div><div class="value">'+(stats.totalNotOpened||0)+'</div></div><div class="recipient-stat opened"><div class="label">Open Rate</div><div class="value">'+(stats.openRate||0)+'%</div></div></div>';$('recipHistoryStats').innerHTML=s;if(!emails.length){$('recipHistoryList').innerHTML='<div class="empty">No MailFlow sends yet</div>';return;}var list='<div style="font-size:11px;color:var(--text2);text-transform:uppercase;font-weight:700;margin-bottom:12px">📧 MailFlow Sends ('+emails.length+') — newest first</div>';emails.forEach(function(e,i){var opened=!!e.openedAt;var pred=e.aiPrediction||'GOOD';var prob=e.aiInboxProb||75;var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';var attHtml='';if(e.attachmentNames&&e.attachmentNames.length>0)attHtml='<div class="attachment-list">'+e.attachmentNames.map(function(n){return '<span class="attachment-name">📎 '+esc(n)+'</span>';}).join('')+'</div>';list+='<div class="send-history-item'+(opened?' opened':'')+'"><div class="top"><div class="subj">#'+(emails.length-i)+' · '+esc(e.subject||'(no subject)')+'</div><span class="badge '+(opened?'opened':'sent')+'">'+(opened?'👁 Opened':'📤 Sent')+'</span></div><div class="meta"><span>📅 '+fmtDate(e.sentAt)+'</span>'+(opened?'<span style="color:#86efac">👁 '+fmtDate(e.openedAt)+'</span>':'<span style="color:#fcd34d">⏳ Not opened</span>')+'<span style="color:'+pc+'">🤖 '+pred+' ('+prob+'%)</span></div>'+attHtml+'</div>';});list+='<div style="margin-top:14px;text-align:center"><button class="btn ghost" id="loadGmailHistBtn" onclick="loadGmailHistory(\''+recipientId+'\')">📧 Load Gmail Sent History (All-time)</button></div>';$('recipHistoryList').innerHTML=list;});}
 function closeRecipHistory(){$('recipHistoryModal').classList.add('hidden');}
-
-async function loadGmailHistory(recipientId){
-  var btn = $('loadGmailHistBtn');
-  if(!btn) return;
-  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Fetching from Gmail...';
-  try{
-    var r = await api('/api/recipient/'+recipientId+'/gmail-history');
-    if(!r.ok){
-      if(r.needsImap){ toast('Please connect your Inbox (IMAP) first from the Inbox tab','warn'); }
-      else toast('Error: '+(r.error||'Failed'),'err');
-      btn.disabled=false; btn.innerHTML='📧 Load Gmail Sent History (All-time)';
-      return;
-    }
-    var ems = r.emails || [];
-    var wrap = $('recipHistoryList');
-    var existing = wrap.innerHTML;
-    var h = '<div style="font-size:11px;color:var(--text2);text-transform:uppercase;font-weight:700;margin:14px 0 10px">📧 Gmail Sent History — '+ems.length+' emails (newest first)</div>';
-    if(!ems.length){ h += '<div class="empty" style="padding:20px">No Gmail sent emails found for this recipient</div>'; }
-    else {
-      ems.forEach(function(e,i){
-        h += '<div class="send-history-item gmail"><div class="top"><div class="subj">#'+(ems.length-i)+' · '+esc(e.subject||'(no subject)')+'</div><span class="badge gmail">📧 Gmail</span></div><div class="meta"><span>📅 '+fmtEmailDate(e.date)+'</span><span>To: '+esc(e.to||'')+'</span></div></div>';
-      });
-    }
-    var cleaned = existing.replace(/<div style="margin-top:14px;text-align:center"><button[^>]*id="loadGmailHistBtn"[^>]*>[\s\S]*?<\/button><\/div>/,'');
-    cleaned = cleaned.split('<div style="font-size:11px;color:var(--text2);text-transform:uppercase;font-weight:700;margin:14px 0 10px">📧 Gmail Sent History')[0];
-    wrap.innerHTML = cleaned + h + '<div style="margin-top:14px;text-align:center"><button class="btn ghost" onclick="loadGmailHistory(\''+recipientId+'\')">🔄 Refresh Gmail History</button></div>';
-  } catch(e){ toast('Error loading history','err'); btn.disabled=false; btn.innerHTML='📧 Load Gmail Sent History (All-time)'; }
-}
-
+async function loadGmailHistory(recipientId,force){var btn=$('loadGmailHistBtn');if(btn){btn.disabled=true;btn.innerHTML='<span class="spin"></span> Fetching from Gmail...';}try{var url='/api/recipient/'+recipientId+'/gmail-history'+(force?'?force=1':'');var r=await api(url);if(!r.ok){if(r.needsImap){toast('Please connect your Inbox (IMAP) first from the Inbox tab','warn');}else toast('Error: '+(r.error||'Failed'),'err');if(btn){btn.disabled=false;btn.innerHTML='📧 Load Gmail Sent History (All-time)';}return;}var ems=r.emails||[];var wrap=$('recipHistoryList');var existing=wrap.innerHTML;var h='<div style="font-size:11px;color:var(--text2);text-transform:uppercase;font-weight:700;margin:14px 0 10px">📧 Gmail Sent History — '+ems.length+' emails (all-time, newest first)</div>';if(!ems.length){h+='<div class="empty" style="padding:20px">No Gmail sent emails found for this recipient</div>';}else{ems.forEach(function(e,i){h+='<div class="send-history-item gmail"><div class="top"><div class="subj">#'+(ems.length-i)+' · '+esc(e.subject||'(no subject)')+'</div><span class="badge gmail">📧 Gmail</span></div><div class="meta"><span>📅 '+fmtEmailDate(e.date)+'</span><span>To: '+esc(e.to||'')+'</span></div></div>';});}var cleaned=existing.replace(/<div style="margin-top:14px;text-align:center"><button[^>]*id="loadGmailHistBtn"[^>]*>[\s\S]*?<\/button><\/div>/,'');cleaned=cleaned.split('<div style="font-size:11px;color:var(--text2);text-transform:uppercase;font-weight:700;margin:14px 0 10px">📧 Gmail Sent History')[0];wrap.innerHTML=cleaned+h+'<div style="margin-top:14px;text-align:center"><button class="btn ghost" onclick="loadGmailHistory(\''+recipientId+'\',true)">🔄 Refresh Gmail History</button></div>';}catch(e){toast('Error loading history','err');if(btn){btn.disabled=false;btn.innerHTML='📧 Load Gmail Sent History (All-time)';}}}
 function openSendOptions(id){_currentSendId=id;var rec=ALL_ROWS.filter(function(x){return x.id===id;})[0]||{};var status=rec.status||'Pending';var info='<div><b>'+esc(rec.email||'')+'</b>'+(rec.company?' — '+esc(rec.company):'')+'</div>';info+='<div style="margin-top:6px">Status: <b>'+status+'</b></div>';$('sendOptionsInfo').innerHTML=info;$('optSignature').checked=true;$('optLogo').checked=true;$('optAttachments').checked=true;$('sendOptionsBackdrop').classList.remove('hidden');}
 function closeSendOptions(){$('sendOptionsBackdrop').classList.add('hidden');_currentSendId=null;}
-document.getElementById('sendOptionsConfirm').addEventListener('click',function(){if(!_currentSendId)return;var id=_currentSendId;var payload={recipientId:id,includeSignature:$('optSignature').checked,includeLogo:$('optLogo').checked,includeAttachments:$('optAttachments').checked,selectedFileIds:Object.keys(SELECTED_FILES)};var btn=this;btn.disabled=true;btn.innerHTML='<span class="spin"></span> Sending...';api('/api/send','POST',payload).then(function(r){btn.disabled=false;btn.innerText='📤 Send Now';if(r.ok){toast('✅ Email sent');closeSendOptions();loadAll();loadMyEmails();loadQuota();loadQuickAuto();}else if(r.error==='QUIET_HOURS'){closeSendOptions();showConfirm({icon:'🌙',title:'Quiet Hours Active',message:'Send anyway?',okText:'Send Now',primary:true}).then(function(f){if(!f)return;api('/api/send','POST',Object.assign({force:true},payload)).then(function(r2){if(r2.ok){toast('✅ Email sent');loadAll();}else toast('Error sending','err');});});}else if(r.error==='DAILY_LIMIT_REACHED'){toast('❌ Daily sending limit reached','err');}else toast('Error: '+r.error,'err');}).catch(function(){btn.disabled=false;btn.innerText='📤 Send Now';});});
+document.getElementById('sendOptionsConfirm').addEventListener('click',function(){if(!_currentSendId)return;var id=_currentSendId;var payload={recipientId:id,includeSignature:$('optSignature').checked,includeLogo:$('optLogo').checked,includeAttachments:$('optAttachments').checked,selectedFileIds:Object.keys(SELECTED_FILES)};var btn=this;btn.disabled=true;btn.innerHTML='<span class="spin"></span> Sending...';api('/api/send','POST',payload).then(function(r){btn.disabled=false;btn.innerText='📤 Send Now';if(r.ok){toast('✅ Email sent');closeSendOptions();loadAll();loadMyEmails();loadQuota(true);loadQuickAuto();}else if(r.error==='QUIET_HOURS'){closeSendOptions();showConfirm({icon:'🌙',title:'Quiet Hours Active',message:'Send anyway?',okText:'Send Now',primary:true}).then(function(f){if(!f)return;api('/api/send','POST',Object.assign({force:true},payload)).then(function(r2){if(r2.ok){toast('✅ Email sent');loadAll();}else toast('Error sending','err');});});}else if(r.error==='DAILY_LIMIT_REACHED'){toast('❌ Daily sending limit reached','err');}else toast('Error: '+r.error,'err');}).catch(function(){btn.disabled=false;btn.innerText='📤 Send Now';});});
 async function delRec(id){var ok=await showConfirm({icon:'🗑',title:'Delete recipient?',message:'This will permanently remove this recipient.',okText:'Delete'});if(!ok)return;api('/api/recipients/'+id,'DELETE').then(function(r){if(r.ok){toast('✅ Recipient deleted');delete SELECTED[id];loadAll();loadQuickAuto();}});}
-async function resendSelected(){var ids=Object.keys(SELECTED);if(!ids.length)return toast('Please select recipients first','err');var ok=await showConfirm({icon:'🔁',title:'Resend to '+ids.length+' recipients?',message:'',okText:'Resend',primary:true});if(!ok)return;var done=0,err=0;var selFiles=Object.keys(SELECTED_FILES);toast('Starting bulk resend...');var next=function(i){if(i>=ids.length){toast('✅ '+done+' emails sent');clearSelection();loadAll();loadQuota();loadMyEmails();return;}setTimeout(function(){api('/api/resend','POST',{recipientId:ids[i],selectedFileIds:selFiles}).then(function(r){if(r.ok)done++;else if(r.error==='DAILY_LIMIT_REACHED'){toast('❌ Daily limit reached','err');clearSelection();loadAll();return;}else err++;next(i+1);}).catch(function(){err++;next(i+1);});},800);};next(0);}
+async function resendSelected(){var ids=Object.keys(SELECTED);if(!ids.length)return toast('Please select recipients first','err');var ok=await showConfirm({icon:'🔁',title:'Resend to '+ids.length+' recipients?',message:'',okText:'Resend',primary:true});if(!ok)return;var done=0,err=0;var selFiles=Object.keys(SELECTED_FILES);toast('Starting bulk resend...');var next=function(i){if(i>=ids.length){toast('✅ '+done+' emails sent');clearSelection();loadAll();loadQuota(true);loadMyEmails();return;}setTimeout(function(){api('/api/resend','POST',{recipientId:ids[i],selectedFileIds:selFiles}).then(function(r){if(r.ok)done++;else if(r.error==='DAILY_LIMIT_REACHED'){toast('❌ Daily limit reached','err');clearSelection();loadAll();return;}else err++;next(i+1);}).catch(function(){err++;next(i+1);});},800);};next(0);}
 async function deleteSelected(){var ids=Object.keys(SELECTED);if(!ids.length)return toast('Please select recipients first','err');var ok=await showConfirm({icon:'⚠️',title:'Delete '+ids.length+' recipients?',message:'This cannot be undone.',okText:'Delete All'});if(!ok)return;api('/api/recipients/bulk-delete','POST',{ids:ids}).then(function(r){if(r.ok){toast('✅ '+r.deleted+' recipients deleted');clearSelection();loadAll();loadQuickAuto();}});}
-
 function loadMyEmails(){var range=$('myEmailRange')?$('myEmailRange').value:'all';api('/api/my-emails?range='+encodeURIComponent(range)).then(function(r){if(!r.ok)return;MY_EMAILS=(r.emails||[]).sort(function(a,b){var ta=a.sentAt&&a.sentAt._seconds?a.sentAt._seconds*1000:new Date(a.sentAt||0).getTime();var tb=b.sentAt&&b.sentAt._seconds?b.sentAt._seconds*1000:new Date(b.sentAt||0).getTime();return tb-ta;});renderMyEmails();});}
 function renderMyEmails(){var w=$('myEmailsWrap');var q=($('myEmailSearch').value||'').toLowerCase();var filtered=MY_EMAILS.filter(function(e){return !q||(e.recipientEmail||'').toLowerCase().indexOf(q)!==-1||(e.subject||'').toLowerCase().indexOf(q)!==-1;});if($('myEmailCount'))$('myEmailCount').innerText=filtered.length+' shown';if(!filtered.length){w.innerHTML='<div class="empty"><div class="ico">📧</div>No email history yet</div>';return;}var h='<table class="data-table"><thead><tr><th>Recipient</th><th>Subject</th><th>Sent</th><th>Status</th><th>Opened</th><th>Files</th></tr></thead><tbody>';filtered.slice(0,300).forEach(function(e){var opened=!!e.openedAt;var stCls=opened?'opened':'sent';var stIcon=opened?'👁':'📤';var stLbl=opened?'Opened':'Sent';var attCell='—';if(e.attachmentNames&&e.attachmentNames.length>0)attCell='<div class="attachment-list">'+e.attachmentNames.map(function(n){return '<span class="attachment-name">📎 '+esc(n)+'</span>';}).join('')+'</div>';else if((e.attachmentsCount||0)>0)attCell='<span class="badge attach">📎 '+e.attachmentsCount+'</span>';h+='<tr><td style="word-break:break-all;font-size:11px">'+esc(e.recipientEmail)+'</td><td style="font-size:11px">'+esc(e.subject||'—')+'</td><td style="font-size:10px">'+fmtDate(e.sentAt)+'</td><td><span class="badge '+stCls+'">'+stIcon+' '+stLbl+'</span></td><td style="font-size:10px">'+(opened?fmtDate(e.openedAt):'—')+'</td><td>'+attCell+'</td></tr>';});h+='</tbody></table>';w.innerHTML=h;}
-
 function loadPrefs(){api('/api/prefs').then(function(r){if(!r.ok)return;});}
-
 function checkIMAPStatus(){api('/api/imap/status').then(function(r){if(!r.ok){showIMAPSetup();return;}IMAP_CONNECTED=!!r.connected;if(IMAP_CONNECTED){$('imapSetupPanel').classList.add('hidden');$('imapInboxUI').classList.remove('hidden');loadIMAPInbox();startLiveInbox();}else{showIMAPSetup();}}).catch(function(){showIMAPSetup();});}
 function showIMAPSetup(){$('imapSetupPanel').classList.remove('hidden');$('imapInboxUI').classList.add('hidden');}
-async function connectIMAP(){var pass=$('imapAppPassword').value.trim();if(!pass||pass.replace(/\s/g,'').length<16){return toast('App password must be 16 characters','err');}var btn=$('imapConnectBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Testing connection...';try{var r=await api('/api/imap/connect','POST',{appPassword:pass});if(r.ok){toast('✅ Inbox connected');$('imapAppPassword').value='';IMAP_CONNECTED=true;$('imapSetupPanel').classList.add('hidden');$('imapInboxUI').classList.remove('hidden');loadIMAPInbox();startLiveInbox();}else{toast('Error: '+r.error,'err');}}catch(e){toast('Connection failed','err');}btn.disabled=false;btn.innerHTML='🔌 Connect Inbox';}
-async function connectIMAPWithStored(){var btn=$('imapSamePassBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Connecting...';try{var r=await api('/api/imap/connect','POST',{useStored:true});if(r.ok){toast('✅ Connected with saved password');IMAP_CONNECTED=true;$('imapSetupPanel').classList.add('hidden');$('imapInboxUI').classList.remove('hidden');loadIMAPInbox();startLiveInbox();}else{toast('Error: '+r.error,'err');}}catch(e){toast('Connection failed','err');}btn.disabled=false;btn.innerHTML='🔗 Use Saved Password';}
+async function connectIMAP(){var pass=$('imapAppPassword').value.trim();if(!pass||pass.replace(/\s/g,'').length<16){return toast('App password must be 16 characters','err');}var btn=$('imapConnectBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Testing connection...';try{var r=await api('/api/imap/connect','POST',{appPassword:pass});if(r.ok){toast('✅ Inbox connected');$('imapAppPassword').value='';IMAP_CONNECTED=true;$('imapSetupPanel').classList.add('hidden');$('imapInboxUI').classList.remove('hidden');loadIMAPInbox();startLiveInbox();loadQuota(true);}else{toast('Error: '+r.error,'err');}}catch(e){toast('Connection failed','err');}btn.disabled=false;btn.innerHTML='🔌 Connect Inbox';}
+async function connectIMAPWithStored(){var btn=$('imapSamePassBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Connecting...';try{var r=await api('/api/imap/connect','POST',{useStored:true});if(r.ok){toast('✅ Connected with saved password');IMAP_CONNECTED=true;$('imapSetupPanel').classList.add('hidden');$('imapInboxUI').classList.remove('hidden');loadIMAPInbox();startLiveInbox();loadQuota(true);}else{toast('Error: '+r.error,'err');}}catch(e){toast('Connection failed','err');}btn.disabled=false;btn.innerHTML='🔗 Use Saved Password';}
 async function disconnectIMAP(){var ok=await showConfirm({icon:'🔌',title:'Disconnect Inbox?',message:'',okText:'Disconnect'});if(!ok)return;api('/api/imap/disconnect','POST').then(function(r){if(r.ok){toast('Inbox disconnected');IMAP_CONNECTED=false;INBOX_EMAILS=[];if(LIVE_INBOX_TIMER)clearInterval(LIVE_INBOX_TIMER);$('imapSetupPanel').classList.remove('hidden');$('imapInboxUI').classList.add('hidden');}});}
 function loadIMAPInbox(silent){if(!IMAP_CONNECTED)return;var folder=$('inboxFolder').value;var pageSize=parseInt($('inboxLimit').value)||20;if(!silent){$('inboxList').innerHTML='<div class="empty">⏳ Loading...</div>';}$('imapPageInfo').innerText='Page '+imapPage;$('imapPrevBtn').disabled=imapPage<=1;$('imapNextBtn').disabled=true;api('/api/imap/inbox','POST',{folder:folder,page:imapPage,pageSize:pageSize}).then(function(r){if(!r.ok){if(!silent)$('inboxList').innerHTML='<div class="empty">'+esc(r.error)+'</div>';return;}var newEmails=r.emails||[];var newHash=JSON.stringify(newEmails.map(function(e){return e.uid+'-'+e.isRead;}));if(silent&&newHash===lastInboxHash)return;lastInboxHash=newHash;INBOX_EMAILS=newEmails;$('imapNextBtn').disabled=!r.hasMore;if(!INBOX_EMAILS.length){$('inboxList').innerHTML='<div class="empty">No emails found</div>';return;}renderInboxList();});}
 function renderInboxList(){var h='';INBOX_EMAILS.forEach(function(e,i){h+='<div class="inbox-item'+(e.isRead?'':' unread')+'" onclick="openIMAPEmail('+i+')" data-idx="'+i+'">';h+='<div class="from"><span class="from-name">'+esc(e.fromName||e.from||'Unknown')+'</span><span class="date">'+esc(fmtTimeAgo(e.date||e.receivedAt))+'</span></div>';h+='<div class="subj">'+esc(e.subject||'(no subject)')+'</div></div>';});$('inboxList').innerHTML=h;}
-function openIMAPEmail(i){var e=INBOX_EMAILS[i];if(!e)return;ACTIVE_EMAIL=e;document.querySelectorAll('.inbox-item').forEach(function(el){el.classList.remove('active');if(parseInt(el.getAttribute('data-idx'))===i)el.classList.add('active');});$('inboxEmpty').classList.add('hidden');$('inboxViewerContent').classList.remove('hidden');$('inboxViewerContent').style.display='flex';$('viewSubject').innerText=e.subject||'(no subject)';$('viewFrom').innerText=(e.fromName||'')+' <'+(e.from||'')+'>';$('viewTo').innerText=e.to||'';$('viewDate').innerText=fmtEmailDate(e.date||e.receivedAt);var bodyContainer=$('viewBody');bodyContainer.innerHTML='<div class="loading"><div class="spin"></div><span>Loading...</span></div>';api('/api/imap/body','POST',{folder:e.folder||'INBOX',uid:e.uid}).then(function(r){if(!r.ok){bodyContainer.innerHTML='<div class="plain-body">Failed to load email</div>';return;}var email=r.email;ACTIVE_EMAIL=Object.assign({},e,email);bodyContainer.innerHTML='';if(email.htmlBody && email.htmlBody.trim().length>0){var iframe=document.createElement('iframe');iframe.style.cssText='width:100%;border:none;background:#fff;display:block;';iframe.setAttribute('sandbox','allow-same-origin allow-popups');bodyContainer.appendChild(iframe);try{var doc=iframe.contentDocument||iframe.contentWindow.document;doc.open();doc.write('<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:20px;font-family:-apple-system,sans-serif;font-size:14px;line-height:1.6;color:#222;word-break:break-word;background:#fff}img{max-width:100%;height:auto}a{color:#1a73e8}</style></head><body>'+email.htmlBody+'</body></html>');doc.close();setTimeout(function(){try{var hh=doc.body.scrollHeight;iframe.style.height=Math.max(400,Math.min(hh+60,1500))+'px';}catch(err){iframe.style.height='500px';}},200);}catch(err){bodyContainer.innerHTML='<div class="plain-body">'+esc(email.textBody||email.snippet||'')+'</div>';}}else bodyContainer.innerHTML='<div class="plain-body">'+esc(email.textBody||email.snippet||'')+'</div>';});}
+function openIMAPEmail(i){var e=INBOX_EMAILS[i];if(!e)return;ACTIVE_EMAIL=e;document.querySelectorAll('.inbox-item').forEach(function(el){el.classList.remove('active');if(parseInt(el.getAttribute('data-idx'))===i)el.classList.add('active');});$('inboxEmpty').classList.add('hidden');$('inboxViewerContent').classList.remove('hidden');$('inboxViewerContent').style.display='flex';$('viewSubject').innerText=e.subject||'(no subject)';$('viewFrom').innerText=(e.fromName||'')+' <'+(e.from||'')+'>';$('viewTo').innerText=e.to||'';$('viewDate').innerText=fmtEmailDate(e.date||e.receivedAt);var bodyContainer=$('viewBody');bodyContainer.innerHTML='<div class="loading"><div class="spin"></div><span>Loading...</span></div>';api('/api/imap/body','POST',{folder:e.folder||'INBOX',uid:e.uid}).then(function(r){if(!r.ok){bodyContainer.innerHTML='<div class="plain-body">Failed to load email</div>';return;}var email=r.email;ACTIVE_EMAIL=Object.assign({},e,email);bodyContainer.innerHTML='';if(email.htmlBody&&email.htmlBody.trim().length>0){var iframe=document.createElement('iframe');iframe.style.cssText='width:100%;border:none;background:#fff;display:block;';iframe.setAttribute('sandbox','allow-same-origin allow-popups');bodyContainer.appendChild(iframe);try{var doc=iframe.contentDocument||iframe.contentWindow.document;doc.open();doc.write('<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:20px;font-family:-apple-system,sans-serif;font-size:14px;line-height:1.6;color:#222;word-break:break-word;background:#fff}img{max-width:100%;height:auto}a{color:#1a73e8}</style></head><body>'+email.htmlBody+'</body></html>');doc.close();setTimeout(function(){try{var hh=doc.body.scrollHeight;iframe.style.height=Math.max(400,Math.min(hh+60,1500))+'px';}catch(err){iframe.style.height='500px';}},200);}catch(err){bodyContainer.innerHTML='<div class="plain-body">'+esc(email.textBody||email.snippet||'')+'</div>';}}else bodyContainer.innerHTML='<div class="plain-body">'+esc(email.textBody||email.snippet||'')+'</div>';});}
 async function deleteIMAPEmail(){if(!ACTIVE_EMAIL)return;var ok=await showConfirm({icon:'🗑',title:'Delete email?',message:'Removes from MailFlow only.',okText:'Delete'});if(!ok)return;api('/api/imap/email/'+encodeURIComponent(ACTIVE_EMAIL.id),'DELETE').then(function(r){if(r.ok){toast('✅ Deleted');INBOX_EMAILS=INBOX_EMAILS.filter(function(e){return e.id!==ACTIVE_EMAIL.id;});ACTIVE_EMAIL=null;$('inboxViewerContent').classList.add('hidden');$('inboxEmpty').classList.remove('hidden');renderInboxList();}});}
-
 function openReplyModal(useAI){if(!ACTIVE_EMAIL)return;$('replyTo').value=ACTIVE_EMAIL.from||'';$('replySubject').value=/^re:/i.test(ACTIVE_EMAIL.subject||'')?ACTIVE_EMAIL.subject:('Re: '+(ACTIVE_EMAIL.subject||''));$('replyBody').value='';$('replyModalTitle').innerText=useAI?'🤖 AI Smart Reply':'↩️ Reply';$('replyAIHint').style.display=useAI?'block':'none';$('replyModal').classList.remove('hidden');if(useAI){$('replyAIStatus').innerText='🤖 Analyzing email...';generateAIReply(ACTIVE_EMAIL);}}
 function closeReplyModal(){$('replyModal').classList.add('hidden');}
 async function generateAIReply(email){try{var bodyText=email.textBody||email.snippet||'';if(!bodyText&&email.htmlBody)bodyText=email.htmlBody.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();if(!bodyText){$('replyAIStatus').innerText='⚠️ No email body available';return;}$('replyAIStatus').innerText='🤖 Generating reply...';var res=await api('/api/ai/smart-reply','POST',{originalSubject:email.subject,originalBody:bodyText.substring(0,4000),originalFrom:(email.fromName||'')+' <'+(email.from||'')+'>'});if(res.ok&&res.body){$('replyBody').value=res.body;if(res.subject)$('replySubject').value=res.subject;$('replyAIStatus').innerText='✅ Reply ready';toast('✅ Reply generated');}else{$('replyAIStatus').innerText='⚠️ Generation failed';}}catch(e){$('replyAIStatus').innerText='⚠️ Error';}}
-function sendReplyFromInbox(){var to=$('replyTo').value.trim(),subject=$('replySubject').value.trim(),body=$('replyBody').value.trim();if(!to||!body)return toast('Please fill in recipient and message','err');var inReplyTo=ACTIVE_EMAIL?(ACTIVE_EMAIL.messageId||''):'';var references=ACTIVE_EMAIL?(ACTIVE_EMAIL.references||ACTIVE_EMAIL.messageId||''):'';toast('Sending reply...');api('/api/inbox/reply','POST',{to:to,subject:subject,body:body,inReplyTo:inReplyTo,references:references}).then(function(r){if(r.ok){toast('✅ Reply sent');closeReplyModal();}else toast('Error: '+r.error,'err');});}
-
+function sendReplyFromInbox(){var to=$('replyTo').value.trim(),subject=$('replySubject').value.trim(),body=$('replyBody').value.trim();if(!to||!body)return toast('Please fill in recipient and message','err');var inReplyTo=ACTIVE_EMAIL?(ACTIVE_EMAIL.messageId||''):'';var references=ACTIVE_EMAIL?(ACTIVE_EMAIL.references||ACTIVE_EMAIL.messageId||''):'';toast('Sending reply...');api('/api/inbox/reply','POST',{to:to,subject:subject,body:body,inReplyTo:inReplyTo,references:references}).then(function(r){if(r.ok){toast('✅ Reply sent');closeReplyModal();loadQuota(true);}else toast('Error: '+r.error,'err');});}
 function switchTestTab(t){if(t==='manual'){$('testTabManual').classList.add('active');$('testTabBulk').classList.remove('active');$('testManualTab').classList.remove('hidden');$('testBulkTab').classList.add('hidden');}else{$('testTabBulk').classList.add('active');$('testTabManual').classList.remove('active');$('testBulkTab').classList.remove('hidden');$('testManualTab').classList.add('hidden');}}
 function addTestRow(){var w=$('testRecipientsRows');if(!w)return;var d=document.createElement('div');d.className='recip-row';d.innerHTML='<input type="text" placeholder="Company"><input type="email" placeholder="test@example.com"><button class="del" onclick="this.parentNode.remove()">✕</button>';w.appendChild(d);}
 function submitTestRecipientsManual(){var rows=$('testRecipientsRows').querySelectorAll('.recip-row');var list=[];rows.forEach(function(r){var i=r.querySelectorAll('input');if(i[1].value.trim())list.push({company:i[0].value.trim(),email:i[1].value.trim()});});if(!list.length)return toast('No emails entered','err');api('/api/test/recipients','POST',{list:list}).then(function(res){if(res.ok){toast('✅ '+res.added+' added');$('testRecipientsRows').innerHTML='';addTestRow();loadTestDashboard();}});}
@@ -1568,7 +1469,6 @@ async function delTestRec(id){var ok=await showConfirm({icon:'🗑',title:'Delet
 async function clearTestData(){var ok=await showConfirm({icon:'⚠️',title:'Clear ALL test data?',message:'This cannot be undone',okText:'Clear All'});if(!ok)return;toast('Clearing test data...');api('/api/test/clear','POST',{}).then(function(r){if(r.ok){toast('✅ '+r.deleted+' items deleted');TEST_SELECTED={};setTimeout(loadTestDashboard,500);}});}
 function sendTestEmail(){var to=$('testTo').value.trim(),subject=$('testSubject').value.trim(),body=$('testBody').value.trim();if(!to||!subject||!body)return toast('Please fill in all fields','err');toast('Sending test email...');api('/api/test/send','POST',{to:to,subject:subject,body:body,includeSignature:true,includeLogo:false,selectedFileIds:[],useTestSignature:false}).then(function(r){if(r.ok){toast('✅ Test email sent');loadTestDashboard();}else toast('Error: '+r.error,'err');});}
 async function runTestAutomation(){var bs=parseInt($('testAutoBatchSize').value)||5;var delay=parseInt($('testAutoDelay').value)||20;var ok=await showConfirm({icon:'▶️',title:'Run automation?',message:bs+' emails with '+delay+'s delay',okText:'Run',primary:true});if(!ok)return;toast('⏳ Running automation...');api('/api/test/automation/run','POST',{batchSize:bs,delay:delay}).then(function(r){if(r.ok){if(r.sent>0)toast('✅ '+r.sent+' emails sent');else toast(r.message||'No pending recipients','warn');loadTestDashboard();}});}
-
 function loadAdmin(){$('adminUsersList').innerHTML='<div class="empty">Loading...</div>';api('/api/admin/dashboard').then(function(r){if(!r.ok)return;$('adTotalUsers').innerText=r.stats.totalUsers;$('adTotalEmails').innerText=r.stats.totalEmails;$('adTotalOpened').innerText=r.stats.totalOpened;$('adTotalPending').innerText=r.stats.totalPending;$('adTotalSends').innerText=r.stats.totalSends||0;});}
 function loadAdminUsersPage(p,silent){if(p<1)p=1;adminPage=p;if(!silent)$('adminUsersList').innerHTML='<div class="empty">Loading...</div>';$('adminPagination').style.display='none';api('/api/admin/users/paginated?page='+adminPage+'&limit=15&search='+encodeURIComponent(adminSearchQuery)).then(function(r){if(!r.ok){if(!silent)$('adminUsersList').innerHTML='<div class="empty">Error loading users</div>';return;}var users=r.users||[];var pag=r.pagination||{page:1,totalPages:1,total:0};if(!users.length){if(!silent){$('adminUsersList').innerHTML='<div class="empty">'+(adminSearchQuery?'No matching users':'No users yet')+'</div>';}$('adminPagination').style.display='none';return;}var h='';users.forEach(function(u){h+='<div class="user-card '+(u.banned?'banned':'')+'"><div class="top"><div style="flex:1;min-width:0"><div class="name">'+esc(u.name||'(no name)')+(u.banned?' <span class="badge banned">🚫</span>':'')+(u.hasSmtp?' <span class="badge sent">📧</span>':'')+'</div><div class="email">'+esc(u.email)+'</div></div><span class="app-id-pill">'+esc(u.appAccountId||'N/A')+'</span></div>';h+='<div style="font-size:11px;color:var(--text3);margin-top:6px">Reg: '+fmtDate(u.createdAt)+' · Auth: '+(u.authType||'email')+'</div>';h+='<div class="actions-row"><button class="btn ghost small" onclick="viewAdminUser(\''+esc(u.id)+'\')">👁 Details</button>';if(u.email.toLowerCase()!==(USER.email||'').toLowerCase()){if(u.banned){h+='<button class="btn success small" onclick="unbanUser(\''+esc(u.id)+'\')">✓ Unban</button>';}else{h+='<button class="btn warn small" onclick="openBanModal(\''+esc(u.id)+'\',\''+esc(u.email)+'\')">🚫 Ban</button>';}h+='<button class="btn danger small" onclick="deleteUserAccount(\''+esc(u.id)+'\',\''+esc(u.email)+'\')">🗑 Delete</button>';}h+='</div></div>';});$('adminUsersList').innerHTML=h;if(pag.totalPages>1){$('adminPagination').style.display='flex';$('adminPageInfo').innerText='Page '+pag.page+' of '+pag.totalPages+' ('+pag.total+' total)';$('adminPrevBtn').disabled=pag.page<=1;$('adminNextBtn').disabled=pag.page>=pag.totalPages;}else $('adminPagination').style.display='none';});}
 function onAdminSearchChange(){if(adminSearchTimer)clearTimeout(adminSearchTimer);adminSearchTimer=setTimeout(function(){adminSearchQuery=$('adminSearch').value.trim();loadAdminUsersPage(1);},400);}
@@ -1586,7 +1486,6 @@ async function confirmBanUser(){if(!_banTargetUid)return;var reason=$('banReason
 async function deleteUserAccount(uid,email){var ok=await showConfirm({icon:'⚠️',title:'Delete User?',message:'Delete '+email+' and ALL their data?',okText:'Delete'});if(!ok)return;var ok2=await showConfirm({icon:'🚨',title:'FINAL CONFIRMATION',message:'Really delete '+email+'? This cannot be undone.',okText:'Yes, Delete'});if(!ok2)return;toast('Deleting user...');api('/api/admin/user/'+uid,'DELETE').then(function(r){if(r.ok){toast('✅ User deleted');loadAdmin();loadAdminAIUsage();loadAdminBanned();loadAdminUsersPage(adminPage);}else toast('Error deleting','err');});}
 function viewAdminUser(uid){$('adminUserContent').innerHTML='<div class="empty">Loading...</div>';$('adminUserModal').classList.remove('hidden');api('/api/admin/user/'+uid+'/details').then(function(r){if(!r.ok){$('adminUserContent').innerHTML='<div class="empty">Error loading user</div>';return;}var u=r.user;var ai=u.aiUsage||{today:0,month:0,total:0,calls:0,providers:{}};var h='<div class="info-box" style="margin:0"><div class="row"><span class="k">Name:</span><span class="v">'+esc(u.name||'—')+'</span></div><div class="row"><span class="k">Email:</span><span class="v" style="font-size:12px">'+esc(u.email)+'</span></div><div class="row"><span class="k">App ID:</span><span class="v"><span class="app-id-pill">'+esc(u.appAccountId)+'</span></span></div><div class="row"><span class="k">Auth:</span><span class="v">'+esc(u.authType||'email')+'</span></div><div class="row"><span class="k">Gmail:</span><span class="v">'+(u.hasSmtp?'✅ Connected':'❌ Not connected')+'</span></div><div class="row"><span class="k">Inbox:</span><span class="v">'+(u.hasImap?'✅ Connected':'❌ Not connected')+'</span></div><div class="row"><span class="k">Registered:</span><span class="v" style="font-size:12px">'+fmtDate(u.createdAt)+'</span></div><div class="row"><span class="k">Last Login:</span><span class="v" style="font-size:12px">'+fmtDate(u.lastLogin)+'</span></div><div class="row"><span class="k">Status:</span><span class="v">'+(u.banned?'<span class="badge banned">🚫 BANNED</span>':'<span class="badge opened">✅ Active</span>')+'</span></div></div>';var s=u.stats;h+='<div class="recipient-stat-grid" style="margin-top:16px"><div class="recipient-stat total"><div class="label">Recipients</div><div class="value">'+s.total+'</div></div><div class="recipient-stat sent"><div class="label">Sent</div><div class="value">'+s.sent+'</div></div><div class="recipient-stat opened"><div class="label">Opened</div><div class="value">'+s.opened+'</div></div><div class="recipient-stat pending"><div class="label">Pending</div><div class="value">'+s.pending+'</div></div></div>';h+='<div style="font-size:13px;font-weight:700;margin-top:20px;margin-bottom:12px;color:var(--cyan)">🤖 AI Usage</div><div class="ai-usage-grid"><div class="ai-usage-card"><div class="lbl">Today</div><div class="val">'+fmtNum(ai.today)+'</div></div><div class="ai-usage-card"><div class="lbl">Month</div><div class="val">'+fmtNum(ai.month)+'</div></div><div class="ai-usage-card highlight"><div class="lbl">Lifetime</div><div class="val">'+fmtNum(ai.total)+'</div></div><div class="ai-usage-card"><div class="lbl">Calls</div><div class="val">'+fmtNum(ai.calls)+'</div></div></div>';var provs=Object.keys(ai.providers||{}).map(function(k){return '<span class="badge sent" style="font-size:10px;margin:2px">'+esc(k)+' ('+ai.providers[k]+')</span>';}).join('');if(provs)h+='<div style="margin-top:12px"><b style="font-size:11px;color:var(--text2)">Providers:</b><div style="margin-top:6px">'+provs+'</div></div>';$('adminUserContent').innerHTML=h;});}
 function closeAdminUser(){$('adminUserModal').classList.add('hidden');}
-
 var url=new URL(window.location.href);
 if(url.searchParams.get('login')==='success'){window.history.replaceState({},'','/');location.reload();}
 </script>
