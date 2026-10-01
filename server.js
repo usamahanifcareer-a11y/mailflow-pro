@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const cookieSession = require('cookie-session');
 const nodemailer = require('nodemailer');
-const { initializeApp, cert } = require('firebase-admin/app');
+const { initializeApp, cert, getApps } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const crypto = require('crypto');
@@ -19,13 +19,13 @@ const DEFAULT_SEND_DELAY = 20;
 const IS_VERCEL = !!process.env.VERCEL;
 const CRON_SECRET = process.env.CRON_SECRET || '';
 const BACKEND_URL = process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org';
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.0.1';
 const OCR_SPACE_API_KEY = process.env.OCR_SPACE_API_KEY || 'helloworld';
 const OCR_FREE_MONTHLY_LIMIT = 25000;
 
 // Tracking quality controls
-const TRACK_MIN_DELAY_MS = 60 * 1000;     // 60s: ignore pixel hits before this (prefetch/scanner safety)
-const TRACK_MACHINE_WINDOW_MS = 5 * 60 * 1000; // within 5min = mark "Delivered" (machine), not "Opened"
+const TRACK_MIN_DELAY_MS = 60 * 1000;
+const TRACK_MACHINE_WINDOW_MS = 5 * 60 * 1000;
 
 const MAX_FILE_SIZE = 3 * 1024 * 1024;
 const MAX_LOGO_SIZE = 2 * 1024 * 1024;
@@ -71,7 +71,6 @@ async function fetchWithTimeout(url,opts,ms){const ctrl=new AbortController();co
 
 function replaceInlineLogoWithPublicUrl(html, uid){if(!html||!uid)return html;try{return html.replace(/src\s*=\s*["']data:image\/[^;]+;base64,[^"']+["']/gi, 'src="' + BACKEND_URL + '/logo/' + uid + '"');}catch(e){return html;}}
 
-// Rewrite all <a href="http..."> to our click-tracking URL (most reliable human signal)
 function rewriteLinksForTracking(html, logId, uid, token){
   if(!html||!logId||!uid||!token) return html;
   try{
@@ -111,9 +110,27 @@ app.use(express.static(path.join(__dirname,'public')));
 app.get('/privacy',(req,res)=>res.sendFile(path.join(__dirname,'public','privacy.html')));
 app.get('/terms',(req,res)=>res.sendFile(path.join(__dirname,'public','terms.html')));
 
+// ====== FIREBASE: Idempotent init (Vercel-safe) ======
 let serviceAccount = {};
-try { if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) serviceAccount = JSON.parse(Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf8')); else if (process.env.FIREBASE_SERVICE_ACCOUNT) serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT); } catch (e) { console.error('Firebase parse error:', e.message); }
-try { if (!Object.keys(serviceAccount).length) throw new Error('Firebase service account missing'); initializeApp({ credential: cert(serviceAccount) }); } catch (e) { console.error('Firebase init error:', e.message); }
+try {
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
+    serviceAccount = JSON.parse(Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf8'));
+  } else if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  }
+} catch (e) { console.error('Firebase parse error:', e.message); }
+
+if (getApps().length === 0) {
+  try {
+    if (!Object.keys(serviceAccount).length) throw new Error('Firebase service account missing');
+    initializeApp({ credential: cert(serviceAccount) });
+    console.log('✅ Firebase initialized (fresh)');
+  } catch (e) {
+    console.error('❌ Firebase init error:', e.message);
+  }
+} else {
+  console.log('✅ Firebase reused existing app');
+}
 const db = getFirestore();
 
 app.get('/logo/:uid', async (req, res) => {
@@ -134,23 +151,26 @@ app.get('/logo/:uid', async (req, res) => {
 function createTransporter(email, appPassword) { return nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user: email, pass: appPassword }, connectionTimeout: 30000, greetingTimeout: 30000, socketTimeout: 60000 }); }
 function createImapClient(email, appPassword) { return new ImapFlow({ host: 'imap.gmail.com', port: 993, secure: true, auth: { user: email, pass: appPassword }, logger: false, tls: { rejectUnauthorized: false } }); }
 
-// ==== TRACKING QUALITY: UA check ====
-// Returns true if the request is from a bot / prefetcher / scanner that we should NOT count as human.
 function isBotOrPrefetch(req){
   const ua = String(req.headers['user-agent'] || '');
   const uaLower = ua.toLowerCase();
-  // 1) No UA at all -> almost certainly a machine
   if (!ua) return true;
-  // 2) Gmail's image proxy (this is THE big one)
   if (/googleimageproxy|ggpht\.com|google image proxy/i.test(ua)) return true;
-  // 3) Known bots / scanners / previews
   const botRx = /(googlebot|google-read-aloud|googleweblight|feedfetcher|google-safety|bingbot|bingpreview|duckduckbot|baiduspider|yandexbot|sogou|exabot|facebookexternalhit|facebot|twitterbot|linkedinbot|pinterest|slackbot|discordbot|telegrambot|whatsapp|skypeuripreview|applebot|semrushbot|ahrefsbot|mj12bot|dotbot|petalbot|bytespider|preview|crawler|spider|monitoring|uptime|pingdom|statuscake|newrelic|datadog|site24x7|proofpoint|barracuda|mimecast|cloudmark|symantec|forcepoint|trendmicro|phishlabs|safelinks|mailchimp|sendgrid|amazonses|postmark|mailgun|outlook-iOS|ms-office|microsoft office|yahoomailproxy|outlookmobile|outlook|thunderbird|apple mail)/i;
   if (botRx.test(uaLower)) return true;
-  // 4) Real browser heuristic — must have Mozilla/5.0 + (Chrome|Safari|Firefox|Edg|OPR)
   if (/mozilla\/5\.0/i.test(ua) && /(chrome|safari|firefox|edg|opr|samsungbrowser)/i.test(ua)) return false;
-  // 5) Anything else — treat as suspicious
   return true;
 }
+
+async function resolveAppPassword(uid) { const snap = await db.collection('users').doc(uid).get(); if (!snap.exists) return null; const d = snap.data(); let pass = null; if (d.smtpAppPassword) pass = decrypt(d.smtpAppPassword); if (!pass && d.imapAppPassword) pass = decrypt(d.imapAppPassword); return pass; }
+async function authRequired(req, res, next) { if (!req.session || !req.session.user) return res.status(401).json({ ok: false, error: 'Session expired.' }); try { const banned = await db.collection('bannedUsers').doc(req.session.user.id).get(); if (banned.exists) { req.session = null; return res.status(403).json({ ok: false, error: 'BANNED', reason: banned.data().reason }); } } catch (e) { } next(); }
+async function adminRequired(req, res, next) { if (!req.session || !req.session.user) return res.status(401).json({ ok: false, error: 'Session expired.' }); if (req.session.user.email.toLowerCase() !== ADMIN_EMAIL) return res.status(403).json({ ok: false, error: 'Admin required' }); next(); }
+async function getUserData(uid) { const d = await db.collection('users').doc(uid).get(); if (!d.exists) return null; const data = d.data(); if (data.imapAppPassword && typeof data.imapAppPassword === 'string') data.imapAppPassword = decrypt(data.imapAppPassword) || null; if (data.smtpAppPassword && typeof data.smtpAppPassword === 'string') data.smtpAppPassword = decrypt(data.smtpAppPassword) || null; return data; }
+function generateAppAccountId() { const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; const bytes = crypto.randomBytes(6); let id = 'MFP-'; for (let i = 0; i < 6; i++) id += c.charAt(bytes[i] % c.length); return id; }
+function isQuietHours(p) { if (!p || !p.quietEnabled) return false; const n = new Date().getHours(); const s = Number(p.quietStart), e = Number(p.quietEnd); if (isNaN(s) || isNaN(e) || s === e) return false; if (s < e) return n >= s && n < e; return n >= s || n < e; }
+function getCurrentHourKey() { const n = new Date(); return n.toISOString().split('T')[0] + '-' + n.getHours(); }
+function sanitizeSubject(subject) { if (!subject) return ''; let s = subject.replace(/!{2,}/g, '!').replace(/\?{2,}/g, '?').trim(); if (s.length > 78) s = s.substring(0, 75) + '...'; return s; }
+function getClientIP(req) { const fwd = req.headers['x-forwarded-for']; if (fwd) return String(fwd).split(',')[0].trim(); return req.headers['x-real-ip'] || req.connection?.remoteAddress || req.socket?.remoteAddress || 'unknown'; }
 
 function localAnalysis(subject, body) {
   const SW = ['free', 'guarantee', 'act now', 'click here', 'limited time', 'buy now', 'cash', 'prize', 'urgent', 'risk-free', 'earn money', 'work from home', 'make money', 'no cost', 'no fees'];
@@ -342,9 +362,7 @@ async function extractCvFromBuffer(buf, filename, mimeType) {
 
 app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL, version: APP_VERSION, method: 'smtp', trackMinDelayMs: TRACK_MIN_DELAY_MS, machineWindowMs: TRACK_MACHINE_WINDOW_MS }));
 
-/* ============ TRACKING (pixel + click) ============ */
-
-// Pixel tracker: 1x1 GIF. Never fails, always returns image.
+/* ============ TRACKING ============ */
 app.get('/track/:id', async (req, res) => {
   const px = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
   res.set('Content-Type', 'image/gif');
@@ -356,12 +374,8 @@ app.get('/track/:id', async (req, res) => {
     const t = String(req.query.t || '');
     const type = String(req.query.type || '');
     if (!u || !t || !req.params.id) return res.send(px);
-
-    const ua = String(req.headers['user-agent'] || '');
     const bot = isBotOrPrefetch(req);
-
     if (type === 'test') {
-      // Test recipient tracking — keep simple
       if (bot) return res.send(px);
       const ref = db.collection('users').doc(u).collection('testRecipients').doc(req.params.id);
       const r = await ref.get();
@@ -373,43 +387,20 @@ app.get('/track/:id', async (req, res) => {
       }
       return res.send(px);
     }
-
-    // Main emailLog tracking
     const logRef = db.collection('users').doc(u).collection('emailLog').doc(req.params.id);
     const r = await logRef.get();
     if (!r.exists) return res.send(px);
     const data = r.data();
     if (data.sendTrackToken !== t) return res.send(px);
-
     const now = Date.now();
     const sentAt = data.sentAt && data.sentAt._seconds ? data.sentAt._seconds * 1000 : new Date(data.sentAt || 0).getTime();
     const sinceSend = now - sentAt;
-
-    // --- Layer 1: skip bot / prefetch / scanner ---
-    if (bot) {
-      // Log as "machineHit" for diagnostics, but DO NOT mark as opened
-      try { await logRef.set({ lastMachineHitAt: new Date(), machineHits: FieldValue.increment(1) }, { merge: true }); } catch(e){}
-      return res.send(px);
-    }
-
-    // --- Layer 2: 60s delay safety net ---
-    if (sinceSend < TRACK_MIN_DELAY_MS) {
-      try { await logRef.set({ lastMachineHitAt: new Date(), machineHits: FieldValue.increment(1) }, { merge: true }); } catch(e){}
-      return res.send(px);
-    }
-
-    // --- Real hit ---
+    if (bot) { try { await logRef.set({ lastMachineHitAt: new Date(), machineHits: FieldValue.increment(1) }, { merge: true }); } catch(e){} return res.send(px); }
+    if (sinceSend < TRACK_MIN_DELAY_MS) { try { await logRef.set({ lastMachineHitAt: new Date(), machineHits: FieldValue.increment(1) }, { merge: true }); } catch(e){} return res.send(px); }
     const firstRealOpen = !data.openedAt;
     const update = { lastOpenAt: new Date() };
-    if (firstRealOpen) {
-      update.openedAt = new Date();
-      update.openCount = FieldValue.increment(1);
-    } else {
-      update.reopenCount = FieldValue.increment(1);
-    }
+    if (firstRealOpen) { update.openedAt = new Date(); update.openCount = FieldValue.increment(1); } else { update.reopenCount = FieldValue.increment(1); }
     await logRef.set(update, { merge: true });
-
-    // Update recipient status (only first real open -> Opened)
     const recId = data.recipientId;
     if (recId) {
       try {
@@ -418,17 +409,15 @@ app.get('/track/:id', async (req, res) => {
         if (rec.exists) {
           const recUpdate = { lastActivityAt: new Date() };
           if (rec.data().status !== 'Opened') { recUpdate.status = 'Opened'; recUpdate.openedAt = new Date(); recUpdate.everOpened = true; }
-          else if (rec.data().status === 'Sent' || rec.data().status === 'Delivered') { recUpdate.status = 'Opened'; recUpdate.openedAt = rec.data().openedAt || new Date(); recUpdate.everOpened = true; }
           await recRef.set(recUpdate, { merge: true });
         }
       } catch(e){}
     }
     cacheDel('stats:' + u); cacheDel('recipients:' + u);
-  } catch (e) { /* silent */ }
+  } catch (e) { }
   res.send(px);
 });
 
-// Click tracker: redirects to original URL after recording click (100% human signal)
 app.get('/click/:id', async (req, res) => {
   let redirectUrl = BACKEND_URL;
   try {
@@ -437,27 +426,20 @@ app.get('/click/:id', async (req, res) => {
     const enc = String(req.query.url || '');
     if (enc) { try { redirectUrl = Buffer.from(enc, 'base64url').toString('utf8'); } catch(e){} }
     if (!/^https?:\/\//i.test(redirectUrl)) redirectUrl = BACKEND_URL;
-
     if (!u || !t || !req.params.id) return res.redirect(302, redirectUrl);
-
-    const ua = String(req.headers['user-agent'] || '');
     const bot = isBotOrPrefetch(req);
     if (bot) return res.redirect(302, redirectUrl);
-
     const logRef = db.collection('users').doc(u).collection('emailLog').doc(req.params.id);
     const r = await logRef.get();
     if (!r.exists) return res.redirect(302, redirectUrl);
     const data = r.data();
     if (data.sendTrackToken !== t) return res.redirect(302, redirectUrl);
-
     const now = new Date();
     const firstClick = !data.firstClickAt;
     const update = { lastClickAt: now, clickCount: FieldValue.increment(1), lastClickUrl: redirectUrl.substring(0, 500) };
     if (firstClick) update.firstClickAt = now;
-    // A click is the strongest "opened" signal
     if (!data.openedAt) { update.openedAt = now; update.openedBy = 'click'; }
     await logRef.set(update, { merge: true });
-
     const recId = data.recipientId;
     if (recId) {
       try {
@@ -471,7 +453,7 @@ app.get('/click/:id', async (req, res) => {
       } catch(e){}
     }
     cacheDel('stats:' + u); cacheDel('recipients:' + u);
-  } catch (e) { /* silent */ }
+  } catch (e) { }
   return res.redirect(302, redirectUrl);
 });
 
@@ -1212,8 +1194,6 @@ async function sendOne(userId, userEmail, recipientId, options) {
   const lp = localAnalysis(subject, fullHtml);
   const sendTrackToken = crypto.randomBytes(16).toString('hex');
 
-  // ==== ATTACHMENTS (ONLY if explicitly requested) ====
-  // Rule: attach files ONLY when options.includeAttachments === true AND selectedFileIds has entries.
   const atts = []; const attNames = [];
   if (options.includeAttachments === true && Array.isArray(options.selectedFileIds) && options.selectedFileIds.length > 0) {
     for (const fid of options.selectedFileIds) {
