@@ -556,7 +556,7 @@ input,textarea,select{min-height:44px;font-size:16px}
 <svg viewBox="0 0 64 64"><defs><linearGradient id="mfGradM" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset=".5" stop-color="#6366f1"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="14" fill="url(#mfGradM)"/><path d="M14 22 L32 34 L50 22 L50 46 Q50 48 48 48 L16 48 Q14 48 14 46 Z" fill="#fff" opacity=".97"/><path d="M14 22 L32 34 L50 22" stroke="url(#mfGradM)" stroke-width="1.8" fill="none" stroke-linejoin="round"/><circle cx="49" cy="15" r="5.5" fill="#fbbf24"/></svg>
 </div>
 <span class="brand-text">MailFlow Pro</span>
-<span style="font-size:9px;color:var(--text3);font-weight:500;padding:2px 6px;background:rgba(56,189,248,.1);border-radius:6px;margin-left:4px">v1.8.5</span>
+<span style="font-size:9px;color:var(--text3);font-weight:500;padding:2px 6px;background:rgba(56,189,248,.1);border-radius:6px;margin-left:4px">v1.8.6</span>
 </div>
 <div class="user-chip">
 <img id="userAvatar" class="user-avatar" src="" style="display:none" alt="" onclick="openProfileModal()">
@@ -785,7 +785,7 @@ input,textarea,select{min-height:44px;font-size:16px}
 <button class="btn ghost" onclick="document.getElementById('ocrInput').click()" style="border:1px dashed var(--cyan);color:#7dd3fc;flex:1">📁 Choose Files</button>
 <button class="btn ghost" onclick="openCameraCapture()" style="border:1px dashed var(--cyan);color:#7dd3fc;flex:1">📷 Use Camera</button>
 </div>
-<div class="ocr-drop" onclick="document.getElementById('ocrInput').click()"><span class="ico">📸</span><div class="t">Click to upload multiple screenshots</div><div class="s">PNG, JPG, WEBP — max 8MB each (auto-compressed)</div></div>
+<div class="ocr-drop" onclick="document.getElementById('ocrInput').click()"><span class="ico">📸</span><div class="t">Click to upload multiple screenshots</div><div class="s">PNG, JPG, WEBP — max 12MB each (auto-compressed)</div></div>
 <div class="ocr-multi-grid" id="ocrThumbs"></div>
 <div id="ocrProgress" class="ocr-progress"><div class="ocr-progress-fill" id="ocrProgressFill"></div></div>
 <div class="ocr-progress-info" id="ocrProgressInfo" style="display:none">
@@ -1388,18 +1388,11 @@ var OCR_MONITOR_DATA=[];
 
 function $(id){return document.getElementById(id);}
 function api(p,m,b){return fetch(p,{method:m||'GET',credentials:'include',headers:{'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined}).then(function(r){return r.text().then(function(t){try{return JSON.parse(t);}catch(e){return {ok:false,error:'Server error '+r.status};}});}).catch(function(e){var msg;if(e&&e.message)msg=e.message;else if(e&&e.type)msg='Network '+e.type;else msg='Network error';return {ok:false,error:msg};});}
-/* Report client-side OCR errors to server (fires and forgets) */
-function reportOcrClientError(errorMsg, fileName, stage){
-  try{
-    fetch('/api/ocr/client-error',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({error:errorMsg,fileName:fileName||'',stage:stage||'client'})}).catch(function(){});
-  }catch(e){}
-}
+function reportOcrClientError(errorMsg,fileName,stage){try{fetch('/api/ocr/client-error',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({error:errorMsg,fileName:fileName||'',stage:stage||'client'})}).catch(function(){});}catch(e){}}
 function toast(m,t){var el=$('toast');el.innerText=m;el.className='toast show '+(t||'ok');clearTimeout(el._t);el._t=setTimeout(function(){el.className='toast'},4500);}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function fmtSize(b){if(!b)return '—';if(b<1024)return b+' B';if(b<1048576)return (b/1024).toFixed(1)+' KB';return (b/1048576).toFixed(2)+' MB';}
-/* Compact numbers (for stats that can be huge) */
 function fmtNum(n){if(!n||n===0)return '0';if(n<1000)return String(n);if(n<1000000)return (n/1000).toFixed(1)+'K';return (n/1000000).toFixed(2)+'M';}
-/* FULL numbers with commas (for OCR quota, exact counts) */
 function fmtFull(n){var v=parseInt(n||0,10);if(isNaN(v))v=0;return v.toString().replace(/\B(?=(\d{3})+(?!\d))/g,',');}
 function fmtDate(d){if(!d)return '—';try{var t=d._seconds?d._seconds*1000:(d.seconds?d.seconds*1000:new Date(d).getTime());var dt=new Date(t);return dt.toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'})+' · '+dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});}catch(e){return '—';}}
 function fmtEmailDate(dateISO){if(!dateISO)return '—';try{var d=new Date(dateISO);if(isNaN(d.getTime()))return '—';var now=new Date();var timeStr=d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});var dateStr=d.toLocaleDateString('en-US',{day:'numeric',month:'short'});if(d.toDateString()===now.toDateString())return timeStr;return dateStr+' · '+timeStr;}catch(e){return '—';}}
@@ -1516,26 +1509,65 @@ function clearBulk(){$('bulkInput').value='';updateBulk();}
 function submitBulk(){var r=parseBulk($('bulkInput').value);if(!r.valid.length)return toast('No valid emails found','err');sendBulkRecipients(r.valid);}
 function sendBulkRecipients(items){api('/api/recipients','POST',{list:items,templateId:$('tplSelect').value}).then(function(res){if(res.ok){toast('✅ '+res.added+' recipients added');$('bulkInput').value='';updateBulk();loadAll();loadQuickAuto();switchTab('manual');}else toast('Error adding recipients','err');});}
 
-/* ============ OCR v1.8.5 — NO Blob URLs, DATA-URL ONLY (Android + iPhone SAFE) ============ */
+/* ============ OCR v1.8.6 — MEMORY-OPTIMIZED (read → compress → release) ============ */
 document.getElementById('ocrInput').addEventListener('change',function(e){var files=e.target.files;if(!files||!files.length)return;for(var i=0;i<files.length;i++){enqueueOCRFile(files[i]);}e.target.value='';});
-document.addEventListener('paste',function(e){if($('ocrTab').classList.contains('hidden'))return;var items=e.clipboardData&&e.clipboardData.items;if(!items)return;var found=false;for(var i=0;i<items.length;i++){if(items[i].type.indexOf('image')!==-1){var blob=items[i].getAsFile();if(blob){enqueueOCRFile(blob);found=true;}}}if(found)toast('📋 Screenshot added to queue');});
+document.addEventListener('paste',function(e){if($('ocrTab').classList.contains('hidden'))return;var items=e.clipboardData&&e.clipboardData.items;if(!items)return;var found=false;for(var i=0;i<items.length;i++){if(items[i].type.indexOf('image')!==-1){var blob=items[i].getAsFile();if(blob){enqueueOCRFile(blob);found=true;}}}if(found)toast('📋 Screenshot added');});
 function openCameraCapture(){var inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.capture='environment';inp.onchange=function(e){var f=e.target.files[0];if(f)enqueueOCRFile(f);};inp.click();}
 
-/* Sequential reader: one file at a time → data URL. No memory spikes. */
 function readFileAsDataURL(file){
   return new Promise(function(resolve,reject){
     var r=new FileReader();
-    var tid=setTimeout(function(){try{r.abort();}catch(e){}reject(new Error('File read timeout'));},30000);
+    var tid=setTimeout(function(){try{r.abort();}catch(e){}reject(new Error('Read timeout'));},45000);
     r.onload=function(){clearTimeout(tid);resolve(String(r.result||''));};
-    r.onerror=function(){clearTimeout(tid);reject(new Error('Cannot read file from device'));};
-    r.onabort=function(){clearTimeout(tid);reject(new Error('File read aborted'));};
-    try{r.readAsDataURL(file);}catch(e){clearTimeout(tid);reject(new Error('FileReader: '+(e.message||'failed')));}
+    r.onerror=function(){clearTimeout(tid);var e=r.error;var m=e?(e.name||'read error'):'unknown';reject(new Error('FileReader: '+m));};
+    r.onabort=function(){clearTimeout(tid);reject(new Error('Aborted'));};
+    try{r.readAsDataURL(file);}catch(e){clearTimeout(tid);reject(new Error('FileReader setup: '+(e.message||'failed')));}
+  });
+}
+
+function compressDataUrlToBase64(dataUrl, maxDim, quality){
+  return new Promise(function(resolve,reject){
+    var img=new Image();
+    var done=false,canvas=null;
+    var finish=function(err,b64){
+      if(done)return;done=true;
+      try{if(img){img.onload=null;img.onerror=null;img.src='';img=null;}}catch(e){}
+      try{if(canvas){canvas.width=0;canvas.height=0;canvas=null;}}catch(e){}
+      if(err)reject(err);else resolve(b64);
+    };
+    var tid=setTimeout(function(){finish(new Error('Decode timeout'));},20000);
+    img.onload=function(){
+      clearTimeout(tid);
+      try{
+        var w=img.naturalWidth||img.width;
+        var h=img.naturalHeight||img.height;
+        if(!w||!h)return finish(new Error('Invalid dimensions'));
+        var scale=Math.min(maxDim/w,maxDim/h,1);
+        var nw=Math.max(1,Math.round(w*scale));
+        var nh=Math.max(1,Math.round(h*scale));
+        canvas=document.createElement('canvas');
+        canvas.width=nw;canvas.height=nh;
+        var ctx=canvas.getContext('2d');
+        if(!ctx)return finish(new Error('No canvas ctx'));
+        ctx.fillStyle='#ffffff';
+        ctx.fillRect(0,0,nw,nh);
+        ctx.drawImage(img,0,0,nw,nh);
+        var out;
+        try{out=canvas.toDataURL('image/jpeg',quality);}catch(e){return finish(new Error('Export failed'));}
+        if(!out||out.length<30)return finish(new Error('Empty output'));
+        var b64=out.split(',')[1]||'';
+        if(!b64||b64.length<20)return finish(new Error('Empty base64'));
+        finish(null,b64);
+      }catch(err){finish(new Error('Processing: '+(err.message||'unknown')));}
+    };
+    img.onerror=function(){clearTimeout(tid);finish(new Error('Cannot decode image'));};
+    img.src=dataUrl;
   });
 }
 
 function enqueueOCRFile(file){
   if(!file)return;
-  if(file.size>8*1024*1024){toast('Max 8MB per image','err');return;}
+  if(file.size>12*1024*1024){toast('Max 12MB per image','err');return;}
   FILE_READ_QUEUE.push(file);
   processFileReadQueue();
 }
@@ -1546,21 +1578,32 @@ async function processFileReadQueue(){
   while(FILE_READ_QUEUE.length>0){
     var file=FILE_READ_QUEUE.shift();
     var idx=OCR_FILES.length;
-    OCR_FILES.push({file:file,dataUrl:'',status:'reading',text:'',retries:0,error:''});
+    var fname=(file&&file.name)?file.name:('image-'+Date.now()+'.jpg');
+    var fsize=(file&&file.size)?file.size:0;
+    OCR_FILES.push({dataUrl:'',base64:'',status:'reading',text:'',retries:0,error:'',fileName:fname,size:fsize});
     renderOCRThumbs();
     renderOCRResultCards();
     updateOCRStatus();
     try{
       var dataUrl=await readFileAsDataURL(file);
-      if(!dataUrl||dataUrl.length<50){throw new Error('Empty file read');}
-      OCR_FILES[idx].dataUrl=dataUrl;
+      file=null;
+      if(!dataUrl||dataUrl.length<50)throw new Error('Empty read');
+      var b64=await compressDataUrlToBase64(dataUrl,1400,0.75);
+      var sizeKB=Math.round(b64.length/1024);
+      if(sizeKB>1200){
+        b64=await compressDataUrlToBase64(dataUrl,1000,0.65);
+        sizeKB=Math.round(b64.length/1024);
+      }
+      dataUrl=null;
+      if(sizeKB>1400)throw new Error('Image too large ('+sizeKB+'KB)');
+      OCR_FILES[idx].base64=b64;
+      OCR_FILES[idx].dataUrl='data:image/jpeg;base64,'+b64;
       OCR_FILES[idx].status='queued';
       OCR_QUEUE.push(idx);
     }catch(e){
       OCR_FILES[idx].status='failed';
-      OCR_FILES[idx].error='Cannot read file: '+(e.message||'unknown');
-      reportOcrClientError('Read error: '+(e.message||'unknown'), file.name||'', 'read');
-      console.warn('File read failed for #'+(idx+1)+':', e.message);
+      OCR_FILES[idx].error=(e.message||'Read failed');
+      try{reportOcrClientError('Read: '+OCR_FILES[idx].error,fname,'read');}catch(x){}
     }
     renderOCRThumbs();
     renderOCRResultCards();
@@ -1573,17 +1616,13 @@ async function processFileReadQueue(){
 
 async function processOCRQueue(){
   if(OCR_PROCESSING)return;
-  OCR_PROCESSING=true;
-  OCR_CANCELLED=false;
-  OCR_STARTED_AT=Date.now();
+  OCR_PROCESSING=true;OCR_CANCELLED=false;OCR_STARTED_AT=Date.now();
   updateOCRCancelBtn();
   while(OCR_QUEUE.length>0 && !OCR_CANCELLED){
     var idx=OCR_QUEUE.shift();
     await processOCRItem(idx);
     var sinceLast=Date.now()-OCR_LAST_REQUEST_TIME;
-    if(sinceLast<OCR_MIN_INTERVAL_MS){
-      await new Promise(function(r){setTimeout(r,OCR_MIN_INTERVAL_MS-sinceLast);});
-    }
+    if(sinceLast<OCR_MIN_INTERVAL_MS){await new Promise(function(r){setTimeout(r,OCR_MIN_INTERVAL_MS-sinceLast);});}
     await new Promise(function(r){setTimeout(r,350);});
   }
   OCR_PROCESSING=false;
@@ -1592,199 +1631,70 @@ async function processOCRQueue(){
 }
 
 function updateOCRCancelBtn(){
-  var btn=$('ocrCancelBtn');
-  if(!btn)return;
-  if(OCR_PROCESSING){btn.style.display='inline-flex';}
-  else{btn.style.display='none';}
+  var btn=$('ocrCancelBtn');if(!btn)return;
+  btn.style.display=OCR_PROCESSING?'inline-flex':'none';
   var rfb=$('ocrRetryFailedBtn');
-  if(rfb){
-    var failed=OCR_FILES.filter(function(x){return x.status==='failed';}).length;
-    rfb.style.display=failed>0?'inline-flex':'none';
-  }
+  if(rfb){var f=OCR_FILES.filter(function(x){return x.status==='failed';}).length;rfb.style.display=f>0?'inline-flex':'none';}
 }
-
-function cancelOCRQueue(){
-  OCR_CANCELLED=true;
-  OCR_QUEUE=[];
-  FILE_READ_QUEUE=[];
-  toast('⏹ Queue cancelled','warn');
-  updateOCRCancelBtn();
-}
-
+function cancelOCRQueue(){OCR_CANCELLED=true;OCR_QUEUE=[];FILE_READ_QUEUE=[];toast('⏹ Cancelled','warn');updateOCRCancelBtn();}
 function retryAllFailedOCR(){
-  var failedIdx=[];
-  var toReread=[];
-  OCR_FILES.forEach(function(x,i){
-    if(x.status==='failed'){
-      // If we never got the dataUrl, re-read the file
-      if(!x.dataUrl && x.file){
-        toReread.push(x.file);
-        // Mark for removal after re-read
-        x._replace=true;
-      } else if(x.dataUrl){
-        x.status='queued';x.error='';x.retries=0;failedIdx.push(i);
-      }
-    }
-  });
-  if(!failedIdx.length && !toReread.length)return toast('No failed items','warn');
-  if(failedIdx.length){
-    OCR_QUEUE=OCR_QUEUE.concat(failedIdx);
-    toast('🔄 Retrying '+failedIdx.length+' items');
-  }
-  if(toReread.length){
-    // Remove failed-without-data entries and re-enqueue
-    var kept=[];
-    var newIdxMap={};
-    OCR_FILES.forEach(function(x,i){
-      if(x._replace)return;
-      newIdxMap[i]=kept.length;
-      kept.push(x);
-    });
-    // Remap OCR_QUEUE indexes
-    OCR_QUEUE=OCR_QUEUE.map(function(oldIdx){return newIdxMap[oldIdx]!==undefined?newIdxMap[oldIdx]:oldIdx;}).filter(function(v){return v!==undefined;});
-    OCR_FILES=kept;
-    toReread.forEach(function(f){FILE_READ_QUEUE.push(f);});
-    toast('🔄 Re-reading '+toReread.length+' files');
-    processFileReadQueue();
-  }
-  renderOCRThumbs();
-  renderOCRResultCards();
-  updateOCRStatus();
-  if(!OCR_PROCESSING && !FILE_READING && OCR_QUEUE.length)processOCRQueue();
+  var retryable=[];
+  OCR_FILES.forEach(function(x,i){if(x.status==='failed'&&x.base64){x.status='queued';x.error='';x.retries=0;retryable.push(i);}});
+  if(!retryable.length)return toast('No retryable items','warn');
+  OCR_QUEUE=OCR_QUEUE.concat(retryable);
+  renderOCRThumbs();renderOCRResultCards();updateOCRStatus();
+  toast('🔄 Retrying '+retryable.length);
+  if(!OCR_PROCESSING)processOCRQueue();
 }
-
 function extractErrorMessage(err){
-  if(!err)return 'Unknown error';
+  if(!err)return 'Unknown';
   if(typeof err==='string')return err;
   if(err.message)return String(err.message);
   if(err.type)return 'Network '+err.type;
   if(err.name)return String(err.name);
-  try{var s=String(err);if(s&&s!=='[object Object]'&&s!=='[object ProgressEvent]')return s;}catch(e){}
   return 'Network error';
 }
 
-/* Compress image from DATA URL (no blob, no FileReader in this step). */
-function compressDataUrlToBase64(dataUrl, maxDim, quality){
-  return new Promise(function(resolve,reject){
-    var img=new Image();
-    var done=false;
-    var canvas=null;
-    var finish=function(err,base64){
-      if(done)return;
-      done=true;
-      try{if(img){img.onload=null;img.onerror=null;img.src='';img=null;}}catch(e){}
-      try{if(canvas){canvas.width=0;canvas.height=0;canvas=null;}}catch(e){}
-      if(err)reject(err);else resolve(base64);
-    };
-    var timeoutId=setTimeout(function(){finish(new Error('Image decode timeout'));},15000);
-    img.onload=function(){
-      clearTimeout(timeoutId);
-      try{
-        var w=img.naturalWidth||img.width;
-        var h=img.naturalHeight||img.height;
-        if(!w||!h)return finish(new Error('Invalid image dimensions'));
-        var scale=Math.min(maxDim/w,maxDim/h,1);
-        var newW=Math.max(1,Math.round(w*scale));
-        var newH=Math.max(1,Math.round(h*scale));
-        canvas=document.createElement('canvas');
-        canvas.width=newW;
-        canvas.height=newH;
-        var ctx=canvas.getContext('2d');
-        if(!ctx)return finish(new Error('Canvas context failed'));
-        ctx.fillStyle='#ffffff';
-        ctx.fillRect(0,0,newW,newH);
-        ctx.drawImage(img,0,0,newW,newH);
-        var out;
-        try{out=canvas.toDataURL('image/jpeg',quality);}catch(e){return finish(new Error('Export failed'));}
-        if(!out||out.length<30)return finish(new Error('Empty output'));
-        var b64=out.split(',')[1]||'';
-        if(!b64||b64.length<20)return finish(new Error('Empty base64'));
-        finish(null,b64);
-      }catch(err){finish(new Error('Processing: '+(err.message||'unknown')));}
-    };
-    img.onerror=function(){clearTimeout(timeoutId);finish(new Error('Cannot decode image'));};
-    img.src=dataUrl;
-  });
-}
-
 async function processOCRItem(idx){
-  var item=OCR_FILES[idx];
-  if(!item)return;
-  if(!item.dataUrl){
-    item.status='failed';
-    if(!item.error)item.error='File could not be read from device';
-    renderOCRThumbs();
-    renderOCRResultCards();
-    updateOCRStatus();
-    return;
-  }
-  item.status='processing';
-  item.error='';
-  renderOCRThumbs();
-  renderOCRResultCards();
-  updateOCRStatus();
-  var stages=[
-    {dim:1400,q:0.75},
-    {dim:1100,q:0.65},
-    {dim:900,q:0.58},
-    {dim:700,q:0.50}
-  ];
+  var item=OCR_FILES[idx];if(!item)return;
+  if(!item.base64){item.status='failed';if(!item.error)item.error='No image data';renderOCRThumbs();renderOCRResultCards();updateOCRStatus();return;}
+  item.status='processing';item.error='';
+  renderOCRThumbs();renderOCRResultCards();updateOCRStatus();
   for(var attempt=1;attempt<=OCR_MAX_RETRIES;attempt++){
-    var stage=stages[Math.min(attempt-1,stages.length-1)];
     try{
-      var base64=await compressDataUrlToBase64(item.dataUrl,stage.dim,stage.q);
-      var sizeKB=Math.round(base64.length/1024);
-      if(sizeKB>1000){
-        var smaller=stages[Math.min(attempt,stages.length-1)];
-        base64=await compressDataUrlToBase64(item.dataUrl,smaller.dim,smaller.q);
-        sizeKB=Math.round(base64.length/1024);
-      }
-      if(sizeKB>1400)throw new Error('Image too large ('+sizeKB+'KB) even after compression');
       OCR_LAST_REQUEST_TIME=Date.now();
-      var r=await api('/api/ocr/extract','POST',{base64:base64,mimeType:'image/jpeg',filename:item.file.name||''});
+      var r=await api('/api/ocr/extract','POST',{base64:item.base64,mimeType:'image/jpeg',filename:item.fileName||''});
       if(!r.ok){
         var em=(r.error||'').toLowerCase();
         if(em.indexOf('429')!==-1||em.indexOf('rate')!==-1||em.indexOf('too many')!==-1){throw new Error('RATE_LIMIT');}
         throw new Error(r.error||'OCR failed');
       }
-      if(!r.text||r.text.length<2)throw new Error('No text detected in image');
-      item.text=r.text;
-      item.status='done';
-      item.error='';
-      renderOCRThumbs();
-      renderOCRResultCards();
-      updateOCRStatus();
-      await new Promise(function(rs){setTimeout(rs,200);});
+      if(!r.text||r.text.length<2)throw new Error('No text detected');
+      item.text=r.text;item.status='done';item.error='';
+      renderOCRThumbs();renderOCRResultCards();updateOCRStatus();
       return;
     }catch(err){
       var msg=extractErrorMessage(err);
-      console.warn('OCR #'+(idx+1)+' attempt '+attempt+':',msg);
-      item.retries=attempt;
-      item.error=msg;
+      item.retries=attempt;item.error=msg;
       if(attempt<OCR_MAX_RETRIES){
         item.status='retrying';
-        renderOCRThumbs();
-        renderOCRResultCards();
-        updateOCRStatus();
+        renderOCRThumbs();renderOCRResultCards();updateOCRStatus();
         var waitMs=(msg==='RATE_LIMIT')?(5000*attempt):(1500*attempt);
         await new Promise(function(rs){setTimeout(rs,waitMs);});
       }else{
         item.status='failed';
-        if(msg==='RATE_LIMIT')item.error='Rate limit — try again in a minute';
+        if(msg==='RATE_LIMIT')item.error='Rate limit — try in a minute';
       }
     }
   }
-  renderOCRThumbs();
-  renderOCRResultCards();
-  updateOCRStatus();
+  renderOCRThumbs();renderOCRResultCards();updateOCRStatus();
 }
 
-function updateOCRStatus(done){
-  var total=OCR_FILES.length;
-  var info=$('ocrProgressInfo');
+function updateOCRStatus(){
+  var total=OCR_FILES.length,info=$('ocrProgressInfo');
   if(total===0){$('ocrStatus').innerHTML='';$('ocrETA').innerHTML='';$('ocrProgress').classList.remove('show');if(info)info.style.display='none';return;}
-  var queued=OCR_FILES.filter(function(x){return x.status==='queued';}).length;
   var reading=OCR_FILES.filter(function(x){return x.status==='reading';}).length;
+  var queued=OCR_FILES.filter(function(x){return x.status==='queued';}).length;
   var processing=OCR_FILES.filter(function(x){return x.status==='processing'||x.status==='retrying';}).length;
   var doneCount=OCR_FILES.filter(function(x){return x.status==='done';}).length;
   var failed=OCR_FILES.filter(function(x){return x.status==='failed';}).length;
@@ -1794,18 +1704,18 @@ function updateOCRStatus(done){
   if(info)info.style.display='flex';
   var msg='';
   if(OCR_CANCELLED)msg='<span style="color:#fcd34d">⏹ Cancelled — '+finished+'/'+total+'</span>';
-  else if(reading>0)msg='📖 Reading files from device... ('+reading+' left)';
-  else if(queued>0&&processing===0)msg='⏳ '+queued+' in queue · '+doneCount+' done'+(failed>0?' · <span style="color:#fca5a5">'+failed+' failed</span>':'');
+  else if(reading>0)msg='📖 Reading ('+reading+' left)';
+  else if(queued>0&&processing===0)msg='⏳ '+queued+' queued · '+doneCount+' done'+(failed>0?' · <span style="color:#fca5a5">'+failed+' failed</span>':'');
   else if(processing>0)msg='☁️ Processing #'+(finished+1)+'/'+total+' · '+doneCount+' ✓'+(failed>0?' <span style="color:#fca5a5">'+failed+' ✗</span>':'');
-  else if(finished===total)msg='<span style="color:#86efac">✅ Complete: '+doneCount+' succeeded'+(failed>0?', <span style="color:#fca5a5">'+failed+' failed</span>':'')+'</span>';
-  else msg=doneCount+'/'+total+' done';
+  else if(finished===total)msg='<span style="color:#86efac">✅ Complete: '+doneCount+' done'+(failed>0?', <span style="color:#fca5a5">'+failed+' failed</span>':'')+'</span>';
+  else msg=doneCount+'/'+total;
   $('ocrStatus').innerHTML=msg;
   var eta='';
   if(OCR_PROCESSING&&!OCR_CANCELLED&&finished>0){
     var elapsed=Date.now()-OCR_STARTED_AT;
     var avgPerItem=elapsed/finished;
     var remaining=queued+processing;
-    if(remaining>0){eta='<span style="font-size:11px;color:var(--text3)">⏱ ~'+fmtDuration(avgPerItem*remaining)+' left</span>';}
+    if(remaining>0)eta='<span style="font-size:11px;color:var(--text3)">⏱ ~'+fmtDuration(avgPerItem*remaining)+' left</span>';
   }
   $('ocrETA').innerHTML=eta;
   if(doneCount>0)$('ocrResultWrap').style.display='block';
@@ -1813,20 +1723,19 @@ function updateOCRStatus(done){
 }
 
 function renderOCRThumbs(){
-  var w=$('ocrThumbs');
+  var w=$('ocrThumbs');if(!w)return;
   if(!OCR_FILES.length){w.innerHTML='';return;}
-  var placeholder='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+  var ph='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
   w.innerHTML=OCR_FILES.map(function(x,i){
     var cls=x.status==='done'?'done':((x.status==='processing'||x.status==='retrying'||x.status==='reading')?'processing':(x.status==='failed'?'failed':'queued'));
     var lbl=x.status==='done'?'✓ Done':(x.status==='processing'?'... OCR':(x.status==='retrying'?'↻ '+x.retries+'/'+OCR_MAX_RETRIES:(x.status==='reading'?'📖 Reading':(x.status==='queued'?'Queued':'✗ Failed'))));
-    var src=x.dataUrl||placeholder;
+    var src=x.dataUrl||ph;
     return '<div class="ocr-thumb '+cls+'"><img src="'+src+'"><div class="status">'+(i+1)+'. '+lbl+'</div></div>';
   }).join('');
 }
 
 function renderOCRResultCards(){
-  var wrap=$('ocrResultCards');
-  if(!wrap)return;
+  var wrap=$('ocrResultCards');if(!wrap)return;
   if(!OCR_FILES.length){wrap.innerHTML='';if($('ocrCardCount'))$('ocrCardCount').innerText='';return;}
   var doneCount=OCR_FILES.filter(function(x){return x.status==='done';}).length;
   var failed=OCR_FILES.filter(function(x){return x.status==='failed';}).length;
@@ -1834,19 +1743,18 @@ function renderOCRResultCards(){
   var h='';
   OCR_FILES.forEach(function(x,i){
     var stCls=x.status==='done'?'done':((x.status==='processing'||x.status==='retrying'||x.status==='reading')?'processing':(x.status==='queued'?'queued':'failed'));
-    var stTxt=x.status==='done'?'✓ Extracted':(x.status==='processing'?'... Processing':(x.status==='retrying'?'↻ Retry '+x.retries+'/'+OCR_MAX_RETRIES:(x.status==='reading'?'📖 Reading':(x.status==='queued'?'⏳ Queued':'✗ Failed'))));
-    h+='<div class="ocr-card"><div class="head"><span class="num">SS #'+(i+1)+'</span><span class="fname">'+esc(x.file.name||'image')+'</span><span class="st '+stCls+'">'+stTxt+'</span></div>';
-    if(x.status==='failed'&&x.error){h+='<div style="font-size:11px;color:#fca5a5;margin-bottom:6px">Error: '+esc(x.error)+'</div>';}
+    var stTxt=x.status==='done'?'✓ Extracted':(x.status==='processing'?'... Processing':(x.status==='retrying'?'↻ Retry '+x.retries:(x.status==='reading'?'📖 Reading':(x.status==='queued'?'⏳ Queued':'✗ Failed'))));
+    h+='<div class="ocr-card"><div class="head"><span class="num">SS #'+(i+1)+'</span><span class="fname">'+esc(x.fileName||'image')+'</span><span class="st '+stCls+'">'+stTxt+'</span></div>';
+    if(x.status==='failed'&&x.error)h+='<div style="font-size:11px;color:#fca5a5;margin-bottom:6px">Error: '+esc(x.error)+'</div>';
     h+='<textarea data-ocr-idx="'+i+'" oninput="onOCRCardEdit('+i+',this.value)" placeholder="Extracted text will appear here...">'+esc(x.text||'')+'</textarea></div>';
   });
   wrap.innerHTML=h;
 }
-
 function onOCRCardEdit(idx,val){if(OCR_FILES[idx])OCR_FILES[idx].text=val;}
-function collectOCRTextFromCards(){return OCR_FILES.map(function(x,i){if(x.status!=='done')return '';return '═══════════════════════════════\n📸 SCREENSHOT #'+(i+1)+' — '+(x.file.name||'image')+'\n═══════════════════════════════\n'+(x.text||'');}).filter(Boolean).join('\n\n');}
-function sendOCRToBulk(){var text=collectOCRTextFromCards();if(!text.trim())return toast('No extracted text to send','err');$('bulkInput').value=text;updateBulk();switchTab('bulk');toast('📋 Text sent to Bulk tab');}
+function collectOCRTextFromCards(){return OCR_FILES.map(function(x,i){if(x.status!=='done')return '';return '═══════════════════════════════\n📸 #'+(i+1)+' — '+(x.fileName||'image')+'\n═══════════════════════════════\n'+(x.text||'');}).filter(Boolean).join('\n\n');}
+function sendOCRToBulk(){var t=collectOCRTextFromCards();if(!t.trim())return toast('Nothing to send','err');$('bulkInput').value=t;updateBulk();switchTab('bulk');toast('📋 Sent to Bulk');}
 function copyOCRText(){var t=collectOCRTextFromCards();if(!t)return toast('Nothing to copy','err');if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){toast('✅ Copied');});else{var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('✅ Copied');}}
-function clearOCR(){OCR_CANCELLED=true;OCR_QUEUE=[];FILE_READ_QUEUE=[];OCR_FILES.forEach(function(x){x.file=null;x.dataUrl='';x.text='';});OCR_FILES=[];OCR_QUEUE=[];OCR_PROCESSING=false;FILE_READING=false;$('ocrThumbs').innerHTML='';if($('ocrResultCards'))$('ocrResultCards').innerHTML='';$('ocrResultWrap').style.display='none';$('ocrProgress').classList.remove('show');$('ocrProgressFill').style.width='0%';$('ocrStatus').innerHTML='';if($('ocrETA'))$('ocrETA').innerHTML='';if($('ocrProgressInfo'))$('ocrProgressInfo').style.display='none';updateOCRCancelBtn();}
+function clearOCR(){OCR_CANCELLED=true;OCR_QUEUE=[];FILE_READ_QUEUE=[];OCR_FILES.forEach(function(x){x.base64='';x.dataUrl='';x.text='';});OCR_FILES=[];OCR_PROCESSING=false;FILE_READING=false;$('ocrThumbs').innerHTML='';if($('ocrResultCards'))$('ocrResultCards').innerHTML='';$('ocrResultWrap').style.display='none';$('ocrProgress').classList.remove('show');$('ocrProgressFill').style.width='0%';$('ocrStatus').innerHTML='';if($('ocrETA'))$('ocrETA').innerHTML='';if($('ocrProgressInfo'))$('ocrProgressInfo').style.display='none';updateOCRCancelBtn();}
 document.addEventListener('DOMContentLoaded',function(){var ta=$('bulkInput');if(ta)ta.addEventListener('input',updateBulk);});
 
 function loadAll(isManual){if(isManual)toast('🔄 Refreshing...');api('/api/stats').then(function(r){if(!r.ok)return;$('stTotal').innerText=r.stats.total;$('stSent').innerText=r.stats.sent;$('stOpened').innerText=r.stats.opened;$('stPending').innerText=r.stats.pending;$('stTotalSends').innerText=r.stats.totalSends||0;});api('/api/recipients').then(function(r){if(!r.ok)return;CURRENT_ROWS=(r.recipients||[]).sort(function(a,b){var ta=a.createdAt&&a.createdAt._seconds?a.createdAt._seconds*1000:new Date(a.createdAt||0).getTime();var tb=b.createdAt&&b.createdAt._seconds?b.createdAt._seconds*1000:new Date(b.createdAt||0).getTime();return tb-ta;});ALL_ROWS=CURRENT_ROWS.slice();renderRecipients();});}
@@ -1907,7 +1815,6 @@ function sendTestEmail(){var to=$('testTo').value.trim(),subject=$('testSubject'
 async function runTestAutomation(){var bs=parseInt($('testAutoBatchSize').value)||5;var delay=parseInt($('testAutoDelay').value)||20;var ok=await showConfirm({icon:'▶️',title:'Run automation?',message:bs+' emails with '+delay+'s delay',okText:'Run',primary:true});if(!ok)return;toast('⏳ Running automation...');api('/api/test/automation/run','POST',{batchSize:bs,delay:delay}).then(function(r){if(r.ok){if(r.sent>0)toast('✅ '+r.sent+' emails sent');else toast(r.message||'No pending recipients','warn');loadTestDashboard();}});}
 function loadAdmin(){$('adminUsersList').innerHTML='<div class="empty">Loading...</div>';api('/api/admin/dashboard').then(function(r){if(!r.ok)return;$('adTotalUsers').innerText=r.stats.totalUsers;$('adTotalEmails').innerText=r.stats.totalEmails;$('adTotalOpened').innerText=r.stats.totalOpened;$('adTotalPending').innerText=r.stats.totalPending;$('adTotalSends').innerText=r.stats.totalSends||0;});}
 
-/* ===== OCR & AI MONITOR (v1.8.5) ===== */
 function loadOcrQuota(){
   api('/api/admin/ocr-quota').then(function(r){
     if(!r.ok)return;

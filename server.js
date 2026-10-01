@@ -19,7 +19,7 @@ const DEFAULT_SEND_DELAY = 20;
 const IS_VERCEL = !!process.env.VERCEL;
 const CRON_SECRET = process.env.CRON_SECRET || '';
 const BACKEND_URL = process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org';
-const APP_VERSION = '1.8.5';
+const APP_VERSION = '1.8.6';
 const OCR_SPACE_API_KEY = process.env.OCR_SPACE_API_KEY || 'helloworld';
 const OCR_FREE_MONTHLY_LIMIT = 25000;
 
@@ -114,7 +114,6 @@ async function logAIUsage(uid,provider,model,usage){
   }catch(e){}
 }
 
-/* ===== OCR USAGE LOGGING (per-user + global monthly quota + client errors) ===== */
 async function logOcrUsage(uid, success, chars, errorMsg, fileName, isClientError, stage) {
   if (!uid) return;
   try {
@@ -124,7 +123,6 @@ async function logOcrUsage(uid, success, chars, errorMsg, fileName, isClientErro
     const dayRef = db.collection('users').doc(uid).collection('ocrUsage').doc(today);
     const dayUpdate = { date: today, updatedAt: new Date() };
     if (isClientError) {
-      // Client errors don't count in OCR.space quota but should be visible
       dayUpdate.clientErrors = FieldValue.increment(1);
     } else {
       dayUpdate.total = FieldValue.increment(1);
@@ -135,17 +133,14 @@ async function logOcrUsage(uid, success, chars, errorMsg, fileName, isClientErro
     if (errorMsg) dayUpdate.lastError = String(errorMsg).substring(0, 200);
     if (fileName) dayUpdate.lastFileName = String(fileName).substring(0, 120);
     batch.set(dayRef, dayUpdate, { merge: true });
-    
     const totalRef = db.collection('users').doc(uid).collection('ocrUsage').doc('total');
     if (isClientError) {
       batch.set(totalRef, { clientErrors: FieldValue.increment(1), updatedAt: new Date() }, { merge: true });
     } else {
       batch.set(totalRef, { total: FieldValue.increment(1), success: FieldValue.increment(success ? 1 : 0), failed: FieldValue.increment(success ? 0 : 1), charsExtracted: FieldValue.increment(chars || 0), updatedAt: new Date() }, { merge: true });
     }
-    
     const logRef = db.collection('users').doc(uid).collection('ocrLog').doc();
     batch.set(logRef, { success: !!success, chars: chars || 0, error: errorMsg ? String(errorMsg).substring(0, 300) : '', fileName: fileName ? String(fileName).substring(0, 120) : '', isClientError: !!isClientError, stage: stage ? String(stage).substring(0, 50) : '', at: new Date() });
-    
     if (!isClientError) {
       const globalRef = db.collection('globalStats').doc('ocrQuota_' + month);
       batch.set(globalRef, { month, total: FieldValue.increment(1), success: FieldValue.increment(success ? 1 : 0), failed: FieldValue.increment(success ? 0 : 1), charsExtracted: FieldValue.increment(chars || 0), updatedAt: new Date() }, { merge: true });
@@ -154,7 +149,6 @@ async function logOcrUsage(uid, success, chars, errorMsg, fileName, isClientErro
   } catch (e) { }
 }
 
-/* ===== AI ERROR LOGGING — FIXED: dot notation for nested increment ===== */
 async function logAIError(uid, provider, errorMessage) {
   if (!uid || !provider) return;
   try {
@@ -510,7 +504,7 @@ app.post('/api/ocr/extract', authRequired, async (req, res) => {
   }
 });
 
-/* ============ OCR CLIENT-SIDE ERROR (NEW v1.8.5) ============ */
+/* ============ OCR CLIENT-SIDE ERROR ============ */
 app.post('/api/ocr/client-error', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -1601,7 +1595,6 @@ app.get('/api/admin/dashboard', adminRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ===== OCR USAGE MONITOR (v1.8.5 — includes clientErrors) ===== */
 app.get('/api/admin/ocr-usage', adminRequired, async (req, res) => {
   try {
     const us = await db.collection('users').get();
@@ -1667,7 +1660,6 @@ app.get('/api/admin/ocr-log', adminRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ===== AI ERROR MONITOR (v1.8.5 — dot notation fix) ===== */
 app.get('/api/admin/ai-errors', adminRequired, async (req, res) => {
   try {
     const us = await db.collection('users').get();
