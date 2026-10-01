@@ -144,7 +144,7 @@ function isBotOrPrefetch(req){
   // 2) Gmail's image proxy (this is THE big one)
   if (/googleimageproxy|ggpht\.com|google image proxy/i.test(ua)) return true;
   // 3) Known bots / scanners / previews
-  const botRx = /(googlebot|google-read-aloud|googleweblight|feedfetcher|google-safety|bingbot|bingpreview|duckduckbot|baiduspider|yandexbot|sogou|exabot|facebookexternalhit|facebot|twitterbot|linkedinbot|pinterest|slackbot|discordbot|telegrambot|whatsapp|skypeuripreview|applebot|semrushbot|ahrefsbot|mj12bot|dotbot|petalbot|bytespider|preview|crawler|spider|monitoring|uptime|pingdom|statuscake|newrelic|datadog|site24x7|proofpoint|barracuda|mimecast|cloudmark|symantec|forcepoint|trendmicro|phishlabs|safelinks|mailchimp|sendgrid|amazonses|postmark|mailgun|outlook-iOS|ms-office|microsoft office|yahoomailproxy|outlookmobile|outlook|thunderbird|apple mail/i;
+  const botRx = /(googlebot|google-read-aloud|googleweblight|feedfetcher|google-safety|bingbot|bingpreview|duckduckbot|baiduspider|yandexbot|sogou|exabot|facebookexternalhit|facebot|twitterbot|linkedinbot|pinterest|slackbot|discordbot|telegrambot|whatsapp|skypeuripreview|applebot|semrushbot|ahrefsbot|mj12bot|dotbot|petalbot|bytespider|preview|crawler|spider|monitoring|uptime|pingdom|statuscake|newrelic|datadog|site24x7|proofpoint|barracuda|mimecast|cloudmark|symantec|forcepoint|trendmicro|phishlabs|safelinks|mailchimp|sendgrid|amazonses|postmark|mailgun|outlook-iOS|ms-office|microsoft office|yahoomailproxy|outlookmobile|outlook|thunderbird|apple mail)/i;
   if (botRx.test(uaLower)) return true;
   // 4) Real browser heuristic — must have Mozilla/5.0 + (Chrome|Safari|Firefox|Edg|OPR)
   if (/mozilla\/5\.0/i.test(ua) && /(chrome|safari|firefox|edg|opr|samsungbrowser)/i.test(ua)) return false;
