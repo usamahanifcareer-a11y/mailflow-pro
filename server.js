@@ -19,13 +19,12 @@ const DEFAULT_SEND_DELAY = 20;
 const IS_VERCEL = !!process.env.VERCEL;
 const CRON_SECRET = process.env.CRON_SECRET || '';
 const BACKEND_URL = process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org';
-const APP_VERSION = '2.0.1';
+const APP_VERSION = '2.0.3';
 const OCR_SPACE_API_KEY = process.env.OCR_SPACE_API_KEY || 'helloworld';
 const OCR_FREE_MONTHLY_LIMIT = 25000;
 
-// Tracking quality controls
-const TRACK_MIN_DELAY_MS = 60 * 1000;
-const TRACK_MACHINE_WINDOW_MS = 5 * 60 * 1000;
+const TRACK_EARLY_PREFETCH_MS = 30 * 1000;
+const DUPLICATE_SEND_WINDOW_MS = 90 * 1000;
 
 const MAX_FILE_SIZE = 3 * 1024 * 1024;
 const MAX_LOGO_SIZE = 2 * 1024 * 1024;
@@ -110,7 +109,7 @@ app.use(express.static(path.join(__dirname,'public')));
 app.get('/privacy',(req,res)=>res.sendFile(path.join(__dirname,'public','privacy.html')));
 app.get('/terms',(req,res)=>res.sendFile(path.join(__dirname,'public','terms.html')));
 
-// ====== FIREBASE: Idempotent init (Vercel-safe) ======
+// ====== FIREBASE: Idempotent init ======
 let serviceAccount = {};
 try {
   if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
@@ -151,15 +150,23 @@ app.get('/logo/:uid', async (req, res) => {
 function createTransporter(email, appPassword) { return nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user: email, pass: appPassword }, connectionTimeout: 30000, greetingTimeout: 30000, socketTimeout: 60000 }); }
 function createImapClient(email, appPassword) { return new ImapFlow({ host: 'imap.gmail.com', port: 993, secure: true, auth: { user: email, pass: appPassword }, logger: false, tls: { rejectUnauthorized: false } }); }
 
-function isBotOrPrefetch(req){
+function isRealBrowser(req){
   const ua = String(req.headers['user-agent'] || '');
-  const uaLower = ua.toLowerCase();
+  if (!ua) return false;
+  if (/googleimageproxy|ggpht\.com|google image proxy/i.test(ua)) return false;
+  if (/googlebot|bingbot|crawler|spider|scanner|monitor|pingdom|uptime|proofpoint|barracuda|mimecast|symantec|forcepoint|trendmicro|outlook-iOS|ms-office|thunderbird|apple mail/i.test(ua)) return false;
+  if (/mozilla\/5\.0/i.test(ua) && /(chrome|safari|firefox|edg|opr|samsungbrowser)/i.test(ua)) return true;
+  return false;
+}
+function isGoogleProxy(req){
+  const ua = String(req.headers['user-agent'] || '');
+  return /googleimageproxy|ggpht\.com|google image proxy/i.test(ua);
+}
+function isOtherKnownBot(req){
+  const ua = String(req.headers['user-agent'] || '').toLowerCase();
   if (!ua) return true;
-  if (/googleimageproxy|ggpht\.com|google image proxy/i.test(ua)) return true;
   const botRx = /(googlebot|google-read-aloud|googleweblight|feedfetcher|google-safety|bingbot|bingpreview|duckduckbot|baiduspider|yandexbot|sogou|exabot|facebookexternalhit|facebot|twitterbot|linkedinbot|pinterest|slackbot|discordbot|telegrambot|whatsapp|skypeuripreview|applebot|semrushbot|ahrefsbot|mj12bot|dotbot|petalbot|bytespider|preview|crawler|spider|monitoring|uptime|pingdom|statuscake|newrelic|datadog|site24x7|proofpoint|barracuda|mimecast|cloudmark|symantec|forcepoint|trendmicro|phishlabs|safelinks|mailchimp|sendgrid|amazonses|postmark|mailgun|outlook-iOS|ms-office|microsoft office|yahoomailproxy|outlookmobile|outlook|thunderbird|apple mail)/i;
-  if (botRx.test(uaLower)) return true;
-  if (/mozilla\/5\.0/i.test(ua) && /(chrome|safari|firefox|edg|opr|samsungbrowser)/i.test(ua)) return false;
-  return true;
+  return botRx.test(ua);
 }
 
 async function resolveAppPassword(uid) { const snap = await db.collection('users').doc(uid).get(); if (!snap.exists) return null; const d = snap.data(); let pass = null; if (d.smtpAppPassword) pass = decrypt(d.smtpAppPassword); if (!pass && d.imapAppPassword) pass = decrypt(d.imapAppPassword); return pass; }
@@ -360,7 +367,7 @@ async function extractCvFromBuffer(buf, filename, mimeType) {
   return '';
 }
 
-app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL, version: APP_VERSION, method: 'smtp', trackMinDelayMs: TRACK_MIN_DELAY_MS, machineWindowMs: TRACK_MACHINE_WINDOW_MS }));
+app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL, version: APP_VERSION, method: 'smtp', earlyPrefetchMs: TRACK_EARLY_PREFETCH_MS, duplicateWindowMs: DUPLICATE_SEND_WINDOW_MS }));
 
 /* ============ TRACKING ============ */
 app.get('/track/:id', async (req, res) => {
@@ -374,33 +381,53 @@ app.get('/track/:id', async (req, res) => {
     const t = String(req.query.t || '');
     const type = String(req.query.type || '');
     if (!u || !t || !req.params.id) return res.send(px);
-    const bot = isBotOrPrefetch(req);
+
+    const realBrowser = isRealBrowser(req);
+    const googleProxy = isGoogleProxy(req);
+    const otherBot = isOtherKnownBot(req);
+
     if (type === 'test') {
-      if (bot) return res.send(px);
+      if (otherBot && !realBrowser && !googleProxy) return res.send(px);
       const ref = db.collection('users').doc(u).collection('testRecipients').doc(req.params.id);
       const r = await ref.get();
-      if (r.exists && r.data().trackToken === t) {
-        const now = new Date();
-        const update = { lastOpenAt: now };
-        if (r.data().status !== 'Opened') { update.status = 'Opened'; update.openedAt = now; update.everOpened = true; }
-        await ref.set(update, { merge: true });
-      }
+      if (!r.exists || r.data().trackToken !== t) return res.send(px);
+      const sentAt = r.data().sentAt && r.data().sentAt._seconds ? r.data().sentAt._seconds * 1000 : new Date(r.data().sentAt || 0).getTime();
+      const sinceSend = Date.now() - sentAt;
+      if (!realBrowser && sinceSend < TRACK_EARLY_PREFETCH_MS) return res.send(px);
+      const now = new Date();
+      const update = { lastOpenAt: now };
+      if (r.data().status !== 'Opened') { update.status = 'Opened'; update.openedAt = now; update.everOpened = true; }
+      await ref.set(update, { merge: true });
       return res.send(px);
     }
+
     const logRef = db.collection('users').doc(u).collection('emailLog').doc(req.params.id);
     const r = await logRef.get();
     if (!r.exists) return res.send(px);
     const data = r.data();
     if (data.sendTrackToken !== t) return res.send(px);
-    const now = Date.now();
+
     const sentAt = data.sentAt && data.sentAt._seconds ? data.sentAt._seconds * 1000 : new Date(data.sentAt || 0).getTime();
-    const sinceSend = now - sentAt;
-    if (bot) { try { await logRef.set({ lastMachineHitAt: new Date(), machineHits: FieldValue.increment(1) }, { merge: true }); } catch(e){} return res.send(px); }
-    if (sinceSend < TRACK_MIN_DELAY_MS) { try { await logRef.set({ lastMachineHitAt: new Date(), machineHits: FieldValue.increment(1) }, { merge: true }); } catch(e){} return res.send(px); }
+    const sinceSend = Date.now() - sentAt;
+
+    let treatAsReal = false;
+    let reason = 'unknown';
+    if (realBrowser) { treatAsReal = true; reason = 'real_browser'; }
+    else if (googleProxy) { treatAsReal = sinceSend >= TRACK_EARLY_PREFETCH_MS; reason = treatAsReal ? 'gmail_proxy_late' : 'gmail_proxy_early'; }
+    else if (otherBot) { treatAsReal = false; reason = 'known_bot'; }
+    else { treatAsReal = sinceSend >= TRACK_EARLY_PREFETCH_MS; reason = 'unknown_ua'; }
+
+    if (!treatAsReal) {
+      try { await logRef.set({ lastMachineHitAt: new Date(), machineHits: FieldValue.increment(1), lastMachineReason: reason }, { merge: true }); } catch(e){}
+      return res.send(px);
+    }
+
     const firstRealOpen = !data.openedAt;
-    const update = { lastOpenAt: new Date() };
-    if (firstRealOpen) { update.openedAt = new Date(); update.openCount = FieldValue.increment(1); } else { update.reopenCount = FieldValue.increment(1); }
+    const update = { lastOpenAt: new Date(), lastOpenReason: reason };
+    if (firstRealOpen) { update.openedAt = new Date(); update.openCount = FieldValue.increment(1); }
+    else { update.reopenCount = FieldValue.increment(1); }
     await logRef.set(update, { merge: true });
+
     const recId = data.recipientId;
     if (recId) {
       try {
@@ -427,8 +454,8 @@ app.get('/click/:id', async (req, res) => {
     if (enc) { try { redirectUrl = Buffer.from(enc, 'base64url').toString('utf8'); } catch(e){} }
     if (!/^https?:\/\//i.test(redirectUrl)) redirectUrl = BACKEND_URL;
     if (!u || !t || !req.params.id) return res.redirect(302, redirectUrl);
-    const bot = isBotOrPrefetch(req);
-    if (bot) return res.redirect(302, redirectUrl);
+    const otherBot = isOtherKnownBot(req);
+    if (otherBot && !isRealBrowser(req)) return res.redirect(302, redirectUrl);
     const logRef = db.collection('users').doc(u).collection('emailLog').doc(req.params.id);
     const r = await logRef.get();
     if (!r.exists) return res.redirect(302, redirectUrl);
@@ -1143,11 +1170,32 @@ app.get('/api/my-emails', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ SEND ============ */
+/* ============ SEND (with DUPLICATE GUARD) ============ */
 async function sendOne(userId, userEmail, recipientId, options) {
   options = options || {};
   const u = await getUserData(userId);
   if (!u.smtpEnabled || !u.smtpAppPassword) throw new Error('Please connect Gmail first to send emails');
+
+  // ==== DUPLICATE SEND GUARD ====
+  // Prevent same recipient getting 2 emails within 90 seconds (auto-send + manual races, double clicks, retries).
+  if (!options.forceResend) {
+    try {
+      const cutoff = new Date(Date.now() - DUPLICATE_SEND_WINDOW_MS);
+      const recentSnap = await db.collection('users').doc(userId).collection('emailLog')
+        .where('recipientId', '==', recipientId)
+        .where('sentAt', '>', cutoff)
+        .limit(1).get();
+      if (!recentSnap.empty) {
+        const err = new Error('DUPLICATE_SEND_SKIP');
+        err.code = 'DUPLICATE_SEND_SKIP';
+        throw err;
+      }
+    } catch (dupErr) {
+      if (dupErr.code === 'DUPLICATE_SEND_SKIP') throw dupErr;
+      // else ignore the guard query error and continue
+    }
+  }
+
   if (isQuietHours(u) && !options.force) { const e = new Error('QUIET_HOURS'); e.code = 'QUIET_HOURS'; e.quietEnd = u.quietEnd; throw e; }
   const today = new Date().toISOString().split('T')[0];
   const sdChk = await db.collection('users').doc(userId).collection('stats').doc(today).get();
@@ -1238,12 +1286,13 @@ app.post('/api/send', authRequired, async (req, res) => {
   } catch (e) {
     if (e.code === 'QUIET_HOURS') return res.json({ ok: false, error: 'QUIET_HOURS', quietEnd: e.quietEnd });
     if (e.code === 'DAILY_LIMIT_REACHED') return res.json({ ok: false, error: 'DAILY_LIMIT_REACHED', limit: e.limit });
+    if (e.code === 'DUPLICATE_SEND_SKIP') return res.json({ ok: false, error: 'DUPLICATE_SEND_SKIP', message: 'This recipient already received an email in the last 90 seconds. Skipped to avoid duplicate.' });
     res.json({ ok: false, error: e.message });
   }
 });
 app.post('/api/resend', authRequired, async (req, res) => {
   try {
-    const result = await sendOne(req.session.user.id, req.session.user.email, req.body.recipientId, { force: true, skipDelay: true, includeSignature: req.body.includeSignature !== false, includeLogo: req.body.includeLogo !== false, includeAttachments: req.body.includeAttachments === true, selectedFileIds: req.body.selectedFileIds || [], templateId: req.body.templateId || null });
+    const result = await sendOne(req.session.user.id, req.session.user.email, req.body.recipientId, { force: true, skipDelay: true, forceResend: true, includeSignature: req.body.includeSignature !== false, includeLogo: req.body.includeLogo !== false, includeAttachments: req.body.includeAttachments === true, selectedFileIds: req.body.selectedFileIds || [], templateId: req.body.templateId || null });
     res.json({ ok: true, email: result.email, attachmentsCount: result.attachmentsCount });
   } catch (e) {
     if (e.code === 'DAILY_LIMIT_REACHED') return res.json({ ok: false, error: 'DAILY_LIMIT_REACHED', limit: e.limit });
@@ -1251,13 +1300,13 @@ app.post('/api/resend', authRequired, async (req, res) => {
   }
 });
 
-/* ============ AUTO-SEND ============ */
+/* ============ AUTO-SEND (with duplicate guard) ============ */
 async function runAutoSend(uid, ue, ud) {
   if (isQuietHours(ud)) return { skipped: true };
   const bs = Number(ud.autoSendBatchSize) || 5;
   const ps = await db.collection('users').doc(uid).collection('recipients').where('status', '==', 'Pending').limit(bs).get();
   if (ps.empty) return { sent: 0, failed: 0 };
-  let s = 0, f = 0;
+  let s = 0, f = 0, dup = 0;
   const delaySec = ud.sendDelay !== undefined ? Number(ud.sendDelay) : DEFAULT_SEND_DELAY;
   const autoFileIds = Array.isArray(ud.autoSendFileIds) ? ud.autoSendFileIds : [];
   const includeAtt = ud.autoSendIncludeAttachments === true && autoFileIds.length > 0;
@@ -1268,10 +1317,14 @@ async function runAutoSend(uid, ue, ud) {
       s++;
       if (delaySec > 0) await sleep(delaySec * 1000 + Math.floor(Math.random() * 1000));
     }
-    catch (e) { f++; if (e.code === 'QUIET_HOURS' || e.code === 'DAILY_LIMIT_REACHED') break; }
+    catch (e) {
+      if (e.code === 'DUPLICATE_SEND_SKIP') { dup++; continue; }
+      f++;
+      if (e.code === 'QUIET_HOURS' || e.code === 'DAILY_LIMIT_REACHED') break;
+    }
   }
   if (s > 0) await db.collection('users').doc(uid).update({ totalAutoSent: FieldValue.increment(s), lastAutoSendRun: new Date() });
-  return { sent: s, failed: f };
+  return { sent: s, failed: f, duplicatesSkipped: dup };
 }
 
 app.get('/api/cron/auto-send', async (req, res) => {
@@ -1470,26 +1523,58 @@ app.get('/api/admin/dashboard', adminRequired, async (req, res) => {
     res.json({ ok: true, stats: { totalUsers, totalEmails, totalOpened, totalPending, totalSends } });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
+
+// OCR usage — now counts CLIENT errors into FAILED total
 app.get('/api/admin/ocr-usage', adminRequired, async (req, res) => {
   try {
     const us = await db.collection('users').get();
     const today = new Date().toISOString().split('T')[0];
     const rows = [];
-    let grandTotal = 0, grandSuccess = 0, grandFailed = 0, grandChars = 0, grandClientErrors = 0;
+    let sumTotal = 0, sumSuccess = 0, sumFailed = 0, sumChars = 0, sumClientErr = 0;
     for (const u of us.docs) {
       const d = u.data();
       const [daySnap, totalSnap] = await Promise.all([db.collection('users').doc(u.id).collection('ocrUsage').doc(today).get(), db.collection('users').doc(u.id).collection('ocrUsage').doc('total').get()]);
       const day = daySnap.exists ? daySnap.data() : { total: 0, success: 0, failed: 0, charsExtracted: 0, clientErrors: 0 };
       const tot = totalSnap.exists ? totalSnap.data() : { total: 0, success: 0, failed: 0, charsExtracted: 0, clientErrors: 0 };
-      if ((tot.total || 0) > 0 || (tot.clientErrors || 0) > 0) {
-        rows.push({ id: u.id, email: d.email, name: d.name, appAccountId: d.appAccountId || 'N/A', todayTotal: day.total || 0, todaySuccess: day.success || 0, todayFailed: day.failed || 0, todayChars: day.charsExtracted || 0, todayClientErrors: day.clientErrors || 0, todayLastError: day.lastError || '', total: tot.total || 0, success: tot.success || 0, failed: tot.failed || 0, chars: tot.charsExtracted || 0, clientErrors: tot.clientErrors || 0 });
-        grandTotal += tot.total || 0; grandSuccess += tot.success || 0; grandFailed += tot.failed || 0; grandChars += tot.charsExtracted || 0; grandClientErrors += tot.clientErrors || 0;
+      const clientErrs = tot.clientErrors || 0;
+      const allAttempts = (tot.total || 0) + clientErrs;
+      const allFailed = (tot.failed || 0) + clientErrs;
+      if (allAttempts > 0) {
+        rows.push({
+          id: u.id, email: d.email, name: d.name, appAccountId: d.appAccountId || 'N/A',
+          todayTotal: (day.total || 0) + (day.clientErrors || 0),
+          todaySuccess: day.success || 0,
+          todayFailed: (day.failed || 0) + (day.clientErrors || 0),
+          todayChars: day.charsExtracted || 0,
+          todayClientErrors: day.clientErrors || 0,
+          todayLastError: day.lastError || '',
+          total: allAttempts,
+          success: tot.success || 0,
+          failed: allFailed,
+          chars: tot.charsExtracted || 0,
+          clientErrors: clientErrs
+        });
+        sumTotal += allAttempts;
+        sumSuccess += tot.success || 0;
+        sumFailed += allFailed;
+        sumChars += tot.charsExtracted || 0;
+        sumClientErr += clientErrs;
       }
     }
-    rows.sort((a, b) => (b.total + b.clientErrors) - (a.total + a.clientErrors));
-    res.json({ ok: true, rows, summary: { totalUsers: us.size, activeUsers: rows.length, grandTotal, grandSuccess, grandFailed, grandChars, grandClientErrors, successRate: grandTotal > 0 ? Math.round((grandSuccess / grandTotal) * 100) : 0 } });
+    rows.sort((a, b) => b.total - a.total);
+    res.json({ ok: true, rows, summary: {
+      totalUsers: us.size,
+      activeUsers: rows.length,
+      grandTotal: sumTotal,
+      grandSuccess: sumSuccess,
+      grandFailed: sumFailed,
+      grandChars: sumChars,
+      grandClientErrors: sumClientErr,
+      successRate: sumTotal > 0 ? Math.round((sumSuccess / sumTotal) * 100) : 0
+    }});
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
+
 app.get('/api/admin/ocr-quota', adminRequired, async (req, res) => {
   try {
     const month = new Date().toISOString().substring(0, 7);
@@ -1662,7 +1747,19 @@ app.get('/api/admin/user/:id/details', adminRequired, async (req, res) => {
     const logs = await db.collection('users').doc(uid).collection('emailLog').limit(2000).get();
     let openedSends = 0; logs.forEach(x => { if (x.data().openedAt) openedSends++; });
     const aiUsage = { today: aiT.exists ? (aiT.data().totalTokens || 0) : 0, todayCalls: aiT.exists ? (aiT.data().calls || 0) : 0, month: aiM.exists ? (aiM.data().totalTokens || 0) : 0, monthCalls: aiM.exists ? (aiM.data().calls || 0) : 0, total: aiAll.exists ? (aiAll.data().totalTokens || 0) : 0, calls: aiAll.exists ? (aiAll.data().calls || 0) : 0, providers: aiAll.exists ? (aiAll.data().providers || {}) : {} };
-    const ocrUsage = { todayTotal: ocrT.exists ? (ocrT.data().total || 0) : 0, todaySuccess: ocrT.exists ? (ocrT.data().success || 0) : 0, todayFailed: ocrT.exists ? (ocrT.data().failed || 0) : 0, todayClientErrors: ocrT.exists ? (ocrT.data().clientErrors || 0) : 0, totalTotal: ocrAll.exists ? (ocrAll.data().total || 0) : 0, totalSuccess: ocrAll.exists ? (ocrAll.data().success || 0) : 0, totalFailed: ocrAll.exists ? (ocrAll.data().failed || 0) : 0, totalClientErrors: ocrAll.exists ? (ocrAll.data().clientErrors || 0) : 0, totalChars: ocrAll.exists ? (ocrAll.data().charsExtracted || 0) : 0 };
+    const ocrClientErrsT = ocrT.exists ? (ocrT.data().clientErrors || 0) : 0;
+    const ocrClientErrsAll = ocrAll.exists ? (ocrAll.data().clientErrors || 0) : 0;
+    const ocrUsage = {
+      todayTotal: (ocrT.exists ? (ocrT.data().total || 0) : 0) + ocrClientErrsT,
+      todaySuccess: ocrT.exists ? (ocrT.data().success || 0) : 0,
+      todayFailed: (ocrT.exists ? (ocrT.data().failed || 0) : 0) + ocrClientErrsT,
+      todayClientErrors: ocrClientErrsT,
+      totalTotal: (ocrAll.exists ? (ocrAll.data().total || 0) : 0) + ocrClientErrsAll,
+      totalSuccess: ocrAll.exists ? (ocrAll.data().success || 0) : 0,
+      totalFailed: (ocrAll.exists ? (ocrAll.data().failed || 0) : 0) + ocrClientErrsAll,
+      totalClientErrors: ocrClientErrsAll,
+      totalChars: ocrAll.exists ? (ocrAll.data().charsExtracted || 0) : 0
+    };
     res.json({ ok: true, user: { id: uid, email: data.email, name: data.name, picture: data.profilePicture || '', appAccountId: data.appAccountId || 'N/A', createdAt: data.createdAt ? (data.createdAt.toDate ? data.createdAt.toDate().toISOString() : data.createdAt) : null, lastLogin: data.lastLogin ? (data.lastLogin.toDate ? data.lastLogin.toDate().toISOString() : data.lastLogin) : null, authType: data.authType || 'email', hasSmtp: !!data.smtpEnabled, hasImap: !!data.imapEnabled, autoSend: !!data.autoSend, banned: banned.exists, banReason: banned.exists ? banned.data().reason : '', aiUsage, ocrUsage, stats: { total: t.data().count, sent: s.data().count, opened: openedSends, pending: p.data().count, totalSends: sd.data().count } } });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
@@ -1674,7 +1771,7 @@ app.delete('/api/admin/user/:id', adminRequired, async (req, res) => {
     if (!target.exists) return res.json({ ok: false, error: 'User not found' });
     const email = (target.data().email || '').toLowerCase();
     if (email === ADMIN_EMAIL) return res.json({ ok: false, error: 'Cannot delete admin account' });
-    const subcollections = ['recipients', 'templates', 'emailLog', 'files', 'stats', 'senderMemory', 'imapEmails', 'testRecipients', 'testLog', 'aiUsage', 'replyLog', 'ocrUsage', 'ocrLog', 'aiErrors'];
+    const subcollections = ['recipients', 'templates', 'emailLog', 'files', 'stats', 'senderMemory', 'imapEmails', 'testRecipients', 'testLog', 'aiUsage', 'replyLog', 'ocrUsage', 'ocrLog', 'aiErrors', 'sendLocks'];
     for (const coll of subcollections) { let more = true; while (more) { const snap = await db.collection('users').doc(uid).collection(coll).limit(400).get(); if (snap.empty) { more = false; break; } const b = db.batch(); snap.forEach(d => b.delete(d.ref)); await b.commit(); if (snap.size < 400) more = false; } }
     await db.collection('users').doc(uid).delete();
     await db.collection('bannedUsers').doc(uid).delete().catch(() => { });
