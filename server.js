@@ -19,14 +19,16 @@ const DEFAULT_SEND_DELAY = 20;
 const IS_VERCEL = !!process.env.VERCEL;
 const CRON_SECRET = process.env.CRON_SECRET || '';
 const BACKEND_URL = process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org';
-const APP_VERSION = '1.8.6';
+const APP_VERSION = '1.8.7';
 const OCR_SPACE_API_KEY = process.env.OCR_SPACE_API_KEY || 'helloworld';
 const OCR_FREE_MONTHLY_LIMIT = 25000;
 
+// OCR.space free tier = 1MB total request binary. Base64 = +33% overhead.
+// Client must compress to <= 700KB binary before sending.
 const MAX_FILE_SIZE = 3 * 1024 * 1024;
 const MAX_LOGO_SIZE = 2 * 1024 * 1024;
 const MAX_PROFILE_PIC_SIZE = 1 * 1024 * 1024;
-const MAX_OCR_IMAGE_SIZE = 1500 * 1024;
+const MAX_OCR_IMAGE_SIZE = 1 * 1024 * 1024; // hard 1MB cap (server safety)
 
 if (!process.env.SESSION_SECRET) { console.error('FATAL: SESSION_SECRET missing!'); process.exit(1); }
 if (!process.env.ENCRYPTION_KEY) { console.error('FATAL: ENCRYPTION_KEY missing!'); process.exit(1); }
@@ -176,7 +178,7 @@ app.set('trust proxy',1);
 app.use((req,res,next)=>{res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('X-Frame-Options','SAMEORIGIN');res.setHeader('X-XSS-Protection','1; mode=block');res.setHeader('Referrer-Policy','strict-origin-when-cross-origin');res.setHeader('Strict-Transport-Security','max-age=31536000; includeSubDomains');next();});
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map(x => x.trim()).filter(Boolean);
 app.use(cors({origin:function(origin,cb){if(!origin)return cb(null,true);if(ALLOWED_ORIGINS.length===0)return cb(null,true);if(ALLOWED_ORIGINS.indexOf(origin)!==-1)return cb(null,true);cb(null,false);},credentials:true}));
-app.use(express.json({limit:'10mb'}));
+app.use(express.json({limit:'12mb'}));
 app.use(cookieSession({name:'mf_session',keys:[process.env.SESSION_SECRET],maxAge:SESSION_DAYS_LONG*24*60*60*1000,secure:IS_VERCEL,sameSite:IS_VERCEL?'none':'lax',httpOnly:true,signed:true,overwrite:true}));
 app.use(express.static(path.join(__dirname,'public')));
 app.get('/privacy',(req,res)=>res.sendFile(path.join(__dirname,'public','privacy.html')));
@@ -425,9 +427,9 @@ async function extractCvFromBuffer(buf, filename, mimeType) {
   return '';
 }
 
-app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL, version: APP_VERSION, method: 'smtp', ocrKeySet: OCR_SPACE_API_KEY !== 'helloworld' }));
+app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL, version: APP_VERSION, method: 'smtp', ocrKeySet: OCR_SPACE_API_KEY !== 'helloworld', ocrMaxBytes: MAX_OCR_IMAGE_SIZE }));
 
-/* ============ OCR SERVER ============ */
+/* ============ OCR ============ */
 app.post('/api/ocr/extract', authRequired, async (req, res) => {
   const uid = req.session.user.id;
   let fileName = '';
@@ -444,8 +446,9 @@ app.post('/api/ocr/extract', authRequired, async (req, res) => {
       return res.json({ ok: false, error: 'Invalid image data. Please re-upload the screenshot.' });
     }
     if (buf.length > MAX_OCR_IMAGE_SIZE) {
-      await logOcrUsage(uid, false, 0, 'Image too large: ' + Math.round(buf.length/1024) + 'KB', fileName, false, '');
-      return res.json({ ok: false, error: 'Image too large (' + Math.round(buf.length/1024) + 'KB). Please try a smaller or lower-resolution screenshot.' });
+      const kb = Math.round(buf.length / 1024);
+      await logOcrUsage(uid, false, 0, 'Image too large: ' + kb + 'KB', fileName, false, '');
+      return res.json({ ok: false, error: 'Image too large (' + kb + ' KB). Max ' + Math.round(MAX_OCR_IMAGE_SIZE/1024) + ' KB. Client should compress first.' });
     }
     const mime = (mimeType || 'image/jpeg').toLowerCase();
     const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp', 'image/tiff'];
@@ -464,14 +467,14 @@ app.post('/api/ocr/extract', authRequired, async (req, res) => {
         method: 'POST',
         headers: { 'apikey': OCR_SPACE_API_KEY, 'Content-Type': 'application/x-www-form-urlencoded' },
         body: params.toString()
-      }, 45000);
+      }, 60000);
     } catch (netErr) {
       await logOcrUsage(uid, false, 0, 'Network: ' + netErr.message, fileName, false, '');
       return res.json({ ok: false, error: 'OCR service unreachable. Please try again in a moment.' });
     }
     if (!ocrRes.ok) {
       await logOcrUsage(uid, false, 0, 'OCR HTTP ' + ocrRes.status, fileName, false, '');
-      return res.json({ ok: false, error: 'OCR service error (HTTP ' + ocrRes.status + '). Please try again.' });
+      return res.json({ ok: false, error: 'OCR service error (HTTP ' + ocrRes.status + ').' + (ocrRes.status === 413 ? ' Image too large for provider.' : ' Please try again.') });
     }
     let ocrData;
     try { ocrData = await ocrRes.json(); } catch (e) {
@@ -481,8 +484,12 @@ app.post('/api/ocr/extract', authRequired, async (req, res) => {
     if (ocrData.IsErroredOnProcessing) {
       const errMsg = (ocrData.ErrorMessage && Array.isArray(ocrData.ErrorMessage)) ? ocrData.ErrorMessage.join(' ') : (ocrData.ErrorMessage || 'OCR processing failed');
       await logOcrUsage(uid, false, 0, errMsg, fileName, false, '');
-      if (errMsg.indexOf('limit') !== -1 || errMsg.indexOf('Limit') !== -1) {
+      const low = String(errMsg).toLowerCase();
+      if (low.indexOf('limit') !== -1 || low.indexOf('quota') !== -1) {
         return res.json({ ok: false, error: 'OCR monthly limit reached. Please try again next month.' });
+      }
+      if (low.indexOf('size') !== -1 || low.indexOf('large') !== -1) {
+        return res.json({ ok: false, error: 'Image is too large for OCR. Please use a smaller screenshot.' });
       }
       return res.json({ ok: false, error: errMsg });
     }
@@ -496,7 +503,7 @@ app.post('/api/ocr/extract', authRequired, async (req, res) => {
       return res.json({ ok: false, error: 'No readable text found in image.' });
     }
     await logOcrUsage(uid, true, text.length, '', fileName, false, '');
-    res.json({ ok: true, text: text.substring(0, 20000), chars: text.length });
+    res.json({ ok: true, text: text.substring(0, 30000), chars: text.length });
   } catch (e) {
     console.error('OCR error:', e.message);
     await logOcrUsage(uid, false, 0, 'Server: ' + e.message, fileName, false, '');
@@ -504,7 +511,6 @@ app.post('/api/ocr/extract', authRequired, async (req, res) => {
   }
 });
 
-/* ============ OCR CLIENT-SIDE ERROR ============ */
 app.post('/api/ocr/client-error', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -538,7 +544,19 @@ app.post('/api/auth/register', async (req, res) => {
     if (existing.exists && existing.data().passwordHash) return res.json({ ok: false, error: 'This email is already registered. Please login instead.' });
     const { hash, salt } = hashPassword(password);
     const now = new Date();
-    const data = { email: emailLower, emailNormalized: normalized, name: String(name).substring(0, 100), passwordHash: hash, passwordSalt: salt, authType: 'email', createdAt: now, updatedAt: now, lastLogin: now, lastIP: ip, firstIP: ip, quietEnabled: false, quietStart: 22, quietEnd: 7, autoSend: false, autoSendBatchSize: 5, signature: '', logoUrl: '', logoUrlAlt: '', logoFileId: null, sigFields: {}, appAccountId: generateAppAccountId(), lastAutoSendRun: null, totalAutoSent: 0, lastSendTime: null, dailyLimit: DEFAULT_DAILY_LIMIT, sendDelay: DEFAULT_SEND_DELAY, imapEnabled: false, imapAppPassword: null, aiProfile: {}, profilePicture: '', smtpEnabled: false, smtpAppPassword: null, preferences: { language: 'en', timezone: 'Asia/Karachi', dateFormat: 'DD/MM/YYYY', timeFormat: '12h' } };
+    const data = {
+      email: emailLower, emailNormalized: normalized, name: String(name).substring(0, 100), passwordHash: hash, passwordSalt: salt,
+      authType: 'email', createdAt: now, updatedAt: now, lastLogin: now, lastIP: ip, firstIP: ip,
+      quietEnabled: false, quietStart: 22, quietEnd: 7,
+      autoSend: false, autoSendBatchSize: 5,
+      autoSendTemplateId: '', autoSendFileIds: [], autoSendIncludeLogo: true, autoSendIncludeSignature: true, autoSendIncludeAttachments: true,
+      signature: '', logoUrl: '', logoUrlAlt: '', logoFileId: null, sigFields: {},
+      appAccountId: generateAppAccountId(), lastAutoSendRun: null, totalAutoSent: 0, lastSendTime: null,
+      dailyLimit: DEFAULT_DAILY_LIMIT, sendDelay: DEFAULT_SEND_DELAY,
+      imapEnabled: false, imapAppPassword: null, aiProfile: {}, profilePicture: '',
+      smtpEnabled: false, smtpAppPassword: null,
+      preferences: { language: 'en', timezone: 'Asia/Karachi', dateFormat: 'DD/MM/YYYY', timeFormat: '12h' }
+    };
     if (existing.exists) { const ex = existing.data(); if (ex.appAccountId) data.appAccountId = ex.appAccountId; data.createdAt = ex.createdAt || now; if (ex.smtpAppPassword) data.smtpAppPassword = ex.smtpAppPassword; if (ex.smtpEnabled) data.smtpEnabled = ex.smtpEnabled; if (ex.imapAppPassword) data.imapAppPassword = ex.imapAppPassword; if (ex.imapEnabled) data.imapEnabled = ex.imapEnabled; }
     await db.collection('users').doc(uid).set(data, { merge: true });
     req.session.user = { id: uid, email: emailLower, name: data.name, picture: '', appAccountId: data.appAccountId, isAdmin: emailLower === ADMIN_EMAIL };
@@ -663,7 +681,7 @@ app.post('/api/user-preferences', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ SMTP ============ */
+/* ============ SMTP / IMAP ============ */
 app.post('/api/smtp/connect', authRequired, async (req, res) => {
   try {
     const { appPassword, alsoEnableImap } = req.body || {};
@@ -1077,7 +1095,14 @@ app.get('/api/recipient/:id/history', authRequired, async (req, res) => {
     const rec = recSnap.data();
     const allEmails = [];
     let lastDoc = null, more = true, it = 0;
-    while (more && it < 40) { it++; let q = db.collection('users').doc(uid).collection('emailLog').where('recipientId', '==', recipientId).limit(500); if (lastDoc) q = q.startAfter(lastDoc); const snap = await q.get(); if (snap.empty) { more = false; break; } snap.forEach(d => allEmails.push({ id: d.id, ...d.data() })); lastDoc = snap.docs[snap.docs.length - 1]; if (snap.size < 500) more = false; }
+    while (more && it < 60) { it++; let q = db.collection('users').doc(uid).collection('emailLog').where('recipientId', '==', recipientId).limit(500); if (lastDoc) q = q.startAfter(lastDoc); const snap = await q.get(); if (snap.empty) { more = false; break; } snap.forEach(d => allEmails.push({ id: d.id, ...d.data() })); lastDoc = snap.docs[snap.docs.length - 1]; if (snap.size < 500) more = false; }
+    // Include replies sent to same recipient email
+    try {
+      const recEmail = String(rec.email || '').toLowerCase();
+      const replySnap = await db.collection('users').doc(uid).collection('emailLog').where('recipientEmail','==',recEmail).limit(500).get();
+      const seen = new Set(allEmails.map(e=>e.id));
+      replySnap.forEach(d=>{ if(!seen.has(d.id)){ allEmails.push({ id: d.id, ...d.data() }); seen.add(d.id); } });
+    } catch(e){}
     allEmails.sort((a, b) => { const ta = a.sentAt && a.sentAt._seconds ? a.sentAt._seconds * 1000 : new Date(a.sentAt || 0).getTime(); const tb = b.sentAt && b.sentAt._seconds ? b.sentAt._seconds * 1000 : new Date(b.sentAt || 0).getTime(); return tb - ta; });
     const totalSent = allEmails.length;
     const totalOpened = allEmails.filter(e => !!e.openedAt).length;
@@ -1131,7 +1156,7 @@ app.delete('/api/files/:id', authRequired, async (req, res) => {
   try { await db.collection('users').doc(req.session.user.id).collection('files').doc(req.params.id).delete(); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ============ LOGO ============ */
+/* ============ LOGO / PROFILE ============ */
 app.post('/api/upload-logo', authRequired, async (req, res) => {
   try {
     const { base64, mimeType, filename } = req.body;
@@ -1152,8 +1177,6 @@ app.post('/api/remove-logo', authRequired, async (req, res) => {
 app.get('/api/logo', authRequired, async (req, res) => {
   try { const d = await getUserData(req.session.user.id); const uid = req.session.user.id; const publicUrl = d.logoBase64 ? (BACKEND_URL + '/logo/' + uid) : ''; res.json({ ok: true, url: publicUrl, urlAlt: d.logoUrl || '' }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-
-/* ============ PROFILE PIC ============ */
 app.post('/api/profile/picture', authRequired, async (req, res) => {
   try {
     const { base64, mimeType } = req.body;
@@ -1168,15 +1191,12 @@ app.post('/api/profile/picture', authRequired, async (req, res) => {
     res.json({ ok: true, url });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-
-/* ============ PROFILE ============ */
 app.get('/api/profile', authRequired, async (req, res) => {
   try { const d = await getUserData(req.session.user.id); res.json({ ok: true, profile: { name: d.name || '', email: d.email || '', picture: d.profilePicture || '', appAccountId: d.appAccountId || '', createdAt: d.createdAt || null, lastLogin: d.lastLogin || null, hasSmtp: !!d.smtpEnabled, authType: d.authType || 'email', preferences: d.preferences || { language: 'en', timezone: 'Asia/Karachi', dateFormat: 'DD/MM/YYYY', timeFormat: '12h' } } }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.post('/api/profile', authRequired, async (req, res) => {
   try { const { name } = req.body; const update = {}; if (name && typeof name === 'string') update.name = name.substring(0, 100); if (Object.keys(update).length) { await db.collection('users').doc(req.session.user.id).update(update); if (req.session.user) req.session.user.name = update.name || req.session.user.name; } res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-
 app.get('/api/ai/usage', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -1204,25 +1224,47 @@ app.post('/api/ai-profile', authRequired, async (req, res) => {
     res.json({ ok: true });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-
-/* ============ SIGNATURE / PREFS / STATS ============ */
 app.get('/api/signature', authRequired, async (req, res) => {
   try { const d = await getUserData(req.session.user.id); res.json({ ok: true, signature: d.signature || '', fields: d.sigFields || {} }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.post('/api/signature', authRequired, async (req, res) => {
   try { const u = { signature: req.body.signature || '' }; if (req.body.fields) u.sigFields = req.body.fields; await db.collection('users').doc(req.session.user.id).update(u); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
+
+/* ============ PREFS (UPDATED with auto-send template/files) ============ */
 app.get('/api/prefs', authRequired, async (req, res) => {
-  try { const d = await getUserData(req.session.user.id); res.json({ ok: true, prefs: { quietEnabled: d.quietEnabled === true, quietStart: d.quietStart !== undefined ? d.quietStart : 22, quietEnd: d.quietEnd !== undefined ? d.quietEnd : 7, autoSend: d.autoSend === true, autoSendBatchSize: d.autoSendBatchSize !== undefined ? d.autoSendBatchSize : 5, appAccountId: d.appAccountId || '', totalAutoSent: d.totalAutoSent || 0, autoSendIncludeLogo: d.autoSendIncludeLogo !== false, autoSendIncludeSignature: d.autoSendIncludeSignature !== false, sendDelay: d.sendDelay !== undefined ? d.sendDelay : DEFAULT_SEND_DELAY, lastAutoSendRun: d.lastAutoSendRun || null, dailyLimit: d.dailyLimit || DEFAULT_DAILY_LIMIT } }); } catch (e) { res.json({ ok: false, error: e.message }); }
+  try {
+    const d = await getUserData(req.session.user.id);
+    res.json({ ok: true, prefs: {
+      quietEnabled: d.quietEnabled === true,
+      quietStart: d.quietStart !== undefined ? d.quietStart : 22,
+      quietEnd: d.quietEnd !== undefined ? d.quietEnd : 7,
+      autoSend: d.autoSend === true,
+      autoSendBatchSize: d.autoSendBatchSize !== undefined ? d.autoSendBatchSize : 5,
+      appAccountId: d.appAccountId || '',
+      totalAutoSent: d.totalAutoSent || 0,
+      autoSendIncludeLogo: d.autoSendIncludeLogo !== false,
+      autoSendIncludeSignature: d.autoSendIncludeSignature !== false,
+      autoSendIncludeAttachments: d.autoSendIncludeAttachments !== false,
+      autoSendTemplateId: d.autoSendTemplateId || '',
+      autoSendFileIds: Array.isArray(d.autoSendFileIds) ? d.autoSendFileIds : [],
+      sendDelay: d.sendDelay !== undefined ? d.sendDelay : DEFAULT_SEND_DELAY,
+      lastAutoSendRun: d.lastAutoSendRun || null,
+      dailyLimit: d.dailyLimit || DEFAULT_DAILY_LIMIT
+    } });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 app.post('/api/prefs', authRequired, async (req, res) => {
   try {
-    const { quietEnabled, quietStart, quietEnd, autoSend, autoSendBatchSize, autoSendIncludeLogo, autoSendIncludeSignature, sendDelay } = req.body;
+    const { quietEnabled, quietStart, quietEnd, autoSend, autoSendBatchSize, autoSendIncludeLogo, autoSendIncludeSignature, autoSendIncludeAttachments, autoSendTemplateId, autoSendFileIds, sendDelay } = req.body;
     let bs = Number(autoSendBatchSize); if (isNaN(bs) || bs < 1) bs = 5; if (bs > 500) bs = 500;
     let sd = Number(sendDelay); if (isNaN(sd) || sd < 0) sd = DEFAULT_SEND_DELAY; if (sd > 120) sd = 120;
     const update = { quietEnabled: !!quietEnabled, quietStart: Number(quietStart), quietEnd: Number(quietEnd), autoSend: !!autoSend, autoSendBatchSize: bs, sendDelay: sd, updatedAt: new Date() };
     if (autoSendIncludeLogo !== undefined) update.autoSendIncludeLogo = !!autoSendIncludeLogo;
     if (autoSendIncludeSignature !== undefined) update.autoSendIncludeSignature = !!autoSendIncludeSignature;
+    if (autoSendIncludeAttachments !== undefined) update.autoSendIncludeAttachments = !!autoSendIncludeAttachments;
+    if (autoSendTemplateId !== undefined) update.autoSendTemplateId = String(autoSendTemplateId || '').substring(0, 200);
+    if (Array.isArray(autoSendFileIds)) update.autoSendFileIds = autoSendFileIds.map(x => String(x)).slice(0, 50);
     await db.collection('users').doc(req.session.user.id).update(update);
     res.json({ ok: true });
   } catch (e) { res.json({ ok: false, error: e.message }); }
@@ -1320,7 +1362,15 @@ async function sendOne(userId, userEmail, recipientId, options) {
   const lp = localAnalysis(subject, fullHtml);
   const sendTrackToken = crypto.randomBytes(16).toString('hex');
   const atts = []; const attNames = [];
-  if (options.includeAttachments !== false) { const fs = await db.collection('users').doc(userId).collection('files').get(); const selectedIds = options.selectedFileIds; for (const fd of fs.docs) { if (selectedIds && selectedIds.length > 0 && selectedIds.indexOf(fd.id) === -1) continue; const f = fd.data(); if (f.base64) { atts.push({ filename: f.name, content: Buffer.from(f.base64, 'base64'), contentType: f.mimeType || 'application/octet-stream' }); attNames.push(f.name); } } }
+  if (options.includeAttachments !== false) {
+    const fs = await db.collection('users').doc(userId).collection('files').get();
+    const selectedIds = options.selectedFileIds;
+    for (const fd of fs.docs) {
+      if (selectedIds && selectedIds.length > 0 && selectedIds.indexOf(fd.id) === -1) continue;
+      const f = fd.data();
+      if (f.base64) { atts.push({ filename: f.name, content: Buffer.from(f.base64, 'base64'), contentType: f.mimeType || 'application/octet-stream' }); attNames.push(f.name); }
+    }
+  }
   const logRef = await db.collection('users').doc(userId).collection('emailLog').add({ recipientId, recipientEmail: rec.email, company: rec.company || '', subject, sentAt: new Date(), attachmentsCount: atts.length, attachmentNames: attNames, aiPrediction: lp.prediction, aiScore: lp.score, aiInboxProb: lp.inboxProbability, sendTrackToken, openedAt: null, hasSignature: hasSignature, templateName: t.name || '', isReply: false });
   const logId = logRef.id;
   const trackUrl = BACKEND_URL + '/track/' + logId + '?u=' + userId + '&t=' + sendTrackToken;
@@ -1382,7 +1432,7 @@ app.get('/track/:id', async (req, res) => {
   res.set('Content-Type', 'image/gif'); res.send(px);
 });
 
-/* ============ AUTO-SEND ============ */
+/* ============ AUTO-SEND (UPDATED with template/files) ============ */
 async function runAutoSend(uid, ue, ud) {
   if (isQuietHours(ud)) return { skipped: true };
   const bs = Number(ud.autoSendBatchSize) || 5;
@@ -1390,8 +1440,23 @@ async function runAutoSend(uid, ue, ud) {
   if (ps.empty) return { sent: 0, failed: 0 };
   let s = 0, f = 0;
   const delaySec = ud.sendDelay !== undefined ? Number(ud.sendDelay) : DEFAULT_SEND_DELAY;
+  const autoFileIds = Array.isArray(ud.autoSendFileIds) ? ud.autoSendFileIds : [];
+  const includeAtt = ud.autoSendIncludeAttachments !== false && autoFileIds.length > 0;
+  const autoTemplateId = ud.autoSendTemplateId || null;
   for (const r of ps.docs) {
-    try { await sendOne(uid, ue, r.id, { force: true, skipDelay: true, includeSignature: ud.autoSendIncludeSignature !== false, includeLogo: ud.autoSendIncludeLogo !== false, includeAttachments: true }); s++; if (delaySec > 0) await sleep(delaySec * 1000 + Math.floor(Math.random() * 1000)); }
+    try {
+      await sendOne(uid, ue, r.id, {
+        force: true,
+        skipDelay: true,
+        includeSignature: ud.autoSendIncludeSignature !== false,
+        includeLogo: ud.autoSendIncludeLogo !== false,
+        includeAttachments: includeAtt,
+        templateId: autoTemplateId,
+        selectedFileIds: autoFileIds
+      });
+      s++;
+      if (delaySec > 0) await sleep(delaySec * 1000 + Math.floor(Math.random() * 1000));
+    }
     catch (e) { f++; if (e.code === 'QUIET_HOURS' || e.code === 'DAILY_LIMIT_REACHED') break; }
   }
   if (s > 0) await db.collection('users').doc(uid).update({ totalAutoSent: FieldValue.increment(s), lastAutoSendRun: new Date() });
@@ -1603,23 +1668,12 @@ app.get('/api/admin/ocr-usage', adminRequired, async (req, res) => {
     let grandTotal = 0, grandSuccess = 0, grandFailed = 0, grandChars = 0, grandClientErrors = 0;
     for (const u of us.docs) {
       const d = u.data();
-      const [daySnap, totalSnap] = await Promise.all([
-        db.collection('users').doc(u.id).collection('ocrUsage').doc(today).get(),
-        db.collection('users').doc(u.id).collection('ocrUsage').doc('total').get()
-      ]);
+      const [daySnap, totalSnap] = await Promise.all([db.collection('users').doc(u.id).collection('ocrUsage').doc(today).get(), db.collection('users').doc(u.id).collection('ocrUsage').doc('total').get()]);
       const day = daySnap.exists ? daySnap.data() : { total: 0, success: 0, failed: 0, charsExtracted: 0, clientErrors: 0 };
       const tot = totalSnap.exists ? totalSnap.data() : { total: 0, success: 0, failed: 0, charsExtracted: 0, clientErrors: 0 };
       if ((tot.total || 0) > 0 || (tot.clientErrors || 0) > 0) {
-        rows.push({
-          id: u.id, email: d.email, name: d.name, appAccountId: d.appAccountId || 'N/A',
-          todayTotal: day.total || 0, todaySuccess: day.success || 0, todayFailed: day.failed || 0, todayChars: day.charsExtracted || 0, todayClientErrors: day.clientErrors || 0, todayLastError: day.lastError || '',
-          total: tot.total || 0, success: tot.success || 0, failed: tot.failed || 0, chars: tot.charsExtracted || 0, clientErrors: tot.clientErrors || 0
-        });
-        grandTotal += tot.total || 0;
-        grandSuccess += tot.success || 0;
-        grandFailed += tot.failed || 0;
-        grandChars += tot.charsExtracted || 0;
-        grandClientErrors += tot.clientErrors || 0;
+        rows.push({ id: u.id, email: d.email, name: d.name, appAccountId: d.appAccountId || 'N/A', todayTotal: day.total || 0, todaySuccess: day.success || 0, todayFailed: day.failed || 0, todayChars: day.charsExtracted || 0, todayClientErrors: day.clientErrors || 0, todayLastError: day.lastError || '', total: tot.total || 0, success: tot.success || 0, failed: tot.failed || 0, chars: tot.charsExtracted || 0, clientErrors: tot.clientErrors || 0 });
+        grandTotal += tot.total || 0; grandSuccess += tot.success || 0; grandFailed += tot.failed || 0; grandChars += tot.charsExtracted || 0; grandClientErrors += tot.clientErrors || 0;
       }
     }
     rows.sort((a, b) => (b.total + b.clientErrors) - (a.total + a.clientErrors));
