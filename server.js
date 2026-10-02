@@ -19,7 +19,7 @@ const DEFAULT_SEND_DELAY = 20;
 const IS_VERCEL = !!process.env.VERCEL;
 const CRON_SECRET = process.env.CRON_SECRET || '';
 const BACKEND_URL = process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org';
-const APP_VERSION = '2.0.5';
+const APP_VERSION = '2.0.6';
 const OCR_SPACE_API_KEY = process.env.OCR_SPACE_API_KEY || 'helloworld';
 const OCR_FREE_MONTHLY_LIMIT = 25000;
 
@@ -40,9 +40,9 @@ const SESSION_DAYS_SHORT = 3;
 const SESSION_DAYS_LONG = 30;
 
 const userCache = new Map();
-const CACHE_TTL = { quota: 30 * 1000, history: 5 * 60 * 1000, status: 30 * 1000, stats: 10 * 1000, recipients: 15 * 1000 };
+const CACHE_TTL = { quota: 30 * 1000, history: 3 * 60 * 1000, status: 30 * 1000, stats: 15 * 1000, recipients: 20 * 1000, imapSent: 5 * 60 * 1000 };
 function cacheGet(k){const e=userCache.get(k);if(!e)return null;if(Date.now()-e.time>e.ttl){userCache.delete(k);return null;}return e.value;}
-function cacheSet(k,v,ttl){if(userCache.size>500){const kk=userCache.keys().next().value;userCache.delete(kk);}userCache.set(k,{value:v,time:Date.now(),ttl});}
+function cacheSet(k,v,ttl){if(userCache.size>800){const kk=userCache.keys().next().value;userCache.delete(kk);}userCache.set(k,{value:v,time:Date.now(),ttl});}
 function cacheDel(prefix){for(const k of userCache.keys()){if(k.startsWith(prefix))userCache.delete(k);}}
 
 const rateBuckets = new Map();
@@ -165,7 +165,6 @@ async function adminRequired(req, res, next) { if (!req.session || !req.session.
 async function getUserData(uid) { const d = await db.collection('users').doc(uid).get(); if (!d.exists) return null; const data = d.data(); if (data.imapAppPassword && typeof data.imapAppPassword === 'string') data.imapAppPassword = decrypt(data.imapAppPassword) || null; if (data.smtpAppPassword && typeof data.smtpAppPassword === 'string') data.smtpAppPassword = decrypt(data.smtpAppPassword) || null; return data; }
 function generateAppAccountId() { const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; const bytes = crypto.randomBytes(6); let id = 'MFP-'; for (let i = 0; i < 6; i++) id += c.charAt(bytes[i] % c.length); return id; }
 function isQuietHours(p) { if (!p || !p.quietEnabled) return false; const n = new Date().getHours(); const s = Number(p.quietStart), e = Number(p.quietEnd); if (isNaN(s) || isNaN(e) || s === e) return false; if (s < e) return n >= s && n < e; return n >= s || n < e; }
-function getCurrentHourKey() { const n = new Date(); return n.toISOString().split('T')[0] + '-' + n.getHours(); }
 function sanitizeSubject(subject) { if (!subject) return ''; let s = subject.replace(/!{2,}/g, '!').replace(/\?{2,}/g, '?').trim(); if (s.length > 78) s = s.substring(0, 75) + '...'; return s; }
 function getClientIP(req) { const fwd = req.headers['x-forwarded-for']; if (fwd) return String(fwd).split(',')[0].trim(); return req.headers['x-real-ip'] || (req.connection && req.connection.remoteAddress) || (req.socket && req.socket.remoteAddress) || 'unknown'; }
 
@@ -422,7 +421,7 @@ app.get('/track/:id', async (req, res) => {
         }
       } catch(e){}
     }
-    cacheDel('stats:' + u); cacheDel('recipients:' + u);
+    cacheDel('stats:' + u); cacheDel('recipients:' + u); cacheDel('rechist:' + u);
   } catch (e) { }
   res.send(px);
 });
@@ -461,7 +460,7 @@ app.get('/click/:id', async (req, res) => {
         }
       } catch(e){}
     }
-    cacheDel('stats:' + u); cacheDel('recipients:' + u);
+    cacheDel('stats:' + u); cacheDel('recipients:' + u); cacheDel('rechist:' + u);
   } catch (e) { }
   return res.redirect(302, redirectUrl);
 });
@@ -894,48 +893,54 @@ app.delete('/api/templates/:id', authRequired, async (req, res) => {
   try { await db.collection('users').doc(req.session.user.id).collection('templates').doc(req.params.id).delete(); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ==== FAST RECIPIENTS: uses sendCount field, no N+1 count queries ====
+// ==== FIXED RECIPIENTS: page 2 empty bug fixed (fetch-all + in-memory sort handles missing bumpAt) ====
 app.get('/api/recipients', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(100, parseInt(req.query.limit) || 10);
-    const ck = 'recipients:' + uid + ':' + page + ':' + limit;
+    const search = String(req.query.search || '').toLowerCase().trim();
+    const statusFilter = String(req.query.status || 'all');
+    const ck = 'recipients:' + uid + ':' + page + ':' + limit + ':' + search + ':' + statusFilter;
     const cached = cacheGet(ck); if (cached) return res.json(cached);
     const colRef = db.collection('users').doc(uid).collection('recipients');
-    const countSnap = await colRef.count().get();
-    const total = countSnap.data().count;
-    const totalPages = Math.max(1, Math.ceil(total / limit));
-    const safePage = Math.min(page, totalPages);
-    const offset = (safePage - 1) * limit;
-    let docs = [];
-    try {
-      const s = await colRef.orderBy('bumpAt', 'desc').offset(offset).limit(limit).get();
-      s.forEach(d => docs.push(d));
-      if (docs.length === 0 && total > 0 && safePage === 1) {
-        const s2 = await colRef.orderBy('createdAt', 'desc').limit(limit).get();
-        s2.forEach(d => docs.push(d));
-      }
-    } catch (qErr) {
-      const s2 = await colRef.orderBy('createdAt', 'desc').offset(offset).limit(limit).get();
-      s2.forEach(d => docs.push(d));
-    }
-    const l = [];
-    const bf = db.batch();
+    const allSnap = await colRef.limit(2000).get();
+    let all = [];
+    const backfill = db.batch();
     let bfCount = 0;
-    docs.forEach(d => {
-      const da = d.data();
-      l.push(Object.assign({ id: d.id, sendCount: da.sendCount || 0 }, da));
-      if (!da.bumpAt || da.sendCount === undefined) {
+    allSnap.forEach(d => {
+      const data = d.data();
+      const rec = Object.assign({ id: d.id, sendCount: data.sendCount || 0 }, data);
+      all.push(rec);
+      if (!data.bumpAt || data.sendCount === undefined) {
         const u = {};
-        if (!da.bumpAt) u.bumpAt = da.createdAt || new Date();
-        if (da.sendCount === undefined) u.sendCount = 0;
-        bf.set(d.ref, u, { merge: true });
+        if (!data.bumpAt) u.bumpAt = data.createdAt || new Date();
+        if (data.sendCount === undefined) u.sendCount = 0;
+        backfill.set(d.ref, u, { merge: true });
         bfCount++;
       }
     });
-    if (bfCount > 0) bf.commit().catch(function(){});
-    const out = { ok: true, recipients: l, pagination: { page: safePage, limit, total, totalPages, hasMore: safePage < totalPages } };
+    if (bfCount > 0) backfill.commit().catch(function(){});
+    all.sort((a, b) => toMs(b.bumpAt || b.lastSentAt || b.sentAt || b.createdAt) - toMs(a.bumpAt || a.lastSentAt || a.sentAt || a.createdAt));
+    if (statusFilter !== 'all') {
+      const want = statusFilter.toLowerCase();
+      all = all.filter(r => {
+        const s = (r.status || '').toLowerCase();
+        if (want === 'pending') return s === 'pending';
+        if (want === 'sent') return s === 'sent';
+        if (want === 'opened') return s === 'opened';
+        return s === want;
+      });
+    }
+    if (search) {
+      all = all.filter(r => (r.email || '').toLowerCase().indexOf(search) !== -1 || (r.company || '').toLowerCase().indexOf(search) !== -1);
+    }
+    const total = all.length;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    const safePage = Math.min(page, totalPages);
+    const offset = (safePage - 1) * limit;
+    const sliced = all.slice(offset, offset + limit);
+    const out = { ok: true, recipients: sliced, pagination: { page: safePage, limit, total, totalPages, hasMore: safePage < totalPages } };
     cacheSet(ck, out, CACHE_TTL.recipients);
     res.json(out);
   } catch (e) { res.json({ ok: false, error: e.message }); }
@@ -960,46 +965,64 @@ app.post('/api/recipients/bulk-delete', authRequired, async (req, res) => {
   try { const { ids } = req.body; if (!ids || !ids.length) return res.json({ ok: false }); const b = db.batch(); const r = db.collection('users').doc(req.session.user.id).collection('recipients'); ids.forEach(id => b.delete(r.doc(id))); await b.commit(); cacheDel('recipients:' + req.session.user.id); cacheDel('stats:' + req.session.user.id); res.json({ ok: true, deleted: ids.length }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+// ==== FAST RECIPIENT HISTORY: cached Gmail IMAP + parallel fetch ====
 app.get('/api/recipient/:id/history', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
     const recipientId = req.params.id;
+    const force = req.query.force === '1';
+    const ck = 'rechist:' + uid + ':' + recipientId;
+    if (!force) { const cached = cacheGet(ck); if (cached) return res.json(cached); }
     const recSnap = await db.collection('users').doc(uid).collection('recipients').doc(recipientId).get();
     if (!recSnap.exists) return res.json({ ok: false, error: 'Recipient not found' });
     const rec = recSnap.data();
+    const recEmailLower = String(rec.email || '').toLowerCase().trim();
+    const [byIdSnap, byEmailSnap] = await Promise.all([
+      db.collection('users').doc(uid).collection('emailLog').where('recipientId', '==', recipientId).limit(500).get(),
+      recEmailLower ? db.collection('users').doc(uid).collection('emailLog').where('recipientEmail', '==', recEmailLower).limit(500).get().catch(() => ({ docs: [] })) : Promise.resolve({ docs: [] })
+    ]);
+    const seenIds = new Set();
     const allEmails = [];
-    let lastDoc = null, more = true, it = 0;
-    while (more && it < 60) { it++; let q = db.collection('users').doc(uid).collection('emailLog').where('recipientId', '==', recipientId).limit(500); if (lastDoc) q = q.startAfter(lastDoc); const snap = await q.get(); if (snap.empty) { more = false; break; } snap.forEach(d => allEmails.push(Object.assign({ id: d.id }, d.data()))); lastDoc = snap.docs[snap.docs.length - 1]; if (snap.size < 500) more = false; }
-    try { const recEmail = String(rec.email || '').toLowerCase(); const replySnap = await db.collection('users').doc(uid).collection('emailLog').where('recipientEmail', '==', recEmail).limit(500).get(); const seen = new Set(allEmails.map(function(e){ return e.id; })); replySnap.forEach(d => { if (!seen.has(d.id)) { allEmails.push(Object.assign({ id: d.id }, d.data())); seen.add(d.id); } }); } catch (e) { }
+    byIdSnap.forEach(d => { if (!seenIds.has(d.id)) { seenIds.add(d.id); allEmails.push(Object.assign({ id: d.id }, d.data())); } });
+    byEmailSnap.forEach(d => { if (!seenIds.has(d.id)) { seenIds.add(d.id); allEmails.push(Object.assign({ id: d.id }, d.data())); } });
     let gmailEmails = [];
     let gmailError = null;
-    try {
-      const u = await getUserData(uid);
-      if (u && u.imapEnabled && u.imapAppPassword) {
-        const gRes = await fetchImapSentForRecipient(u.email, u.imapAppPassword, rec.email, 200);
-        if (gRes.ok && gRes.emails && gRes.emails.length) {
-          const mfKeys = new Set();
-          allEmails.forEach(function(e) {
-            const dt = toMs(e.sentAt);
-            const key = String(e.subject || '').substring(0, 60).toLowerCase().trim() + '|' + Math.floor(dt / 60000);
-            mfKeys.add(key);
-          });
-          gmailEmails = gRes.emails.filter(function(g) {
-            if (!g.date) return true;
-            const dt = new Date(g.date).getTime();
-            const key = String(g.subject || '').substring(0, 60).toLowerCase().trim() + '|' + Math.floor(dt / 60000);
-            return !mfKeys.has(key);
-          }).map(function(g) { return { id: 'gmail_' + g.uid, subject: g.subject, sentAt: g.date, recipientEmail: rec.email, isGmailExternal: true, source: 'gmail_imap' }; });
+    let gmailCached = false;
+    const gk = 'imapsent:' + uid + ':' + recEmailLower;
+    let gRes = cacheGet(gk);
+    if (gRes) gmailCached = true;
+    else {
+      try {
+        const u = await getUserData(uid);
+        if (u && u.imapEnabled && u.imapAppPassword) {
+          gRes = await fetchImapSentForRecipient(u.email, u.imapAppPassword, rec.email, 100);
+          if (gRes && gRes.ok) cacheSet(gk, gRes, CACHE_TTL.imapSent);
         }
-      }
-    } catch (ge) { gmailError = ge.message; }
+      } catch (ge) { gmailError = ge.message; }
+    }
+    if (gRes && gRes.ok && gRes.emails && gRes.emails.length) {
+      const mfKeys = new Set();
+      allEmails.forEach(function(e) {
+        const dt = toMs(e.sentAt);
+        const key = String(e.subject || '').substring(0, 60).toLowerCase().trim() + '|' + Math.floor(dt / 60000);
+        mfKeys.add(key);
+      });
+      gmailEmails = gRes.emails.filter(function(g) {
+        if (!g.date) return true;
+        const dt = new Date(g.date).getTime();
+        const key = String(g.subject || '').substring(0, 60).toLowerCase().trim() + '|' + Math.floor(dt / 60000);
+        return !mfKeys.has(key);
+      }).map(function(g) { return { id: 'gmail_' + g.uid, subject: g.subject, sentAt: g.date, recipientEmail: rec.email, isGmailExternal: true, source: 'gmail_imap' }; });
+    }
     const combined = allEmails.concat(gmailEmails);
     combined.sort(function(a, b) { return toMs(b.sentAt) - toMs(a.sentAt); });
     const totalSent = combined.length;
     const totalOpened = combined.filter(function(e){ return !!e.openedAt; }).length;
     const totalNotOpened = totalSent - totalOpened;
     const openRate = totalSent > 0 ? Math.round((totalOpened / totalSent) * 100) : 0;
-    res.json({ ok: true, recipient: { id: recipientId, email: rec.email, company: rec.company || '', status: rec.status || 'Pending', everOpened: rec.everOpened === true, openedAt: rec.openedAt || null, templateId: rec.templateId || '' }, stats: { totalSent, totalOpened, totalNotOpened, openRate, firstSent: combined.length ? combined[combined.length - 1].sentAt : null, lastSent: combined.length ? combined[0].sentAt : null, gmailMerged: gmailEmails.length, gmailError }, emails: combined });
+    const out = { ok: true, recipient: { id: recipientId, email: rec.email, company: rec.company || '', status: rec.status || 'Pending', everOpened: rec.everOpened === true, openedAt: rec.openedAt || null, templateId: rec.templateId || '' }, stats: { totalSent, totalOpened, totalNotOpened, openRate, firstSent: combined.length ? combined[combined.length - 1].sentAt : null, lastSent: combined.length ? combined[0].sentAt : null, gmailMerged: gmailEmails.length, gmailError, gmailCached }, emails: combined };
+    cacheSet(ck, out, CACHE_TTL.history);
+    res.json(out);
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -1008,7 +1031,7 @@ app.get('/api/recipient/:id/gmail-history', authRequired, async (req, res) => {
     const uid = req.session.user.id;
     const recipientId = req.params.id;
     const force = req.query.force === '1';
-    const ck = 'history:' + uid + ':' + recipientId;
+    const ck = 'gmailhist:' + uid + ':' + recipientId;
     if (!force) { const cached = cacheGet(ck); if (cached) return res.json(cached); }
     const recSnap = await db.collection('users').doc(uid).collection('recipients').doc(recipientId).get();
     if (!recSnap.exists) return res.json({ ok: false, error: 'Recipient not found' });
@@ -1150,7 +1173,6 @@ app.post('/api/prefs', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ==== FAST STATS: uses count() and recipient Opened status ====
 app.get('/api/stats', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -1189,7 +1211,98 @@ app.get('/api/my-emails', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ==== SEND with THREADING FIX ====
+// ==== BULK OPTIONS: get templates + files list for bulk resend modal ====
+app.get('/api/bulk/options', authRequired, async (req, res) => {
+  try {
+    const uid = req.session.user.id;
+    const [templatesSnap, filesSnap] = await Promise.all([
+      db.collection('users').doc(uid).collection('templates').get(),
+      db.collection('users').doc(uid).collection('files').get()
+    ]);
+    const templates = []; templatesSnap.forEach(d => templates.push({ id: d.id, name: d.data().name, subject: d.data().subject }));
+    const files = []; filesSnap.forEach(d => { const f = d.data(); files.push({ id: d.id, name: f.name, size: f.size, mimeType: f.mimeType }); });
+    res.json({ ok: true, templates, files });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+// ==== BULK RESEND with FULL OPTIONS: template + signature + logo + files ====
+app.post('/api/bulk/resend', authRequired, rateLimit(60*1000, 10, null), async (req, res) => {
+  try {
+    const uid = req.session.user.id;
+    const ue = req.session.user.email;
+    const { recipientIds, templateId, includeSignature, includeLogo, includeAttachments, selectedFileIds } = req.body || {};
+    if (!Array.isArray(recipientIds) || !recipientIds.length) return res.json({ ok: false, error: 'No recipients selected' });
+    if (!templateId) return res.json({ ok: false, error: 'Template required' });
+    let sent = 0, failed = 0, dupSkipped = 0, limitReached = false;
+    const errors = [];
+    for (let i = 0; i < recipientIds.length; i++) {
+      try {
+        await sendOne(uid, ue, recipientIds[i], {
+          force: true, skipDelay: true, forceResend: true,
+          includeSignature: includeSignature !== false,
+          includeLogo: includeLogo !== false,
+          includeAttachments: includeAttachments === true,
+          selectedFileIds: Array.isArray(selectedFileIds) ? selectedFileIds : [],
+          templateId: templateId
+        });
+        sent++;
+        if (i < recipientIds.length - 1) await sleep(600);
+      } catch (err) {
+        if (err.code === 'DAILY_LIMIT_REACHED') { limitReached = true; break; }
+        if (err.code === 'DUPLICATE_SEND_SKIP') { dupSkipped++; continue; }
+        failed++; errors.push({ id: recipientIds[i], error: err.message });
+      }
+    }
+    res.json({ ok: true, sent, failed, duplicatesSkipped: dupSkipped, total: recipientIds.length, limitReached, errors: errors.slice(0, 5) });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+// ==== BULK SCHEDULE: schedule bulk send at specific hour (7, 8, 9...) ====
+app.post('/api/bulk/schedule', authRequired, rateLimit(60*1000, 20, null), async (req, res) => {
+  try {
+    const uid = req.session.user.id;
+    const { recipientIds, templateId, includeSignature, includeLogo, includeAttachments, selectedFileIds, sendAtHour } = req.body || {};
+    if (!Array.isArray(recipientIds) || !recipientIds.length) return res.json({ ok: false, error: 'No recipients selected' });
+    if (!templateId) return res.json({ ok: false, error: 'Template required' });
+    const hour = parseInt(sendAtHour, 10);
+    if (isNaN(hour) || hour < 0 || hour > 23) return res.json({ ok: false, error: 'Invalid hour (0-23)' });
+    const now = new Date();
+    const target = new Date(now);
+    target.setHours(hour, 0, 0, 0);
+    if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 1);
+    const schedRef = db.collection('users').doc(uid).collection('scheduledBatches').doc();
+    await schedRef.set({
+      userId: uid,
+      recipientIds,
+      templateId,
+      includeSignature: includeSignature !== false,
+      includeLogo: includeLogo !== false,
+      includeAttachments: includeAttachments === true,
+      selectedFileIds: Array.isArray(selectedFileIds) ? selectedFileIds : [],
+      sendAtHour: hour,
+      scheduledFor: target,
+      status: 'pending',
+      createdAt: new Date(),
+      sentCount: 0,
+      failedCount: 0
+    });
+    res.json({ ok: true, id: schedRef.id, scheduledFor: target.toISOString(), count: recipientIds.length, hour });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/bulk/schedules', authRequired, async (req, res) => {
+  try {
+    const snap = await db.collection('users').doc(req.session.user.id).collection('scheduledBatches').orderBy('createdAt', 'desc').limit(50).get();
+    const list = []; snap.forEach(d => list.push(Object.assign({ id: d.id }, d.data())));
+    res.json({ ok: true, schedules: list });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.delete('/api/bulk/schedules/:id', authRequired, async (req, res) => {
+  try { await db.collection('users').doc(req.session.user.id).collection('scheduledBatches').doc(req.params.id).delete(); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+// ==== SEND with THREADING FIX (X-Entity-Ref-ID unique per send) ====
 async function sendOne(userId, userEmail, recipientId, options) {
   options = options || {};
   const u = await getUserData(userId);
@@ -1259,7 +1372,7 @@ async function sendOne(userId, userEmail, recipientId, options) {
   const todayKey = new Date().toISOString().split('T')[0];
   const sr = db.collection('users').doc(userId).collection('stats').doc(todayKey);
   await sr.set({ sent: FieldValue.increment(1), updatedAt: new Date() }, { merge: true });
-  cacheDel('quota:' + userId); cacheDel('stats:' + userId); cacheDel('recipients:' + userId);
+  cacheDel('quota:' + userId); cacheDel('stats:' + userId); cacheDel('recipients:' + userId); cacheDel('rechist:' + userId);
   return { email: rec.email, attachmentsCount: atts.length };
 }
 
@@ -1305,6 +1418,44 @@ async function runAutoSend(uid, ue, ud) {
   return { sent: s, failed: f, duplicatesSkipped: dup };
 }
 
+// ==== SCHEDULED BATCH RUNNER: process scheduledBatches due now (called from cron) ====
+async function runScheduledBatches() {
+  const results = [];
+  try {
+    const now = new Date();
+    const snap = await db.collectionGroup('scheduledBatches').where('status', '==', 'pending').limit(50).get().catch(() => ({ docs: [] }));
+    for (const doc of snap.docs) {
+      const d = doc.data();
+      const uid = d.userId;
+      if (!uid) continue;
+      const schedMs = toMs(d.scheduledFor);
+      if (schedMs > now.getTime()) continue;
+      try {
+        const userSnap = await db.collection('users').doc(uid).get();
+        if (!userSnap.exists) { await doc.ref.update({ status: 'failed', error: 'User not found' }); continue; }
+        const ud = userSnap.data();
+        if (!ud.smtpEnabled || !ud.smtpAppPassword) { await doc.ref.update({ status: 'failed', error: 'SMTP not connected' }); continue; }
+        const ue = ud.email;
+        let sent = 0, failed = 0, dup = 0;
+        for (const rid of (d.recipientIds || [])) {
+          try {
+            await sendOne(uid, ue, rid, { force: true, skipDelay: true, forceResend: true, includeSignature: d.includeSignature !== false, includeLogo: d.includeLogo !== false, includeAttachments: d.includeAttachments === true, selectedFileIds: d.selectedFileIds || [], templateId: d.templateId });
+            sent++;
+            await sleep(600);
+          } catch (err) {
+            if (err.code === 'DAILY_LIMIT_REACHED') { await doc.ref.update({ status: 'paused', error: 'Daily limit', sentCount: sent }); break; }
+            if (err.code === 'DUPLICATE_SEND_SKIP') { dup++; continue; }
+            failed++;
+          }
+        }
+        if (sent > 0 || failed > 0) await doc.ref.update({ status: 'done', sentCount: sent, failedCount: failed, duplicatesSkipped: dup, completedAt: new Date() });
+        results.push({ id: doc.id, sent, failed });
+      } catch (e) { await doc.ref.update({ status: 'failed', error: e.message }).catch(()=>{}); }
+    }
+  } catch (e) { }
+  return results;
+}
+
 app.get('/api/cron/auto-send', async (req, res) => {
   try {
     const authHeader = req.headers.authorization || '';
@@ -1320,7 +1471,8 @@ app.get('/api/cron/auto-send', async (req, res) => {
       try { const r = await runAutoSend(u.id, d.email, d); if (r.skipped) sk++; else if (r.sent > 0) { ts += r.sent; tu++; } details.push({ userId: u.id, email: d.email, result: r }); }
       catch (e) { er++; details.push({ userId: u.id, email: d.email, error: e.message }); }
     }
-    res.json({ ok: true, totalSent: ts, totalUsers: tu, skipped: sk, errors: er, timestamp: new Date().toISOString(), details });
+    const scheduledResult = await runScheduledBatches();
+    res.json({ ok: true, totalSent: ts, totalUsers: tu, skipped: sk, errors: er, scheduledProcessed: scheduledResult, timestamp: new Date().toISOString(), details });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -1330,6 +1482,30 @@ app.post('/api/auto-send-check', authRequired, async (req, res) => {
     if (!u || !u.autoSend) return res.json({ ok: true, skipped: true });
     const r = await runAutoSend(req.session.user.id, req.session.user.email, u);
     res.json(Object.assign({ ok: true }, r));
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+// ==== SCHEDULED CHECK: user-side manual trigger for pending schedules ====
+app.post('/api/scheduled/check', authRequired, async (req, res) => {
+  try {
+    const uid = req.session.user.id;
+    const now = new Date();
+    const snap = await db.collection('users').doc(uid).collection('scheduledBatches').where('status', '==', 'pending').get();
+    let processed = 0;
+    const u = await getUserData(uid);
+    if (!u || !u.smtpEnabled) return res.json({ ok: true, processed: 0 });
+    for (const doc of snap.docs) {
+      const d = doc.data();
+      if (toMs(d.scheduledFor) > now.getTime()) continue;
+      let sent = 0, failed = 0, dup = 0;
+      for (const rid of (d.recipientIds || [])) {
+        try { await sendOne(uid, u.email, rid, { force: true, skipDelay: true, forceResend: true, includeSignature: d.includeSignature !== false, includeLogo: d.includeLogo !== false, includeAttachments: d.includeAttachments === true, selectedFileIds: d.selectedFileIds || [], templateId: d.templateId }); sent++; await sleep(600); }
+        catch (err) { if (err.code === 'DAILY_LIMIT_REACHED') break; if (err.code === 'DUPLICATE_SEND_SKIP') { dup++; continue; } failed++; }
+      }
+      await doc.ref.update({ status: 'done', sentCount: sent, failedCount: failed, duplicatesSkipped: dup, completedAt: new Date() });
+      processed++;
+    }
+    res.json({ ok: true, processed });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -1708,7 +1884,7 @@ app.delete('/api/admin/user/:id', adminRequired, async (req, res) => {
     if (!target.exists) return res.json({ ok: false, error: 'User not found' });
     const email = (target.data().email || '').toLowerCase();
     if (email === ADMIN_EMAIL) return res.json({ ok: false, error: 'Cannot delete admin account' });
-    const subcollections = ['recipients', 'templates', 'emailLog', 'files', 'stats', 'senderMemory', 'imapEmails', 'testRecipients', 'testLog', 'aiUsage', 'replyLog', 'ocrUsage', 'ocrLog', 'aiErrors', 'sendLocks'];
+    const subcollections = ['recipients', 'templates', 'emailLog', 'files', 'stats', 'senderMemory', 'imapEmails', 'testRecipients', 'testLog', 'aiUsage', 'replyLog', 'ocrUsage', 'ocrLog', 'aiErrors', 'sendLocks', 'scheduledBatches'];
     for (const coll of subcollections) { let more = true; while (more) { const snap = await db.collection('users').doc(uid).collection(coll).limit(400).get(); if (snap.empty) { more = false; break; } const b = db.batch(); snap.forEach(d => b.delete(d.ref)); await b.commit(); if (snap.size < 400) more = false; } }
     await db.collection('users').doc(uid).delete();
     await db.collection('bannedUsers').doc(uid).delete().catch(function(){});

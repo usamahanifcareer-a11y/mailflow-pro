@@ -24,7 +24,6 @@ button,input,textarea,select{font-family:inherit;font-size:15px}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 select,option{background-color:#0a0e1a!important;color:#e2e8f0!important}
 select:focus{outline:none;border-color:#38bdf8!important}
-/* AUTH */
 .auth-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;position:relative;z-index:1;background:radial-gradient(circle at 20% 10%,rgba(56,189,248,.12),transparent 40%),radial-gradient(circle at 80% 90%,rgba(168,85,247,.12),transparent 40%)}
 .auth-card{background:rgba(15,23,42,.82);backdrop-filter:blur(32px);padding:44px 34px;border-radius:26px;width:100%;max-width:450px;box-shadow:0 40px 120px rgba(0,0,0,.9),0 0 0 1px rgba(56,189,248,.08) inset;border:1px solid rgba(51,65,85,.6);text-align:center;position:relative;overflow:hidden}
 .auth-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--grad);opacity:.9}
@@ -58,7 +57,6 @@ select:focus{outline:none;border-color:#38bdf8!important}
 .notice-banner{background:linear-gradient(135deg,rgba(56,189,248,.1),rgba(168,85,247,.08));border:1px solid rgba(56,189,248,.3);border-radius:11px;padding:11px 14px;margin-bottom:14px;font-size:12px;color:#7dd3fc;line-height:1.6}
 .btn.loading{position:relative;pointer-events:none;opacity:.85}
 .btn.loading::after{content:'';position:absolute;right:14px;top:50%;margin-top:-7px;width:14px;height:14px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
-/* TOPBAR */
 .topbar{background:rgba(10,14,26,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1000;gap:8px;flex-wrap:wrap}
 .logo-top{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:800;white-space:nowrap}
 .logo-top .mini-logo{width:34px;height:34px}
@@ -105,6 +103,7 @@ select:focus{outline:none;border-color:#38bdf8!important}
 .btn.danger{background:var(--grad-red)}
 .btn.warn{background:var(--grad-amber)}
 .btn.success{background:var(--grad-green)}
+.btn.purple{background:linear-gradient(135deg,#a78bfa,#6366f1)}
 .btn.small{padding:7px 12px;font-size:12px;border-radius:8px}
 .btn.save-btn{width:100%;padding:14px;font-size:14px;font-weight:700;background:var(--grad-green);margin-top:16px}
 .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;gap:12px;border-bottom:1px solid var(--border)}
@@ -142,6 +141,9 @@ table.data-table tr.clickable{cursor:pointer}
 .badge.gmail{background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.3);font-size:9px}
 .badge.reply-badge{background:rgba(168,85,247,.2);color:#e9d5ff;border:1px solid rgba(168,85,247,.4)}
 .badge.click{background:rgba(34,197,94,.12);color:#86efac;border:1px solid rgba(34,197,94,.3);font-size:9px}
+.badge.pending-sched{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3)}
+.badge.done-sched{background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.3)}
+.badge.failed-sched{background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.3)}
 .cbox{appearance:none;width:18px!important;height:18px!important;border:2px solid #475569;border-radius:5px;cursor:pointer;position:relative;background:var(--bg2);padding:0!important;margin:0}
 .cbox:checked{background:var(--cyan);border-color:var(--cyan)}
 .cbox:checked::after{content:'✓';position:absolute;color:white;font-size:13px;font-weight:700;top:50%;left:50%;transform:translate(-50%,-50%)}
@@ -476,6 +478,18 @@ table.data-table tr.clickable{cursor:pointer}
 .modal-file-picker .file-item .icon{width:32px;height:32px;font-size:14px}
 .modal-file-picker .file-item .fname{font-size:12px}
 .info-hint{font-size:10px;color:var(--text3);margin-top:4px}
+.hour-picker{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.hour-chip{padding:10px 14px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;font-size:13px;font-weight:700;color:#cbd5e1;cursor:pointer;transition:.15s;font-family:monospace;min-width:60px;text-align:center}
+.hour-chip:hover{border-color:var(--cyan);background:rgba(56,189,248,.08);color:#7dd3fc}
+.hour-chip.active{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 4px 14px rgba(56,189,248,.4)}
+.hour-chip.pm{color:#c4b5fd}
+.hour-chip.pm:hover{color:#ddd6fe}
+.hour-chip.pm.active{background:linear-gradient(135deg,#a78bfa,#6366f1)}
+.bulk-options-block{background:rgba(56,189,248,.04);border:1px solid rgba(56,189,248,.2);border-radius:12px;padding:12px;margin-bottom:12px}
+.schedule-item{padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.schedule-item .info{flex:1;min-width:180px}
+.schedule-item .info .ttl{font-size:13px;font-weight:700}
+.schedule-item .info .sub{font-size:11px;color:var(--text2);margin-top:3px}
 @media(max-width:768px){
 .maintabs{position:fixed;bottom:0;top:auto;left:0;right:0;padding:6px 8px;z-index:2000;border-top:1px solid var(--border);border-bottom:none;justify-content:space-around;box-shadow:0 -10px 30px rgba(0,0,0,.5);padding-bottom:calc(6px + env(safe-area-inset-bottom));background:rgba(10,14,26,.98)}
 .maintab{flex:1;text-align:center;font-size:10px;padding:8px 4px}
@@ -493,6 +507,7 @@ input,textarea,select{min-height:44px;font-size:16px}
 .ocr-quota-stat .val{font-size:14px}
 .img-preview-header .controls button{padding:6px 10px;font-size:11px;min-width:38px}
 .quiet-time-row{grid-template-columns:1fr 1fr}
+.hour-chip{font-size:12px;padding:8px 10px;min-width:52px}
 }
 ::-webkit-scrollbar{width:8px;height:8px}
 ::-webkit-scrollbar-track{background:var(--bg2)}
@@ -566,7 +581,7 @@ input,textarea,select{min-height:44px;font-size:16px}
 <div class="logo-top">
 <div class="mini-logo"><svg viewBox="0 0 64 64"><defs><linearGradient id="mfGradM" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset=".5" stop-color="#6366f1"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="14" fill="url(#mfGradM)"/><path d="M14 22 L32 34 L50 22 L50 46 Q50 48 48 48 L16 48 Q14 48 14 46 Z" fill="#fff" opacity=".97"/><path d="M14 22 L32 34 L50 22" stroke="url(#mfGradM)" stroke-width="1.8" fill="none" stroke-linejoin="round"/><circle cx="49" cy="15" r="5.5" fill="#fbbf24"/></svg></div>
 <span class="brand-text">MailFlow Pro</span>
-<span style="font-size:9px;color:var(--text3);font-weight:500;padding:2px 6px;background:rgba(56,189,248,.1);border-radius:6px;margin-left:4px">v2.0.5</span>
+<span style="font-size:9px;color:var(--text3);font-weight:500;padding:2px 6px;background:rgba(56,189,248,.1);border-radius:6px;margin-left:4px">v2.0.6</span>
 </div>
 <div class="user-chip">
 <img id="userAvatar" class="user-avatar" src="" style="display:none" alt="" onclick="openProfileModal()">
@@ -695,7 +710,7 @@ input,textarea,select{min-height:44px;font-size:16px}
 <label style="margin:0" data-i18n="subject">Subject</label>
 <button class="btn ghost small" onclick="aiGenerateSubjects()" style="font-size:11px;padding:4px 10px" data-i18n="aiSuggest">✨ AI Suggest</button>
 </div>
-<input type="text" id="composerSubject" placeholder="Enter email subject" oninput="scheduleAnalysis()">
+<input type="text" id="composerSubject" placeholder="Enter email subject" oninput="scheduleAnalysis()" autocomplete="off">
 <div id="aiSubjectSuggestions" style="display:none;margin-top:8px;padding:10px;background:var(--bg2);border:1px solid var(--cyan);border-radius:10px">
 <div style="font-size:11px;color:#7dd3fc;font-weight:700;margin-bottom:8px" data-i18n="aiSuggestions">✨ AI Suggestions</div>
 <div id="aiSubjectList"></div>
@@ -832,18 +847,20 @@ input,textarea,select{min-height:44px;font-size:16px}
 <h2><span data-i18n="recipientTracking">📊 Recipient Tracking</span> <span id="trackCount"></span></h2>
 <div style="font-size:11px;color:var(--text2);margin-bottom:12px;padding:10px;background:rgba(56,189,248,.06);border-radius:8px;border-left:3px solid var(--cyan)" data-i18n="trackingHelp">💡 Click any row for full all-time history (MailFlow + Gmail auto-merged). Real opens only — bots filtered. Duplicate sends auto-blocked for 90s.</div>
 <div class="filter-bar">
-<input type="text" class="search-bar" id="recipSearch" placeholder="Search by email or company..." oninput="recipPage=1;loadRecipients()">
-<select id="statusFilter" onchange="recipPage=1;loadRecipients()"><option value="all" data-i18n="optAllStatus">All Status</option><option value="Pending" data-i18n="optPending">Pending</option><option value="Sent" data-i18n="optSent">Sent</option><option value="Opened" data-i18n="optOpened">Opened</option></select>
+<input type="text" class="search-bar" id="recipSearch" placeholder="Search by email or company..." oninput="onRecipSearchChange()" autocomplete="off">
+<select id="statusFilter" onchange="recipPage=1;loadRecipients()"><option value="all" data-i18n="optAllStatus">All Status</option><option value="pending" data-i18n="optPending">Pending</option><option value="sent" data-i18n="optSent">Sent</option><option value="opened" data-i18n="optOpened">Opened</option></select>
 </div>
 <div class="bulk-action-bar" id="bulkActionBar">
 <span id="selectedCount" style="color:#7dd3fc;font-weight:700;font-size:12px;margin-right:auto">0 selected</span>
-<button class="btn ghost small" onclick="resendSelected()" data-i18n="resendBtn">🔁 Resend</button>
+<button class="btn ghost small" onclick="openBulkResendModal()" data-i18n="resendBtn">🔁 Bulk Resend</button>
+<button class="btn purple small" onclick="openBulkScheduleModal()">⏰ Schedule</button>
 <button class="btn danger small" onclick="deleteSelected()" data-i18n="deleteBtn">🗑 Delete</button>
 <button class="btn ghost small" onclick="clearSelection()" data-i18n="clearSelBtn">Clear</button>
 </div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
 <button class="btn ghost small" onclick="loadAll(true)" data-i18n="refreshBtn">🔄 Refresh</button>
 <button class="btn ghost small" onclick="selectAllVisible()" data-i18n="selectPage">☑️ Select Page</button>
+<button class="btn ghost small" onclick="openSchedulesList()" style="border-color:var(--purple);color:#c4b5fd">⏰ View Schedules</button>
 </div>
 <div id="tableWrap" class="tbl-wrap"></div>
 <div class="pagination" id="recipPagination" style="display:none">
@@ -856,7 +873,7 @@ input,textarea,select{min-height:44px;font-size:16px}
 <div class="panel">
 <h2><span data-i18n="emailHistory">📧 Email History</span> <span id="myEmailCount"></span></h2>
 <div class="filter-bar">
-<input type="text" class="search-bar" id="myEmailSearch" placeholder="Search recipient or subject..." oninput="myEmailPage=1;loadMyEmails()">
+<input type="text" class="search-bar" id="myEmailSearch" placeholder="Search recipient or subject..." oninput="onMyEmailSearchChange()" autocomplete="off">
 <select id="myEmailRange" onchange="myEmailPage=1;loadMyEmails()"><option value="all" data-i18n="allTime">All Time</option><option value="today" data-i18n="today">Today</option><option value="7d" data-i18n="last7">Last 7 Days</option><option value="30d" data-i18n="last30">Last 30 Days</option></select>
 </div>
 <div id="myEmailsWrap" class="tbl-wrap"></div>
@@ -958,7 +975,6 @@ input,textarea,select{min-height:44px;font-size:16px}
 <div class="stat s4"><div class="label" data-i18n="testPending">Test Pending</div><div class="value" id="tstPending">0</div></div>
 <div class="stat s5"><div class="label" data-i18n="testLog">Test Log</div><div class="value" id="tstLog">0</div></div>
 </div>
-
 <div class="panel">
 <h2 data-i18n="addTestRecipients">➕ Add Test Recipients</h2>
 <div class="tabs">
@@ -968,7 +984,6 @@ input,textarea,select{min-height:44px;font-size:16px}
 <div id="testManualTab"><div id="testRecipientsRows"></div><button class="btn ghost small" onclick="addTestRow()" style="margin-top:10px">+ Add Row</button><button class="btn" onclick="submitTestRecipientsManual()" style="margin-left:6px;margin-top:10px" data-i18n="saveBtn">💾 Save</button></div>
 <div id="testBulkTab" class="hidden"><textarea class="bulk-area" id="testBulkInput" placeholder="Paste test emails..."></textarea><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn" onclick="submitTestBulk()" data-i18n="addAllBtn">➕ Add All</button><button class="btn ghost" onclick="clearTestBulk()">🗑</button></div></div>
 </div>
-
 <div class="panel">
 <h2 data-i18n="sendTestH">📤 Send Test</h2>
 <div class="template-picker"><label data-i18n="templateLabel">📝 Template</label><select id="testTemplateSelect" onchange="onTestTemplateChange()"><option value="">-- Manual --</option></select></div>
@@ -984,7 +999,6 @@ input,textarea,select{min-height:44px;font-size:16px}
 <div id="testFilePicker" class="hidden modal-file-picker"><div style="font-size:11px;color:var(--text2);margin-bottom:8px" data-i18n="selectFiles">Select files to attach:</div><div id="testFilesList"></div></div>
 <button class="btn" onclick="sendTestEmail()" style="width:100%;padding:14px;font-weight:700;margin-top:10px" data-i18n="sendTestBtn">🚀 Send Test</button>
 </div>
-
 <div class="panel">
 <h2 data-i18n="automationTest">🤖 Automation Test</h2>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
@@ -998,7 +1012,6 @@ input,textarea,select{min-height:44px;font-size:16px}
 </div>
 <button class="btn warn" onclick="runTestAutomation()" style="width:100%" data-i18n="runNowBtn">▶️ Run Now</button>
 </div>
-
 <div class="panel">
 <h2><span data-i18n="testRecipientsLbl">📋 Test Recipients</span> <span id="testRecipCount"></span></h2>
 <div class="filter-bar">
@@ -1296,6 +1309,60 @@ input,textarea,select{min-height:44px;font-size:16px}
 </div>
 </div>
 
+<!-- Bulk Resend -->
+<div id="bulkResendBackdrop" class="modal-backdrop hidden" onclick="if(event.target===this)closeBulkResendModal()">
+<div class="modal" style="max-width:600px">
+<button class="close-btn" onclick="closeBulkResendModal()">✕</button>
+<h3>🔁 Bulk Resend</h3>
+<div id="bulkResendInfo" style="font-size:12px;color:var(--text2);margin-bottom:12px;padding:10px;background:var(--bg2);border-radius:10px;border:1px solid var(--border)"></div>
+<div class="template-picker"><label data-i18n="templateLabel">📝 Template</label><select id="bulkResendTemplateSelect"></select></div>
+<div class="bulk-options-block">
+<div style="font-size:10px;color:#7dd3fc;text-transform:uppercase;font-weight:700;margin-bottom:10px">📎 Include in Each Email</div>
+<div class="send-options-row" style="margin:0">
+<label><input type="checkbox" id="bulkResendOptSignature" checked> <span data-i18n="optSignature">✍️ Signature</span></label>
+<label><input type="checkbox" id="bulkResendOptLogo" checked> <span data-i18n="optLogo">🖼️ Logo</span></label>
+<label><input type="checkbox" id="bulkResendOptAttachments" onchange="onBulkResendAttachToggle(this.checked)"> <span data-i18n="optAttachFiles">📎 Attach Files</span></label>
+</div>
+</div>
+<div id="bulkResendFilePicker" class="hidden modal-file-picker"><div style="font-size:11px;color:var(--text2);margin-bottom:8px" data-i18n="selectFiles">Select files to attach:</div><div id="bulkResendFilesList"></div></div>
+<div style="display:flex;gap:8px;margin-top:12px"><button class="btn" id="bulkResendConfirm" style="flex:1">🔁 Resend to All Now</button><button class="btn ghost" onclick="closeBulkResendModal()" data-i18n="cancelBtn2">Cancel</button></div>
+</div>
+</div>
+
+<!-- Bulk Schedule -->
+<div id="bulkScheduleBackdrop" class="modal-backdrop hidden" onclick="if(event.target===this)closeBulkScheduleModal()">
+<div class="modal" style="max-width:600px">
+<button class="close-btn" onclick="closeBulkScheduleModal()">✕</button>
+<h3>⏰ Schedule Bulk Send</h3>
+<div id="bulkScheduleInfo" style="font-size:12px;color:var(--text2);margin-bottom:12px;padding:10px;background:var(--bg2);border-radius:10px;border:1px solid var(--border)"></div>
+<div class="template-picker"><label data-i18n="templateLabel">📝 Template</label><select id="bulkScheduleTemplateSelect"></select></div>
+<div class="field">
+<label>🕐 Send at hour (next occurrence)</label>
+<div class="hour-picker" id="bulkHourPicker"></div>
+<div class="info-hint" id="bulkScheduleHint" style="margin-top:8px">Select an hour — emails will be scheduled for the next occurrence of that hour.</div>
+</div>
+<div class="bulk-options-block">
+<div style="font-size:10px;color:#7dd3fc;text-transform:uppercase;font-weight:700;margin-bottom:10px">📎 Include in Each Email</div>
+<div class="send-options-row" style="margin:0">
+<label><input type="checkbox" id="bulkScheduleOptSignature" checked> <span data-i18n="optSignature">✍️ Signature</span></label>
+<label><input type="checkbox" id="bulkScheduleOptLogo" checked> <span data-i18n="optLogo">🖼️ Logo</span></label>
+<label><input type="checkbox" id="bulkScheduleOptAttachments" onchange="onBulkScheduleAttachToggle(this.checked)"> <span data-i18n="optAttachFiles">📎 Attach Files</span></label>
+</div>
+</div>
+<div id="bulkScheduleFilePicker" class="hidden modal-file-picker"><div style="font-size:11px;color:var(--text2);margin-bottom:8px" data-i18n="selectFiles">Select files to attach:</div><div id="bulkScheduleFilesList"></div></div>
+<div style="display:flex;gap:8px;margin-top:12px"><button class="btn purple" id="bulkScheduleConfirm" style="flex:1">⏰ Schedule Send</button><button class="btn ghost" onclick="closeBulkScheduleModal()" data-i18n="cancelBtn2">Cancel</button></div>
+</div>
+</div>
+
+<!-- Scheduled Batches -->
+<div id="schedulesListBackdrop" class="modal-backdrop hidden" onclick="if(event.target===this)closeSchedulesList()">
+<div class="modal" style="max-width:640px">
+<button class="close-btn" onclick="closeSchedulesList()">✕</button>
+<h3>⏰ Scheduled Batches</h3>
+<div id="schedulesListContent"><div class="empty">Loading...</div></div>
+</div>
+</div>
+
 <!-- Template Preview -->
 <div id="tplPreviewBackdrop" class="modal-backdrop hidden" onclick="if(event.target===this)closeTplPreview()">
 <div class="modal" style="max-width:680px">
@@ -1308,7 +1375,7 @@ input,textarea,select{min-height:44px;font-size:16px}
 </div>
 </div>
 
-<!-- User OCR Modal (Admin) -->
+<!-- User OCR Modal -->
 <div id="userOcrModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeUserOcr()">
 <div class="modal" style="max-width:800px">
 <button class="close-btn" onclick="closeUserOcr()">✕</button>
@@ -1376,258 +1443,44 @@ input,textarea,select{min-height:44px;font-size:16px}
 
 <script>
 // ============ STATE ============
-var USER=null,TEMPLATES=[],SELECTED={},CURRENT_ROWS=[],ALL_ROWS=[],FILES=[],SELECTED_FILES={},TEST_RECIPIENTS=[],TEST_SELECTED={};
-var LOGO_URL='',LOGO_URL_ALT='',ADMIN_ALL_EMAILS=[],MY_EMAILS=[],ADMIN_BANNED=[],ADMIN_REQUESTS=[];
+var USER=null,TEMPLATES=[],SELECTED={},CURRENT_ROWS=[],FILES=[],SELECTED_FILES={},TEST_RECIPIENTS=[],TEST_SELECTED={};
+var LOGO_URL='',MY_EMAILS=[],ADMIN_BANNED=[],ADMIN_REQUESTS=[];
 var INBOX_EMAILS=[],ACTIVE_EMAIL=null,MY_QUOTA={sent:0,limit:500,remaining:500,mailflowSent:0,gmailSent:null};
 var SENDERS=[],IMAP_CONNECTED=false,imapPage=1,USER_EMAIL_LOWER='';
 var POLL_TIMER=null,HOURLY_TIMER=null,analysisTimer=null,lastAnalyzedHash='',LIVE_INBOX_TIMER=null,lastInboxHash='';
-var ADMIN_LIVE_TIMER=null,ADMIN_EMAIL_LIVE_TIMER=null;
-var MAX_UPLOAD_SIZE=3*1024*1024;
+var ADMIN_LIVE_TIMER=null,ADMIN_EMAIL_LIVE_TIMER=null,MAX_UPLOAD_SIZE=3*1024*1024;
 var _currentSendId=null,_currentResendId=null,CV_SELECTED_FILE_ID=null;
 var BANNED_USER_EMAIL='',_banTargetUid=null,_banTargetEmail='';
 var adminPage=1,adminSearchQuery='',adminSearchTimer=null;
 var adminEmailsPage=1,adminEmailsSearchQuery='',adminEmailsSearchTimer=null;
-var OCR_FILES=[];var OCR_QUEUE=[];var OCR_PROCESSING=false;var OCR_MAX_RETRIES=3;
-var OCR_LAST_REQUEST_TIME=0;var OCR_MIN_INTERVAL_MS=2600;var OCR_CANCELLED=false;var OCR_STARTED_AT=0;
-var FILE_READ_QUEUE=[];var FILE_READING=false;
-var REPLY_TARGET_EMAIL='';var REPLY_SELECTED_FILES={};
-var OCR_MONITOR_DATA=[];
-var Q_AUTO_FILES={};var SEND_MODAL_FILES={};var RESEND_MODAL_FILES={};var TEST_MODAL_FILES={};
+var OCR_FILES=[],OCR_QUEUE=[],OCR_PROCESSING=false,OCR_MAX_RETRIES=3;
+var OCR_LAST_REQUEST_TIME=0,OCR_MIN_INTERVAL_MS=2600,OCR_CANCELLED=false,OCR_STARTED_AT=0;
+var FILE_READ_QUEUE=[],FILE_READING=false;
+var REPLY_TARGET_EMAIL='',REPLY_SELECTED_FILES={},OCR_MONITOR_DATA=[];
+var Q_AUTO_FILES={},SEND_MODAL_FILES={},RESEND_MODAL_FILES={},TEST_MODAL_FILES={};
+var BULK_RESEND_FILES={},BULK_SCHEDULE_FILES={},BULK_SCHEDULE_HOUR=null;
 var IMG_PREVIEW={list:[],idx:0,zoom:1,rotate:0,panX:0,panY:0,dragging:false,startX:0,startY:0};
 var recipPage=1,recipPerPage=10,recipTotal=0,recipTotalPages=1;
 var myEmailPage=1,myEmailPerPage=10,myEmailTotal=0,myEmailTotalPages=1;
-var CURRENT_LANG='en';
-var PREFERENCES={language:'en',timezone:'Asia/Karachi',dateFormat:'DD/MM/YYYY',timeFormat:'12h'};
+var CURRENT_LANG='en',PREFERENCES={language:'en',timezone:'Asia/Karachi',dateFormat:'DD/MM/YYYY',timeFormat:'12h'};
+var recipSearchTimer=null,myEmailSearchTimer=null;
 
 // ============ i18n ============
-var I18N={
-  en:{
-    tagline:"AI-powered email automation.<br>Send smart. Land in inbox.",
-    login:"Login",register:"Register",emailAddress:"Email Address",password:"Password",
-    rememberMe:"Remember me for 30 days",loginBtn:"🔓 Login",fullName:"Full Name",
-    passwordMin8:"Password (min 8 characters)",createAccount:"✨ Create Account",
-    signupNote:"💡 <b>Note:</b> After signup, connect your Gmail App Password from the Dashboard to start sending emails.",
-    featAI:"AI writes & improves emails",featOCR:"Screenshot to Text extractor",
-    featInbox:"Live inbox sync",featTrack:"Real-time open tracking",featGmail:"Send via your own Gmail",
-    legal:'By continuing you agree to our <a href="/terms" target="_blank">Terms</a> & <a href="/privacy" target="_blank">Privacy Policy</a>',
-    accessSuspended:"Access Suspended",accountSuspended:"Your account has been suspended",
-    suspendedDefault:"Your account was suspended for violating our terms of service.",
-    requestNewAccess:"📝 Request New Access",fullNameReq:"Full Name *",newEmailReq:"New Email *",
-    companyOpt:"Company (Optional)",phoneOpt:"Phone (Optional)",reasonAccess:"Reason for Access *",
-    submitRequest:"📩 Submit Request",backToLogin:"← Back to Login",
-    settingsBtn:"⚙️ Settings",exitBtn:"Exit",
-    tabDashboard:"📊 Dashboard",tabInbox:"📥 Inbox",tabAIProfile:"🧠 AI Profile",tabTools:"🧪 Tools",tabTestLab:"🧪 Test Lab",tabAdmin:"👑 Admin",
-    gettingStarted:"🚀 Getting Started",connectGmail:"Connect Gmail",createTemplate:"Create Template",
-    createTemplateDesc:"Use AI to write or paste your own. Personalize with {name} and {company}.",
-    addRecipients:"Add Recipients",addRecipientsDesc:"Manual, bulk paste, or screenshot OCR.",
-    sendTrack:"Send & Track",sendTrackDesc:"Click 📤 to send. Real-time open tracking.",
-    proTips:"⚡ Pro Tips",
-    proTip1Title:"Personalize Every Email",proTip1Desc:"Use {name} and {company} placeholders — personalized emails get up to 6x more opens.",
-    proTip2Title:"Real Tracking",proTip2Desc:"Only real opens count. Gmail proxy and bots are auto-filtered.",
-    proTip3Title:"Click = 100% Open",proTip3Desc:"If a receiver clicks any link, it counts as a guaranteed open.",
-    proTip4Title:"Duplicate Guard",proTip4Desc:"Same recipient won't get another email within 90 seconds. Safe.",
-    proTip5Title:"Hourly Auto-Send",proTip5Desc:"Enable auto-send and first email will go at the next full hour (e.g. 6:13 ON → 7:00 first send).",
-    gmailNotConnected:"Gmail not connected.",clickConnect:"Click here to connect your Gmail App Password.",
-    quietActive:"Quiet Hours Active",autoPaused:"Auto-send is paused.",
-    statRecipients:"Recipients",statSent:"Sent",statOpened:"Opened",statPending:"Pending",statTotalSends:"Total Sends",
-    quickAuto:"⚡ Quick Automation",autoSendEmails:"🤖 Auto-Send Emails",
-    autoSendDesc:"Sends pending emails automatically every hour (7:00, 8:00, 9:00...)",
-    autoSendTemplate:"📝 Template to use for auto-send",allAutoEmails:"All auto-sent emails will use this template",
-    batchSize:"Batch Size (per hour)",sendDelay:"Delay Between Sends (seconds)",
-    quietHours:"🌙 Quiet Hours",quietHoursDesc:"Auto-send will not run during this time",
-    quietStart:"Start Time (Pause from)",quietEnd:"End Time (Resume at)",
-    quietExample:"Example: Start 22:00, End 07:00 = no emails from 10 PM to 7 AM.",
-    includeInAuto:"📎 Include in Each Auto-Sent Email",optSignature:"✍️ Signature",optLogo:"🖼️ Logo",optAttachFiles:"📎 Attach Files",
-    selectFilesAuto:"Select files to auto-attach:",saveAutomation:"💾 Save Automation Settings",
-    totalAutoSent:"Total Auto-Sent",lastAutoRun:"Last Auto-Run",nextAutoRun:"Next Auto-Run",pendingRecipients:"Pending Recipients",
-    gmailQuota:"📊 Gmail Daily Sending Quota",mailflowSentToday:"📤 MailFlow sends today:",gmailSentToday:"📧 Gmail sends today (all sources):",
-    totalSentToday:"Total sent today:",dailyLimit:"Daily limit:",remainingToday:"Remaining today:",
-    aiComposer:"✉️ AI Email Composer",multiProvider:"Multi-provider AI",
-    templateName:"Template Name",subject:"Subject",aiSuggest:"✨ AI Suggest",aiSuggestions:"✨ AI Suggestions",
-    body:"Body",aiWrite:"🤖 AI Write",cvBtn:"📄 CV",aiFix:"✨ Fix",usePlaceholders:"💡 Use {name} and {company} for personalization",
-    saveTemplate:"💾 Save Template",clearBtn:"🗑 Clear",aiAnalysis:"AI Analysis",deepBtn:"🤖 Deep",inboxProb:"Inbox Probability",
-    templates:"📝 Templates",emailSignature:"✍️ Email Signature",sigAppears:"Appears in every email",
-    uploadLogo:"Click to upload your logo",removeLogo:"🗑 Remove Logo",
-    sigName:"Name",sigDesignation:"Designation",sigCompany:"Company",sigPhone:"📞 Phone",sigEmail:"✉️ Email",sigLinkedin:"🔗 LinkedIn",
-    previewBtn:"👁 Preview",saveSignature:"💾 Save Signature",resetBtn:"🗑 Reset",preview:"📧 Preview",
-    attachments:"📎 Attachments",maxFileSize:"Max 3MB per file",clickUpload:"Click to upload files",
-    uploadDesc:"PDF, DOC, DOCX, TXT, images — max 3MB each",selectAll:"☑️ Select All",unselectAll:"⬜ Unselect All",
-    addRecipientsH:"➕ Add Recipients",templateLabel:"Template",
-    tabManual:"✍️ Manual",tabBulk:"📋 Bulk",tabOcr:"📸 Screenshot",addRow:"+ Add Row",saveBtn:"💾 Save",
-    bulkHelp:"Paste emails in any format — one per line, CSV, or mixed with company names.",livePreview:"🔍 Live Preview",
-    addAllBtn:"➕ Add All",ocrHelp:"<b>Screenshot to Text</b> — Bulk upload. Auto-compress. Click thumbnail to preview.",
-    chooseFiles:"📁 Choose Files",useCamera:"📷 Use Camera",ocrDropTitle:"Click to upload multiple screenshots",
-    ocrDropSub:"PNG, JPG, WEBP — max 12MB each (auto-compressed)",extractedText:"📝 Extracted Text — edit if needed",
-    sendToBulk:"📋 Send All to Bulk",copyBtn:"📋 Copy",retryFailed:"🔄 Retry Failed",cancelBtn:"⏹ Cancel",
-    recipientTracking:"📊 Recipient Tracking",
-    trackingHelp:"💡 Click any row for full all-time history (MailFlow + Gmail auto-merged). Real opens only — bots filtered. Duplicate sends auto-blocked for 90s.",
-    optAllStatus:"All Status",optPending:"Pending",optSent:"Sent",optOpened:"Opened",
-    resendBtn:"🔁 Resend",deleteBtn:"🗑 Delete",clearSelBtn:"Clear",refreshBtn:"🔄 Refresh",selectPage:"☑️ Select Page",
-    emailHistory:"📧 Email History",allTime:"All Time",today:"Today",last7:"Last 7 Days",last30:"Last 30 Days",
-    connectInbox:"Connect Your Inbox",connectInboxDesc:"Use the same Gmail App Password as your sender. One click to connect both.",
-    appPassword:"🔑 Gmail App Password",connectInboxBtn:"🔌 Connect Inbox",useSavedPass:"🔗 Use Saved Password",encryptedNote:"🔒 AES-256 encrypted",
-    folderInbox:"📥 Inbox",folderSent:"📤 Sent",syncBtn:"🔄 Sync",selectEmail:"Select an email",
-    fromLbl:"From:",toLbl:"To:",dateLbl:"Date:",replyBtn:"↩️ Reply",aiReplyBtn:"🤖 AI Reply",
-    aiProfileH:"🧠 AI Profile",aiWritesAsYou:"AI writes as YOU",aiProfileHelp:"This information helps AI match your tone and style.",
-    industryLbl:"Industry",toneLbl:"Preferred Tone",toneProfessional:"Professional",toneFriendly:"Friendly",toneCasual:"Casual",toneConfident:"Confident",
-    aboutMe:"About Me",commonPhrases:"Common Phrases",saveAIProfile:"💾 Save AI Profile",
-    aiTools:"🤖 AI Tools",bestTimeH:"⏰ Best Sending Time",clickAnalyze:"Click analyze",analyzeBtn:"✨ Analyze",
-    predictionsH:"📊 Email Predictions",senderMemoryH:"🧠 Sender Memory",noSenderMemory:"No sender memory yet",
-    testLabBanner:"TEST LAB — Admin only",testRecipients:"Test Recipients",testSent:"Test Sent",testOpened:"Test Opened",testPending:"Test Pending",testLog:"Test Log",
-    addTestRecipients:"➕ Add Test Recipients",sendTestH:"📤 Send Test",toLbl2:"To",
-    includeInEmail:"📎 Include in Email",selectFiles:"Select files to attach:",sendTestBtn:"🚀 Send Test",
-    automationTest:"🤖 Automation Test",batchSizeLbl:"Batch Size",delaySec:"Delay (seconds)",
-    totalAutoSentLbl:"Total auto-sent:",lastRunLbl:"Last run:",pendingLbl:"Pending:",runNowBtn:"▶️ Run Now",
-    testRecipientsLbl:"📋 Test Recipients",selectAllShort:"☑️ All",testLogH:"📜 Test Log",dangerZone:"🗑 Danger Zone",clearAllTest:"🗑 Clear All Test Data",
-    statUsers:"Users",statEmails:"Emails",statSends:"Sends",
-    ocrAiMonitor:"🔍 OCR & AI Monitor",ocrQuotaTitle:"📊 OCR Monthly Quota",statUsed:"Used",statRemaining:"Remaining",statLimit:"Limit",
-    statTotal:"Total",statSuccess:"Success",statFailed:"Failed",statClientErr:"Client Err",perUserOcr:"👥 Per-User OCR Usage",aiProviderErrors:"⚠️ AI Provider Errors (Today)",
-    aiUsage:"🧠 AI Usage",totalUsers:"Total Users",aiActive:"AI Active",month:"Month",lifetime:"Lifetime",remaining:"Remaining",callsLeft:"~Calls Left",calls:"Calls",
-    bannedUsers:"🚫 Banned Users",accessRequests:"📩 Access Requests",allUsers:"👥 All Users",allSentEmails:"📨 All Sent Emails",
-    connectGmailH:"📧 Connect Your Gmail",appPasswordWhy:"💡 <b>Why App Password?</b> Send from your own Gmail without Google verification.",
-    alsoEnableImap:"<b>Also enable Inbox (IMAP)</b> — read your Gmail Inbox & Sent from within MailFlow Pro",connectGmailBtn:"🔌 Connect Gmail",
-    encryptedNote2:"🔒 AES-256-GCM encrypted",myProfileH:"👤 My Profile",displayName:"Display Name",saveNameBtn:"💾 Save Name",
-    appIdLbl:"App ID:",registeredLbl:"Registered:",myAiUsage:"🤖 My AI Usage",remainingTokens:"Remaining Tokens",
-    settingsH:"⚙️ Settings",tabAccount:"👤 Account",tabSecurity:"🔒 Security",tabPreferences:"🌐 Preferences",tabDanger:"⚠️ Danger",
-    emailReadonly:"Email (read-only)",emailChangeDisabled:"💡 Email change is disabled. Create a new account with the new email.",
-    saveChanges:"💾 Save Changes",changePasswordH:"🔑 Change Password",currentPassword:"Current Password",newPassword:"New Password (min 8)",
-    confirmNew:"Confirm New",changePasswordBtn:"🔒 Change Password",langRegion:"🌐 Language & Region",languageLbl:"Language",
-    timezoneLbl:"Timezone",dateFormatLbl:"Date Format",timeFormatLbl:"Time Format",savePreferences:"💾 Save Preferences",
-    dangerZoneH:"⚠️ Danger Zone",disconnectGmail:"Disconnect Gmail",disconnectInbox:"Disconnect Inbox",
-    disconnectBtn:"🔌 Disconnect Gmail",disconnectInboxBtn:"🔌 Disconnect Inbox",deleteAllRecipientsH:"Delete All Recipients",deleteAllBtn:"🗑 Delete All",
-    replyH:"↩️ Reply",messageLbl:"Message",attachToReply:"📎 Attach to Reply",optFiles:"📎 Files",aiImproveBtn:"✨ AI Improve",sendReplyBtn:"📤 Send Reply",
-    aiWriterH:"🤖 AI Email Writer",aiWriterHint:"🌐 Write context in any language — AI will produce professional English.",
-    contextLbl:"Context / Purpose",recipientName:"Recipient Name",companyLbl:"Company",
-    toneFormal:"Formal",tonePersuasive:"Persuasive",lengthLbl:"Length",lengthShort:"Short",lengthMedium:"Medium",lengthLong:"Long",generateEmailBtn:"✨ Generate Email",
-    cvAnalyzerH:"📄 AI CV Analyzer",cvHint:"🌐 CV in any language — AI generates professional English email.",
-    selectCvFile:"📁 Select CV File",uploadNewCv:"📤 Upload New CV",chooseFileBtn:"📁 Choose File",extractedTextLbl:"📝 Extracted Text",
-    targetRole:"🎯 Target Role",jobDescLbl:"📋 Job Description (Optional)",analyzeGenerate:"🤖 Analyze & Generate Email",
-    recipientHistoryH:"📊 Recipient History",sendEmailH:"📤 Send Email",sendNowBtn:"📤 Send Now",cancelBtn2:"Cancel",
-    resendEmailH:"🔁 Resend Email",resendNowBtn:"🔁 Resend Now",subjectLbl:"Subject",bodyLbl:"Body",
-    userOcrDetails:"📸 User OCR Details",userDetailsH:"👤 User Details",banUserH:"🚫 Ban User",reasonLbl:"Reason",
-    alsoBanIp:"<b>Also ban IP address</b>",banUserBtn:"🚫 Ban User"
-  },
-  "ur-roman":{
-    tagline:"AI-powered email automation.<br>Smart bhejo. Inbox mein landing karo.",
-    login:"Login",register:"Register",emailAddress:"Email Address",password:"Password",
-    rememberMe:"Mujhe 30 din tak yaad rakho",loginBtn:"🔓 Login Karo",fullName:"Poora Naam",
-    passwordMin8:"Password (kam se kam 8 characters)",createAccount:"✨ Account Banao",
-    signupNote:"💡 <b>Note:</b> Signup ke baad, Dashboard se Gmail App Password connect karo taake emails bhej sako.",
-    featAI:"AI emails likhta aur improve karta hai",featOCR:"Screenshot se Text nikalta hai",
-    featInbox:"Live inbox sync",featTrack:"Real-time open tracking",featGmail:"Apne Gmail se bhejo",
-    legal:'Continue karne se aap hamari <a href="/terms" target="_blank">Terms</a> aur <a href="/privacy" target="_blank">Privacy Policy</a> se agree karte hain',
-    accessSuspended:"Access Suspended",accountSuspended:"Aapka account suspend kar diya gaya hai",
-    suspendedDefault:"Aapka account terms violation ki wajah se suspend kiya gaya tha.",
-    requestNewAccess:"📝 Nayi Access Request Karo",fullNameReq:"Poora Naam *",newEmailReq:"Naya Email *",
-    companyOpt:"Company (Optional)",phoneOpt:"Phone (Optional)",reasonAccess:"Access ki Wajah *",
-    submitRequest:"📩 Request Submit Karo",backToLogin:"← Login pe wapas",
-    settingsBtn:"⚙️ Settings",exitBtn:"Exit",
-    tabDashboard:"📊 Dashboard",tabInbox:"📥 Inbox",tabAIProfile:"🧠 AI Profile",tabTools:"🧪 Tools",tabTestLab:"🧪 Test Lab",tabAdmin:"👑 Admin",
-    gettingStarted:"🚀 Shuru Karo",connectGmail:"Gmail Connect Karo",createTemplate:"Template Banao",
-    createTemplateDesc:"AI se likhwao ya apna paste karo. {name} aur {company} se personalize karo.",
-    addRecipients:"Recipients Add Karo",addRecipientsDesc:"Manual, bulk paste, ya screenshot OCR.",
-    sendTrack:"Bhejo aur Track Karo",sendTrackDesc:"📤 dabao bhejne ke liye. Real-time open tracking.",
-    proTips:"⚡ Pro Tips",
-    proTip1Title:"Har Email Personalize Karo",proTip1Desc:"{name} aur {company} placeholders use karo — personalized emails ko 6x tak zyada opens milte hain.",
-    proTip2Title:"Real Tracking",proTip2Desc:"Sirf asli opens count hote hain. Gmail proxy aur bots auto-filter hote hain.",
-    proTip3Title:"Click = 100% Open",proTip3Desc:"Agar receiver kisi link pe click kare to pakka open count hoga.",
-    proTip4Title:"Duplicate Guard",proTip4Desc:"Same recipient ko 90 seconds mein dobara email nahi jayegi. Safe.",
-    proTip5Title:"Hourly Auto-Send",proTip5Desc:"Auto-send on karo to pehli email agle poore ghante pe jayegi (e.g. 6:13 ON → 7:00 first send).",
-    gmailNotConnected:"Gmail connect nahi hai.",clickConnect:"Yahan click karo Gmail App Password connect karne ke liye.",
-    quietActive:"Quiet Hours Active",autoPaused:"Auto-send paused hai.",
-    statRecipients:"Recipients",statSent:"Bheje Gaye",statOpened:"Khule",statPending:"Pending",statTotalSends:"Total Sends",
-    quickAuto:"⚡ Quick Automation",autoSendEmails:"🤖 Auto-Send Emails",
-    autoSendDesc:"Har ghante pending emails automatically bhejta hai (7:00, 8:00, 9:00...)",
-    autoSendTemplate:"📝 Auto-send ke liye template",allAutoEmails:"Sabhi auto-sent emails yehi template use karengi",
-    batchSize:"Batch Size (per hour)",sendDelay:"Sends ke beech delay (seconds)",
-    quietHours:"🌙 Quiet Hours",quietHoursDesc:"Is waqt auto-send nahi chalega",
-    quietStart:"Start Time (Pause from)",quietEnd:"End Time (Resume at)",
-    quietExample:"Example: Start 22:00, End 07:00 = raat 10 se subah 7 tak koi email nahi.",
-    includeInAuto:"📎 Har Auto-Sent Email mein Include Karo",optSignature:"✍️ Signature",optLogo:"🖼️ Logo",optAttachFiles:"📎 Files Attach Karo",
-    selectFilesAuto:"Auto-attach karne ke liye files select karo:",saveAutomation:"💾 Automation Settings Save Karo",
-    totalAutoSent:"Total Auto-Sent",lastAutoRun:"Aakhri Auto-Run",nextAutoRun:"Agla Auto-Run",pendingRecipients:"Pending Recipients",
-    gmailQuota:"📊 Gmail Daily Sending Quota",mailflowSentToday:"📤 MailFlow ne aaj bheji:",gmailSentToday:"📧 Gmail ne aaj bheji (sab sources):",
-    totalSentToday:"Total aaj bheji:",dailyLimit:"Daily limit:",remainingToday:"Aaj bachi hain:",
-    aiComposer:"✉️ AI Email Composer",multiProvider:"Multi-provider AI",
-    templateName:"Template Name",subject:"Subject",aiSuggest:"✨ AI Suggest",aiSuggestions:"✨ AI Suggestions",
-    body:"Body",aiWrite:"🤖 AI Likhwao",cvBtn:"📄 CV",aiFix:"✨ Fix Karo",usePlaceholders:"💡 {name} aur {company} personalization ke liye use karo",
-    saveTemplate:"💾 Template Save Karo",clearBtn:"🗑 Clear",aiAnalysis:"AI Analysis",deepBtn:"🤖 Deep",inboxProb:"Inbox Probability",
-    templates:"📝 Templates",emailSignature:"✍️ Email Signature",sigAppears:"Har email mein aata hai",
-    uploadLogo:"Logo upload karne ke liye click karo",removeLogo:"🗑 Logo Hatao",
-    sigName:"Naam",sigDesignation:"Designation",sigCompany:"Company",sigPhone:"📞 Phone",sigEmail:"✉️ Email",sigLinkedin:"🔗 LinkedIn",
-    previewBtn:"👁 Preview",saveSignature:"💾 Signature Save Karo",resetBtn:"🗑 Reset",preview:"📧 Preview",
-    attachments:"📎 Attachments",maxFileSize:"Max 3MB per file",clickUpload:"Files upload karne ke liye click karo",
-    uploadDesc:"PDF, DOC, DOCX, TXT, images — max 3MB each",selectAll:"☑️ Sab Select",unselectAll:"⬜ Sab Unselect",
-    addRecipientsH:"➕ Recipients Add Karo",templateLabel:"Template",
-    tabManual:"✍️ Manual",tabBulk:"📋 Bulk",tabOcr:"📸 Screenshot",addRow:"+ Row Add Karo",saveBtn:"💾 Save",
-    bulkHelp:"Emails kisi bhi format mein paste karo — line per, CSV, ya company names ke saath.",livePreview:"🔍 Live Preview",
-    addAllBtn:"➕ Sab Add Karo",ocrHelp:"<b>Screenshot to Text</b> — Bulk upload. Auto-compress. Preview ke liye thumbnail click karo.",
-    chooseFiles:"📁 Files Choose Karo",useCamera:"📷 Camera Use Karo",ocrDropTitle:"Multiple screenshots upload karne ke liye click karo",
-    ocrDropSub:"PNG, JPG, WEBP — max 12MB each (auto-compressed)",extractedText:"📝 Extracted Text — zarurat ho to edit karo",
-    sendToBulk:"📋 Sab Bulk mein Bhejo",copyBtn:"📋 Copy",retryFailed:"🔄 Failed Retry Karo",cancelBtn:"⏹ Cancel",
-    recipientTracking:"📊 Recipient Tracking",
-    trackingHelp:"💡 Kisi bhi row pe click karo full all-time history ke liye (MailFlow + Gmail auto-merged). Sirf real opens — bots filtered. Duplicate sends 90s tak auto-blocked.",
-    optAllStatus:"Sab Status",optPending:"Pending",optSent:"Bheje",optOpened:"Khule",
-    resendBtn:"🔁 Dobara Bhejo",deleteBtn:"🗑 Delete",clearSelBtn:"Clear",refreshBtn:"🔄 Refresh",selectPage:"☑️ Page Select Karo",
-    emailHistory:"📧 Email History",allTime:"Sab Time",today:"Aaj",last7:"Pichle 7 Din",last30:"Pichle 30 Din",
-    connectInbox:"Inbox Connect Karo",connectInboxDesc:"Wahi Gmail App Password use karo jo sender mein hai. Ek click mein dono connect.",
-    appPassword:"🔑 Gmail App Password",connectInboxBtn:"🔌 Inbox Connect Karo",useSavedPass:"🔗 Saved Password Use Karo",encryptedNote:"🔒 AES-256 encrypted",
-    folderInbox:"📥 Inbox",folderSent:"📤 Sent",syncBtn:"🔄 Sync",selectEmail:"Ek email select karo",
-    fromLbl:"Se:",toLbl:"Ko:",dateLbl:"Date:",replyBtn:"↩️ Reply",aiReplyBtn:"🤖 AI Reply",
-    aiProfileH:"🧠 AI Profile",aiWritesAsYou:"AI aapki tarah likhta hai",aiProfileHelp:"Ye info AI ko aapki tone aur style match karne mein help karti hai.",
-    industryLbl:"Industry",toneLbl:"Preferred Tone",toneProfessional:"Professional",toneFriendly:"Friendly",toneCasual:"Casual",toneConfident:"Confident",
-    aboutMe:"Mere Baare Mein",commonPhrases:"Common Phrases",saveAIProfile:"💾 AI Profile Save Karo",
-    aiTools:"🤖 AI Tools",bestTimeH:"⏰ Best Sending Time",clickAnalyze:"Analyze pe click karo",analyzeBtn:"✨ Analyze",
-    predictionsH:"📊 Email Predictions",senderMemoryH:"🧠 Sender Memory",noSenderMemory:"Abhi koi sender memory nahi",
-    testLabBanner:"TEST LAB — Sirf Admin",testRecipients:"Test Recipients",testSent:"Test Bheje",testOpened:"Test Khule",testPending:"Test Pending",testLog:"Test Log",
-    addTestRecipients:"➕ Test Recipients Add Karo",sendTestH:"📤 Test Bhejo",toLbl2:"Ko",
-    includeInEmail:"📎 Email mein Include Karo",selectFiles:"Attach karne ke liye files select karo:",sendTestBtn:"🚀 Test Bhejo",
-    automationTest:"🤖 Automation Test",batchSizeLbl:"Batch Size",delaySec:"Delay (seconds)",
-    totalAutoSentLbl:"Total auto-sent:",lastRunLbl:"Aakhri run:",pendingLbl:"Pending:",runNowBtn:"▶️ Abhi Run Karo",
-    testRecipientsLbl:"📋 Test Recipients",selectAllShort:"☑️ Sab",testLogH:"📜 Test Log",dangerZone:"🗑 Danger Zone",clearAllTest:"🗑 Sab Test Data Clear Karo",
-    statUsers:"Users",statEmails:"Emails",statSends:"Sends",
-    ocrAiMonitor:"🔍 OCR & AI Monitor",ocrQuotaTitle:"📊 OCR Monthly Quota",statUsed:"Use Hui",statRemaining:"Bachi",statLimit:"Limit",
-    statTotal:"Total",statSuccess:"Success",statFailed:"Failed",statClientErr:"Client Err",perUserOcr:"👥 Per-User OCR Usage",aiProviderErrors:"⚠️ AI Provider Errors (Aaj)",
-    aiUsage:"🧠 AI Usage",totalUsers:"Total Users",aiActive:"AI Active",month:"Mahina",lifetime:"Lifetime",remaining:"Bachi",callsLeft:"~Calls Left",calls:"Calls",
-    bannedUsers:"🚫 Banned Users",accessRequests:"📩 Access Requests",allUsers:"👥 Sab Users",allSentEmails:"📨 Sab Bheji Gayi Emails",
-    connectGmailH:"📧 Apna Gmail Connect Karo",appPasswordWhy:"💡 <b>App Password kyun?</b> Apne Gmail se bhejo bina Google verification ke.",
-    alsoEnableImap:"<b>Inbox (IMAP) bhi enable karo</b> — MailFlow Pro se apni Gmail Inbox aur Sent padho",connectGmailBtn:"🔌 Gmail Connect Karo",
-    encryptedNote2:"🔒 AES-256-GCM encrypted",myProfileH:"👤 Meri Profile",displayName:"Display Name",saveNameBtn:"💾 Naam Save Karo",
-    appIdLbl:"App ID:",registeredLbl:"Register Hua:",myAiUsage:"🤖 Meri AI Usage",remainingTokens:"Bache Tokens",
-    settingsH:"⚙️ Settings",tabAccount:"👤 Account",tabSecurity:"🔒 Security",tabPreferences:"🌐 Preferences",tabDanger:"⚠️ Danger",
-    emailReadonly:"Email (read-only)",emailChangeDisabled:"💡 Email change disabled hai. Naye email se naya account banao.",
-    saveChanges:"💾 Changes Save Karo",changePasswordH:"🔑 Password Badlo",currentPassword:"Current Password",newPassword:"Naya Password (kam se kam 8)",
-    confirmNew:"Naya Confirm Karo",changePasswordBtn:"🔒 Password Badlo",langRegion:"🌐 Language & Region",languageLbl:"Zaban",
-    timezoneLbl:"Timezone",dateFormatLbl:"Date Format",timeFormatLbl:"Time Format",savePreferences:"💾 Preferences Save Karo",
-    dangerZoneH:"⚠️ Danger Zone",disconnectGmail:"Gmail Disconnect Karo",disconnectInbox:"Inbox Disconnect Karo",
-    disconnectBtn:"🔌 Gmail Disconnect Karo",disconnectInboxBtn:"🔌 Inbox Disconnect Karo",deleteAllRecipientsH:"Sab Recipients Delete Karo",deleteAllBtn:"🗑 Sab Delete Karo",
-    replyH:"↩️ Reply",messageLbl:"Message",attachToReply:"📎 Reply mein Attach Karo",optFiles:"📎 Files",aiImproveBtn:"✨ AI Improve",sendReplyBtn:"📤 Reply Bhejo",
-    aiWriterH:"🤖 AI Email Writer",aiWriterHint:"🌐 Kisi bhi zaban mein context likho — AI professional English produce karega.",
-    contextLbl:"Context / Purpose",recipientName:"Recipient ka Naam",companyLbl:"Company",
-    toneFormal:"Formal",tonePersuasive:"Persuasive",lengthLbl:"Length",lengthShort:"Chhota",lengthMedium:"Medium",lengthLong:"Lamba",generateEmailBtn:"✨ Email Generate Karo",
-    cvAnalyzerH:"📄 AI CV Analyzer",cvHint:"🌐 CV kisi bhi zaban mein — AI professional English email banata hai.",
-    selectCvFile:"📁 CV File Select Karo",uploadNewCv:"📤 Naya CV Upload Karo",chooseFileBtn:"📁 File Choose Karo",extractedTextLbl:"📝 Extracted Text",
-    targetRole:"🎯 Target Role",jobDescLbl:"📋 Job Description (Optional)",analyzeGenerate:"🤖 Analyze & Email Generate Karo",
-    recipientHistoryH:"📊 Recipient History",sendEmailH:"📤 Email Bhejo",sendNowBtn:"📤 Abhi Bhejo",cancelBtn2:"Cancel",
-    resendEmailH:"🔁 Email Dobara Bhejo",resendNowBtn:"🔁 Abhi Dobara Bhejo",subjectLbl:"Subject",bodyLbl:"Body",
-    userOcrDetails:"📸 User OCR Details",userDetailsH:"👤 User Details",banUserH:"🚫 User Ban Karo",reasonLbl:"Wajah",
-    alsoBanIp:"<b>IP address bhi ban karo</b>",banUserBtn:"🚫 User Ban Karo"
-  },
-  ur:{},hi:{},ar:{},es:{},fr:{}
-};
+var I18N={en:{"tagline":"AI-powered email automation.<br>Send smart. Land in inbox.","login":"Login","register":"Register","emailAddress":"Email Address","password":"Password","rememberMe":"Remember me for 30 days","loginBtn":"🔓 Login","fullName":"Full Name","passwordMin8":"Password (min 8 characters)","createAccount":"✨ Create Account","signupNote":"💡 <b>Note:</b> After signup, connect your Gmail App Password from the Dashboard to start sending emails.","featAI":"AI writes & improves emails","featOCR":"Screenshot to Text extractor","featInbox":"Live inbox sync","featTrack":"Real-time open tracking","featGmail":"Send via your own Gmail","legal":"By continuing you agree to our <a href=\"/terms\" target=\"_blank\">Terms</a> & <a href=\"/privacy\" target=\"_blank\">Privacy Policy</a>","accessSuspended":"Access Suspended","accountSuspended":"Your account has been suspended","suspendedDefault":"Your account was suspended for violating our terms of service.","requestNewAccess":"📝 Request New Access","fullNameReq":"Full Name *","newEmailReq":"New Email *","companyOpt":"Company (Optional)","phoneOpt":"Phone (Optional)","reasonAccess":"Reason for Access *","submitRequest":"📩 Submit Request","backToLogin":"← Back to Login","settingsBtn":"⚙️ Settings","exitBtn":"Exit","tabDashboard":"📊 Dashboard","tabInbox":"📥 Inbox","tabAIProfile":"🧠 AI Profile","tabTools":"🧪 Tools","tabTestLab":"🧪 Test Lab","tabAdmin":"👑 Admin","gettingStarted":"🚀 Getting Started","connectGmail":"Connect Gmail","createTemplate":"Create Template","createTemplateDesc":"Use AI to write or paste your own. Personalize with {name} and {company}.","addRecipients":"Add Recipients","addRecipientsDesc":"Manual, bulk paste, or screenshot OCR.","sendTrack":"Send & Track","sendTrackDesc":"Click 📤 to send. Real-time open tracking.","proTips":"⚡ Pro Tips","proTip1Title":"Personalize Every Email","proTip1Desc":"Use {name} and {company} placeholders — personalized emails get up to 6x more opens.","proTip2Title":"Real Tracking","proTip2Desc":"Only real opens count. Gmail proxy and bots are auto-filtered.","proTip3Title":"Click = 100% Open","proTip3Desc":"If a receiver clicks any link, it counts as a guaranteed open.","proTip4Title":"Duplicate Guard","proTip4Desc":"Same recipient won't get another email within 90 seconds. Safe.","proTip5Title":"Hourly Auto-Send","proTip5Desc":"Enable auto-send and first email will go at the next full hour (e.g. 6:13 ON → 7:00 first send).","gmailNotConnected":"Gmail not connected.","clickConnect":"Click here to connect your Gmail App Password.","quietActive":"Quiet Hours Active","autoPaused":"Auto-send is paused.","statRecipients":"Recipients","statSent":"Sent","statOpened":"Opened","statPending":"Pending","statTotalSends":"Total Sends","quickAuto":"⚡ Quick Automation","autoSendEmails":"🤖 Auto-Send Emails","autoSendDesc":"Sends pending emails automatically every hour (7:00, 8:00, 9:00...)","autoSendTemplate":"📝 Template to use for auto-send","allAutoEmails":"All auto-sent emails will use this template","batchSize":"Batch Size (per hour)","sendDelay":"Delay Between Sends (seconds)","quietHours":"🌙 Quiet Hours","quietHoursDesc":"Auto-send will not run during this time","quietStart":"Start Time (Pause from)","quietEnd":"End Time (Resume at)","quietExample":"Example: Start 22:00, End 07:00 = no emails from 10 PM to 7 AM.","includeInAuto":"📎 Include in Each Auto-Sent Email","optSignature":"✍️ Signature","optLogo":"🖼️ Logo","optAttachFiles":"📎 Attach Files","selectFilesAuto":"Select files to auto-attach:","saveAutomation":"💾 Save Automation Settings","totalAutoSent":"Total Auto-Sent","lastAutoRun":"Last Auto-Run","nextAutoRun":"Next Auto-Run","pendingRecipients":"Pending Recipients","gmailQuota":"📊 Gmail Daily Sending Quota","mailflowSentToday":"📤 MailFlow sends today:","gmailSentToday":"📧 Gmail sends today (all sources):","totalSentToday":"Total sent today:","dailyLimit":"Daily limit:","remainingToday":"Remaining today:","aiComposer":"✉️ AI Email Composer","multiProvider":"Multi-provider AI","templateName":"Template Name","subject":"Subject","aiSuggest":"✨ AI Suggest","aiSuggestions":"✨ AI Suggestions","body":"Body","aiWrite":"🤖 AI Write","cvBtn":"📄 CV","aiFix":"✨ Fix","usePlaceholders":"💡 Use {name} and {company} for personalization","saveTemplate":"💾 Save Template","clearBtn":"🗑 Clear","aiAnalysis":"AI Analysis","deepBtn":"🤖 Deep","inboxProb":"Inbox Probability","templates":"📝 Templates","emailSignature":"✍️ Email Signature","sigAppears":"Appears in every email","uploadLogo":"Click to upload your logo","removeLogo":"🗑 Remove Logo","sigName":"Name","sigDesignation":"Designation","sigCompany":"Company","sigPhone":"📞 Phone","sigEmail":"✉️ Email","sigLinkedin":"🔗 LinkedIn","previewBtn":"👁 Preview","saveSignature":"💾 Save Signature","resetBtn":"🗑 Reset","preview":"📧 Preview","attachments":"📎 Attachments","maxFileSize":"Max 3MB per file","clickUpload":"Click to upload files","uploadDesc":"PDF, DOC, DOCX, TXT, images — max 3MB each","selectAll":"☑️ Select All","unselectAll":"⬜ Unselect All","addRecipientsH":"➕ Add Recipients","templateLabel":"Template","tabManual":"✍️ Manual","tabBulk":"📋 Bulk","tabOcr":"📸 Screenshot","addRow":"+ Add Row","saveBtn":"💾 Save","bulkHelp":"Paste emails in any format — one per line, CSV, or mixed with company names.","livePreview":"🔍 Live Preview","addAllBtn":"➕ Add All","ocrHelp":"<b>Screenshot to Text</b> — Bulk upload. Auto-compress. Click thumbnail to preview.","chooseFiles":"📁 Choose Files","useCamera":"📷 Use Camera","ocrDropTitle":"Click to upload multiple screenshots","ocrDropSub":"PNG, JPG, WEBP — max 12MB each (auto-compressed)","extractedText":"📝 Extracted Text — edit if needed","sendToBulk":"📋 Send All to Bulk","copyBtn":"📋 Copy","retryFailed":"🔄 Retry Failed","cancelBtn":"⏹ Cancel","recipientTracking":"📊 Recipient Tracking","trackingHelp":"💡 Click any row for full all-time history. Real opens only — bots filtered. Duplicate sends auto-blocked for 90s.","optAllStatus":"All Status","optPending":"Pending","optSent":"Sent","optOpened":"Opened","resendBtn":"🔁 Resend","deleteBtn":"🗑 Delete","clearSelBtn":"Clear","refreshBtn":"🔄 Refresh","selectPage":"☑️ Select Page","emailHistory":"📧 Email History","allTime":"All Time","today":"Today","last7":"Last 7 Days","last30":"Last 30 Days","connectInbox":"Connect Your Inbox","connectInboxDesc":"Use the same Gmail App Password as your sender.","appPassword":"🔑 Gmail App Password","connectInboxBtn":"🔌 Connect Inbox","useSavedPass":"🔗 Use Saved Password","encryptedNote":"🔒 AES-256 encrypted","folderInbox":"📥 Inbox","folderSent":"📤 Sent","syncBtn":"🔄 Sync","selectEmail":"Select an email","fromLbl":"From:","toLbl":"To:","dateLbl":"Date:","replyBtn":"↩️ Reply","aiReplyBtn":"🤖 AI Reply","aiProfileH":"🧠 AI Profile","aiWritesAsYou":"AI writes as YOU","aiProfileHelp":"This information helps AI match your tone and style.","industryLbl":"Industry","toneLbl":"Preferred Tone","toneProfessional":"Professional","toneFriendly":"Friendly","toneCasual":"Casual","toneConfident":"Confident","aboutMe":"About Me","commonPhrases":"Common Phrases","saveAIProfile":"💾 Save AI Profile","aiTools":"🤖 AI Tools","bestTimeH":"⏰ Best Sending Time","clickAnalyze":"Click analyze","analyzeBtn":"✨ Analyze","predictionsH":"📊 Email Predictions","senderMemoryH":"🧠 Sender Memory","noSenderMemory":"No sender memory yet","testLabBanner":"TEST LAB — Admin only","testRecipients":"Test Recipients","testSent":"Test Sent","testOpened":"Test Opened","testPending":"Test Pending","testLog":"Test Log","addTestRecipients":"➕ Add Test Recipients","sendTestH":"📤 Send Test","toLbl2":"To","includeInEmail":"📎 Include in Email","selectFiles":"Select files to attach:","sendTestBtn":"🚀 Send Test","automationTest":"🤖 Automation Test","batchSizeLbl":"Batch Size","delaySec":"Delay (seconds)","totalAutoSentLbl":"Total auto-sent:","lastRunLbl":"Last run:","pendingLbl":"Pending:","runNowBtn":"▶️ Run Now","testRecipientsLbl":"📋 Test Recipients","selectAllShort":"☑️ All","testLogH":"📜 Test Log","dangerZone":"🗑 Danger Zone","clearAllTest":"🗑 Clear All Test Data","statUsers":"Users","statEmails":"Emails","statSends":"Sends","ocrAiMonitor":"🔍 OCR & AI Monitor","ocrQuotaTitle":"📊 OCR Monthly Quota","statUsed":"Used","statRemaining":"Remaining","statLimit":"Limit","statTotal":"Total","statSuccess":"Success","statFailed":"Failed","statClientErr":"Client Err","perUserOcr":"👥 Per-User OCR Usage","aiProviderErrors":"⚠️ AI Provider Errors (Today)","aiUsage":"🧠 AI Usage","totalUsers":"Total Users","aiActive":"AI Active","month":"Month","lifetime":"Lifetime","remaining":"Remaining","callsLeft":"~Calls Left","calls":"Calls","bannedUsers":"🚫 Banned Users","accessRequests":"📩 Access Requests","allUsers":"👥 All Users","allSentEmails":"📨 All Sent Emails","connectGmailH":"📧 Connect Your Gmail","appPasswordWhy":"💡 <b>Why App Password?</b> Send from your own Gmail without Google verification.","alsoEnableImap":"<b>Also enable Inbox (IMAP)</b> — read your Gmail Inbox & Sent from within MailFlow Pro","connectGmailBtn":"🔌 Connect Gmail","encryptedNote2":"🔒 AES-256-GCM encrypted","myProfileH":"👤 My Profile","displayName":"Display Name","saveNameBtn":"💾 Save Name","appIdLbl":"App ID:","registeredLbl":"Registered:","myAiUsage":"🤖 My AI Usage","remainingTokens":"Remaining Tokens","settingsH":"⚙️ Settings","tabAccount":"👤 Account","tabSecurity":"🔒 Security","tabPreferences":"🌐 Preferences","tabDanger":"⚠️ Danger","emailReadonly":"Email (read-only)","emailChangeDisabled":"💡 Email change is disabled. Create a new account with the new email.","saveChanges":"💾 Save Changes","changePasswordH":"🔑 Change Password","currentPassword":"Current Password","newPassword":"New Password (min 8)","confirmNew":"Confirm New","changePasswordBtn":"🔒 Change Password","langRegion":"🌐 Language & Region","languageLbl":"Language","timezoneLbl":"Timezone","dateFormatLbl":"Date Format","timeFormatLbl":"Time Format","savePreferences":"💾 Save Preferences","dangerZoneH":"⚠️ Danger Zone","disconnectGmail":"Disconnect Gmail","disconnectInbox":"Disconnect Inbox","disconnectBtn":"🔌 Disconnect Gmail","disconnectInboxBtn":"🔌 Disconnect Inbox","deleteAllRecipientsH":"Delete All Recipients","deleteAllBtn":"🗑 Delete All","replyH":"↩️ Reply","messageLbl":"Message","attachToReply":"📎 Attach to Reply","optFiles":"📎 Files","aiImproveBtn":"✨ AI Improve","sendReplyBtn":"📤 Send Reply","aiWriterH":"🤖 AI Email Writer","aiWriterHint":"🌐 Write context in any language — AI will produce professional English.","contextLbl":"Context / Purpose","recipientName":"Recipient Name","companyLbl":"Company","toneFormal":"Formal","tonePersuasive":"Persuasive","lengthLbl":"Length","lengthShort":"Short","lengthMedium":"Medium","lengthLong":"Long","generateEmailBtn":"✨ Generate Email","cvAnalyzerH":"📄 AI CV Analyzer","cvHint":"🌐 CV in any language — AI generates professional English email.","selectCvFile":"📁 Select CV File","uploadNewCv":"📤 Upload New CV","chooseFileBtn":"📁 Choose File","extractedTextLbl":"📝 Extracted Text","targetRole":"🎯 Target Role","jobDescLbl":"📋 Job Description (Optional)","analyzeGenerate":"🤖 Analyze & Generate Email","recipientHistoryH":"📊 Recipient History","sendEmailH":"📤 Send Email","sendNowBtn":"📤 Send Now","cancelBtn2":"Cancel","resendEmailH":"🔁 Resend Email","resendNowBtn":"🔁 Resend Now","subjectLbl":"Subject","bodyLbl":"Body","userOcrDetails":"📸 User OCR Details","userDetailsH":"👤 User Details","banUserH":"🚫 Ban User","reasonLbl":"Reason","alsoBanIp":"<b>Also ban IP address</b>","banUserBtn":"🚫 Ban User"},"ur-roman":{"tagline":"AI-powered email automation.<br>Smart bhejo. Inbox mein landing karo.","login":"Login","register":"Register","emailAddress":"Email Address","password":"Password","rememberMe":"Mujhe 30 din tak yaad rakho","loginBtn":"🔓 Login Karo","fullName":"Poora Naam","passwordMin8":"Password (kam se kam 8 characters)","createAccount":"✨ Account Banao","signupNote":"💡 <b>Note:</b> Signup ke baad, Dashboard se Gmail App Password connect karo taake emails bhej sako.","featAI":"AI emails likhta aur improve karta hai","featOCR":"Screenshot se Text nikalta hai","featInbox":"Live inbox sync","featTrack":"Real-time open tracking","featGmail":"Apne Gmail se bhejo","settingsBtn":"⚙️ Settings","exitBtn":"Exit","tabDashboard":"📊 Dashboard","tabInbox":"📥 Inbox","tabAIProfile":"🧠 AI Profile","tabTools":"🧪 Tools","tabTestLab":"🧪 Test Lab","tabAdmin":"👑 Admin","gettingStarted":"🚀 Shuru Karo","connectGmail":"Gmail Connect Karo","createTemplate":"Template Banao","addRecipients":"Recipients Add Karo","sendTrack":"Bhejo aur Track Karo","proTips":"⚡ Pro Tips","statRecipients":"Recipients","statSent":"Bheje Gaye","statOpened":"Khule","statPending":"Pending","statTotalSends":"Total Sends","quickAuto":"⚡ Quick Automation","autoSendEmails":"🤖 Auto-Send Emails","quietHours":"🌙 Quiet Hours","saveAutomation":"💾 Automation Settings Save Karo","gmailQuota":"📊 Gmail Daily Sending Quota","dailyLimit":"Daily limit:","remainingToday":"Aaj bachi hain:","aiComposer":"✉️ AI Email Composer","templateName":"Template Name","subject":"Subject","body":"Body","aiWrite":"🤖 AI Likhwao","saveTemplate":"💾 Template Save Karo","templates":"📝 Templates","emailSignature":"✍️ Email Signature","attachments":"📎 Attachments","addRecipientsH":"➕ Recipients Add Karo","tabManual":"✍️ Manual","tabBulk":"📋 Bulk","tabOcr":"📸 Screenshot","saveBtn":"💾 Save","addAllBtn":"➕ Sab Add Karo","recipientTracking":"📊 Recipient Tracking","optAllStatus":"Sab Status","optPending":"Pending","optSent":"Bheje","optOpened":"Khule","resendBtn":"🔁 Dobara Bhejo","deleteBtn":"🗑 Delete","refreshBtn":"🔄 Refresh","emailHistory":"📧 Email History","allTime":"Sab Time","today":"Aaj","last7":"Pichle 7 Din","last30":"Pichle 30 Din","connectInbox":"Inbox Connect Karo","replyBtn":"↩️ Reply","aiReplyBtn":"🤖 AI Reply","aiProfileH":"🧠 AI Profile","saveAIProfile":"💾 AI Profile Save Karo","aiTools":"🤖 AI Tools","bestTimeH":"⏰ Best Sending Time","analyzeBtn":"✨ Analyze","senderMemoryH":"🧠 Sender Memory","testLabBanner":"TEST LAB — Sirf Admin","settingsH":"⚙️ Settings","tabAccount":"👤 Account","tabSecurity":"🔒 Security","tabPreferences":"🌐 Preferences","tabDanger":"⚠️ Danger","saveChanges":"💾 Changes Save Karo","changePasswordH":"🔑 Password Badlo","currentPassword":"Current Password","newPassword":"Naya Password (kam se kam 8)","changePasswordBtn":"🔒 Password Badlo","savePreferences":"💾 Preferences Save Karo","dangerZoneH":"⚠️ Danger Zone","deleteAllBtn":"🗑 Sab Delete Karo","replyH":"↩️ Reply","sendReplyBtn":"📤 Reply Bhejo","aiWriterH":"🤖 AI Email Writer","generateEmailBtn":"✨ Email Generate Karo","cvAnalyzerH":"📄 AI CV Analyzer","analyzeGenerate":"🤖 Analyze & Email Generate Karo","recipientHistoryH":"📊 Recipient History","sendEmailH":"📤 Email Bhejo","sendNowBtn":"📤 Abhi Bhejo","cancelBtn2":"Cancel","resendEmailH":"🔁 Email Dobara Bhejo","resendNowBtn":"🔁 Abhi Dobara Bhejo","banUserH":"🚫 User Ban Karo","banUserBtn":"🚫 User Ban Karo"},ur:{},hi:{},ar:{},es:{},fr:{}};
 function t(key){var l=I18N[CURRENT_LANG]||I18N.en;return l[key]||I18N.en[key]||key;}
 function applyI18n(){document.querySelectorAll('[data-i18n]').forEach(function(el){var k=el.getAttribute('data-i18n');var v=t(k);if(v)el.innerHTML=v;});}
 
 // ============ HELPERS ============
 function $(id){return document.getElementById(id);}
-function api(p,m,b){return fetch(p,{method:m||'GET',credentials:'include',headers:{'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined}).then(function(r){return r.text().then(function(t){try{return JSON.parse(t);}catch(e){return {ok:false,error:'Server error '+r.status};}});}).catch(function(e){var msg;if(e&&e.message)msg=e.message;else if(e&&e.type)msg='Network '+e.type;else msg='Network error';return {ok:false,error:msg};});}
+function api(p,m,b){return fetch(p,{method:m||'GET',credentials:'include',headers:{'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined}).then(function(r){return r.text().then(function(txt){try{return JSON.parse(txt);}catch(e){return {ok:false,error:'Server error '+r.status};}});}).catch(function(e){var msg;if(e&&e.message)msg=e.message;else if(e&&e.type)msg='Network '+e.type;else msg='Network error';return {ok:false,error:msg};});}
 function reportOcrClientError(errorMsg,fileName,stage){try{fetch('/api/ocr/client-error',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({error:errorMsg,fileName:fileName||'',stage:stage||'client'})}).catch(function(){});}catch(e){}}
-function toast(m,t){var el=$('toast');el.innerText=m;el.className='toast show '+(t||'ok');clearTimeout(el._t);el._t=setTimeout(function(){el.className='toast'},4500);}
+function toast(m,tp){var el=$('toast');el.innerText=m;el.className='toast show '+(tp||'ok');clearTimeout(el._t);el._t=setTimeout(function(){el.className='toast'},4500);}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function fmtSize(b){if(!b)return '—';if(b<1024)return b+' B';if(b<1048576)return (b/1024).toFixed(1)+' KB';return (b/1048576).toFixed(2)+' MB';}
 function fmtNum(n){if(!n||n===0)return '0';if(n<1000)return String(n);if(n<1000000)return (n/1000).toFixed(1)+'K';return (n/1000000).toFixed(2)+'M';}
 function fmtFull(n){var v=parseInt(n||0,10);if(isNaN(v))v=0;return v.toString().replace(/\B(?=(\d{3})+(?!\d))/g,',');}
-function fmtDate(d){if(!d)return '—';try{var t=d._seconds?d._seconds*1000:(d.seconds?d.seconds*1000:new Date(d).getTime());if(isNaN(t))return '—';var dt=new Date(t);return dt.toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'})+' · '+dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});}catch(e){return '—';}}
+function toMs(x){if(!x)return 0;if(typeof x==='number')return x;if(x._seconds)return x._seconds*1000;if(x.seconds)return x.seconds*1000;try{return new Date(x).getTime();}catch(e){return 0;}}
+function fmtDate(d){if(!d)return '—';try{var tm=d._seconds?d._seconds*1000:(d.seconds?d.seconds*1000:new Date(d).getTime());if(isNaN(tm))return '—';var dt=new Date(tm);return dt.toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'})+' · '+dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});}catch(e){return '—';}}
 function fmtEmailDate(dateISO){if(!dateISO)return '—';try{var d=new Date(dateISO);if(isNaN(d.getTime()))return '—';var now=new Date();var timeStr=d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});var dateStr=d.toLocaleDateString('en-US',{day:'numeric',month:'short'});if(d.toDateString()===now.toDateString())return timeStr;return dateStr+' · '+timeStr;}catch(e){return '—';}}
 function fmtTimeAgo(dateISO){if(!dateISO)return '—';try{var d=new Date(dateISO);if(isNaN(d.getTime()))return '—';var diff=Date.now()-d.getTime();var min=Math.floor(diff/60000);if(min<1)return 'Just now';if(min<60)return min+'m ago';var hr=Math.floor(min/60);if(hr<24)return hr+'h ago';return Math.floor(hr/24)+'d ago';}catch(e){return '—';}}
 function fmtDuration(ms){if(ms<1000)return '<1s';var s=Math.floor(ms/1000);if(s<60)return s+'s';var m=Math.floor(s/60);var rs=s%60;return m+'m '+rs+'s';}
@@ -1639,9 +1492,10 @@ function getRememberedEmail(){try{return localStorage.getItem('mf_remember_email
 function setRememberedEmail(email){try{if(email)localStorage.setItem('mf_remember_email',email);else localStorage.removeItem('mf_remember_email');}catch(e){}}
 function getEmailStatus(e){if(e.openedAt)return{cls:'opened',icon:'👁',lbl:t('optOpened'),color:'#86efac'};if(e.lastMachineHitAt||e.machineHits>0)return{cls:'machine',icon:'⚙️',lbl:'Machine',color:'#cbd5e1'};return{cls:'sent',icon:'📤',lbl:t('optSent'),color:'#7dd3fc'};}
 function getRecipientStatus(r){var st=(r.status||'').toLowerCase();if(st.indexOf('opened')!==-1)return{cls:'opened',icon:'👁',lbl:t('optOpened')};if(st==='delivered'||st==='machine')return{cls:'machine',icon:'⚙️',lbl:'Machine'};if(st==='sent')return{cls:'sent',icon:'📤',lbl:t('optSent')};return{cls:'pending',icon:'⏳',lbl:t('optPending')};}
+function hourLabel(h){if(h===0)return '12 AM';if(h<12)return h+' AM';if(h===12)return '12 PM';return (h-12)+' PM';}
 
 // ============ AUTH ============
-function switchAuthTab(t){if(t==='login'){$('loginTab').classList.add('active');$('registerTab').classList.remove('active');$('loginForm').classList.remove('hidden');$('registerForm').classList.add('hidden');}else{$('registerTab').classList.add('active');$('loginTab').classList.remove('active');$('registerForm').classList.remove('hidden');$('loginForm').classList.add('hidden');}$('loginError').classList.add('hidden');$('registerError').classList.add('hidden');}
+function switchAuthTab(x){if(x==='login'){$('loginTab').classList.add('active');$('registerTab').classList.remove('active');$('loginForm').classList.remove('hidden');$('registerForm').classList.add('hidden');}else{$('registerTab').classList.add('active');$('loginTab').classList.remove('active');$('registerForm').classList.remove('hidden');$('loginForm').classList.add('hidden');}$('loginError').classList.add('hidden');$('registerError').classList.add('hidden');}
 function setBtnLoading(btn,text){btn.disabled=true;btn.classList.add('loading');btn._orig=btn.innerHTML;btn.innerHTML=text||'Please wait...';}
 function resetBtn(btn){if(!btn)return;btn.disabled=false;btn.classList.remove('loading');if(btn._orig)btn.innerHTML=btn._orig;}
 async function doEmailLogin(){var email=$('loginEmail').value.trim(),password=$('loginPassword').value;var remember=$('rememberMe')&&$('rememberMe').checked;if(!email||!password){$('loginError').innerText='Please enter both email and password';$('loginError').classList.remove('hidden');return;}$('loginError').classList.add('hidden');var btn=$('loginBtn');setBtnLoading(btn,'🔓 Logging in...');try{var r=await api('/api/auth/login','POST',{email:email,password:password,remember:remember});if(r.ok){if(remember)setRememberedEmail(email);else setRememberedEmail(null);USER=r.user;enterApp();}else if(r.banned){BANNED_USER_EMAIL=email;$('loginView').classList.add('hidden');$('bannedView').classList.remove('hidden');if(r.reason)$('banReasonText').innerText=r.reason;}else{$('loginError').innerText=r.error||'Login failed';$('loginError').classList.remove('hidden');}}catch(e){$('loginError').innerText='Error: '+e.message;$('loginError').classList.remove('hidden');}resetBtn(btn);}
@@ -1658,7 +1512,7 @@ function closeGmailConnectModal(){$('gmailConnectModal').classList.add('hidden')
 async function connectGmail(){var pass=$('smtpAppPassword').value.trim();if(!pass||pass.replace(/\s/g,'').length<16){return toast('App password must be 16 characters','err');}var btn=$('gmailConnectBtn');setBtnLoading(btn,'🔌 Testing connection...');try{var alsoImap=$('alsoEnableImap')?$('alsoEnableImap').checked:false;var r=await api('/api/smtp/connect','POST',{appPassword:pass,alsoEnableImap:alsoImap});if(r.ok){toast('✅ Gmail connected'+(r.imapEnabled?' + Inbox enabled':''));$('smtpAppPassword').value='';closeGmailConnectModal();checkGmailStatus();loadQuota(true);checkIMAPStatus();}else{toast('Error: '+r.error,'err');}}catch(e){toast('Connection failed','err');}resetBtn(btn);}
 function startAutoRefresh(){if(POLL_TIMER)clearInterval(POLL_TIMER);POLL_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('myView').classList.contains('hidden')){loadQuota();loadAll();loadMyEmails();}},30000);}
 function startLiveInbox(){if(LIVE_INBOX_TIMER)clearInterval(LIVE_INBOX_TIMER);LIVE_INBOX_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('inboxView').classList.contains('hidden')&&IMAP_CONNECTED){loadIMAPInbox(true);}},3000);}
-function switchMain(t){['myView','inboxView','aiprofileView','testView','testDashView','adminView'].forEach(function(v){$(v).classList.add('hidden');});document.querySelectorAll('.maintab').forEach(function(el){el.classList.remove('active');});if(t==='my'){$('myView').classList.remove('hidden');$('tabMy').classList.add('active');loadAll();loadQuota();loadMyEmails();loadQuickAuto();loadSignature();loadFiles();}else if(t==='inbox'){$('inboxView').classList.remove('hidden');$('tabInbox').classList.add('active');checkIMAPStatus();}else if(t==='aiprofile'){$('aiprofileView').classList.remove('hidden');$('tabAIP').classList.add('active');loadAIProfile();}else if(t==='test'){$('testView').classList.remove('hidden');$('tabTest').classList.add('active');loadAIPredictions();loadSenders();}else if(t==='testdash'){$('testDashView').classList.remove('hidden');$('tabTestDash').classList.add('active');loadTestDashboard();}else if(t==='admin'){$('adminView').classList.remove('hidden');$('tabAdmin').classList.add('active');loadAdmin();loadAdminAIUsage();loadAdminBanned();loadAdminRequests();loadAdminUsersPage(1);loadAdminEmailsPage(1);loadOcrMonitor();loadOcrQuota();startAdminLive();}}
+function switchMain(x){['myView','inboxView','aiprofileView','testView','testDashView','adminView'].forEach(function(v){$(v).classList.add('hidden');});document.querySelectorAll('.maintab').forEach(function(el){el.classList.remove('active');});if(x==='my'){$('myView').classList.remove('hidden');$('tabMy').classList.add('active');loadAll();loadQuota();loadMyEmails();loadQuickAuto();loadSignature();loadFiles();}else if(x==='inbox'){$('inboxView').classList.remove('hidden');$('tabInbox').classList.add('active');checkIMAPStatus();}else if(x==='aiprofile'){$('aiprofileView').classList.remove('hidden');$('tabAIP').classList.add('active');loadAIProfile();}else if(x==='test'){$('testView').classList.remove('hidden');$('tabTest').classList.add('active');loadAIPredictions();loadSenders();}else if(x==='testdash'){$('testDashView').classList.remove('hidden');$('tabTestDash').classList.add('active');loadTestDashboard();}else if(x==='admin'){$('adminView').classList.remove('hidden');$('tabAdmin').classList.add('active');loadAdmin();loadAdminAIUsage();loadAdminBanned();loadAdminRequests();loadAdminUsersPage(1);loadAdminEmailsPage(1);loadOcrMonitor();loadOcrQuota();startAdminLive();}}
 function startAdminLive(){if(ADMIN_LIVE_TIMER)clearInterval(ADMIN_LIVE_TIMER);ADMIN_LIVE_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('adminView').classList.contains('hidden')){loadAdminUsersPage(adminPage,true);loadAdminAIUsage();loadAdminBanned();loadAdminRequests();loadOcrMonitor();loadOcrQuota();}},15000);if(ADMIN_EMAIL_LIVE_TIMER)clearInterval(ADMIN_EMAIL_LIVE_TIMER);ADMIN_EMAIL_LIVE_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('adminView').classList.contains('hidden')){loadAdminEmailsPage(adminEmailsPage,true);}},20000);}
 
 // ============ QUICK AUTO ============
@@ -1682,7 +1536,7 @@ document.getElementById('profilePicInput').addEventListener('change',function(e)
 // ============ SETTINGS ============
 function openSettingsModal(){$('settingsModal').classList.remove('hidden');loadSettings();}
 function closeSettingsModal(){$('settingsModal').classList.add('hidden');}
-function switchSettingsTab(t){['Account','Security','Preferences','Danger'].forEach(function(x){var el=$('setTab'+x);if(el)el.classList.remove('active');var tab=$('set'+x+'Tab');if(tab)tab.classList.add('hidden');});var map={account:'Account',security:'Security',preferences:'Preferences',danger:'Danger'};$('setTab'+map[t]).classList.add('active');$('set'+map[t]+'Tab').classList.remove('hidden');if(t==='preferences')loadUserPreferences();}
+function switchSettingsTab(x){['Account','Security','Preferences','Danger'].forEach(function(y){var el=$('setTab'+y);if(el)el.classList.remove('active');var tab=$('set'+y+'Tab');if(tab)tab.classList.add('hidden');});var map={account:'Account',security:'Security',preferences:'Preferences',danger:'Danger'};$('setTab'+map[x]).classList.add('active');$('set'+map[x]+'Tab').classList.remove('hidden');if(x==='preferences')loadUserPreferences();}
 function loadSettings(){api('/api/profile').then(function(r){if(!r.ok)return;var p=r.profile;$('setAccountName').value=p.name||'';$('setAccountEmail').value=p.email||'';$('setAccountAppId').value=p.appAccountId||'N/A';});}
 function saveAccountSettings(){var name=$('setAccountName').value.trim();if(!name)return toast('Please enter a name','err');api('/api/profile','POST',{name:name}).then(function(r){if(r.ok){toast('✅ Name updated');$('topName').innerText=name;if(USER)USER.name=name;}else toast('Error','err');});}
 async function changePassword(){var cur=$('cpCurrent').value,newPw=$('cpNew').value,conf=$('cpConfirm').value;if(!cur||!newPw||!conf)return toast('Please fill all fields','err');if(newPw.length<8)return toast('New password must be 8+ chars','err');if(newPw!==conf)return toast('Passwords do not match','err');var ok=await showConfirm({icon:'🔒',title:'Change password?',message:'You will keep using current session.',okText:'Change',primary:true});if(!ok)return;toast('Changing password...');var r=await api('/api/change-password','POST',{currentPassword:cur,newPassword:newPw});if(r.ok){toast('✅ Password changed');$('cpCurrent').value='';$('cpNew').value='';$('cpConfirm').value='';}else toast('❌ '+(r.error||'Failed'),'err');}
@@ -1735,7 +1589,7 @@ function previewSig(){var h=buildSigHtmlFrom(getSigFields(),LOGO_URL);if(!h||h.l
 function saveSig(){var h=buildSigHtmlFrom(getSigFields(),LOGO_URL);if(!h||h.length<20)return toast('Please fill in at least one field','err');api('/api/signature','POST',{signature:h,fields:getSigFields()}).then(function(r){if(!r.ok)return toast('Error','err');toast('✅ Signature saved');previewSig();});}
 async function resetSig(){var ok=await showConfirm({icon:'🗑',title:'Reset signature?',message:'This will clear all fields',okText:'Reset'});if(!ok)return;['sbName','sbPos','sbCompany','sbPhone','sbEmail','sbLinkedin'].forEach(function(id){if($(id))$(id).value='';});$('sigPreviewContent').innerHTML='';$('sigPreviewBox').classList.remove('show');}
 function loadSignature(){api('/api/signature').then(function(r){if(!r.ok)return;var f=r.fields||{};['name','pos','company','phone','email','linkedin'].forEach(function(k){var id='sb'+k.charAt(0).toUpperCase()+k.slice(1);if(f[k]&&$(id))$(id).value=f[k];});if(r.signature){$('sigPreviewContent').innerHTML=r.signature;$('sigPreviewBox').classList.add('show');}});}
-function loadLogo(){api('/api/logo').then(function(r){if(r.ok&&(r.url||r.urlAlt)){LOGO_URL=r.url||r.urlAlt;LOGO_URL_ALT=r.urlAlt||'';var img=$('logoImg');img.onerror=function(){this.style.display='none';$('logoPh').style.display='block';};img.onload=function(){this.style.display='block';$('logoPh').style.display='none';};img.src=LOGO_URL;$('logoTitle').innerText='Logo uploaded';$('logoActions').style.display='block';}});}
+function loadLogo(){api('/api/logo').then(function(r){if(r.ok&&(r.url||r.urlAlt)){LOGO_URL=r.url||r.urlAlt;var img=$('logoImg');img.onerror=function(){this.style.display='none';$('logoPh').style.display='block';};img.onload=function(){this.style.display='block';$('logoPh').style.display='none';};img.src=LOGO_URL;$('logoTitle').innerText='Logo uploaded';$('logoActions').style.display='block';}});}
 document.getElementById('logoInput').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;var ok=['image/png','image/jpeg','image/jpg','image/gif','image/svg+xml','image/webp'];if(ok.indexOf(f.type)===-1)return toast('Invalid image type','err');if(f.size>2*1024*1024)return toast('Max 2MB','err');var rd=new FileReader();rd.onload=function(ev){var b=ev.target.result.split(',')[1];toast('Uploading logo...');api('/api/upload-logo','POST',{base64:b,mimeType:f.type,filename:f.name}).then(function(r){if(!r.ok)return toast('Upload failed','err');LOGO_URL=r.url||r.urlAlt;var img=$('logoImg');img.src=LOGO_URL;img.style.display='block';$('logoPh').style.display='none';$('logoTitle').innerText='Logo uploaded';$('logoActions').style.display='block';toast('✅ Logo uploaded');previewSig();});};rd.readAsDataURL(f);});
 async function removeLogo(){var ok=await showConfirm({icon:'🗑',title:'Remove logo?',message:'',okText:'Remove'});if(!ok)return;api('/api/remove-logo','POST',{}).then(function(r){if(r.ok){toast('Logo removed');LOGO_URL='';$('logoImg').style.display='none';$('logoPh').style.display='block';$('logoTitle').innerText=t('uploadLogo');$('logoActions').style.display='none';previewSig();}});}
 
@@ -1759,6 +1613,12 @@ function onResendOptAttachToggle(v){$('resendOptionsFilePicker').classList.toggl
 function renderTestFilesList(){var w=$('testFilesList');if(!w)return;if(!FILES.length){w.innerHTML='<div style="text-align:center;color:var(--text3);font-size:12px;padding:12px">No files.</div>';return;}w.innerHTML=FILES.map(function(f){var sel=TEST_MODAL_FILES[f.id]?' selected':'';var icon=fileIcon(f.name,f.mimeType);return '<div class="file-item'+sel+'" onclick="toggleTestModalFile(\''+f.id+'\')"><input type="checkbox" class="cbox" '+(TEST_MODAL_FILES[f.id]?'checked':'')+' onclick="event.stopPropagation();toggleTestModalFile(\''+f.id+'\')"><div class="icon">'+icon+'</div><div class="info"><div class="fname">'+esc(f.name)+'</div><div class="fmeta">'+fmtSize(f.size)+'</div></div></div>';}).join('');}
 function toggleTestModalFile(id){if(TEST_MODAL_FILES[id])delete TEST_MODAL_FILES[id];else TEST_MODAL_FILES[id]=true;renderTestFilesList();}
 function onTestAttachToggle(v){$('testFilePicker').classList.toggle('hidden',!v);if(v)renderTestFilesList();}
+function renderBulkResendFiles(){var w=$('bulkResendFilesList');if(!w)return;if(!FILES.length){w.innerHTML='<div style="text-align:center;color:var(--text3);font-size:12px;padding:12px">No files.</div>';return;}w.innerHTML=FILES.map(function(f){var sel=BULK_RESEND_FILES[f.id]?' selected':'';var icon=fileIcon(f.name,f.mimeType);return '<div class="file-item'+sel+'" onclick="toggleBulkResendFile(\''+f.id+'\')"><input type="checkbox" class="cbox" '+(BULK_RESEND_FILES[f.id]?'checked':'')+' onclick="event.stopPropagation();toggleBulkResendFile(\''+f.id+'\')"><div class="icon">'+icon+'</div><div class="info"><div class="fname">'+esc(f.name)+'</div><div class="fmeta">'+fmtSize(f.size)+'</div></div></div>';}).join('');}
+function toggleBulkResendFile(id){if(BULK_RESEND_FILES[id])delete BULK_RESEND_FILES[id];else BULK_RESEND_FILES[id]=true;renderBulkResendFiles();}
+function onBulkResendAttachToggle(v){$('bulkResendFilePicker').classList.toggle('hidden',!v);if(v)renderBulkResendFiles();}
+function renderBulkScheduleFiles(){var w=$('bulkScheduleFilesList');if(!w)return;if(!FILES.length){w.innerHTML='<div style="text-align:center;color:var(--text3);font-size:12px;padding:12px">No files.</div>';return;}w.innerHTML=FILES.map(function(f){var sel=BULK_SCHEDULE_FILES[f.id]?' selected':'';var icon=fileIcon(f.name,f.mimeType);return '<div class="file-item'+sel+'" onclick="toggleBulkScheduleFile(\''+f.id+'\')"><input type="checkbox" class="cbox" '+(BULK_SCHEDULE_FILES[f.id]?'checked':'')+' onclick="event.stopPropagation();toggleBulkScheduleFile(\''+f.id+'\')"><div class="icon">'+icon+'</div><div class="info"><div class="fname">'+esc(f.name)+'</div><div class="fmeta">'+fmtSize(f.size)+'</div></div></div>';}).join('');}
+function toggleBulkScheduleFile(id){if(BULK_SCHEDULE_FILES[id])delete BULK_SCHEDULE_FILES[id];else BULK_SCHEDULE_FILES[id]=true;renderBulkScheduleFiles();}
+function onBulkScheduleAttachToggle(v){$('bulkScheduleFilePicker').classList.toggle('hidden',!v);if(v)renderBulkScheduleFiles();}
 
 // ============ TEMPLATES ============
 function loadTemplates(){api('/api/templates').then(function(r){TEMPLATES=r.templates||[];var w=$('tplList');w.innerHTML='';$('tplCount').innerText=TEMPLATES.length+' saved';if(!TEMPLATES.length)w.innerHTML='<div class="empty"><div class="ico">📝</div>No templates yet</div>';else TEMPLATES.forEach(function(t){var d=document.createElement('div');d.className='tpl-card';d.innerHTML='<div class="info"><div class="name">📄 '+esc(t.name)+'</div><div class="sub">'+esc(t.subject)+'</div></div><button onclick="previewTemplate(\''+t.id+'\')">👁</button><button onclick="loadTemplateToComposer(\''+t.id+'\')">📋 Load</button><button class="danger" onclick="delTpl(\''+t.id+'\')">✕</button>';w.appendChild(d);});var s=$('tplSelect');s.innerHTML='';if(!TEMPLATES.length)s.innerHTML='<option value="">(None available)</option>';else TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;s.appendChild(o);});var ts=$('testTemplateSelect');if(ts){ts.innerHTML='<option value="">-- Manual Entry --</option>';TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;ts.appendChild(o);});}if($('qAutoTemplateId')){var cur=$('qAutoTemplateId').value;var qt=$('qAutoTemplateId');qt.innerHTML='<option value="">(First available / default)</option>';TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;if(t.id===cur)o.selected=true;qt.appendChild(o);});}});}
@@ -1815,7 +1675,8 @@ function imgDownload(){var cur=IMG_PREVIEW.list[IMG_PREVIEW.idx];if(!cur)return;
 
 // ============ RECIPIENTS ============
 function loadAll(isManual){if(isManual)toast('🔄 Refreshing...');api('/api/stats').then(function(r){if(!r.ok)return;$('stTotal').innerText=r.stats.total;$('stSent').innerText=r.stats.sent;$('stOpened').innerText=r.stats.opened;$('stPending').innerText=r.stats.pending;$('stTotalSends').innerText=r.stats.totalSends||0;});loadRecipients();}
-function loadRecipients(){var q=($('recipSearch').value||'').trim();var stF=$('statusFilter').value;var url='/api/recipients?page='+recipPage+'&limit='+recipPerPage;api(url).then(function(r){if(!r.ok){$('tableWrap').innerHTML='<div class="empty">Error loading</div>';return;}CURRENT_ROWS=r.recipients||[];var filtered=CURRENT_ROWS.filter(function(x){if(stF!=='all'){var s=getRecipientStatus(x);if(s.lbl!==stF)return false;}return !q||(x.company||'').toLowerCase().indexOf(q.toLowerCase())!==-1||(x.email||'').toLowerCase().indexOf(q.toLowerCase())!==-1;});var total=r.pagination?r.pagination.total:filtered.length;var totalPages=r.pagination?r.pagination.totalPages:1;recipTotal=total;recipTotalPages=totalPages;if(r.pagination)recipPage=r.pagination.page;$('trackCount').innerText=total+' total';if(!total){$('tableWrap').innerHTML='<div class="empty"><div class="ico">📭</div>No recipients yet</div>';$('recipPagination').style.display='none';updateBulkBar();return;}if(!filtered.length){$('tableWrap').innerHTML='<div class="empty">🔍 No matching on this page</div>';}else{var h='<table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" class="cbox" onchange="toggleAll(this.checked)"></th><th>Company</th><th>Email</th><th>Status</th><th>Sends</th><th>Last Sent</th><th>Actions</th></tr></thead><tbody>';filtered.forEach(function(x){var st=getRecipientStatus(x);h+='<tr class="clickable '+(SELECTED[x.id]?'selected':'')+'" onclick="openRecipHistory(\''+x.id+'\')"><td onclick="event.stopPropagation()"><input type="checkbox" class="cbox" '+(SELECTED[x.id]?'checked':'')+' onchange="toggleOne(\''+x.id+'\',this.checked)"></td>';h+='<td>'+esc(x.company||'—')+'</td><td style="word-break:break-all">'+esc(x.email)+'</td>';h+='<td><span class="badge '+st.cls+'">'+st.icon+' '+st.lbl+'</span></td>';h+='<td><span class="badge count">'+(x.sendCount||0)+'×</span></td>';h+='<td style="font-size:10px">'+fmtDate(x.lastSentAt||x.sentAt)+'</td>';h+='<td style="white-space:nowrap" onclick="event.stopPropagation()"><button class="btn ghost small" onclick="openRecipHistory(\''+x.id+'\')">📊</button> <button class="btn ghost small" onclick="openSendOptions(\''+x.id+'\')">📤</button> <button class="btn warn small" onclick="openResendOptions(\''+x.id+'\')">🔁</button> <button class="btn danger small" onclick="delRec(\''+x.id+'\')">✕</button></td></tr>';});h+='</tbody></table>';$('tableWrap').innerHTML=h;}if(totalPages>1){$('recipPagination').style.display='flex';$('recipPageInfo').innerText='Page '+recipPage+' of '+totalPages+' ('+total+' total)';$('recipPrevBtn').disabled=recipPage<=1;$('recipNextBtn').disabled=recipPage>=totalPages;}else $('recipPagination').style.display='none';updateBulkBar();});}
+function onRecipSearchChange(){if(recipSearchTimer)clearTimeout(recipSearchTimer);recipSearchTimer=setTimeout(function(){recipPage=1;loadRecipients();},400);}
+function loadRecipients(){var q=($('recipSearch').value||'').trim();var stF=$('statusFilter').value;var url='/api/recipients?page='+recipPage+'&limit='+recipPerPage;if(q)url+='&search='+encodeURIComponent(q);if(stF&&stF!=='all')url+='&status='+encodeURIComponent(stF);api(url).then(function(r){if(!r.ok){$('tableWrap').innerHTML='<div class="empty">Error loading</div>';return;}CURRENT_ROWS=r.recipients||[];var total=r.pagination?r.pagination.total:0;var totalPages=r.pagination?r.pagination.totalPages:1;recipTotal=total;recipTotalPages=totalPages;if(r.pagination)recipPage=r.pagination.page;$('trackCount').innerText=total+' total';if(!total){$('tableWrap').innerHTML='<div class="empty"><div class="ico">📭</div>No recipients yet</div>';$('recipPagination').style.display='none';updateBulkBar();return;}if(!CURRENT_ROWS.length){$('tableWrap').innerHTML='<div class="empty">🔍 No matching on this page</div>';}else{var h='<table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" class="cbox" onchange="toggleAll(this.checked)"></th><th>Company</th><th>Email</th><th>Status</th><th>Sends</th><th>Last Sent</th><th>Actions</th></tr></thead><tbody>';CURRENT_ROWS.forEach(function(x){var st=getRecipientStatus(x);h+='<tr class="clickable '+(SELECTED[x.id]?'selected':'')+'" onclick="openRecipHistory(\''+x.id+'\')"><td onclick="event.stopPropagation()"><input type="checkbox" class="cbox" '+(SELECTED[x.id]?'checked':'')+' onchange="toggleOne(\''+x.id+'\',this.checked)"></td>';h+='<td>'+esc(x.company||'—')+'</td><td style="word-break:break-all">'+esc(x.email)+'</td>';h+='<td><span class="badge '+st.cls+'">'+st.icon+' '+st.lbl+'</span></td>';h+='<td><span class="badge count">'+(x.sendCount||0)+'×</span></td>';h+='<td style="font-size:10px">'+fmtDate(x.lastSentAt||x.sentAt)+'</td>';h+='<td style="white-space:nowrap" onclick="event.stopPropagation()"><button class="btn ghost small" onclick="openRecipHistory(\''+x.id+'\')">📊</button> <button class="btn ghost small" onclick="openSendOptions(\''+x.id+'\')">📤</button> <button class="btn warn small" onclick="openResendOptions(\''+x.id+'\')">🔁</button> <button class="btn danger small" onclick="delRec(\''+x.id+'\')">✕</button></td></tr>';});h+='</tbody></table>';$('tableWrap').innerHTML=h;}if(totalPages>1){$('recipPagination').style.display='flex';$('recipPageInfo').innerText='Page '+recipPage+' of '+totalPages+' ('+total+' total)';$('recipPrevBtn').disabled=recipPage<=1;$('recipNextBtn').disabled=recipPage>=totalPages;}else $('recipPagination').style.display='none';updateBulkBar();});}
 function toggleOne(id,c){if(c)SELECTED[id]=true;else delete SELECTED[id];loadRecipients();}
 function toggleAll(c){if(c)CURRENT_ROWS.forEach(function(r){SELECTED[r.id]=true;});else{var ids=CURRENT_ROWS.map(function(r){return r.id;});ids.forEach(function(id){delete SELECTED[id];});}loadRecipients();}
 function selectAllVisible(){CURRENT_ROWS.forEach(function(r){SELECTED[r.id]=true;});loadRecipients();}
@@ -1835,10 +1696,23 @@ function closeResendOptions(){$('resendOptionsBackdrop').classList.add('hidden')
 document.getElementById('resendOptionsConfirm').addEventListener('click',function(){if(!_currentResendId)return;var id=_currentResendId;var selectedTemplate=$('resendTemplateSelect').value;if(!selectedTemplate){return toast('Please select a template','err');}var attachChecked=$('resendOptAttachments').checked;var fileIds=attachChecked?Object.keys(RESEND_MODAL_FILES):[];var payload={recipientId:id,templateId:selectedTemplate,includeSignature:$('resendOptSignature').checked,includeLogo:$('resendOptLogo').checked,includeAttachments:attachChecked,selectedFileIds:fileIds};var btn=this;setBtnLoading(btn,'🔁 Resending...');api('/api/resend','POST',payload).then(function(r){resetBtn(btn);if(r.ok){toast('✅ Email resent'+(r.attachmentsCount?' with '+r.attachmentsCount+' file(s)':''));closeResendOptions();loadAll();loadMyEmails();loadQuota(true);loadQuickAuto();}else if(r.error==='DAILY_LIMIT_REACHED'){toast('❌ Daily limit reached','err');}else toast('❌ '+r.error,'err');}).catch(function(){resetBtn(btn);});});
 
 async function delRec(id){var ok=await showConfirm({icon:'🗑',title:'Delete recipient?',message:'Permanently remove.',okText:'Delete'});if(!ok)return;api('/api/recipients/'+id,'DELETE').then(function(r){if(r.ok){toast('✅ Deleted');delete SELECTED[id];loadAll();loadQuickAuto();}});}
-async function resendSelected(){var ids=Object.keys(SELECTED);if(!ids.length)return toast('Please select recipients first','err');if(!TEMPLATES.length)return toast('Create a template first','err');var ok=await showConfirm({icon:'🔁',title:'Bulk Resend to '+ids.length+'?',message:'Uses first template. No files.',okText:'Continue',primary:true});if(!ok)return;var done=0,err=0;var firstTemplate=TEMPLATES[0].id;toast('Starting bulk resend...');var next=function(i){if(i>=ids.length){toast('✅ '+done+' sent');clearSelection();loadAll();loadQuota(true);loadMyEmails();return;}setTimeout(function(){api('/api/resend','POST',{recipientId:ids[i],templateId:firstTemplate,includeAttachments:false,selectedFileIds:[]}).then(function(r){if(r.ok)done++;else if(r.error==='DAILY_LIMIT_REACHED'){toast('❌ Limit reached','err');clearSelection();loadAll();return;}else err++;next(i+1);}).catch(function(){err++;next(i+1);});},800);};next(0);}
 async function deleteSelected(){var ids=Object.keys(SELECTED);if(!ids.length)return toast('Please select recipients first','err');var ok=await showConfirm({icon:'⚠️',title:'Delete '+ids.length+'?',message:'Cannot be undone.',okText:'Delete All'});if(!ok)return;api('/api/recipients/bulk-delete','POST',{ids:ids}).then(function(r){if(r.ok){toast('✅ '+r.deleted+' deleted');clearSelection();loadAll();loadQuickAuto();}});}
 
+// ============ BULK RESEND / SCHEDULE ============
+function openBulkResendModal(){var ids=Object.keys(SELECTED);if(!ids.length)return toast('Please select recipients first','err');BULK_RESEND_FILES={};$('bulkResendInfo').innerHTML='<div><b>'+ids.length+' recipients selected</b></div><div style="margin-top:6px;font-size:11px;color:#fcd34d">⚠️ Sends a NEW email to each. Duplicate check bypassed.</div>';var sel=$('bulkResendTemplateSelect');sel.innerHTML='';if(!TEMPLATES.length){sel.innerHTML='<option value="">(No templates)</option>';}else{TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;sel.appendChild(o);});}$('bulkResendOptSignature').checked=true;$('bulkResendOptLogo').checked=true;$('bulkResendOptAttachments').checked=false;$('bulkResendFilePicker').classList.add('hidden');$('bulkResendBackdrop').classList.remove('hidden');}
+function closeBulkResendModal(){$('bulkResendBackdrop').classList.add('hidden');}
+document.getElementById('bulkResendConfirm').addEventListener('click',function(){var ids=Object.keys(SELECTED);if(!ids.length){closeBulkResendModal();return toast('No recipients selected','err');}var templateId=$('bulkResendTemplateSelect').value;if(!templateId)return toast('Please select a template','err');var attachChecked=$('bulkResendOptAttachments').checked;var payload={recipientIds:ids,templateId:templateId,includeSignature:$('bulkResendOptSignature').checked,includeLogo:$('bulkResendOptLogo').checked,includeAttachments:attachChecked,selectedFileIds:attachChecked?Object.keys(BULK_RESEND_FILES):[]};var btn=this;setBtnLoading(btn,'🔁 Resending...');api('/api/bulk/resend','POST',payload).then(function(r){resetBtn(btn);if(r.ok){toast('✅ '+r.sent+' sent'+(r.duplicatesSkipped?', '+r.duplicatesSkipped+' dup skipped':'')+(r.failed?', '+r.failed+' failed':''));closeBulkResendModal();clearSelection();loadAll();loadMyEmails();loadQuota(true);loadQuickAuto();}else toast('❌ '+(r.error||'Failed'),'err');}).catch(function(){resetBtn(btn);});});
+
+function openBulkScheduleModal(){var ids=Object.keys(SELECTED);if(!ids.length)return toast('Please select recipients first','err');BULK_SCHEDULE_FILES={};BULK_SCHEDULE_HOUR=null;$('bulkScheduleInfo').innerHTML='<div><b>'+ids.length+' recipients selected</b></div><div style="margin-top:6px;font-size:11px;color:#c4b5fd">⏰ Choose an hour — emails go at next occurrence of that hour.</div>';var sel=$('bulkScheduleTemplateSelect');sel.innerHTML='';if(!TEMPLATES.length){sel.innerHTML='<option value="">(No templates)</option>';}else{TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;sel.appendChild(o);});}var hp=$('bulkHourPicker');hp.innerHTML='';for(var h=0;h<24;h++){var btn=document.createElement('div');btn.className='hour-chip'+(h>=12?' pm':'');btn.setAttribute('data-hour',h);btn.innerText=hourLabel(h);btn.onclick=function(){BULK_SCHEDULE_HOUR=parseInt(this.getAttribute('data-hour'),10);document.querySelectorAll('#bulkHourPicker .hour-chip').forEach(function(c){c.classList.remove('active');});this.classList.add('active');};hp.appendChild(btn);}$('bulkScheduleHint').innerHTML='Select an hour — emails will be scheduled for the next occurrence of that hour.';$('bulkScheduleOptSignature').checked=true;$('bulkScheduleOptLogo').checked=true;$('bulkScheduleOptAttachments').checked=false;$('bulkScheduleFilePicker').classList.add('hidden');$('bulkScheduleBackdrop').classList.remove('hidden');}
+function closeBulkScheduleModal(){$('bulkScheduleBackdrop').classList.add('hidden');}
+document.getElementById('bulkScheduleConfirm').addEventListener('click',function(){var ids=Object.keys(SELECTED);if(!ids.length){closeBulkScheduleModal();return toast('No recipients selected','err');}if(BULK_SCHEDULE_HOUR===null||BULK_SCHEDULE_HOUR===undefined)return toast('Please select an hour','err');var templateId=$('bulkScheduleTemplateSelect').value;if(!templateId)return toast('Please select a template','err');var attachChecked=$('bulkScheduleOptAttachments').checked;var payload={recipientIds:ids,templateId:templateId,sendAtHour:BULK_SCHEDULE_HOUR,includeSignature:$('bulkScheduleOptSignature').checked,includeLogo:$('bulkScheduleOptLogo').checked,includeAttachments:attachChecked,selectedFileIds:attachChecked?Object.keys(BULK_SCHEDULE_FILES):[]};var btn=this;setBtnLoading(btn,'⏰ Scheduling...');api('/api/bulk/schedule','POST',payload).then(function(r){resetBtn(btn);if(r.ok){var when=new Date(r.scheduledFor).toLocaleString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,day:'numeric',month:'short'});toast('✅ Scheduled '+r.count+' for '+when);closeBulkScheduleModal();clearSelection();}else toast('❌ '+(r.error||'Failed'),'err');}).catch(function(){resetBtn(btn);});});
+
+function openSchedulesList(){$('schedulesListBackdrop').classList.remove('hidden');$('schedulesListContent').innerHTML='<div class="empty">Loading...</div>';api('/api/bulk/schedules').then(function(r){if(!r.ok){$('schedulesListContent').innerHTML='<div class="empty">Error</div>';return;}var list=r.schedules||[];if(!list.length){$('schedulesListContent').innerHTML='<div class="empty"><div class="ico">⏰</div>No scheduled batches</div>';return;}var h='';list.forEach(function(s){var when=new Date(s.scheduledFor).toLocaleString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,day:'numeric',month:'short'});var status=s.status||'pending';var cls=status==='pending'?'pending-sched':status==='done'?'done-sched':'failed-sched';h+='<div class="schedule-item"><div class="info"><div class="ttl">📅 '+esc(when)+'</div><div class="sub">'+(s.recipientIds||[]).length+' recipients · Sent: '+(s.sentCount||0)+' · Failed: '+(s.failedCount||0)+'</div></div><span class="badge '+cls+'">'+esc(status.toUpperCase())+'</span>';if(status==='pending')h+='<button class="btn danger small" onclick="deleteSchedule(\''+s.id+'\')">✕</button>';h+='</div>';});$('schedulesListContent').innerHTML=h;});}
+function closeSchedulesList(){$('schedulesListBackdrop').classList.add('hidden');}
+async function deleteSchedule(id){var ok=await showConfirm({icon:'🗑',title:'Delete schedule?',message:'',okText:'Delete'});if(!ok)return;api('/api/bulk/schedules/'+id,'DELETE').then(function(r){if(r.ok){toast('✅ Deleted');openSchedulesList();}});}
+
 // ============ EMAIL HISTORY ============
+function onMyEmailSearchChange(){if(myEmailSearchTimer)clearTimeout(myEmailSearchTimer);myEmailSearchTimer=setTimeout(function(){myEmailPage=1;loadMyEmails();},400);}
 function loadMyEmails(){var range=$('myEmailRange')?$('myEmailRange').value:'all';var q=($('myEmailSearch').value||'').trim();var url='/api/my-emails?range='+encodeURIComponent(range)+'&page='+myEmailPage+'&limit='+myEmailPerPage;if(q)url+='&search='+encodeURIComponent(q);api(url).then(function(r){if(!r.ok)return;MY_EMAILS=(r.emails||[]);if(r.pagination){myEmailPage=r.pagination.page;myEmailTotal=r.pagination.total;myEmailTotalPages=r.pagination.totalPages;}renderMyEmails();});}
 function renderMyEmails(){var w=$('myEmailsWrap');if(!MY_EMAILS.length){w.innerHTML='<div class="empty"><div class="ico">📧</div>No email history yet</div>';$('myEmailsPagination').style.display='none';if($('myEmailCount'))$('myEmailCount').innerText='0 shown';return;}if($('myEmailCount'))$('myEmailCount').innerText=MY_EMAILS.length+' shown';var h='<table class="data-table"><thead><tr><th>Type</th><th>Recipient</th><th>Subject</th><th>Sent</th><th>Status</th><th>Clicks</th><th>Files</th></tr></thead><tbody>';MY_EMAILS.forEach(function(e){var st=getEmailStatus(e);var isReply=!!e.isReply;var typeBadge=isReply?'<span class="badge reply-badge">📩</span>':'<span class="badge sent">📤</span>';var clickCell=(e.clickCount>0)?('<span class="badge click">🖱️ '+e.clickCount+'</span>'):'—';var attCell='—';if(e.attachmentNames&&e.attachmentNames.length>0)attCell='<div class="attachment-list">'+e.attachmentNames.map(function(n){return '<span class="attachment-name">📎 '+esc(n)+'</span>';}).join('')+'</div>';else if((e.attachmentsCount||0)>0)attCell='<span class="badge attach">📎 '+e.attachmentsCount+'</span>';h+='<tr><td>'+typeBadge+'</td><td style="word-break:break-all;font-size:11px">'+esc(e.recipientEmail)+'</td><td style="font-size:11px">'+esc(e.subject||'—')+'</td><td style="font-size:10px">'+fmtDate(e.sentAt)+'</td><td><span class="badge '+st.cls+'">'+st.icon+' '+st.lbl+'</span></td><td>'+clickCell+'</td><td>'+attCell+'</td></tr>';});h+='</tbody></table>';w.innerHTML=h;if(myEmailTotalPages>1){$('myEmailsPagination').style.display='flex';$('myEmailsPageInfo').innerText='Page '+myEmailPage+' of '+myEmailTotalPages+' ('+myEmailTotal+' total)';$('myEmailsPrevBtn').disabled=myEmailPage<=1;$('myEmailsNextBtn').disabled=myEmailPage>=myEmailTotalPages;}else $('myEmailsPagination').style.display='none';}
 function loadPrefs(){api('/api/prefs').then(function(r){if(!r.ok)return;});}
