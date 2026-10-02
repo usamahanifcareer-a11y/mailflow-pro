@@ -19,11 +19,15 @@ const DEFAULT_SEND_DELAY = 20;
 const IS_VERCEL = !!process.env.VERCEL;
 const CRON_SECRET = process.env.CRON_SECRET || '';
 const BACKEND_URL = process.env.BACKEND_URL || 'https://mailflowpro.dpdns.org';
-const APP_VERSION = '2.0.6';
+const APP_VERSION = '2.0.8';
 const OCR_SPACE_API_KEY = process.env.OCR_SPACE_API_KEY || 'helloworld';
 const OCR_FREE_MONTHLY_LIMIT = 25000;
 
-const TRACK_EARLY_PREFETCH_MS = 30 * 1000;
+// ==== TRACKING WINDOWS ====
+// Early prefetch: Gmail prefetches pixel within this window — ignore
+const TRACK_EARLY_PREFETCH_MS = 90 * 1000; // was 60s, now 90s
+// Sender activity window: if sender is actively using MailFlow, ignore proxy hits
+const TRACK_SENDER_ACTIVE_MS = 10 * 60 * 1000; // 10 minutes
 const DUPLICATE_SEND_WINDOW_MS = 90 * 1000;
 const AUTO_SEND_LOCK_MS = 55 * 60 * 1000;
 
@@ -91,6 +95,30 @@ function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 function safeParseJSON(text){if(!text)return null;let c=text.trim().replace(/^```(?:json)?\s*/i,'').replace(/```\s*$/i,'').trim();const fb=c.indexOf('{'),lb=c.lastIndexOf('}');if(fb===-1||lb===-1)return null;try{return JSON.parse(c.substring(fb,lb+1));}catch(e){return null;}}
 async function fetchWithTimeout(url,opts,ms){const ctrl=new AbortController();const t=setTimeout(()=>ctrl.abort(),ms||20000);try{const r=await fetch(url,{...opts,signal:ctrl.signal});clearTimeout(t);return r;}catch(e){clearTimeout(t);throw e;}}
 
+// ============================================================
+// FIX #3: Reply threading — normalize message IDs properly
+// ============================================================
+function normalizeMessageId(id){
+  if(!id)return '';
+  var s=String(id).trim();
+  if(!s)return '';
+  // Strip any whitespace/newlines
+  s = s.replace(/[\r\n\t]+/g, ' ').trim();
+  // Take only the first message ID if multiple
+  var match = s.match(/<[^>]+>/g);
+  if (match && match.length > 0) return match[0];
+  // No angle brackets — add them
+  if(s.charAt(0)!=='<')s='<'+s;
+  if(s.charAt(s.length-1)!=='>')s=s+'>';
+  return s;
+}
+function normalizeReferences(refs){
+  if(!refs)return '';
+  var str = Array.isArray(refs) ? refs.join(' ') : String(refs);
+  var match = str.match(/<[^>]+>/g) || [];
+  return match.map(function(m){return m.trim();}).filter(Boolean).join(' ');
+}
+
 function replaceInlineLogoWithPublicUrl(html, uid){if(!html||!uid)return html;try{return html.replace(/src\s*=\s*["']data:image\/[^;]+;base64,[^"']+["']/gi, 'src="' + BACKEND_URL + '/logo/' + uid + '"');}catch(e){return html;}}
 function rewriteLinksForTracking(html, logId, uid, token){if(!html||!logId||!uid||!token)return html;try{return html.replace(/href\s*=\s*["'](https?:\/\/[^"']+)["']/gi,function(match,url){try{const enc=Buffer.from(url,'utf8').toString('base64url');return 'href="'+BACKEND_URL+'/click/'+logId+'?u='+uid+'&t='+token+'&url='+enc+'"';}catch(e){return match;}});}catch(e){return html;}}
 function stripSignature(text){if(!text)return text;let t=String(text).trim();const lines=t.split('\n');while(lines.length>0&&!lines[lines.length-1].trim())lines.pop();if(lines.length<2)return t;const closer=/^(best regards|regards|sincerely|thank you|thanks|warm regards|kind regards|cheers|warmly|yours truly|yours faithfully|respectfully|all the best|best|thankyou|thanks & regards)[,.!\s]*$/i;const last=lines[lines.length-1].trim();const sec=lines.length>=2?lines[lines.length-2].trim():'';if(closer.test(last))return lines.slice(0,-1).join('\n').trim();if(lines.length>=3&&closer.test(sec))return lines.slice(0,-2).join('\n').trim();return t;}
@@ -115,6 +143,24 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map(x => 
 app.use(cors({origin:function(origin,cb){if(!origin)return cb(null,true);if(ALLOWED_ORIGINS.length===0)return cb(null,true);if(ALLOWED_ORIGINS.indexOf(origin)!==-1)return cb(null,true);cb(null,false);},credentials:true}));
 app.use(express.json({limit:'12mb'}));
 app.use(cookieSession({name:'mf_session',keys:[process.env.SESSION_SECRET || 'fallback-secret-change-me'],maxAge:SESSION_DAYS_LONG*24*60*60*1000,secure:IS_VERCEL,sameSite:IS_VERCEL?'none':'lax',httpOnly:true,signed:true,overwrite:true}));
+
+// ==== ACTIVITY TRACKER MIDDLEWARE ====
+// Fires on every authenticated request — updates lastActivityAt/lastIP/lastUA
+app.use((req, res, next) => {
+  if (req.session && req.session.user && req.session.user.id) {
+    const uid = req.session.user.id;
+    const ip = getClientIP(req);
+    const ua = String(req.headers['user-agent'] || '').substring(0, 300);
+    // Fire and forget — don't await
+    db.collection('users').doc(uid).set({
+      lastActivityAt: new Date(),
+      lastIP: ip,
+      lastUserAgent: ua
+    }, { merge: true }).catch(() => {});
+  }
+  next();
+});
+
 app.use(express.static(path.join(__dirname,'public')));
 app.get('/privacy',(req,res)=>res.sendFile(path.join(__dirname,'public','privacy.html')));
 app.get('/terms',(req,res)=>res.sendFile(path.join(__dirname,'public','terms.html')));
@@ -219,7 +265,7 @@ async function fetchImapEmails(email, appPassword, options) {
             const subj = env.subject || '(no subject)';
             const dt = env.date ? new Date(env.date).toISOString() : new Date().toISOString();
             const flags = m.flags || new Set();
-            emails.push({ uid: m.uid, seq: m.seq, messageId: env.messageId || '', from: fromAddr, fromName: fromName || fromAddr, to: toAddr, replyTo: replyToAddr, subject: subj, date: dt, snippet: '', category: localCategorize(fromAddr, subj, ''), folder: folder, isRead: flags.has('\\Seen'), attachments: [] });
+            emails.push({ uid: m.uid, seq: m.seq, messageId: normalizeMessageId(env.messageId || ''), from: fromAddr, fromName: fromName || fromAddr, to: toAddr, replyTo: replyToAddr, subject: subj, date: dt, snippet: '', category: localCategorize(fromAddr, subj, ''), folder: folder, isRead: flags.has('\\Seen'), attachments: [] });
           } catch (pe) { }
         }
       }
@@ -237,7 +283,19 @@ async function fetchImapBody(email, appPassword, folder, uid) {
     const msg = await client.fetchOne(String(uid), { source: true }, { uid: true });
     if (!msg || !msg.source) { await client.logout(); return { ok: false, error: 'Email not found' }; }
     const parsed = await simpleParser(msg.source);
-    const body = { textBody: (parsed.text || '').substring(0, 15000), htmlBody: (parsed.html || '').substring(0, 40000), snippet: (parsed.text || '').substring(0, 200).replace(/\s+/g, ' '), messageId: parsed.messageId || '', inReplyTo: parsed.inReplyTo || '', references: Array.isArray(parsed.references) ? parsed.references.join(' ') : (parsed.references || ''), replyTo: parsed.replyTo ? parsed.replyTo.text : '', to: parsed.to ? parsed.to.text : '', from: parsed.from ? parsed.from.text : '', cc: parsed.cc ? parsed.cc.text : '', attachments: (parsed.attachments || []).map(a => ({ filename: a.filename || 'attachment', size: a.size || 0, contentType: a.contentType || 'application/octet-stream' })) };
+    const body = {
+      textBody: (parsed.text || '').substring(0, 15000),
+      htmlBody: (parsed.html || '').substring(0, 40000),
+      snippet: (parsed.text || '').substring(0, 200).replace(/\s+/g, ' '),
+      messageId: normalizeMessageId(parsed.messageId || ''),
+      inReplyTo: normalizeMessageId(parsed.inReplyTo || ''),
+      references: normalizeReferences(parsed.references),
+      replyTo: parsed.replyTo ? parsed.replyTo.text : '',
+      to: parsed.to ? parsed.to.text : '',
+      from: parsed.from ? parsed.from.text : '',
+      cc: parsed.cc ? parsed.cc.text : '',
+      attachments: (parsed.attachments || []).map(a => ({ filename: a.filename || 'attachment', size: a.size || 0, contentType: a.contentType || 'application/octet-stream' }))
+    };
     await client.logout();
     return { ok: true, body };
   } catch (e) { try { await client.close(); } catch (err) { } return { ok: false, error: e.message }; }
@@ -286,7 +344,7 @@ async function fetchImapSentForRecipient(email, appPassword, recipientEmail, max
         const ccAddrs = (env.cc || []).map(x => (x.address || '').toLowerCase().trim());
         if (!toAddrs.includes(target) && !ccAddrs.includes(target)) continue;
         const flags = msg.flags || new Set();
-        results.push({ uid: msg.uid, messageId: env.messageId || '', subject: env.subject || '(no subject)', date: env.date ? new Date(env.date).toISOString() : null, from: env.from && env.from[0] ? env.from[0].address : email, to: env.to && env.to[0] ? env.to[0].address : '', isRead: flags.has('\\Seen'), source: 'gmail_imap' });
+        results.push({ uid: msg.uid, messageId: normalizeMessageId(env.messageId || ''), subject: env.subject || '(no subject)', date: env.date ? new Date(env.date).toISOString() : null, from: env.from && env.from[0] ? env.from[0].address : email, to: env.to && env.to[0] ? env.to[0].address : '', isRead: flags.has('\\Seen'), source: 'gmail_imap' });
       } catch (e) { }
     }
     await client.logout();
@@ -359,6 +417,9 @@ async function extractCvFromBuffer(buf, filename, mimeType) {
 
 app.get('/api/health', (req, res) => res.json({ ok: true, vercel: IS_VERCEL, version: APP_VERSION, method: 'smtp', earlyPrefetchMs: TRACK_EARLY_PREFETCH_MS, duplicateWindowMs: DUPLICATE_SEND_WINDOW_MS }));
 
+// ============================================================
+// FIX #1: TRACKING with STRONG self-open protection
+// ============================================================
 app.get('/track/:id', async (req, res) => {
   const px = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
   res.set('Content-Type', 'image/gif');
@@ -370,13 +431,58 @@ app.get('/track/:id', async (req, res) => {
     const t = String(req.query.t || '');
     const type = String(req.query.type || '');
     if (!u || !t || !req.params.id) return res.send(px);
+
+    // ==== SELF-OPEN PROTECTION LAYER 1: Sender's session cookie ====
+    try {
+      if (req.session && req.session.user && req.session.user.id === u) {
+        return res.send(px);
+      }
+    } catch(e) {}
+
+    // ==== Load sender data ====
+    let senderData = null;
+    try {
+      const uSnap = await db.collection('users').doc(u).get();
+      if (uSnap.exists) senderData = uSnap.data();
+    } catch(e) {}
+
+    const clientIP = getClientIP(req);
+    const clientUA = String(req.headers['user-agent'] || '');
+    const ref = String(req.headers['referer'] || req.headers['referrer'] || '');
+
+    if (senderData) {
+      const senderLastIP = senderData.lastIP || null;
+      const senderLastUA = senderData.lastUserAgent || null;
+      const senderLastActivity = toMs(senderData.lastActivityAt);
+
+      // ==== LAYER 2: IP match → sender viewing their own email ====
+      // If request IP matches sender's IP exactly, it's definitely the sender
+      if (senderLastIP && clientIP && clientIP === senderLastIP) {
+        return res.send(px);
+      }
+
+      // ==== LAYER 3: Referrer from our own domain → MailFlow preview ====
+      if (ref && ref.indexOf(BACKEND_URL) !== -1) {
+        return res.send(px);
+      }
+
+      // ==== LAYER 4: Google proxy + sender recently active → likely self-view ====
+      // If sender used MailFlow in last 10 min, and Google proxy hits now, it's likely
+      // them opening their Sent folder in Gmail web
+      const isProxy = isGoogleProxy(req);
+      if (isProxy && senderLastActivity && (Date.now() - senderLastActivity) < TRACK_SENDER_ACTIVE_MS) {
+        return res.send(px);
+      }
+    }
+
     const realBrowser = isRealBrowser(req);
     const googleProxy = isGoogleProxy(req);
     const otherBot = isOtherKnownBot(req);
+
     if (type === 'test') {
       if (otherBot && !realBrowser && !googleProxy) return res.send(px);
-      const ref = db.collection('users').doc(u).collection('testRecipients').doc(req.params.id);
-      const r = await ref.get();
+      const ref2 = db.collection('users').doc(u).collection('testRecipients').doc(req.params.id);
+      const r = await ref2.get();
       if (!r.exists || r.data().trackToken !== t) return res.send(px);
       const sentAt = toMs(r.data().sentAt);
       const sinceSend = Date.now() - sentAt;
@@ -384,9 +490,10 @@ app.get('/track/:id', async (req, res) => {
       const now = new Date();
       const update = { lastOpenAt: now, bumpAt: now };
       if (r.data().status !== 'Opened') { update.status = 'Opened'; update.openedAt = now; update.everOpened = true; }
-      await ref.set(update, { merge: true });
+      await ref2.set(update, { merge: true });
       return res.send(px);
     }
+
     const logRef = db.collection('users').doc(u).collection('emailLog').doc(req.params.id);
     const r = await logRef.get();
     if (!r.exists) return res.send(px);
@@ -435,8 +542,23 @@ app.get('/click/:id', async (req, res) => {
     if (enc) { try { redirectUrl = Buffer.from(enc, 'base64url').toString('utf8'); } catch(e){} }
     if (!/^https?:\/\//i.test(redirectUrl)) redirectUrl = BACKEND_URL;
     if (!u || !t || !req.params.id) return res.redirect(302, redirectUrl);
+
+    // Self-click protection
+    try { if (req.session && req.session.user && req.session.user.id === u) return res.redirect(302, redirectUrl); } catch(e){}
+
+    // IP-based self-click protection
+    try {
+      const uSnap = await db.collection('users').doc(u).get();
+      if (uSnap.exists) {
+        const ud = uSnap.data();
+        const clientIP = getClientIP(req);
+        if (ud.lastIP && clientIP === ud.lastIP) return res.redirect(302, redirectUrl);
+      }
+    } catch(e){}
+
     const otherBot = isOtherKnownBot(req);
     if (otherBot && !isRealBrowser(req)) return res.redirect(302, redirectUrl);
+
     const logRef = db.collection('users').doc(u).collection('emailLog').doc(req.params.id);
     const r = await logRef.get();
     if (!r.exists) return res.redirect(302, redirectUrl);
@@ -526,7 +648,8 @@ app.post('/api/auth/register', rateLimit(15*60*1000, 10, (req) => getClientIP(re
     if (existing.exists && existing.data().passwordHash) return res.json({ ok: false, error: 'This email is already registered. Please login instead.' });
     const { hash, salt } = hashPassword(password);
     const now = new Date();
-    const data = { email: emailLower, emailNormalized: normalized, name: String(name).substring(0, 100), passwordHash: hash, passwordSalt: salt, authType: 'email', createdAt: now, updatedAt: now, lastLogin: now, lastIP: ip, firstIP: ip, quietEnabled: false, quietStart: 22, quietEnd: 7, autoSend: false, autoSendBatchSize: 5, autoSendTemplateId: '', autoSendFileIds: [], autoSendIncludeLogo: true, autoSendIncludeSignature: true, autoSendIncludeAttachments: false, signature: '', logoUrl: '', logoUrlAlt: '', logoFileId: null, sigFields: {}, appAccountId: generateAppAccountId(), lastAutoSendRun: null, totalAutoSent: 0, lastSendTime: null, dailyLimit: DEFAULT_DAILY_LIMIT, sendDelay: DEFAULT_SEND_DELAY, imapEnabled: false, imapAppPassword: null, aiProfile: {}, profilePicture: '', smtpEnabled: false, smtpAppPassword: null, preferences: { language: 'en', timezone: 'Asia/Karachi', dateFormat: 'DD/MM/YYYY', timeFormat: '12h' } };
+    const ua = String(req.headers['user-agent'] || '').substring(0, 300);
+    const data = { email: emailLower, emailNormalized: normalized, name: String(name).substring(0, 100), passwordHash: hash, passwordSalt: salt, authType: 'email', createdAt: now, updatedAt: now, lastLogin: now, lastIP: ip, firstIP: ip, lastUserAgent: ua, lastActivityAt: now, quietEnabled: false, quietStart: 22, quietEnd: 7, autoSend: false, autoSendBatchSize: 5, autoSendTemplateId: '', autoSendFileIds: [], autoSendIncludeLogo: true, autoSendIncludeSignature: true, autoSendIncludeAttachments: false, signature: '', logoUrl: '', logoUrlAlt: '', logoFileId: null, sigFields: {}, appAccountId: generateAppAccountId(), lastAutoSendRun: null, totalAutoSent: 0, lastSendTime: null, dailyLimit: DEFAULT_DAILY_LIMIT, sendDelay: DEFAULT_SEND_DELAY, imapEnabled: false, imapAppPassword: null, aiProfile: {}, profilePicture: '', smtpEnabled: false, smtpAppPassword: null, preferences: { language: 'en', timezone: 'Asia/Karachi', dateFormat: 'DD/MM/YYYY', timeFormat: '12h' } };
     if (existing.exists) { const ex = existing.data(); if (ex.appAccountId) data.appAccountId = ex.appAccountId; data.createdAt = ex.createdAt || now; if (ex.smtpAppPassword) data.smtpAppPassword = ex.smtpAppPassword; if (ex.smtpEnabled) data.smtpEnabled = ex.smtpEnabled; if (ex.imapAppPassword) data.imapAppPassword = ex.imapAppPassword; if (ex.imapEnabled) data.imapEnabled = ex.imapEnabled; }
     await db.collection('users').doc(uid).set(data, { merge: true });
     req.session.user = { id: uid, email: emailLower, name: data.name, picture: '', appAccountId: data.appAccountId, isAdmin: emailLower === ADMIN_EMAIL };
@@ -554,7 +677,8 @@ app.post('/api/auth/login', rateLimit(15*60*1000, 10, (req) => getClientIP(req))
     const ip = getClientIP(req);
     const ipBanned = await db.collection('bannedUsers').where('ip', '==', ip).limit(1).get();
     if (!ipBanned.empty) return res.json({ ok: false, error: 'IP suspended', banned: true });
-    await db.collection('users').doc(uid).update({ lastLogin: new Date(), lastIP: ip, emailNormalized: normalized });
+    const ua = String(req.headers['user-agent'] || '').substring(0, 300);
+    await db.collection('users').doc(uid).update({ lastLogin: new Date(), lastIP: ip, lastUserAgent: ua, lastActivityAt: new Date(), emailNormalized: normalized });
     const sessionDays = remember ? SESSION_DAYS_LONG : SESSION_DAYS_SHORT;
     req.sessionOptions.maxAge = sessionDays * 24 * 60 * 60 * 1000;
     req.session.remember = !!remember;
@@ -710,6 +834,9 @@ app.delete('/api/imap/email/:id', authRequired, async (req, res) => {
   try { await db.collection('users').doc(req.session.user.id).collection('imapEmails').doc(req.params.id).delete(); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+// ============================================================
+// FIX #3: REPLY with PROPER threading — Gmail will put in same thread
+// ============================================================
 app.post('/api/inbox/reply', authRequired, rateLimit(60*1000, 30, null), async (req, res) => {
   try {
     const { to, subject, body, inReplyTo, references, includeSignature, includeLogo, includeAttachments, selectedFileIds } = req.body;
@@ -738,20 +865,110 @@ app.post('/api/inbox/reply', authRequired, rateLimit(60*1000, 30, null), async (
     const bodyHtml = body.replace(/\n/g, '<br>');
     const fullHtml = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">' + bodyHtml + sigHtml + '</div>';
     const sendTrackToken = crypto.randomBytes(16).toString('hex');
-    const logRef = await db.collection('users').doc(uid).collection('emailLog').add({ recipientId: null, recipientEmail: to, company: '', subject: sanitizeSubject(subject), sentAt: new Date(), attachmentsCount: atts.length, attachmentNames: attNames, aiPrediction: 'GOOD', aiScore: 20, aiInboxProb: 80, sendTrackToken, openedAt: null, hasSignature: hasSignature, templateName: '', isReply: true, inReplyTo: inReplyTo || '' });
+
+    // ==== THREADING FIX ====
+    // Normalize incoming message IDs — MUST have angle brackets
+    const normalizedInReplyTo = normalizeMessageId(inReplyTo);
+    let normalizedRefs = '';
+    if (references) {
+      normalizedRefs = normalizeReferences(references);
+    }
+    // If we have inReplyTo but no references, use inReplyTo as reference
+    if (!normalizedRefs && normalizedInReplyTo) {
+      normalizedRefs = normalizedInReplyTo;
+    }
+    // If we have references but no inReplyTo, use last reference as inReplyTo
+    let finalInReplyTo = normalizedInReplyTo;
+    if (!finalInReplyTo && normalizedRefs) {
+      const refList = normalizedRefs.split(/\s+/).filter(Boolean);
+      if (refList.length > 0) finalInReplyTo = refList[refList.length - 1];
+    }
+
+    // Ensure subject starts with "Re:" for Gmail threading
+    let cleanSubject = sanitizeSubject(subject);
+    if (!/^re:/i.test(cleanSubject)) {
+      cleanSubject = 'Re: ' + cleanSubject;
+    }
+
+    // Log entry
+    const logRef = await db.collection('users').doc(uid).collection('emailLog').add({
+      recipientId: null,
+      recipientEmail: to,
+      company: '',
+      subject: cleanSubject,
+      sentAt: new Date(),
+      attachmentsCount: atts.length,
+      attachmentNames: attNames,
+      aiPrediction: 'GOOD',
+      aiScore: 20,
+      aiInboxProb: 80,
+      sendTrackToken,
+      openedAt: null,
+      hasSignature: hasSignature,
+      templateName: '',
+      isReply: true,
+      inReplyTo: finalInReplyTo,
+      references: normalizedRefs
+    });
     const logId = logRef.id;
     const trackUrl = BACKEND_URL + '/track/' + logId + '?u=' + uid + '&t=' + sendTrackToken;
     const pix = '<img src="' + trackUrl + '" width="1" height="1" alt="" style="border:0;display:block;width:1px;height:1px">';
     const withClickLinks = rewriteLinksForTracking(fullHtml, logId, uid, sendTrackToken);
     const finalHtml = withClickLinks + pix;
-    const mailOptions = { from: '"' + (u.name || 'User') + '" <' + req.session.user.email + '>', to, subject: sanitizeSubject(subject), html: finalHtml };
-    if (inReplyTo) mailOptions.inReplyTo = inReplyTo;
-    if (references) mailOptions.references = references;
+
+    const uniqueEntityId = crypto.randomBytes(12).toString('hex');
+
+    // Build headers — CRITICAL for threading
+    const headers = {
+      'X-Entity-Ref-ID': uniqueEntityId
+    };
+    if (finalInReplyTo) {
+      headers['In-Reply-To'] = finalInReplyTo;
+    }
+    if (normalizedRefs) {
+      headers['References'] = normalizedRefs;
+    }
+
+    const mailOptions = {
+      from: '"' + (u.name || 'User') + '" <' + req.session.user.email + '>',
+      to: to,
+      subject: cleanSubject,
+      html: finalHtml,
+      headers: headers
+    };
+
+    // Also set nodemailer properties (belt and suspenders)
+    if (finalInReplyTo) {
+      mailOptions.inReplyTo = finalInReplyTo;
+    }
+    if (normalizedRefs) {
+      mailOptions.references = normalizedRefs;
+    }
+
     if (atts.length > 0) mailOptions.attachments = atts;
+
     const info = await transporter.sendMail(mailOptions);
     cacheDel('quota:' + uid); cacheDel('stats:' + uid);
-    await db.collection('users').doc(uid).collection('replyLog').add({ to, subject, body, sentAt: new Date(), messageId: info.messageId || '', inReplyTo: inReplyTo || '', references: references || '', logId: logId, attachmentNames: attNames });
-    res.json({ ok: true, id: info.messageId, logId: logId, hasSignature: hasSignature, attachmentsCount: atts.length });
+    await db.collection('users').doc(uid).collection('replyLog').add({
+      to,
+      subject: cleanSubject,
+      body,
+      sentAt: new Date(),
+      messageId: info.messageId || '',
+      inReplyTo: finalInReplyTo,
+      references: normalizedRefs,
+      logId: logId,
+      attachmentNames: attNames
+    });
+    res.json({
+      ok: true,
+      id: info.messageId,
+      logId: logId,
+      hasSignature: hasSignature,
+      attachmentsCount: atts.length,
+      threadedAs: finalInReplyTo ? 'reply' : 'new',
+      inReplyTo: finalInReplyTo
+    });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -893,7 +1110,6 @@ app.delete('/api/templates/:id', authRequired, async (req, res) => {
   try { await db.collection('users').doc(req.session.user.id).collection('templates').doc(req.params.id).delete(); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ==== FIXED RECIPIENTS: page 2 empty bug fixed (fetch-all + in-memory sort handles missing bumpAt) ====
 app.get('/api/recipients', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -965,7 +1181,6 @@ app.post('/api/recipients/bulk-delete', authRequired, async (req, res) => {
   try { const { ids } = req.body; if (!ids || !ids.length) return res.json({ ok: false }); const b = db.batch(); const r = db.collection('users').doc(req.session.user.id).collection('recipients'); ids.forEach(id => b.delete(r.doc(id))); await b.commit(); cacheDel('recipients:' + req.session.user.id); cacheDel('stats:' + req.session.user.id); res.json({ ok: true, deleted: ids.length }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ==== FAST RECIPIENT HISTORY: cached Gmail IMAP + parallel fetch ====
 app.get('/api/recipient/:id/history', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -1211,98 +1426,6 @@ app.get('/api/my-emails', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ==== BULK OPTIONS: get templates + files list for bulk resend modal ====
-app.get('/api/bulk/options', authRequired, async (req, res) => {
-  try {
-    const uid = req.session.user.id;
-    const [templatesSnap, filesSnap] = await Promise.all([
-      db.collection('users').doc(uid).collection('templates').get(),
-      db.collection('users').doc(uid).collection('files').get()
-    ]);
-    const templates = []; templatesSnap.forEach(d => templates.push({ id: d.id, name: d.data().name, subject: d.data().subject }));
-    const files = []; filesSnap.forEach(d => { const f = d.data(); files.push({ id: d.id, name: f.name, size: f.size, mimeType: f.mimeType }); });
-    res.json({ ok: true, templates, files });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-
-// ==== BULK RESEND with FULL OPTIONS: template + signature + logo + files ====
-app.post('/api/bulk/resend', authRequired, rateLimit(60*1000, 10, null), async (req, res) => {
-  try {
-    const uid = req.session.user.id;
-    const ue = req.session.user.email;
-    const { recipientIds, templateId, includeSignature, includeLogo, includeAttachments, selectedFileIds } = req.body || {};
-    if (!Array.isArray(recipientIds) || !recipientIds.length) return res.json({ ok: false, error: 'No recipients selected' });
-    if (!templateId) return res.json({ ok: false, error: 'Template required' });
-    let sent = 0, failed = 0, dupSkipped = 0, limitReached = false;
-    const errors = [];
-    for (let i = 0; i < recipientIds.length; i++) {
-      try {
-        await sendOne(uid, ue, recipientIds[i], {
-          force: true, skipDelay: true, forceResend: true,
-          includeSignature: includeSignature !== false,
-          includeLogo: includeLogo !== false,
-          includeAttachments: includeAttachments === true,
-          selectedFileIds: Array.isArray(selectedFileIds) ? selectedFileIds : [],
-          templateId: templateId
-        });
-        sent++;
-        if (i < recipientIds.length - 1) await sleep(600);
-      } catch (err) {
-        if (err.code === 'DAILY_LIMIT_REACHED') { limitReached = true; break; }
-        if (err.code === 'DUPLICATE_SEND_SKIP') { dupSkipped++; continue; }
-        failed++; errors.push({ id: recipientIds[i], error: err.message });
-      }
-    }
-    res.json({ ok: true, sent, failed, duplicatesSkipped: dupSkipped, total: recipientIds.length, limitReached, errors: errors.slice(0, 5) });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-
-// ==== BULK SCHEDULE: schedule bulk send at specific hour (7, 8, 9...) ====
-app.post('/api/bulk/schedule', authRequired, rateLimit(60*1000, 20, null), async (req, res) => {
-  try {
-    const uid = req.session.user.id;
-    const { recipientIds, templateId, includeSignature, includeLogo, includeAttachments, selectedFileIds, sendAtHour } = req.body || {};
-    if (!Array.isArray(recipientIds) || !recipientIds.length) return res.json({ ok: false, error: 'No recipients selected' });
-    if (!templateId) return res.json({ ok: false, error: 'Template required' });
-    const hour = parseInt(sendAtHour, 10);
-    if (isNaN(hour) || hour < 0 || hour > 23) return res.json({ ok: false, error: 'Invalid hour (0-23)' });
-    const now = new Date();
-    const target = new Date(now);
-    target.setHours(hour, 0, 0, 0);
-    if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 1);
-    const schedRef = db.collection('users').doc(uid).collection('scheduledBatches').doc();
-    await schedRef.set({
-      userId: uid,
-      recipientIds,
-      templateId,
-      includeSignature: includeSignature !== false,
-      includeLogo: includeLogo !== false,
-      includeAttachments: includeAttachments === true,
-      selectedFileIds: Array.isArray(selectedFileIds) ? selectedFileIds : [],
-      sendAtHour: hour,
-      scheduledFor: target,
-      status: 'pending',
-      createdAt: new Date(),
-      sentCount: 0,
-      failedCount: 0
-    });
-    res.json({ ok: true, id: schedRef.id, scheduledFor: target.toISOString(), count: recipientIds.length, hour });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-
-app.get('/api/bulk/schedules', authRequired, async (req, res) => {
-  try {
-    const snap = await db.collection('users').doc(req.session.user.id).collection('scheduledBatches').orderBy('createdAt', 'desc').limit(50).get();
-    const list = []; snap.forEach(d => list.push(Object.assign({ id: d.id }, d.data())));
-    res.json({ ok: true, schedules: list });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-
-app.delete('/api/bulk/schedules/:id', authRequired, async (req, res) => {
-  try { await db.collection('users').doc(req.session.user.id).collection('scheduledBatches').doc(req.params.id).delete(); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-
-// ==== SEND with THREADING FIX (X-Entity-Ref-ID unique per send) ====
 async function sendOne(userId, userEmail, recipientId, options) {
   options = options || {};
   const u = await getUserData(userId);
@@ -1367,7 +1490,9 @@ async function sendOne(userId, userEmail, recipientId, options) {
   if (atts.length > 0) mailOptions.attachments = atts;
   await transporter.sendMail(mailOptions);
   const everOpenedFlag = rec.everOpened === true || rec.status === 'Opened';
-  await db.collection('users').doc(userId).collection('recipients').doc(recipientId).update({ status: 'Sent', lastSentAt: now, sentAt: now, everOpened: everOpenedFlag, bumpAt: now, sendCount: FieldValue.increment(1) });
+  const recUpdate = { status: 'Sent', lastSentAt: now, sentAt: now, everOpened: everOpenedFlag, bumpAt: now, sendCount: FieldValue.increment(1) };
+  if (rec.status === 'Opened') recUpdate.status = 'Opened';
+  await db.collection('users').doc(userId).collection('recipients').doc(recipientId).update(recUpdate);
   await db.collection('users').doc(userId).update({ lastSendTime: now });
   const todayKey = new Date().toISOString().split('T')[0];
   const sr = db.collection('users').doc(userId).collection('stats').doc(todayKey);
@@ -1418,7 +1543,6 @@ async function runAutoSend(uid, ue, ud) {
   return { sent: s, failed: f, duplicatesSkipped: dup };
 }
 
-// ==== SCHEDULED BATCH RUNNER: process scheduledBatches due now (called from cron) ====
 async function runScheduledBatches() {
   const results = [];
   try {
@@ -1485,7 +1609,6 @@ app.post('/api/auto-send-check', authRequired, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ==== SCHEDULED CHECK: user-side manual trigger for pending schedules ====
 app.post('/api/scheduled/check', authRequired, async (req, res) => {
   try {
     const uid = req.session.user.id;
@@ -1536,6 +1659,94 @@ app.get('/api/quota', authRequired, async (req, res) => {
     cacheSet(ck, out, CACHE_TTL.quota);
     res.json(out);
   } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/bulk/options', authRequired, async (req, res) => {
+  try {
+    const uid = req.session.user.id;
+    const [templatesSnap, filesSnap] = await Promise.all([
+      db.collection('users').doc(uid).collection('templates').get(),
+      db.collection('users').doc(uid).collection('files').get()
+    ]);
+    const templates = []; templatesSnap.forEach(d => templates.push({ id: d.id, name: d.data().name, subject: d.data().subject }));
+    const files = []; filesSnap.forEach(d => { const f = d.data(); files.push({ id: d.id, name: f.name, size: f.size, mimeType: f.mimeType }); });
+    res.json({ ok: true, templates, files });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/bulk/resend', authRequired, rateLimit(60*1000, 10, null), async (req, res) => {
+  try {
+    const uid = req.session.user.id;
+    const ue = req.session.user.email;
+    const { recipientIds, templateId, includeSignature, includeLogo, includeAttachments, selectedFileIds } = req.body || {};
+    if (!Array.isArray(recipientIds) || !recipientIds.length) return res.json({ ok: false, error: 'No recipients selected' });
+    if (!templateId) return res.json({ ok: false, error: 'Template required' });
+    let sent = 0, failed = 0, dupSkipped = 0, limitReached = false;
+    const errors = [];
+    for (let i = 0; i < recipientIds.length; i++) {
+      try {
+        await sendOne(uid, ue, recipientIds[i], {
+          force: true, skipDelay: true, forceResend: true,
+          includeSignature: includeSignature !== false,
+          includeLogo: includeLogo !== false,
+          includeAttachments: includeAttachments === true,
+          selectedFileIds: Array.isArray(selectedFileIds) ? selectedFileIds : [],
+          templateId: templateId
+        });
+        sent++;
+        if (i < recipientIds.length - 1) await sleep(600);
+      } catch (err) {
+        if (err.code === 'DAILY_LIMIT_REACHED') { limitReached = true; break; }
+        if (err.code === 'DUPLICATE_SEND_SKIP') { dupSkipped++; continue; }
+        failed++; errors.push({ id: recipientIds[i], error: err.message });
+      }
+    }
+    res.json({ ok: true, sent, failed, duplicatesSkipped: dupSkipped, total: recipientIds.length, limitReached, errors: errors.slice(0, 5) });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/bulk/schedule', authRequired, rateLimit(60*1000, 20, null), async (req, res) => {
+  try {
+    const uid = req.session.user.id;
+    const { recipientIds, templateId, includeSignature, includeLogo, includeAttachments, selectedFileIds, sendAtHour } = req.body || {};
+    if (!Array.isArray(recipientIds) || !recipientIds.length) return res.json({ ok: false, error: 'No recipients selected' });
+    if (!templateId) return res.json({ ok: false, error: 'Template required' });
+    const hour = parseInt(sendAtHour, 10);
+    if (isNaN(hour) || hour < 0 || hour > 23) return res.json({ ok: false, error: 'Invalid hour (0-23)' });
+    const now = new Date();
+    const target = new Date(now);
+    target.setHours(hour, 0, 0, 0);
+    if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 1);
+    const schedRef = db.collection('users').doc(uid).collection('scheduledBatches').doc();
+    await schedRef.set({
+      userId: uid,
+      recipientIds,
+      templateId,
+      includeSignature: includeSignature !== false,
+      includeLogo: includeLogo !== false,
+      includeAttachments: includeAttachments === true,
+      selectedFileIds: Array.isArray(selectedFileIds) ? selectedFileIds : [],
+      sendAtHour: hour,
+      scheduledFor: target,
+      status: 'pending',
+      createdAt: new Date(),
+      sentCount: 0,
+      failedCount: 0
+    });
+    res.json({ ok: true, id: schedRef.id, scheduledFor: target.toISOString(), count: recipientIds.length, hour });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/bulk/schedules', authRequired, async (req, res) => {
+  try {
+    const snap = await db.collection('users').doc(req.session.user.id).collection('scheduledBatches').orderBy('createdAt', 'desc').limit(50).get();
+    const list = []; snap.forEach(d => list.push(Object.assign({ id: d.id }, d.data())));
+    res.json({ ok: true, schedules: list });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.delete('/api/bulk/schedules/:id', authRequired, async (req, res) => {
+  try { await db.collection('users').doc(req.session.user.id).collection('scheduledBatches').doc(req.params.id).delete(); res.json({ ok: true }); } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
 app.get('/api/test/stats', adminRequired, async (req, res) => {
