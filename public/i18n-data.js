@@ -61,9 +61,7 @@
     optAttachFiles: "📎 Files Attach Karo", selectFilesAuto: "Auto-attach karne ke liye files chuno:",
     saveAutomation: "💾 Automation Settings Save Karo", totalAutoSent: "Total Auto-Sent", lastAutoRun: "Aakhri Auto-Run",
     nextAutoRun: "Agla Auto-Run", pendingRecipients: "Pending Recipients",
-    gmailQuota: "📊 Gmail Daily Sending Quota", mailflowSentToday: "📤 MailFlow ne aaj bheje:",
-    gmailSentToday: "📧 Gmail se aaj bheje (saare sources):", totalSentToday: "Aaj total bheje:",
-    dailyLimit: "Daily limit:", remainingToday: "Aaj bachi hain:",
+    dailyLimit: "Daily limit:",
     aiComposer: "✉️ AI Email Composer", multiProvider: "Multi-provider AI", templateName: "Template Name",
     subject: "Subject", aiSuggest: "✨ AI Suggest", aiSuggestions: "✨ AI Suggestions", body: "Body",
     aiWrite: "🤖 AI Likhwao", cvBtn: "📄 CV", aiFix: "✨ Fix",
@@ -167,7 +165,17 @@
     deliverabilityLbl: "📬 Inbox Deliverability",
     deliverabilityGood: "Behtareen — inbox mein jane ke chances zyada",
     deliverabilityRisk: "Kuch issues hain — spam mein ja sakti hai",
-    checkInboxBtn: "📬 Inbox Check"
+    checkInboxBtn: "📬 Inbox Check",
+    /* quota card (naye) */
+    todaySection: "Aaj (Today)",
+    allTimeSection: "All Time (kul total)",
+    mailflowSentToday: "📤 MailFlow se aaj:",
+    gmailSentToday: "📧 Gmail Sent folder (aaj):",
+    totalSentToday: "Aaj total (dono mila kar):",
+    remainingToday: "Aaj baaki:",
+    mailflowAllTime: "📤 MailFlow se (kul):",
+    gmailAllTime: "📧 Gmail se (kul):",
+    grandTotalAllTime: "🏆 Total sent (all time):"
   };
 
   window.MF_I18N["ur-roman"] = urRoman;
