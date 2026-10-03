@@ -1,20 +1,24 @@
 /* ============================================================================
-   MailFlow Pro — i18n data bundle
+   MailFlow Pro — i18n data bundle + lazy language loader
    ----------------------------------------------------------------------------
-   Ye file index.html ke pehle load hoti hai aur I18N dictionaries ko MERGE karti
-   hai. Sirf naye/override keys yahan rakhe gaye hain — is liye index.html ka
-   English dictionary waise hi rehta hai aur ye file sirf use poora karti hai.
+   - Roman Urdu dictionary INLINE hai (sab se zyada use hoti hai) — zero request.
+   - English base index.html se aata hai.
+   - Baqi languages (ur/hi/ar/es/fr) alag files se LAZY load hoti hain:
+     public/i18n/<lang>.js  ->  window.MF_I18N[<lang>] = {...}
+     Is liye jo language chuni gayi ho sirf wohi download hoti hai.
 
-   IMPORTANT:
+   Important:
    - HTML tags (<br>, <b>, <a>) aur emojis translate NAHI kiye gaye.
-   - {name} / {company} jaise placeholders bilkul waisay hi rakhe gaye hain.
-   - Load order: ye file index.html <head> mein main script se PEHLE aati hai.
+   - {name} / {company} placeholders bilkul waisay hi rakhe gaye hain.
+   - Poora code try/catch mein hai — i18n fail ho to app normal chalti rahe.
    ============================================================================ */
 (function () {
   "use strict";
 
+  window.MF_I18N = window.MF_I18N || {};
+
   /* ==========================================================================
-     ROMAN URDU — 100% complete (all 360 keys)
+     ROMAN URDU — 100% complete
      ========================================================================== */
   var urRoman = {
     tagline: "AI-powered email automation.<br>Smart bhejo. Inbox mein land karo.",
@@ -150,21 +154,14 @@
     userOcrDetails: "📸 User OCR Details", userDetailsH: "👤 User Details",
     banUserH: "🚫 User Ban Karo", reasonLbl: "Wajah", alsoBanIp: "<b>IP address bhi ban karo</b>",
     banUserBtn: "🚫 User Ban Karo", openTimeCol: "Khulne ka Waqt",
-
-    /* ---- extra keys (hardcoded strings jo pehle translate nahi hoti thin) ---- */
-    machine: "Machine",
-    statusMachine: "Machine",
+    machine: "Machine", statusMachine: "Machine",
     sentLbl: "Bheja", openedLbl: "Khula", machineLbl: "Machine",
-    never: "Kabhi Nahi",
-    liveLbl: "Live",
-
-    /* ---- daily limit + send window (naye features) ---- */
+    never: "Kabhi Nahi", liveLbl: "Live",
     dailyLimitLbl: "📊 Rozana Bhejne ki Limit (per day)",
     dailyLimitHint: "Gmail rozana taqreeban 500 emails allow karta hai. Limit poori hone pe auto-send khud ruk jata hai.",
     sendWindow: "⏰ Sirf In Ghanton Mein Bhejo",
     sendWindowDesc: "Auto-send sirf is waqt ke andar chalega",
-    windowStart: "Se",
-    windowEnd: "Tak",
+    windowStart: "Se", windowEnd: "Tak",
     windowExample: "Misaal: 09:00 se 18:00 = emails sirf office hours mein jayengi.",
     deliverabilityLbl: "📬 Inbox Deliverability",
     deliverabilityGood: "Behtareen — inbox mein jane ke chances zyada",
@@ -172,38 +169,184 @@
     checkInboxBtn: "📬 Inbox Check"
   };
 
+  window.MF_I18N["ur-roman"] = urRoman;
+
   /* ==========================================================================
-     MERGE into I18N
-     - Jin languages ka dictionary yahan maujood hai, unke keys override hoti
-       hain; baqi keys English se fallback leti hain (kabhi blank nahi dikhta).
-     - Jin languages ka dictionary khaali hai (hi/ar/es/fr) wahan I18N.en hi
-       chalta hai — yani kabhi crash ya blank UI nahi hoga.
+     LANGUAGE MANIFEST — kaunsi language kaunsi file se aati hai
      ========================================================================== */
-  function merge() {
+  var LANG_FILES = {
+    ur: "/i18n/ur.js",
+    hi: "/i18n/hi.js",
+    ar: "/i18n/ar.js",
+    es: "/i18n/es.js",
+    fr: "/i18n/fr.js"
+  };
+  var LANG_NAMES = {
+    en: "English",
+    "ur-roman": "Urdu Roman",
+    ur: "اردو",
+    hi: "हिन्दी",
+    ar: "العربية",
+    es: "Español",
+    fr: "Français"
+  };
+  var loading = {};
+
+  /* ==========================================================================
+     MERGE — jab ek language load ho jaye to I18N[lang] bana do
+     NOTE: "loaded" alag rakha gaya hai. buildLang() abhi bhi English fallback
+     deta hai, lekin us se ye pata nahi chalta ke ASLI file aayi hai ya nahi.
+     Isi liye lazy-load ka faisla "loaded" flag se hota hai.
+     ========================================================================== */
+  var loaded = { "ur-roman": true }; // Roman Urdu inline hai — hamesha maujood
+
+  /* Version counter: jab bhi kisi language ki ASLI dictionary load hoti hai, us ka
+     version barh jata hai. Isse applyI18n ko pata chalta hai ke pehle jo (English
+     fallback) values lagayi gayi thin wo ab purani ho chuki hain — dobara likhni hain.
+     Warna: DOMContentLoaded pe English lag jati hai aur file load hone ke baad
+     marker ki wajah se skip ho jati hai (yahi asli bug tha). */
+  var langVersion = {};
+
+  function bumpVersion(lang) {
+    langVersion[lang] = (langVersion[lang] || 0) + 1;
+  }
+
+  // index.html ka applyI18n isse poochta hai
+  window.mfLangVersion = function (lang) { return langVersion[lang] || 0; };
+
+  function buildLang(lang) {
     if (typeof I18N === "undefined" || !I18N) return;
-
-    // 0) en base pehle ensure karo — warna neeche I18N.en undefined ho sakta hai
     I18N.en = I18N.en || {};
+    var dict = window.MF_I18N[lang] || {};
+    var had = Object.keys(dict).length > 0;
+    I18N[lang] = Object.assign({}, I18N.en, dict);
+    if (had) bumpVersion(lang);
+  }
 
-    // 1) Roman Urdu: base (index.html) + ye complete set
-    I18N["ur-roman"] = Object.assign({}, I18N.en, I18N["ur-roman"] || {}, urRoman);
+  function markLoaded(lang) {
+    if (window.MF_I18N[lang]) { loaded[lang] = true; bumpVersion(lang); }
+  }
 
-    // 2) Jo languages khaali hain, unhein English base de do (graceful fallback)
-    var fallbackLangs = ["ur", "hi", "ar", "es", "fr"];
-    for (var i = 0; i < fallbackLangs.length; i++) {
-      var k = fallbackLangs[i];
-      I18N[k] = Object.assign({}, I18N.en, I18N[k] || {});
-    }
+  function buildAll() {
+    buildLang("ur-roman");
+    for (var k in LANG_FILES) buildLang(k);
+  }
+
+  /* ==========================================================================
+     LAZY LOAD — sirf chuni hui language ki file mangwao
+     ========================================================================== */
+  function mfLoadLang(lang, cb) {
+    if (!lang || lang === "en") { if (cb) cb(); return; }
+    if (loaded[lang]) { buildLang(lang); if (cb) cb(); return; }
+    if (loading[lang]) { if (cb) loading[lang].push(cb); return; }
+    var src = LANG_FILES[lang];
+    if (!src) { if (cb) cb(); return; }
+    loading[lang] = cb ? [cb] : [];
+    var sc = document.createElement("script");
+    sc.src = src;
+    sc.async = true;
+    sc.onload = function () {
+      markLoaded(lang);
+      buildLang(lang);
+      var q = loading[lang] || [];
+      delete loading[lang];
+      for (var i = 0; i < q.length; i++) { try { q[i](); } catch (e) {} }
+      if (typeof applyI18n === "function" && typeof CURRENT_LANG !== "undefined" && CURRENT_LANG === lang) {
+        try { applyI18n(); } catch (e) {}
+      }
+    };
+    sc.onerror = function () {
+      delete loading[lang];
+      // file load na ho to app English pe chalti rahe — crash nahi
+    };
+    document.head.appendChild(sc);
+  }
+
+  /* ==========================================================================
+     PUBLIC API — index.html se call hota hai
+     ========================================================================== */
+  // Language set karo + apply karo (file load hone ke baad khud re-apply hoti hai)
+  window.mfApplyLanguage = function (lang, cb) {
+    try {
+      mfLoadLang(lang, function () {
+        buildLang(lang);
+        if (typeof applyI18n === "function") { try { applyI18n(); } catch (e) {} }
+        if (cb) { try { cb(); } catch (e) {} }
+      });
+    } catch (e) { if (cb) { try { cb(); } catch (e2) {} } }
+  };
+
+  // Page khulte hi cached language eagerly load karo (pehle render se pehle tayyar ho)
+  window.mfPrefetchLanguage = function (lang) {
+    try {
+      if (lang === "en" || !lang) return;
+      if (loaded[lang] || loading[lang]) return;
+      var src = LANG_FILES[lang];
+      if (!src) return;
+      loading[lang] = [];
+      var sc = document.createElement("script");
+      sc.src = src;
+      sc.async = true;
+      sc.onload = function () {
+        markLoaded(lang);
+        buildLang(lang);
+        var q = loading[lang] || [];
+        delete loading[lang];
+        for (var i = 0; i < q.length; i++) { try { q[i](); } catch (e) {} }
+        if (typeof applyI18n === "function" && typeof CURRENT_LANG !== "undefined" && CURRENT_LANG === lang) {
+          try { applyI18n(); } catch (e) {}
+        }
+      };
+      sc.onerror = function () { delete loading[lang]; };
+      document.head.appendChild(sc);
+    } catch (e) {}
+  };
+
+  window.mfLangName = function (lang) { return LANG_NAMES[lang] || lang; };
+
+  /* ==========================================================================
+     BOOTSTRAP
+     ========================================================================== */
+  function boot() {
+    if (typeof I18N === "undefined" || !I18N) return;
+    I18N.en = I18N.en || {};
+    buildAll();
   }
 
   try {
-    merge();
+    boot();
+    // Page khulte hi cached language ka file eagerly load karo — login screen bhi
+    // sahi bhasha (aur RTL direction) mein khule. Pehle ye sirf login ke BAAD hota tha.
+    try {
+      var _raw = localStorage.getItem("mf_prefs_v1");
+      if (_raw) {
+        var _o = JSON.parse(_raw);
+        var _lg = _o && _o.p && _o.p.language;
+        if (_lg && _lg !== "en") {
+          if (typeof CURRENT_LANG !== "undefined") { try { CURRENT_LANG = _lg; } catch (e) {} }
+          if (typeof PREFERENCES !== "undefined" && _o.p) { try { PREFERENCES = _o.p; } catch (e) {} }
+          try { document.documentElement.lang = _lg; } catch (e) {}
+          window.mfPrefetchLanguage(_lg);
+        }
+      }
+    } catch (e) {}
 
-    // Agar ye bundle main script se PEHLE load hua ho to I18N abhi define nahi
-    // hoga — us surat mein DOM ready hone ka intezar karo.
     if (typeof I18N === "undefined") {
       document.addEventListener("DOMContentLoaded", function () {
-        try { merge(); } catch (e) {}
+        try {
+          boot();
+          try {
+            var raw = localStorage.getItem("mf_prefs_v1");
+            if (raw) {
+              var o = JSON.parse(raw);
+              var lg = o && o.p && o.p.language;
+              if (lg) {
+                if (typeof CURRENT_LANG !== "undefined") { try { CURRENT_LANG = lg; } catch (e) {} }
+                window.mfPrefetchLanguage(lg);
+              }
+            }
+          } catch (e) {}
+        } catch (e) {}
       });
     }
   } catch (e) {

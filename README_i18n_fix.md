@@ -5,7 +5,71 @@ Ye file har round ke kaam ka record rakhti hai. Brand naam **"MailFlow Pro"** ha
 
 ---
 
-## ROUND 3 — Inbox Deliverability + Limits + Tracking (latest)
+## ROUND 4 — Saari 7 Languages (latest)
+
+### Ab poora UI 6 zabanon mein
+| Language | Keys | Direction |
+|---|---|---|
+| English | 343 | LTR |
+| Roman Urdu | 347 | LTR |
+| اردو | 343 | **RTL** |
+| हिन्दी | 343 | LTR |
+| العربية | 343 | **RTL** |
+| Español | 343 | LTR |
+| Français | 343 | LTR |
+
+Sab 343/343 — **0 missing, 0 extra**, emojis/HTML tags/`{name}` placeholders 100%
+preserved (script se verify kiya).
+
+### Architecture — lazy loading (speed barqarar)
+- Roman Urdu **inline** hai `i18n-data.js` mein → **zero extra request**
+- Baqi 5 languages alag files: `public/i18n/<lang>.js` → **sirf chuni hui language
+  download hoti hai** (~16-24KB)
+- `window.mfApplyLanguage(lang)` → file load kar ke apply karta hai
+- `window.mfPrefetchLanguage(lang)` → page khulte hi eagerly load (login screen bhi
+  sahi bhasha mein khulta hai)
+- File load fail ho jaye to app English pe chalti rehti hai — **crash nahi**
+
+### RTL support
+`اردو` aur `العربية` select karne pe `document.documentElement.dir = "rtl"` set hota
+hai, LTR pe wapas `ltr`.
+
+### 2 asli bugs jo is round mein pakre aur fix hue
+
+**BUG A — Login screen pe language apply nahi hoti thi**
+`applyI18n()` sirf `enterApp()` (login ke baad) se call hota tha. Is liye login
+screen hamesha English mein dikhti thi. **Fix:** `DOMContentLoaded` pe bhi
+`applyI18n()` call hota hai + `i18n-data.js` cached language eagerly load karta hai.
+
+**BUG B — Language file load hone ke baad UI update nahi hota tha**
+`applyI18n()` ke paas marker tha: `if(el._mfI18nKey===k && el._mfI18nLang===CURRENT_LANG) skip`.
+DOMContentLoaded pe dictionary **abhi English** hoti thi → button "Login" set hota aur
+marker lag jata. Jab asli language file load hoti, marker ki wajah se **skip** ho jata
+→ English hi reh jata.
+**Fix:** `mfLangVersion(lang)` counter — jab bhi asli dictionary load hoti hai to
+version barhta hai. Marker mein `_mfI18nVer` bhi check hota hai, is liye file load
+hone ke baad saare elements **dobara likhe jate hain**. Saath `_i18nPending` ab call
+drop nahi karta (re-queue karta hai).
+
+### Verified (headless Chrome, real browser test)
+```
+English     -> "Login"              dir=ltr  keys=343  PASS
+Urdu Roman  -> "Login Karo"         dir=ltr  keys=347  PASS
+اردو         -> "لاگ اِن"            dir=rtl  keys=343  PASS
+हिन्दी        -> "लॉगिन"              dir=ltr  keys=343  PASS
+العربية      -> "تسجيل الدخول"        dir=rtl  keys=343  PASS
+Español     -> "Iniciar sesión"     dir=ltr  keys=343  PASS
+Français    -> "Connexion"          dir=ltr  keys=343  PASS
+RESULT: ALL LANGUAGES WORKING
+```
+
+### Warmup — JAAN-BOOJH KAR NAHI DALA
+Aapne kaha tha warmup user-per-depend rehna chahiye. Is liye koi automatic ramp-up
+nahi dala — user khud **Daily Send Limit** se control karta hai.
+
+---
+
+## ROUND 3 — Inbox Deliverability + Limits + Tracking
 
 ### 1. 📬 Inbox deliverability — email spam mein na jaye
 

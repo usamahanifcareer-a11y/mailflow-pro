@@ -4932,24 +4932,35 @@ function t(key){
 }
 
 function applyI18n(){
+  // RTL languages ke liye page direction set karo (Arabic/Urdu)
+  try{
+    var _rtl=(CURRENT_LANG==='ar'||CURRENT_LANG==='ur');
+    var _dir=_rtl?'rtl':'ltr';
+    if(document.documentElement.getAttribute('dir')!==_dir)document.documentElement.setAttribute('dir',_dir);
+  }catch(e){}
   // Optimized: sirf woh elements likho jin ki value WAQAI badli ho, aur sab
   // updates ek frame mein batch karo. Pehle har baar 328 elements re-paint hote
   // the — mobile pe yahi "language change slow" ka asli sabab tha.
-  try{
-    if(_i18nPending)return;
-    _i18nPending=true;
-  }catch(e){}
+  // NOTE: agar pehle se ek update pending hai to rukna NAHI hai — dobara queue
+  // karo. Warna language file load hone ke baad wali call drop ho jati thi
+  // (isi wajah se login screen English mein reh jati thi).
+  try{ _i18nPending=true; }catch(e){}
   var run=function(){
     _i18nPending=false;
+    // Dictionary ka version — jab asli language file load hoti hai to barhta hai.
+    // Isse pata chalta hai ke pehle lagayi gayi (English fallback) values purani hain.
+    var ver='0';
+    try{ if(typeof mfLangVersion==='function')ver=String(mfLangVersion(CURRENT_LANG)); }catch(e){}
     var els=document.querySelectorAll('[data-i18n]');
     for(var i=0;i<els.length;i++){
       var el=els[i];
       var k=el.getAttribute('data-i18n');
-      if(el._mfI18nKey===k&&el._mfI18nLang===CURRENT_LANG)continue; // pehle se sahi
+      if(el._mfI18nKey===k&&el._mfI18nLang===CURRENT_LANG&&el._mfI18nVer===ver)continue; // pehle se sahi
       var v=t(k);
       if(v&&el.innerHTML!==v)el.innerHTML=v;
       el._mfI18nKey=k;
       el._mfI18nLang=CURRENT_LANG;
+      el._mfI18nVer=ver;
     }
     // Language badalne pe dynamically banaye gaye labels (jaise "Machine"
     // status, pagination info) ko dobara render karne ke liye signal bhejo.
@@ -5163,6 +5174,8 @@ function applyCachedPrefsEarly(){
     PREFERENCES=p;
     if(p.language)CURRENT_LANG=p.language;
     document.documentElement.lang=CURRENT_LANG;
+    // Language file eagerly load karo taake login screen pe hi translation tayyar ho
+    if(p.language&&typeof mfPrefetchLanguage==='function')mfPrefetchLanguage(p.language);
   }catch(e){}
 }
 
@@ -5177,7 +5190,11 @@ function applyPreferences(p){
     var el=$(map[i][0]);
     if(el&&map[i][1])el.value=map[i][1];
   }
-  applyI18n();
+  // Language file lazy load hoti hai, load hone ke baad applyI18n khud chalta hai
+  try{
+    if(typeof mfApplyLanguage==='function')mfApplyLanguage(CURRENT_LANG,applyI18n);
+    else applyI18n();
+  }catch(e){applyI18n();}
 }
 
 function getEmailStatus(e){
@@ -8804,6 +8821,8 @@ function closeAdminUser(){$('adminUserModal').classList.add('hidden');}
 document.addEventListener('DOMContentLoaded',function(){
   // Speed: cached language FORAN lagao — login screen bhi sahi bhasha mein khule
   try{applyCachedPrefsEarly();}catch(e){}
+  // Cached language ka translation login screen pe lagao (pehle sirf login ke baad hota tha)
+  try{applyI18n();}catch(e){}
   var rem=getRememberedEmail();
   if(rem){
     var inp=$('loginEmail'),chk=$('rememberMe');
