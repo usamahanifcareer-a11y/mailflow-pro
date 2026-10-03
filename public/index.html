@@ -44,6 +44,7 @@ button, input, textarea, select { font-family: inherit; font-size: 15px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes fadeInRow { from { opacity: 0; background: rgba(34, 197, 94, 0.15); } to { opacity: 1; background: transparent; } }
 select, option { background-color: #0a0e1a !important; color: #e2e8f0 !important; }
 select:focus { outline: none; border-color: #38bdf8 !important; }
 .auth-wrap { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; position: relative; z-index: 1; background: radial-gradient(circle at 20% 10%, rgba(56, 189, 248, 0.12), transparent 40%), radial-gradient(circle at 80% 90%, rgba(168, 85, 247, 0.12), transparent 40%); }
@@ -155,6 +156,7 @@ table.data-table th { text-align: left; font-size: 10px; color: var(--text2); te
 table.data-table td { padding: 12px 10px; border-bottom: 1px solid rgba(26, 35, 56, 0.5); color: #cbd5e1; vertical-align: middle; }
 table.data-table tbody tr:hover td { background: rgba(56, 189, 248, 0.04); }
 table.data-table tr.clickable { cursor: pointer; }
+table.data-table tr.optimistic-new td { animation: fadeInRow 1.6s ease-out; }
 .badge { display: inline-flex; align-items: center; gap: 3px; padding: 4px 9px; border-radius: 20px; font-size: 10px; font-weight: 700; white-space: nowrap; }
 .badge.pending { background: rgba(245, 158, 11, 0.15); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.3); }
 .badge.sent { background: rgba(56, 189, 248, 0.15); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.3); }
@@ -522,13 +524,20 @@ table.data-table tr.clickable { cursor: pointer; }
 .recip-schedule-option { display: flex; align-items: center; gap: 12px; padding: 14px; background: var(--bg2); border: 2px solid var(--border); border-radius: 12px; cursor: pointer; transition: 0.15s; }
 .recip-schedule-option:hover { border-color: var(--cyan); background: rgba(56, 189, 248, 0.05); }
 .recip-schedule-option.selected { border-color: var(--cyan); background: linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(99, 102, 241, 0.08)); box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15); }
+.recip-schedule-option.selected.send-mode { border-color: #22c55e; background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(56, 189, 248, 0.08)); box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15); }
 .recip-schedule-option .ico { font-size: 26px; flex-shrink: 0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: rgba(56, 189, 248, 0.1); border-radius: 10px; }
+.recip-schedule-option.send-mode .ico { background: rgba(34, 197, 94, 0.15); }
 .recip-schedule-option .body { flex: 1; min-width: 0; }
 .recip-schedule-option .ttl { font-size: 13px; font-weight: 700; color: var(--text); }
 .recip-schedule-option .dsc { font-size: 11px; color: var(--text2); margin-top: 3px; line-height: 1.5; }
 .recip-schedule-option .radio { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #475569; flex-shrink: 0; position: relative; background: var(--bg2); }
 .recip-schedule-option.selected .radio { border-color: var(--cyan); }
 .recip-schedule-option.selected .radio::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--cyan); }
+.recip-schedule-option.selected.send-mode .radio { border-color: #22c55e; }
+.recip-schedule-option.selected.send-mode .radio::after { background: #22c55e; }
+.save-send-config { background: rgba(34, 197, 94, 0.06); border: 1px solid rgba(34, 197, 94, 0.35); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+.save-send-config .ttl { font-size: 10px; color: #86efac; text-transform: uppercase; font-weight: 700; margin-bottom: 8px; }
+.optimistic-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(56, 189, 248, 0.3); border-top-color: var(--cyan); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
 @media(max-width: 768px) {
   .maintabs { position: fixed; bottom: 0; top: auto; left: 0; right: 0; padding: 6px 8px; z-index: 2000; border-top: 1px solid var(--border); border-bottom: none; justify-content: space-around; box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5); padding-bottom: calc(6px + env(safe-area-inset-bottom)); background: rgba(10, 14, 26, 0.98); }
   .maintab { flex: 1; text-align: center; font-size: 10px; padding: 8px 4px; }
@@ -620,7 +629,7 @@ table.data-table tr.clickable { cursor: pointer; }
 <div class="logo-top">
 <div class="mini-logo"><svg viewBox="0 0 64 64" role="img" aria-label="MailFlow Pro"><defs><linearGradient id="mfGradM" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset=".5" stop-color="#6366f1"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs><rect x="1.5" y="1.5" width="61" height="61" rx="15" fill="url(#mfGradM)"/><path d="M56 15 L8 37 L25 40.5 Z" fill="#2c3aa8" opacity=".92"/><path d="M56 15 L25 40.5 L26.5 57 Z" fill="#ffffff"/><path d="M56 15 L8 37 L25 40.5 L26.5 57 Z" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linejoin="round" opacity=".95"/><path d="M8 37 L25 40.5 L26.5 57" fill="none" stroke="#22d3ee" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="50.5" cy="15" r="4.4" fill="#fbbf24"/></svg></div>
 <span class="brand-text">MailFlow Pro</span>
-<span style="font-size:9px;color:var(--text3);font-weight:500;padding:2px 6px;background:rgba(56,189,248,.1);border-radius:6px;margin-left:4px">v2.2.0</span>
+<span style="font-size:9px;color:var(--text3);font-weight:500;padding:2px 6px;background:rgba(56,189,248,.1);border-radius:6px;margin-left:4px">v2.2.1</span>
 </div>
 <div class="user-chip">
 <img id="userAvatar" class="user-avatar" src="" style="display:none" alt="" decoding="async" onclick="openProfileModal()">
@@ -1278,7 +1287,7 @@ table.data-table tr.clickable { cursor: pointer; }
 
 <!-- Save Recipients Options Modal -->
 <div id="saveRecipOptionsBackdrop" class="modal-backdrop hidden" onclick="if(event.target===this)closeSaveRecipOptions()">
-<div class="modal" style="max-width:560px">
+<div class="modal" style="max-width:600px">
 <button class="close-btn" onclick="closeSaveRecipOptions()">✕</button>
 <h3>💾 Save Recipients — Choose Action</h3>
 <div id="saveRecipInfo" style="font-size:12px;color:var(--text2);margin-bottom:14px;padding:12px;background:var(--bg2);border-radius:10px;border:1px solid var(--border)"></div>
@@ -1288,12 +1297,38 @@ table.data-table tr.clickable { cursor: pointer; }
 <div class="body"><div class="ttl">Save Only (No Send)</div><div class="dsc">Just add them as Pending. Send manually later OR let auto-send pick them up if enabled.</div></div>
 <div class="radio"></div>
 </div>
+<div class="recip-schedule-option send-mode" data-mode="save-and-send" onclick="selectSaveMode('save-and-send')">
+<div class="ico">📤</div>
+<div class="body"><div class="ttl">Save & Send Now</div><div class="dsc">Save instantly and send email right now to every recipient with signature, logo & attachments.</div></div>
+<div class="radio"></div>
+</div>
 <div class="recip-schedule-option" data-mode="schedule" onclick="selectSaveMode('schedule')">
 <div class="ico">⏰</div>
 <div class="body"><div class="ttl">Save & Schedule</div><div class="dsc">Save and choose a specific date & time to send automatically.</div></div>
 <div class="radio"></div>
 </div>
 </div>
+
+<!-- Save & Send Now config -->
+<div id="saveSendConfig" class="save-send-config hidden">
+<div class="ttl">📧 Send Options</div>
+<div class="template-picker" style="background:rgba(34,197,94,.06);border-color:rgba(34,197,94,.3)">
+<label style="color:#86efac">📝 Template</label>
+<select id="saveSendTemplateId"></select>
+</div>
+<div class="send-options-row" style="margin:6px 0 0 0">
+<label><input type="checkbox" id="saveSendOptSignature" checked> ✍️ Signature</label>
+<label><input type="checkbox" id="saveSendOptLogo" checked> 🖼️ Logo</label>
+<label><input type="checkbox" id="saveSendOptAttachments" onchange="onSaveSendAttachToggle(this.checked)"> 📎 Attach Files</label>
+</div>
+<div id="saveSendFilePicker" class="hidden" style="background:rgba(0,0,0,.2);border-radius:10px;padding:10px;margin-top:8px">
+<div style="font-size:11px;color:var(--text2);margin-bottom:8px">Select files to attach:</div>
+<div id="saveSendFilesList" style="max-height:180px;overflow-y:auto"></div>
+</div>
+<div class="info-hint ok" style="margin-top:10px">⚡ Emails will be sent immediately after saving. Fast mode — no waiting.</div>
+</div>
+
+<!-- Save & Schedule config -->
 <div id="saveScheduleConfig" class="hidden" style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.35);border-radius:12px;padding:12px;margin-bottom:12px">
 <div style="font-size:10px;color:#c4b5fd;text-transform:uppercase;font-weight:700;margin-bottom:10px">⏰ Schedule Time</div>
 <div id="saveSchedulePresets" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
@@ -1517,7 +1552,7 @@ var OCR_LAST_REQUEST_TIME=0,OCR_MIN_INTERVAL_MS=2600,OCR_CANCELLED=false,OCR_STA
 var FILE_READ_QUEUE=[],FILE_READING=false;
 var REPLY_TARGET_EMAIL='',REPLY_SELECTED_FILES={},OCR_MONITOR_DATA=[];
 var Q_AUTO_FILES={},SEND_MODAL_FILES={},RESEND_MODAL_FILES={};
-var BULK_RESEND_FILES={},BULK_SCHEDULE_FILES={};
+var BULK_RESEND_FILES={},BULK_SCHEDULE_FILES={},SAVE_SEND_FILES={};
 var SAVE_RECIP_PENDING=null,SAVE_RECIP_MODE='save-only';
 var IMG_PREVIEW={list:[],idx:0,zoom:1,rotate:0,panX:0,panY:0,dragging:false,startX:0,startY:0};
 var recipPage=1,recipPerPage=10,recipTotal=0,recipTotalPages=1;
@@ -1528,6 +1563,7 @@ var _recipRenderRAF=null,_pendingRecipData=null;
 var _myEmailRenderRAF=null,_pendingMyEmailData=null;
 var RECIP_LIVE_TIMER=null,MYEMAIL_LIVE_TIMER=null;
 var LIVE_REFRESH_MS=10000;
+var OPTIMISTIC_ROWS={}; // tracks pending optimistic rows for fast UI
 
 // ============ HELPERS ============
 function $(id){return document.getElementById(id);}
@@ -2070,6 +2106,7 @@ function loadFiles(){
     if($('qAutoFilePicker')&&!$('qAutoFilePicker').classList.contains('hidden'))renderQAutoFilesList();
     if($('sendOptionsFilePicker')&&!$('sendOptionsFilePicker').classList.contains('hidden'))renderSendOptionsFiles();
     if($('resendOptionsFilePicker')&&!$('resendOptionsFilePicker').classList.contains('hidden'))renderResendOptionsFiles();
+    if($('saveSendFilePicker')&&!$('saveSendFilePicker').classList.contains('hidden'))renderSaveSendFiles();
   });
 }
 function renderFilesList(){
@@ -2117,6 +2154,14 @@ function renderBulkScheduleFiles(){
 }
 function toggleBulkScheduleFile(id){if(BULK_SCHEDULE_FILES[id])delete BULK_SCHEDULE_FILES[id];else BULK_SCHEDULE_FILES[id]=true;renderBulkScheduleFiles();}
 function onBulkScheduleAttachToggle(v){$('bulkScheduleFilePicker').classList.toggle('hidden',!v);if(v)renderBulkScheduleFiles();}
+// === Save & Send files ===
+function renderSaveSendFiles(){
+  var w=$('saveSendFilesList');if(!w)return;
+  if(!FILES.length){w.innerHTML='<div style="text-align:center;color:var(--text3);font-size:12px;padding:12px">No files uploaded yet.</div>';return;}
+  w.innerHTML=FILES.map(function(f){var sel=SAVE_SEND_FILES[f.id]?' selected':'';var icon=fileIcon(f.name,f.mimeType);return '<div class="file-item'+sel+'" onclick="toggleSaveSendFile(\''+f.id+'\')" style="padding:8px 10px;margin-bottom:6px"><input type="checkbox" class="cbox" '+(SAVE_SEND_FILES[f.id]?'checked':'')+' onclick="event.stopPropagation();toggleSaveSendFile(\''+f.id+'\')"><div class="icon" style="width:32px;height:32px;font-size:14px">'+icon+'</div><div class="info"><div class="fname" style="font-size:12px">'+esc(f.name)+'</div><div class="fmeta">'+fmtSize(f.size)+'</div></div></div>';}).join('');
+}
+function toggleSaveSendFile(id){if(SAVE_SEND_FILES[id])delete SAVE_SEND_FILES[id];else SAVE_SEND_FILES[id]=true;renderSaveSendFiles();}
+function onSaveSendAttachToggle(v){$('saveSendFilePicker').classList.toggle('hidden',!v);if(v)renderSaveSendFiles();}
 
 // ============ TEMPLATES ============
 function loadTemplates(){
@@ -2128,6 +2173,8 @@ function loadTemplates(){
     if(!TEMPLATES.length)s.innerHTML='<option value="">(None available)</option>';
     else TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;s.appendChild(o);});
     if($('qAutoTemplateId')){var cur=$('qAutoTemplateId').value;var qt=$('qAutoTemplateId');qt.innerHTML='<option value="">(First available / default)</option>';TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;if(t.id===cur)o.selected=true;qt.appendChild(o);});}
+    // Also fill save-and-send template picker
+    if($('saveSendTemplateId')){var cur2=$('saveSendTemplateId').value;var st=$('saveSendTemplateId');st.innerHTML='';if(!TEMPLATES.length)st.innerHTML='<option value="">(No templates)</option>';else TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;if(t.id===cur2)o.selected=true;st.appendChild(o);});}
   });
 }
 function previewTemplate(id){var t=TEMPLATES.filter(function(x){return x.id===id;})[0];if(!t)return;$('tplPreviewTitle').innerText='📄 '+t.name;$('tplPreviewSubject').innerText=t.subject;$('tplPreviewBody').innerText=t.body;$('tplPreviewBackdrop').classList.remove('hidden');}
@@ -2140,17 +2187,29 @@ function addRow(){var w=$('recipients'),d=document.createElement('div');d.classN
 function openSaveRecipientsModal(items,sourceLabel){
   SAVE_RECIP_PENDING={items:items,sourceLabel:sourceLabel||''};
   SAVE_RECIP_MODE='save-only';
+  SAVE_SEND_FILES={};
   selectSaveMode('save-only');
   $('saveRecipInfo').innerHTML='<div><b>'+items.length+' recipient'+(items.length>1?'s':'')+'</b> ready to save'+(sourceLabel?' ('+esc(sourceLabel)+')':'')+'</div><div style="margin-top:6px;font-size:11px;color:var(--text3)">Choose what happens after saving:</div>';
   try{setSaveScheduleDate(new Date(Date.now()+60*60*1000));}catch(e){}
   renderSaveSchedulePresets();
+  // populate save-send template list
+  if($('saveSendTemplateId')){
+    var cur=$('saveSendTemplateId').value;
+    var st=$('saveSendTemplateId');st.innerHTML='';
+    if(!TEMPLATES.length)st.innerHTML='<option value="">(No templates)</option>';
+    else TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;if(t.id===cur)o.selected=true;st.appendChild(o);});
+  }
+  $('saveSendOptSignature').checked=true;$('saveSendOptLogo').checked=true;$('saveSendOptAttachments').checked=false;
+  $('saveSendFilePicker').classList.add('hidden');
   $('saveRecipOptionsBackdrop').classList.remove('hidden');
 }
 function closeSaveRecipOptions(){$('saveRecipOptionsBackdrop').classList.add('hidden');SAVE_RECIP_PENDING=null;}
 function selectSaveMode(mode){
   SAVE_RECIP_MODE=mode;
   document.querySelectorAll('#saveRecipOptions .recip-schedule-option').forEach(function(el){if(el.getAttribute('data-mode')===mode)el.classList.add('selected');else el.classList.remove('selected');});
-  if(mode==='schedule'){$('saveScheduleConfig').classList.remove('hidden');updateSaveSchedulePreview();}else $('saveScheduleConfig').classList.add('hidden');
+  if(mode==='schedule'){$('saveScheduleConfig').classList.remove('hidden');$('saveSendConfig').classList.add('hidden');updateSaveSchedulePreview();}
+  else if(mode==='save-and-send'){$('saveSendConfig').classList.remove('hidden');$('saveScheduleConfig').classList.add('hidden');}
+  else{$('saveScheduleConfig').classList.add('hidden');$('saveSendConfig').classList.add('hidden');}
 }
 function renderSaveSchedulePresets(){
   var box=$('saveSchedulePresets');if(!box)return;
@@ -2185,27 +2244,119 @@ function updateSaveSchedulePreview(){
   if(ms<=Date.now()){p.innerHTML='<span style="color:#fca5a5">⚠️ This time has passed — choose future time.</span>';return;}
   p.innerHTML='📅 <b style="color:#c4b5fd">'+new Date(ms).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true})+'</b> · '+fmtDuration(ms-Date.now())+' left';
 }
+
+// ═══════════════════════════════════════════════════════════════
+// OPTIMISTIC UI — instantly show new recipients in table
+// ═══════════════════════════════════════════════════════════════
+function buildOptimisticRows(created){
+  // Convert server-provided recipient objects into table rows
+  return created.map(function(r){
+    return {
+      id:r.id,
+      email:r.email,
+      company:r.company||'',
+      status:'Pending',
+      sentAt:null,
+      lastSentAt:null,
+      openedAt:null,
+      everOpened:false,
+      sendCount:0,
+      createdAt:r.createdAt||new Date().toISOString(),
+      bumpAt:r.bumpAt||new Date().toISOString(),
+      _optimistic:true
+    };
+  });
+}
+function insertOptimisticRows(newRows){
+  if(!newRows||!newRows.length)return;
+  // Dedupe against existing CURRENT_ROWS by id
+  var existingIds={};
+  CURRENT_ROWS.forEach(function(r){existingIds[r.id]=true;});
+  var toAdd=newRows.filter(function(r){return !existingIds[r.id];});
+  if(!toAdd.length)return;
+  // Prepend to CURRENT_ROWS and mark as optimistic
+  toAdd.forEach(function(r){OPTIMISTIC_ROWS[r.id]=true;});
+  CURRENT_ROWS=toAdd.concat(CURRENT_ROWS);
+  // Bump counts
+  recipTotal+=toAdd.length;
+  $('trackCount').innerText=recipTotal+' total';
+  var currentTotal=parseInt($('stTotal').innerText||'0',10)||0;
+  $('stTotal').innerText=currentTotal+toAdd.length;
+  var currentPending=parseInt($('stPending').innerText||'0',10)||0;
+  $('stPending').innerText=currentPending+toAdd.length;
+  // Render immediately with the new data
+  _pendingRecipData={rows:CURRENT_ROWS,total:recipTotal,totalPages:Math.max(1,Math.ceil(recipTotal/recipPerPage))};
+  if(_recipRenderRAF)cancelAnimationFrame(_recipRenderRAF);
+  _recipRenderRAF=requestAnimationFrame(renderRecipientsTable);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN confirm handler — handles 3 modes
+// ═══════════════════════════════════════════════════════════════
 async function confirmSaveRecipients(){
   if(!SAVE_RECIP_PENDING||!SAVE_RECIP_PENDING.items.length)return closeSaveRecipOptions();
   var items=SAVE_RECIP_PENDING.items;
-  var templateId=$('tplSelect')?$('tplSelect').value:'';
   var btn=$('saveRecipConfirm');
   setBtnLoading(btn,'💾 Saving...');
+
+  // ═══════════ MODE 3: SAVE & SEND NOW (fast combined endpoint) ═══════════
+  if(SAVE_RECIP_MODE==='save-and-send'){
+    var sendTemplateId=$('saveSendTemplateId')?$('saveSendTemplateId').value:'';
+    if(!sendTemplateId){resetBtn(btn);return toast('Please select a template','err');}
+    var sendPayload={
+      list:items,
+      templateId:sendTemplateId,
+      includeSignature:$('saveSendOptSignature').checked,
+      includeLogo:$('saveSendOptLogo').checked,
+      includeAttachments:$('saveSendOptAttachments').checked,
+      selectedFileIds:$('saveSendOptAttachments').checked?Object.keys(SAVE_SEND_FILES):[]
+    };
+    try{
+      var r=await api('/api/recipients/save-and-send','POST',sendPayload);
+      if(!r.ok){
+        resetBtn(btn);
+        if(r.error==='DAILY_LIMIT_REACHED'){toast('❌ Daily limit reached ('+r.sent+'/'+r.limit+')','err');}
+        else toast('❌ '+(r.error||'Save & Send failed'),'err');
+        return;
+      }
+      // optimistic insert (they'll show as Pending first, then Sent)
+      insertOptimisticRows(buildOptimisticRows(r.recipients||[]));
+      // reset form instantly
+      $('recipients').innerHTML='';addRow();
+      $('bulkInput').value='';updateBulk();
+      closeSaveRecipOptions();
+      var msg='✅ '+r.added+' saved';
+      if(r.sent>0)msg+=' · '+r.sent+' sent';
+      if(r.duplicatesSkipped>0)msg+=' · '+r.duplicatesSkipped+' dup skipped';
+      if(r.failed>0)msg+=' · '+r.failed+' failed';
+      toast(msg,r.failed>0?'warn':'ok');
+      // background refresh to reconcile
+      setTimeout(function(){loadAll();loadMyEmails();loadQuota(true);loadQuickAuto();},600);
+    }catch(e){
+      toast('❌ '+(e.message||'Save & Send failed'),'err');
+    }
+    resetBtn(btn);
+    return;
+  }
+
+  // ═══════════ MODE 1 & 2: SAVE ONLY / SAVE & SCHEDULE ═══════════
+  var templateId=$('tplSelect')?$('tplSelect').value:'';
   try{
     var saveRes=await api('/api/recipients','POST',{list:items,templateId:templateId});
     if(!saveRes.ok){resetBtn(btn);return toast('❌ Save failed: '+(saveRes.error||''),'err');}
+    // ⚡ Optimistic UI — instantly show in table
+    insertOptimisticRows(buildOptimisticRows(saveRes.recipients||[]));
+
     if(SAVE_RECIP_MODE==='schedule'){
       var ms=getSaveScheduleMs();
       if(!ms){resetBtn(btn);return toast('Please choose date and time','err');}
       if(ms<=Date.now()){resetBtn(btn);return toast('Please choose future time','err');}
       var mins=Math.round((ms-Date.now())/60000);
       if(mins<2){resetBtn(btn);return toast('Minimum 2 minutes ahead','err');}
-      var fetchRes=await api('/api/recipients?limit=100&page=1');
-      if(!fetchRes.ok){resetBtn(btn);return toast('❌ Could not fetch saved recipients','err');}
-      var emailSet={};items.forEach(function(it){emailSet[String(it.email||'').toLowerCase()]=true;});
-      var ids=(fetchRes.recipients||[]).filter(function(r){return emailSet[String(r.email||'').toLowerCase()];}).map(function(r){return r.id;});
-      if(!ids.length){resetBtn(btn);return toast('❌ Could not match saved recipients','err');}
       if(!templateId){resetBtn(btn);return toast('Please select a template','err');}
+      // Use IDs we already have — no refetch needed
+      var ids=(saveRes.recipients||[]).map(function(x){return x.id;});
+      if(!ids.length){resetBtn(btn);return toast('❌ Could not match saved recipients','err');}
       var sched=await api('/api/bulk/schedule','POST',{recipientIds:ids,templateId:templateId,scheduleAt:new Date(ms).toISOString(),timezone:getScheduleTz(),includeSignature:true,includeLogo:true,includeAttachments:false});
       if(sched.ok)toast('✅ '+saveRes.added+' saved + scheduled for '+new Date(ms).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit',hour12:true}));
       else toast('⚠️ Saved '+saveRes.added+' but scheduling failed: '+(sched.error||''),'warn');
@@ -2216,10 +2367,13 @@ async function confirmSaveRecipients(){
     }
     $('recipients').innerHTML='';addRow();
     $('bulkInput').value='';updateBulk();
-    closeSaveRecipOptions();loadAll();loadQuickAuto();
+    closeSaveRecipOptions();
+    // Background refresh to reconcile
+    setTimeout(function(){loadAll();loadQuickAuto();},500);
   }catch(e){toast('❌ '+(e.message||'Save failed'),'err');}
   resetBtn(btn);
 }
+
 function submitRecipients(){
   var rows=$('recipients').querySelectorAll('.recip-row'),list=[];
   rows.forEach(function(r){var i=r.querySelectorAll('input');if(i[1].value.trim())list.push({company:i[0].value.trim(),email:i[1].value.trim()});});
@@ -2584,12 +2738,13 @@ function renderRecipientsTable(){
     var looksSent=rawSt==='sent'||rawSt==='opened'||rawSt==='delivered'||rawSt.indexOf('opened')!==-1;
     var scDisplay=(sc===0&&looksSent)?1:sc;
     var wasSent=scDisplay>0;
+    var isNew=!!x._optimistic;
     var sentCellHtml='';
     if(wasSent)sentCellHtml='<span class="sent-status-cell yes">✅ Sent</span>';
     else if(isSched)sentCellHtml='<span class="sent-status-cell sched">⏰ Scheduled</span>';
     else sentCellHtml='<span class="sent-status-cell no">— Pending</span>';
     var lastCol=isSched?'<span style="color:#c4b5fd">⏰ '+fmtDate(x.scheduledFor)+'</span>':(x.lastSentAt!==undefined&&x.lastSentAt!==null?fmtDate(x.lastSentAt):(x.sentAt?fmtDate(x.sentAt):'—'));
-    parts.push('<tr class="clickable '+(SELECTED[x.id]?'selected':'')+'" onclick="openRecipHistory(\''+x.id+'\')"><td onclick="event.stopPropagation()"><input type="checkbox" class="cbox" '+(SELECTED[x.id]?'checked':'')+' onchange="toggleOne(\''+x.id+'\',this.checked)"></td>');
+    parts.push('<tr class="clickable'+(isNew?' optimistic-new':'')+' '+(SELECTED[x.id]?'selected':'')+'" onclick="openRecipHistory(\''+x.id+'\')"><td onclick="event.stopPropagation()"><input type="checkbox" class="cbox" '+(SELECTED[x.id]?'checked':'')+' onchange="toggleOne(\''+x.id+'\',this.checked)"></td>');
     parts.push('<td style="text-align:center">'+sentCellHtml+'</td>');
     parts.push('<td>'+esc(x.company||'—')+'</td><td style="word-break:break-all">'+esc(x.email)+'</td>');
     parts.push('<td style="text-align:center">'+(scDisplay>0?'<span class="badge count">'+scDisplay+'×</span>':'<span style="color:var(--text3);font-size:11px">—</span>')+'</td>');
