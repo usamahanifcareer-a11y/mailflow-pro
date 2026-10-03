@@ -5,7 +5,85 @@ Ye file har round ke kaam ka record rakhti hai. Brand naam **"MailFlow Pro"** ha
 
 ---
 
-## ROUND 8 — Timezone Fix + Gmail-jaisa Schedule UI (latest)
+## ROUND 9 — All-Time Sent, Professional Schedule, Schedule-Block Bug (latest)
+
+### 1. 🔴 BADA BUG: Schedule ban hi nahi raha tha
+**Wajah:** purane 24 hour-chips hatane ke baad bhi `confirmBulkSchedule()` mein unka
+check **reh gaya**:
+```js
+if(BULK_SCHEDULE_HOUR===null||BULK_SCHEDULE_HOUR===undefined)
+  return toast('Please select an hour','err');   // <-- hamesha true!
+```
+`BULK_SCHEDULE_HOUR` ab sirf chips se set hota tha — chips gaye to ye **kabhi set
+nahi hota** → har baar "Please select an hour" error → **schedule ban hi nahi sakta**.
+**Fix:** purana check hataya. Ab **real browser test** se verify: request banti hai,
+`scheduleAt` sahi jata hai, modal band hota hai. ✅
+
+### 2. 🏆 All-Time Sent count (manual + MailFlow)
+Aap chahte the ke **kul total** dikhe — sirf aaj ka nahi.
+
+**Quota card ab 2 hisson mein:**
+```
+AAJ (TODAY)
+  📤 MailFlow se aaj:              4
+  📧 Gmail Sent folder (aaj):     11
+  ─────────────────────────────────
+  Aaj total (dono mila kar):      11
+  Daily limit:                   500
+  Aaj baaki:                     489
+
+ALL TIME (KUL TOTAL)
+  📤 MailFlow se (kul):          248
+  📧 Gmail se (kul):           1,204
+  ─────────────────────────────────
+  🏆 Total sent (all time):    1,204
+```
+- `fetchGmailSentTotal()` — Gmail **Sent folder ka poora total** (IMAP `mailbox.exists`)
+- `GET /api/quota?all=1` — all-time counts (5 min cache)
+- Manual Gmail sends bhi count hote hain (Sent folder se)
+
+### 3. 📊 Recipient Tracking — summary bar + Sent columns
+Table ke upar **all-time summary bar**:
+
+| Recipients | ⏳ Pending | ⏰ Scheduled | 📤 Sent | 👁 Opened | 🏆 **Total Sent (all time)** |
+|---|---|---|---|---|---|
+| 10 | 1 | 0 | 3 | 6 | **1,204** |
+
+Table mein **do saaf columns**:
+- **Sent?** — ✅ agar bheja gaya, — agar nahi
+- **Times Sent** — kitni baar bheja gaya (`2×`)
+
+### 4. 📅 Schedule UI — ab professional (purana tareeqa khatam)
+**Hataya:** 24 hour-chips (`12 AM`, `1 AM`, ...) — wo purana/fazool tha.
+
+**Ab sirf:**
+- **⚡ Quick presets:** `+1 ghanta` · `+3 ghante` · `Kal subah 9` · `Kal 12 baje` ·
+  `Kal 6 baje` · `Aaj raat 9`
+- **📅 Date picker + 🕐 Time picker**
+- **Live preview:** `📅 4 Oct 2026, 9:00 am · 14h 22m baaki`
+- **🌍 Timezone:** `Aapki timezone: Asia/Karachi`
+- **2-minute minimum** guard + past-time warning
+- Confirm button pe hi waqt likha aata hai
+
+### Verified (real browser tests)
+```
+Confirm flow:
+  modal open                -> true
+  picked 7:00 AM (2 din baad)
+  date field 2026-10-05 , time field 07:00
+  scheduleAt   = 2026-10-05T02:00:00.000Z   (= 7:00 AM PKT)
+  MATCHES PICK = true                       ✅
+  legacy sendAtHour = NO (clean)            ✅
+  modal closed after success = true         ✅
+
+UI: 24-hour-chips removed, date/time picker present, presets present,
+    quota all-time fields present, summary bar present, Sent? + Times Sent present
+Audit: 0 duplicate IDs, 0 undefined inline handlers, syntax OK (all files)
+```
+
+---
+
+## ROUND 8 — Timezone Fix + Gmail-jaisa Schedule UI
 
 ### 1. 🕐 ASLI BUG: "7 AM chuna, 12 PM dikha" — timezone
 **Wajah:** frontend sirf **hour number** (7) bhejta tha. Server usay **apni

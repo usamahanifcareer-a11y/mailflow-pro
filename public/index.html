@@ -1079,6 +1079,39 @@ table.data-table tr.clickable {
   border: 1px solid rgba(148, 163, 184, 0.3);
 }
 
+/* All-time summary bar (Recipient Tracking) */
+.recip-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.recip-summary .rs-item {
+  flex: 1 1 110px;
+  background: rgba(10, 14, 26, 0.75);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  text-align: center;
+}
+.recip-summary .rs-item.hi {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.14), rgba(56, 189, 248, 0.1));
+  border-color: rgba(34, 197, 94, 0.45);
+}
+.recip-summary .rs-lbl {
+  font-size: 9px;
+  color: var(--text3);
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: .3px;
+  margin-bottom: 3px;
+}
+.recip-summary .rs-val {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+}
+
 /* Scheduled = bheja nahi gaya, waqt set hai (purple) */
 .badge.scheduled {
   background: rgba(167, 139, 250, 0.18);
@@ -3960,13 +3993,19 @@ table.data-table tr.clickable {
 </div>
 
 <div class="panel">
-<h2><span data-i18n="gmailQuota">📊 Gmail Daily Sending Quota</span> <span class="quota-live" id="quotaLiveIndicator"><span class="dot"></span>Live</span></h2>
+<h2><span data-i18n="gmailQuota">📊 Gmail Sending Quota</span> <span class="quota-live" id="quotaLiveIndicator"><span class="dot"></span>Live</span></h2>
 <div class="info-box">
-<div class="row"><span class="k" data-i18n="mailflowSentToday">📤 MailFlow sends today:</span><span class="v" id="quotaMailflowSent">—</span></div>
-<div class="row"><span class="k" data-i18n="gmailSentToday">📧 Gmail sends today (all sources):</span><span class="v" id="quotaGmailSent">—</span></div>
-<div class="row" style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px"><span class="k"><b data-i18n="totalSentToday">Total sent today:</b></span><span class="v" id="quotaSent">—</span></div>
+<div style="font-size:9px;color:var(--text3);text-transform:uppercase;font-weight:700;letter-spacing:.5px;margin-bottom:6px">Aaj (Today)</div>
+<div class="row"><span class="k" data-i18n="mailflowSentToday">📤 MailFlow se aaj:</span><span class="v" id="quotaMailflowSent">—</span></div>
+<div class="row"><span class="k" data-i18n="gmailSentToday">📧 Gmail Sent folder (aaj):</span><span class="v" id="quotaGmailSent">—</span></div>
+<div class="row" style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px"><span class="k"><b data-i18n="totalSentToday">Aaj total (dono mila kar):</b></span><span class="v" id="quotaSent">—</span></div>
 <div class="row"><span class="k" data-i18n="dailyLimit">Daily limit:</span><span class="v" id="quotaLimit">500</span></div>
-<div class="row"><span class="k" data-i18n="remainingToday">Remaining today:</span><span class="v" id="quotaRemaining">—</span></div>
+<div class="row"><span class="k" data-i18n="remainingToday">Aaj baaki:</span><span class="v" id="quotaRemaining">—</span></div>
+<div style="border-top:1px dashed var(--border);margin:10px 0 8px"></div>
+<div style="font-size:9px;color:var(--text3);text-transform:uppercase;font-weight:700;letter-spacing:.5px;margin-bottom:6px">All Time (kul total)</div>
+<div class="row"><span class="k">📤 MailFlow se (kul):</span><span class="v" id="quotaMfAll">—</span></div>
+<div class="row"><span class="k">📧 Gmail se (kul):</span><span class="v" id="quotaGmailAll">—</span></div>
+<div class="row" style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px"><span class="k"><b>🏆 Total sent (all time):</b></span><span class="v" id="quotaTotalAll" style="color:#86efac;font-weight:800">—</span></div>
 </div>
 <div class="quota-bar"><div class="quota-fill" id="quotaFill"></div></div>
 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:8px;flex-wrap:wrap">
@@ -4625,11 +4664,7 @@ table.data-table tr.clickable {
 <div class="info-hint" id="bulkSchedulePreview" style="margin-top:8px">—</div>
 <div class="info-hint" id="bulkScheduleTz" style="margin-top:4px;color:var(--text3)"></div>
 </div>
-<div class="field">
-<label style="opacity:.75">🕐 Ya seedha hour chunein (purana tareeqa)</label>
-<div class="hour-picker" id="bulkHourPicker"></div>
-<div class="info-hint" id="bulkScheduleHint" style="margin-top:8px">Hour chip dabane se date/time khud set ho jayega.</div>
-</div>
+<div class="field" style="display:none"><div class="hour-picker" id="bulkHourPicker"></div><span id="bulkScheduleHint"></span></div>
 <div class="bulk-options-block">
 <div style="font-size:10px;color:#7dd3fc;text-transform:uppercase;font-weight:700;margin-bottom:10px">📎 Include in Each Email</div>
 <div class="send-options-row" style="margin:0">
@@ -5991,7 +6026,7 @@ function runAutoCheck(){
 }
 
 function loadQuota(force){
-  var url='/api/quota'+(force?'?force=1':'');
+  var url='/api/quota?all=1'+(force?'&force=1':'');
   api(url).then(function(r){
     if(!r.ok){
       if(r.noTokens){
@@ -6012,6 +6047,12 @@ function loadQuota(force){
     if(li){
       if(r.live){li.className='quota-live';li.innerHTML='<span class="dot"></span>Live';}
       else{li.className='quota-live offline';li.innerHTML='⚡ MailFlow only';}
+    }
+    // ALL-TIME totals (manual + MailFlow dono)
+    if(r.allTime){
+      if($('quotaMfAll'))$('quotaMfAll').innerText=fmtFull(r.allTime.mailflowSent||0);
+      if($('quotaGmailAll'))$('quotaGmailAll').innerText=(r.allTime.gmailSent!==null&&r.allTime.gmailSent!==undefined)?fmtFull(r.allTime.gmailSent):(r.imapAvailable===false?'N/A':'—');
+      if($('quotaTotalAll'))$('quotaTotalAll').innerText=fmtFull(r.allTime.total||0);
     }
     var pct=(r.limit>0)?(r.sent/r.limit)*100:0;
     if($('quotaFill')){
@@ -7534,10 +7575,23 @@ function loadRecipients(){
       updateBulkBar();
       return;
     }
+    // ===== ALL-TIME SUMMARY (manual + MailFlow) =====
+    var _sum=r.summary||{};
+    var _gmailAll=MY_QUOTA&&MY_QUOTA.allTime?MY_QUOTA.allTime.gmailSent:null;
+    var _mfAll=_sum.mailflowSendsAllTime!==undefined?_sum.mailflowSendsAllTime:0;
+    var _totalAll=(_gmailAll!==null&&_gmailAll!==undefined)?Math.max(_mfAll,_gmailAll):_mfAll;
+    var _sup='<div class="recip-summary">'
+      +'<div class="rs-item"><div class="rs-lbl">Recipients</div><div class="rs-val">'+fmtFull(_sum.recipientsTotal||total)+'</div></div>'
+      +'<div class="rs-item"><div class="rs-lbl">⏳ Pending</div><div class="rs-val" style="color:#fcd34d">'+fmtFull(_sum.pending||0)+'</div></div>'
+      +'<div class="rs-item"><div class="rs-lbl">⏰ Scheduled</div><div class="rs-val" style="color:#c4b5fd">'+fmtFull(_sum.scheduled||0)+'</div></div>'
+      +'<div class="rs-item"><div class="rs-lbl">📤 Sent</div><div class="rs-val" style="color:#7dd3fc">'+fmtFull(_sum.sent||0)+'</div></div>'
+      +'<div class="rs-item"><div class="rs-lbl">👁 Opened</div><div class="rs-val" style="color:#86efac">'+fmtFull(_sum.opened||0)+'</div></div>'
+      +'<div class="rs-item hi"><div class="rs-lbl">🏆 Total Sent (all time)</div><div class="rs-val">'+fmtFull(_totalAll)+'</div></div>'
+      +'</div>';
     if(!CURRENT_ROWS.length){
       $('tableWrap').innerHTML='<div class="empty">🔍 No matching on this page</div>';
     }else{
-      var h='<table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" class="cbox" onchange="toggleAll(this.checked)"></th><th>Company</th><th>Email</th><th>Status</th><th>Sends</th><th>Last Sent</th><th>Actions</th></tr></thead><tbody>';
+      var h='<table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" class="cbox" onclick="event.stopPropagation()" onchange="toggleAll(this.checked)"></th><th style="width:34px;text-align:center" title="Bheja gaya ya nahi">Sent?</th><th>Company</th><th>Email</th><th>Status</th><th style="text-align:center" title="Kitni baar bheja gaya (kul)">Times Sent</th><th>Last Sent</th><th style="text-align:right">Actions</th></tr></thead><tbody>';
       CURRENT_ROWS.forEach(function(x){
         var st=getRecipientStatus(x);
         var schedMs=toMs(x.scheduledFor);
@@ -7546,9 +7600,11 @@ function loadRecipients(){
           ? '<span style="color:#c4b5fd">⏰ '+fmtDate(x.scheduledFor)+'</span>'
           : fmtDate(x.lastSentAt!==undefined&&x.lastSentAt!==null?x.lastSentAt:x.sentAt);
         h+='<tr class="clickable '+(SELECTED[x.id]?'selected':'')+'" onclick="openRecipHistory(\''+x.id+'\')"><td onclick="event.stopPropagation()"><input type="checkbox" class="cbox" '+(SELECTED[x.id]?'checked':'')+' onchange="toggleOne(\''+x.id+'\',this.checked)"></td>';
+        var wasSent=((parseInt(x.sendCount,10)||0)>0)||!!x.sentAt||!!x.lastSentAt;
+        h+='<td style="text-align:center;font-size:14px" title="'+(wasSent?'Bheja gaya':'Abhi nahi bheja')+'">'+(wasSent?'✅':'—')+'</td>';
         h+='<td>'+esc(x.company||'—')+'</td><td style="word-break:break-all">'+esc(x.email)+'</td>';
         h+='<td><span class="badge '+st.cls+'">'+st.icon+' '+st.lbl+'</span></td>';
-        h+='<td><span class="badge count">'+(x.sendCount||0)+'×</span></td>';
+        h+='<td style="text-align:center"><span class="badge count" title="Kul '+(x.sendCount||0)+' baar bheja gaya">'+(x.sendCount||0)+'×</span></td>';
         h+='<td style="font-size:10px">'+lastCol+'</td>';
         h+='<td style="white-space:nowrap" onclick="event.stopPropagation()"><button class="btn ghost small" onclick="openRecipHistory(\''+x.id+'\')" title="History">📊</button>'
           +(isSched
@@ -7557,7 +7613,7 @@ function loadRecipients(){
           +' <button class="btn danger small" onclick="delRec(\''+x.id+'\')" title="Delete">✕</button></td></tr>';
       });
       h+='</tbody></table>';
-      $('tableWrap').innerHTML=h;
+      $('tableWrap').innerHTML=_sup+h;
     }
     if(totalPages>1){
       $('recipPagination').style.display='flex';
@@ -7905,7 +7961,7 @@ function openBulkScheduleModal(){
   if(!ids.length)return toast('Please select recipients first','err');
   BULK_SCHEDULE_FILES={};
   BULK_SCHEDULE_HOUR=null;
-  $('bulkScheduleInfo').innerHTML='<div><b>'+ids.length+' recipients selected</b></div><div style="margin-top:6px;font-size:11px;color:#c4b5fd">⏰ Choose an hour — emails go at next occurrence of that hour.</div>';
+  $('bulkScheduleInfo').innerHTML='<div><b>'+ids.length+' recipients selected</b></div><div style="margin-top:6px;font-size:11px;color:#c4b5fd">⏰ Neeche se waqt chunein — preset dabayein ya date/time khud set karein.</div>';
   var sel=$('bulkScheduleTemplateSelect');
   sel.innerHTML='';
   if(!TEMPLATES.length){sel.innerHTML='<option value="">(No templates)</option>';}
@@ -7913,27 +7969,7 @@ function openBulkScheduleModal(){
   // Default: agla poora ghanta (date + time fields set)
   try{ setBulkScheduleDate(new Date(Date.now()+60*60*1000)); }catch(e){}
   renderBulkSchedulePresets();
-  var hp=$('bulkHourPicker');
-  hp.innerHTML='';
-  for(var h=0;h<24;h++){
-    var btn=document.createElement('div');
-    btn.className='hour-chip'+(h>=12?' pm':'');
-    btn.setAttribute('data-hour',h);
-    btn.innerText=hourLabel(h);
-    btn.onclick=function(){
-      BULK_SCHEDULE_HOUR=parseInt(this.getAttribute('data-hour'),10);
-      document.querySelectorAll('#bulkHourPicker .hour-chip').forEach(function(c){c.classList.remove('active');});
-      this.classList.add('active');
-      // chip dabane se date/time fields bhi update ho jayein
-      try{
-        var _t=new Date(); _t.setHours(BULK_SCHEDULE_HOUR,0,0,0);
-        if(_t.getTime()<=Date.now())_t.setDate(_t.getDate()+1);
-        setBulkScheduleDate(_t);
-      }catch(e){}
-    };
-    hp.appendChild(btn);
-  }
-  $('bulkScheduleHint').innerHTML='Select an hour — emails will be scheduled for the next occurrence of that hour.';
+  // Purane hour-chips hata diye — ab sirf professional date/time picker hai.
   $('bulkScheduleOptSignature').checked=true;
   $('bulkScheduleOptLogo').checked=true;
   $('bulkScheduleOptAttachments').checked=false;
@@ -7946,16 +7982,17 @@ function closeBulkScheduleModal(){$('bulkScheduleBackdrop').classList.add('hidde
 document.getElementById('bulkScheduleConfirm').addEventListener('click',function(){
   var ids=Object.keys(SELECTED);
   if(!ids.length){closeBulkScheduleModal();return toast('No recipients selected','err');}
-  if(BULK_SCHEDULE_HOUR===null||BULK_SCHEDULE_HOUR===undefined)return toast('Please select an hour','err');
   var templateId=$('bulkScheduleTemplateSelect').value;
   if(!templateId)return toast('Please select a template','err');
   var attachChecked=$('bulkScheduleOptAttachments').checked;
   var _ms=getBulkScheduleMs();
   if(!_ms){toast('Pehle date aur time chunein','err');return;}
   if(_ms<=Date.now()){toast('Ye waqt guzar chuka hai — aage ka waqt chunein','err');return;}
+  var _mins=Math.round((_ms-Date.now())/60000);
+  if(_mins<2){toast('Kam az kam 2 minute baad ka waqt chunein','err');return;}
   var payload={recipientIds:ids,templateId:templateId,scheduleAt:new Date(_ms).toISOString(),timezone:getScheduleTz(),includeSignature:$('bulkScheduleOptSignature').checked,includeLogo:$('bulkScheduleOptLogo').checked,includeAttachments:attachChecked,selectedFileIds:attachChecked?Object.keys(BULK_SCHEDULE_FILES):[]};
   var btn=this;
-  setBtnLoading(btn,'⏰ Scheduling...');
+  setBtnLoading(btn,'⏰ '+new Date(_ms).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit',hour12:true})+' — scheduled');
   api('/api/bulk/schedule','POST',payload).then(function(r){
     resetBtn(btn);
     if(r.ok){
