@@ -4613,9 +4613,22 @@ table.data-table tr.clickable {
 <div id="bulkScheduleInfo" style="font-size:12px;color:var(--text2);margin-bottom:12px;padding:10px;background:var(--bg2);border-radius:10px;border:1px solid var(--border)"></div>
 <div class="template-picker"><label data-i18n="templateLabel">📝 Template</label><select id="bulkScheduleTemplateSelect"></select></div>
 <div class="field">
-<label>🕐 Send at hour (next occurrence)</label>
+<label>⚡ Quick presets</label>
+<div id="bulkSchedulePresets" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px"></div>
+</div>
+<div class="field">
+<label>📅 Date &amp; Time (aapki local time)</label>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<input type="date" id="bulkScheduleDate" onchange="updateBulkSchedulePreview()" style="flex:1;min-width:150px;padding:10px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;font-size:14px">
+<input type="time" id="bulkScheduleTime" onchange="updateBulkSchedulePreview()" style="flex:1;min-width:120px;padding:10px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;font-size:14px">
+</div>
+<div class="info-hint" id="bulkSchedulePreview" style="margin-top:8px">—</div>
+<div class="info-hint" id="bulkScheduleTz" style="margin-top:4px;color:var(--text3)"></div>
+</div>
+<div class="field">
+<label style="opacity:.75">🕐 Ya seedha hour chunein (purana tareeqa)</label>
 <div class="hour-picker" id="bulkHourPicker"></div>
-<div class="info-hint" id="bulkScheduleHint" style="margin-top:8px">Select an hour — emails will be scheduled for the next occurrence of that hour.</div>
+<div class="info-hint" id="bulkScheduleHint" style="margin-top:8px">Hour chip dabane se date/time khud set ho jayega.</div>
 </div>
 <div class="bulk-options-block">
 <div style="font-size:10px;color:#7dd3fc;text-transform:uppercase;font-weight:700;margin-bottom:10px">📎 Include in Each Email</div>
@@ -5469,8 +5482,14 @@ function refreshQuotaNow(){
     if(b){b.disabled=false;b.innerText='🔄 Sync now';}
     loadQuota(false);
     if(r&&r.ok){
-      if(r.live)toast('✅ Gmail se live count aa gaya: '+r.gmailSent);
-      else{toast('⚠️ Sirf MailFlow count — wajah check kar raha hoon…');showQuotaDiagnose();}
+      if(r.live){
+        // Sirf tab "live" bolo jab waqai Gmail Sent folder se aaya ho
+        var _src=(r.gmailSource==='since')?'Gmail Sent (since)':'Gmail Sent folder';
+        toast('✅ '+r.gmailSent+' email aaj Gmail ke '+_src+' mein · total '+r.sent+'/'+r.limit+' · '+r.remaining+' baaki');
+      }else{
+        toast('⚠️ Sirf MailFlow count aa raha hai — wajah check kar raha hoon…');
+        showQuotaDiagnose();
+      }
     }else{
       toast('❌ '+(r&&r.error?r.error:'Sync failed'));
     }
@@ -7822,6 +7841,65 @@ document.getElementById('bulkResendConfirm').addEventListener('click',function()
   }).catch(function(){resetBtn(btn);});
 });
 
+// ===== SCHEDULE HELPERS (Gmail-jaisa) =====
+function pad2(n){return (n<10?'0':'')+n;}
+function localDateStr(d){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
+function localTimeStr(d){return pad2(d.getHours())+':'+pad2(d.getMinutes());}
+function getScheduleTz(){try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';}catch(e){return 'UTC';}}
+function fmtInTz(ms,tz){try{return new Intl.DateTimeFormat('en-GB',{timeZone:tz,day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).format(new Date(ms));}catch(e){return new Date(ms).toLocaleString();}}
+function setBulkScheduleDate(d){
+  if(!d||isNaN(d.getTime()))return;
+  var de=$('bulkScheduleDate'),te=$('bulkScheduleTime');
+  if(de)de.value=localDateStr(d);
+  if(te)te.value=localTimeStr(d);
+  updateBulkSchedulePreview();
+}
+function getBulkScheduleMs(){
+  var dEl=$('bulkScheduleDate'),tEl=$('bulkScheduleTime');
+  if(!dEl||!tEl||!dEl.value||!tEl.value)return 0;
+  var dp=dEl.value.split('-'),tp=tEl.value.split(':');
+  if(dp.length!==3||tp.length<2)return 0;
+  var dt=new Date(parseInt(dp[0],10),parseInt(dp[1],10)-1,parseInt(dp[2],10),parseInt(tp[0],10),parseInt(tp[1],10),0,0);
+  return isNaN(dt.getTime())?0:dt.getTime();
+}
+function updateBulkSchedulePreview(){
+  var ms=getBulkScheduleMs();
+  var p=$('bulkSchedulePreview'),z=$('bulkScheduleTz');
+  if(z)z.innerText='🌍 Aapki timezone: '+getScheduleTz();
+  if(!p)return;
+  if(!ms){p.innerHTML='Pehle date aur time chunein.';return;}
+  if(ms<=Date.now()){p.innerHTML='<span style="color:#fca5a5">⚠️ Ye waqt guzar chuka hai — agli baar ke liye set hoga.</span>';return;}
+  p.innerHTML='📅 <b style="color:#c4b5fd">'+new Date(ms).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true})+'</b> · '+fmtDuration(ms-Date.now())+' baaki';
+}
+function renderBulkSchedulePresets(){
+  var box=$('bulkSchedulePresets');
+  if(!box)return;
+  function mkNow(h,mn){var d=new Date();d.setHours(h,mn,0,0);if(d.getTime()<=Date.now())d.setDate(d.getDate()+1);return d;}
+  var t1=new Date(Date.now()+60*60*1000);
+  var s1=new Date(Date.now()+3*60*60*1000);
+  var presets=[
+    ['⏱ +1 ghanta',t1],
+    ['⏱ +3 ghante',s1],
+    ['🌅 Kal subah 9',mkNow(9,0)],
+    ['☀️ Kal 12 baje',mkNow(12,0)],
+    ['🌆 Kal 6 baje',mkNow(18,0)],
+    ['🌙 Aaj raat 9',mkNow(21,0)]
+  ];
+  box.innerHTML='';
+  presets.forEach(function(p){
+    var b=document.createElement('div');
+    b.className='hour-chip';
+    b.setAttribute('data-ms',String(p[1].getTime()));
+    b.innerText=p[0];
+    b.onclick=function(){
+      var ms=parseInt(this.getAttribute('data-ms'),10);
+      setBulkScheduleDate(new Date(ms));
+      document.querySelectorAll('#bulkSchedulePresets .hour-chip').forEach(function(c){c.classList.remove('active');});
+      this.classList.add('active');
+    };
+    box.appendChild(b);
+  });
+}
 function openBulkScheduleModal(){
   var ids=Object.keys(SELECTED);
   if(!ids.length)return toast('Please select recipients first','err');
@@ -7832,6 +7910,9 @@ function openBulkScheduleModal(){
   sel.innerHTML='';
   if(!TEMPLATES.length){sel.innerHTML='<option value="">(No templates)</option>';}
   else TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;sel.appendChild(o);});
+  // Default: agla poora ghanta (date + time fields set)
+  try{ setBulkScheduleDate(new Date(Date.now()+60*60*1000)); }catch(e){}
+  renderBulkSchedulePresets();
   var hp=$('bulkHourPicker');
   hp.innerHTML='';
   for(var h=0;h<24;h++){
@@ -7843,6 +7924,12 @@ function openBulkScheduleModal(){
       BULK_SCHEDULE_HOUR=parseInt(this.getAttribute('data-hour'),10);
       document.querySelectorAll('#bulkHourPicker .hour-chip').forEach(function(c){c.classList.remove('active');});
       this.classList.add('active');
+      // chip dabane se date/time fields bhi update ho jayein
+      try{
+        var _t=new Date(); _t.setHours(BULK_SCHEDULE_HOUR,0,0,0);
+        if(_t.getTime()<=Date.now())_t.setDate(_t.getDate()+1);
+        setBulkScheduleDate(_t);
+      }catch(e){}
     };
     hp.appendChild(btn);
   }
@@ -7863,7 +7950,10 @@ document.getElementById('bulkScheduleConfirm').addEventListener('click',function
   var templateId=$('bulkScheduleTemplateSelect').value;
   if(!templateId)return toast('Please select a template','err');
   var attachChecked=$('bulkScheduleOptAttachments').checked;
-  var payload={recipientIds:ids,templateId:templateId,sendAtHour:BULK_SCHEDULE_HOUR,includeSignature:$('bulkScheduleOptSignature').checked,includeLogo:$('bulkScheduleOptLogo').checked,includeAttachments:attachChecked,selectedFileIds:attachChecked?Object.keys(BULK_SCHEDULE_FILES):[]};
+  var _ms=getBulkScheduleMs();
+  if(!_ms){toast('Pehle date aur time chunein','err');return;}
+  if(_ms<=Date.now()){toast('Ye waqt guzar chuka hai — aage ka waqt chunein','err');return;}
+  var payload={recipientIds:ids,templateId:templateId,scheduleAt:new Date(_ms).toISOString(),timezone:getScheduleTz(),includeSignature:$('bulkScheduleOptSignature').checked,includeLogo:$('bulkScheduleOptLogo').checked,includeAttachments:attachChecked,selectedFileIds:attachChecked?Object.keys(BULK_SCHEDULE_FILES):[]};
   var btn=this;
   setBtnLoading(btn,'⏰ Scheduling...');
   api('/api/bulk/schedule','POST',payload).then(function(r){

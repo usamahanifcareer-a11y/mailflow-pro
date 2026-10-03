@@ -5,7 +5,55 @@ Ye file har round ke kaam ka record rakhti hai. Brand naam **"MailFlow Pro"** ha
 
 ---
 
-## ROUND 7 — Duplicate Clock, Admin Tables, AI Error Spam (latest)
+## ROUND 8 — Timezone Fix + Gmail-jaisa Schedule UI (latest)
+
+### 1. 🕐 ASLI BUG: "7 AM chuna, 12 PM dikha" — timezone
+**Wajah:** frontend sirf **hour number** (7) bhejta tha. Server usay **apni
+timezone** mein set karta tha. Vercel **UTC** pe chalta hai, user **PKT (UTC+5)** —
+is liye **5 ghante ka farq** (7 AM → 12 PM).
+
+**Fix:** frontend ab **poora ISO timestamp** bhejta hai:
+```js
+scheduleAt: new Date(pickedMs).toISOString()   // "2026-10-04T02:00:00.000Z"
+timezone: Intl.DateTimeFormat().resolvedOptions().timeZone   // "Asia/Karachi"
+```
+Server usay **bilkul waisa hi** store karta hai (`new Date(iso)`) → **koi timezone
+masla nahi**, kisi bhi server timezone pe.
+Purana `sendAtHour` bhi chalta rahega (backward compatible).
+
+**Test se confirm:**
+```
+user picks      : 7:00 AM PKT (4 Oct)
+payload sent    : {"scheduleAt":"2026-10-04T02:00:00.000Z","timezone":"Asia/Karachi"}
+server stores   : 2026-10-04T02:00:00.000Z  (exact same moment)
+client dekhay   : 4 Oct 2026, 7:00 am       ✅ EXACT MATCH
+```
+
+### 2. 📅 Naya Schedule UI (Gmail se behtar)
+Pehle: sirf 24 hour-chips (`12 AM`, `1 AM`, ...). Ab:
+
+- **⚡ 6 Quick presets:** `⏱ +1 ghanta` · `⏱ +3 ghante` · `🌅 Kal subah 9` ·
+  `☀️ Kal 12 baje` · `🌆 Kal 6 baje` · `🌙 Aaj raat 9`
+- **📅 Date picker + 🕐 Time picker** — koi bhi exact waqt
+- **Live preview:** `📅 4 Oct 2026, 7:00 am · 142m 50s baaki`
+- **🌍 Timezone line:** `Aapki timezone: Asia/Karachi`
+- **Past-time guard:** guzra hua waqt chunein to warning
+- Purane 24 hour-chips bhi maujood hain (chip dabane se date/time khud set ho jate hain)
+- **Scheduled Batches list** mein countdown + template name
+
+### 3. 🔔 Toast bug: "Gmail se live count aa gaya: 0"
+Toast jhoot bol raha tha (0 pe bhi "aa gaya" keh raha tha).
+**Ab:** `✅ 0 email aaj Gmail ke Gmail Sent folder mein · total 0/500 · 500 baaki`
+Aur agar live nahi to seedha diagnose chalta hai.
+
+### Note: language bug nahi tha
+"English save karne pe Urdu Roman" — browser test se **verify kiya**, language
+**sahi** save ho rahi hai (`CL="en"`, button `📤 Login`, `dir=ltr`). Purana test
+assertion ghalat tha. Ab language 7/7 sahi chalti hai.
+
+---
+
+## ROUND 7 — Duplicate Clock, Admin Tables, AI Error Spam
 
 ### 1. 🐛 "⏰ ⏰ Scheduled" — duplicate clock emoji
 **Wajah:** `getRecipientStatus()` icon **aur** label dono mein clock tha:
