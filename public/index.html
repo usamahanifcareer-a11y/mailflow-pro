@@ -3898,6 +3898,25 @@ table.data-table tr.clickable {
 </div>
 <div class="field" style="margin-bottom:10px"><label data-i18n="batchSize">Batch Size (per hour)</label><input type="number" id="qBatchSize" min="1" max="500" value="5"></div>
 <div class="field" style="margin-bottom:10px"><label data-i18n="sendDelay">Delay Between Sends (seconds)</label><input type="number" id="qDelay" min="0" max="120" value="20"></div>
+<div class="field" style="margin-bottom:10px">
+<label data-i18n="dailyLimitLbl">📊 Daily Send Limit (per day)</label>
+<input type="number" id="qDailyLimit" min="1" max="5000" value="500" oninput="updateDailyLimitHint()">
+<div class="info-hint" id="qDailyLimitHint" style="margin-top:6px" data-i18n="dailyLimitHint">Gmail allows about 500 emails per day. Auto-send stops on its own when this limit is reached.</div>
+</div>
+
+<div style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--border)">
+<div class="toggle-row" style="border-bottom:none">
+<div><div class="lbl" data-i18n="sendWindow">⏰ Send Only During These Hours</div><div class="sub" data-i18n="sendWindowDesc">Auto-send will run only inside this time window</div></div>
+<label class="switch"><input type="checkbox" id="qWindowEnabled" onchange="onWindowToggle(this.checked)"><span class="slider"></span></label>
+</div>
+<div id="qWindowConfig" style="display:none">
+<div class="quiet-time-row">
+<div class="quiet-time-box"><label data-i18n="windowStart">From</label><input type="time" id="qWindowStart" value="09:00"></div>
+<div class="quiet-time-box"><label data-i18n="windowEnd">To</label><input type="time" id="qWindowEnd" value="18:00"></div>
+</div>
+<div class="info-hint" style="margin-top:8px" data-i18n="windowExample">Example: 09:00 to 18:00 = emails sirf office hours mein jayengi.</div>
+</div>
+</div>
 
 <div style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--border)">
 <div class="toggle-row" style="border-bottom:none">
@@ -3972,9 +3991,11 @@ table.data-table tr.clickable {
 <button class="btn ghost small" onclick="openAIWriter()" style="font-size:11px;padding:4px 10px" data-i18n="aiWrite">🤖 AI Write</button>
 <button class="btn ghost small" onclick="openCVAnalyzer()" style="font-size:11px;padding:4px 10px;border-color:var(--purple);color:#c4b5fd" data-i18n="cvBtn">📄 CV</button>
 <button class="btn ghost small" onclick="aiImproveComposer()" style="font-size:11px;padding:4px 10px" data-i18n="aiFix">✨ Fix</button>
+<button class="btn ghost small" onclick="runDeliverabilityCheck()" style="font-size:11px;padding:4px 10px;border-color:var(--green);color:#86efac" data-i18n="checkInboxBtn">📬 Inbox Check</button>
 </div>
 </div>
 <textarea id="composerBody" class="bulk-area" placeholder="Write your email here..." oninput="scheduleAnalysis()" style="min-height:280px;font-size:14px"></textarea>
+<div id="deliverabilityBox" style="display:none;margin-top:12px;padding:12px;background:var(--bg2);border:1px solid var(--border);border-radius:12px"></div>
 <div style="font-size:11px;color:var(--text3);margin-top:6px" data-i18n="usePlaceholders">💡 Use {name} and {company} for personalization</div>
 </div>
 <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -4847,7 +4868,18 @@ var I18N={
     resendNowBtn:"🔁 Resend Now",subjectLbl:"Subject",bodyLbl:"Body",
     userOcrDetails:"📸 User OCR Details",userDetailsH:"👤 User Details",
     banUserH:"🚫 Ban User",reasonLbl:"Reason",alsoBanIp:"<b>Also ban IP address</b>",
-    banUserBtn:"🚫 Ban User",openTimeCol:"Open Time"
+    banUserBtn:"🚫 Ban User",openTimeCol:"Open Time",
+    dailyLimitLbl:"📊 Daily Send Limit (per day)",
+    dailyLimitHint:"Gmail allows about 500 emails per day. Auto-send stops on its own when this limit is reached.",
+    sendWindow:"⏰ Send Only During These Hours",
+    sendWindowDesc:"Auto-send will run only inside this time window",
+    windowStart:"From",windowEnd:"To",
+    windowExample:"Example: 09:00 to 18:00 = emails only during office hours.",
+    deliverabilityLbl:"📬 Inbox Deliverability",
+    deliverabilityGood:"Excellent — very likely to land in inbox",
+    deliverabilityRisk:"Some issues found — may land in spam",
+    checkInboxBtn:"📬 Inbox Check",
+    machine:"Machine",never:"Never",liveLbl:"Live"
   },
   "ur-roman":{
     tagline:"AI-powered email automation.<br>Smart bhejo. Inbox mein landing karo.",
@@ -5502,6 +5534,12 @@ function loadQuickAuto(){
     $('qAutoConfig').style.display=p.autoSend?'block':'none';
     $('qBatchSize').value=p.autoSendBatchSize||5;
     $('qDelay').value=p.sendDelay!==undefined?p.sendDelay:20;
+    $('qDailyLimit').value=p.dailyLimit||500;
+    updateDailyLimitHint();
+    $('qWindowEnabled').checked=p.sendWindowEnabled===true;
+    $('qWindowConfig').style.display=p.sendWindowEnabled?'block':'none';
+    $('qWindowStart').value=toTimeInputVal(p.sendWindowStart!==undefined?p.sendWindowStart:9);
+    $('qWindowEnd').value=toTimeInputVal(p.sendWindowEnd!==undefined?p.sendWindowEnd:18);
     $('qTotalSent').innerText=p.totalAutoSent||0;
     if(p.lastAutoSendRun){
       $('qLastRun').innerText=fmtTimeAgo(p.lastAutoSendRun);
@@ -5543,6 +5581,16 @@ function loadQuickAuto(){
 
 function onQuickAutoToggle(v){$('qAutoConfig').style.display=v?'block':'none';}
 function onQuietToggle(v){$('qQuietConfig').style.display=v?'block':'none';}
+function onWindowToggle(v){$('qWindowConfig').style.display=v?'block':'none';}
+function updateDailyLimitHint(){
+  var el=$('qDailyLimit'),hint=$('qDailyLimitHint');
+  if(!el||!hint)return;
+  var n=parseInt(el.value,10);
+  if(isNaN(n)||n<1){hint.innerText='1 se 5000 ke darmiyan number likhein.';return;}
+  if(n>2000)hint.innerText='⚠️ '+n+' bohat zyada hai — Gmail is se block kar sakta hai. 500 tak safe hai.';
+  else if(n>500)hint.innerText='⚠️ Gmail ki normal limit ~500/din hai. '+n+' se deliverability kam ho sakti hai.';
+  else hint.innerText='✅ '+n+' per day — safe range. Auto-send limit poora hone pe khud ruk jayega.';
+}
 function onQuickAutoAttachToggle(v){$('qAutoFilePicker').classList.toggle('hidden',!v);if(v)renderQAutoFilesList();}
 
 function renderQAutoFilesList(){
@@ -5572,10 +5620,19 @@ function saveQuickAuto(){
   if(sd>120)sd=120;
   var qStart=parseTimeInputVal($('qQuietStart').value);
   var qEnd=parseTimeInputVal($('qQuietEnd').value);
+  var wStart=parseTimeInputVal($('qWindowStart').value);
+  var wEnd=parseTimeInputVal($('qWindowEnd').value);
+  var dl=parseInt($('qDailyLimit').value,10);
+  if(isNaN(dl)||dl<1)dl=500;
+  if(dl>5000)dl=5000;
   var payload={
     autoSend:$('qAutoSend').checked,
     autoSendBatchSize:bs,
     sendDelay:sd,
+    dailyLimit:dl,
+    sendWindowEnabled:$('qWindowEnabled').checked,
+    sendWindowStart:wStart,
+    sendWindowEnd:wEnd,
     quietEnabled:$('qQuietEnabled').checked,
     quietStart:qStart,
     quietEnd:qEnd,
@@ -5906,6 +5963,38 @@ function runLiveAnalysis(){
     }
     $('aiLiveStatus').innerText=r.aiPowered?'🤖 AI':'⚡ Local';
     renderAIAnalysis(r);
+  });
+}
+
+function runDeliverabilityCheck(){
+  var subject=$('composerSubject').value.trim();
+  var body=$('composerBody').value.trim();
+  var box=$('deliverabilityBox');
+  if(!subject&&!body){toast('Subject ya body likhein pehle','err');return;}
+  box.style.display='block';
+  box.innerHTML='<div style="font-size:12px;color:var(--text2)">⏳ Checking inbox deliverability…</div>';
+  api('/api/deliverability/check','POST',{subject:subject,body:body}).then(function(r){
+    if(!r.ok){box.innerHTML='<div style="font-size:12px;color:#fca5a5">❌ '+(r.error||'Check failed')+'</div>';return;}
+    var col=r.score>=85?'#86efac':r.score>=70?'#7dd3fc':r.score>=50?'#fcd34d':'#fca5a5';
+    var html='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">'
+      +'<div style="font-size:13px;font-weight:800;color:'+col+'">📬 Inbox Score: '+r.score+'/100 — '+esc(r.label)+'</div>'
+      +'<div style="font-size:11px;color:var(--text3)">'+t('deliverabilityLbl')+'</div></div>';
+    html+='<div class="quota-bar" style="margin-bottom:12px"><div class="quota-fill" style="width:'+Math.max(3,r.score)+'%;background:'+col+'"></div></div>';
+    if(r.issues&&r.issues.length){
+      html+='<div style="font-size:11px;font-weight:700;color:#fcd34d;margin-bottom:6px">⚠️ Issues mile ('+r.issues.length+'):</div>';
+      r.issues.forEach(function(it){
+        var c=it.severity==='high'?'#fca5a5':it.severity==='medium'?'#fcd34d':'#94a3b8';
+        html+='<div style="font-size:11px;color:'+c+';padding:3px 0">• '+esc(it.message)+'</div>';
+      });
+    }else{
+      html+='<div style="font-size:11px;color:#86efac">✅ Koi masla nahi mila — email inbox ke liye tayyar hai.</div>';
+    }
+    var meta=[];
+    meta.push(r.hasSignature?'✍️ Signature ✓':'✍️ Signature ✗');
+    meta.push(r.hasLogo?'🖼️ Logo ✓':'🖼️ Logo ✗');
+    meta.push(r.smtpConnected?'📧 Gmail ✓':'📧 Gmail ✗');
+    html+='<div style="margin-top:10px;padding-top:8px;border-top:1px dashed var(--border);font-size:10px;color:var(--text3)">'+meta.join(' &nbsp;•&nbsp; ')+'</div>';
+    box.innerHTML=html;
   });
 }
 

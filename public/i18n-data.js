@@ -156,7 +156,20 @@
     statusMachine: "Machine",
     sentLbl: "Bheja", openedLbl: "Khula", machineLbl: "Machine",
     never: "Kabhi Nahi",
-    liveLbl: "Live"
+    liveLbl: "Live",
+
+    /* ---- daily limit + send window (naye features) ---- */
+    dailyLimitLbl: "📊 Rozana Bhejne ki Limit (per day)",
+    dailyLimitHint: "Gmail rozana taqreeban 500 emails allow karta hai. Limit poori hone pe auto-send khud ruk jata hai.",
+    sendWindow: "⏰ Sirf In Ghanton Mein Bhejo",
+    sendWindowDesc: "Auto-send sirf is waqt ke andar chalega",
+    windowStart: "Se",
+    windowEnd: "Tak",
+    windowExample: "Misaal: 09:00 se 18:00 = emails sirf office hours mein jayengi.",
+    deliverabilityLbl: "📬 Inbox Deliverability",
+    deliverabilityGood: "Behtareen — inbox mein jane ke chances zyada",
+    deliverabilityRisk: "Kuch issues hain — spam mein ja sakti hai",
+    checkInboxBtn: "📬 Inbox Check"
   };
 
   /* ==========================================================================
