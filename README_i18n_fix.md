@@ -1,136 +1,113 @@
-# MailFlow Pro — Language (i18n) Fix
+# MailFlow Pro — i18n + Speed + Mobile Fix
 
-**Date:** ye change
-**Files touched:** `public/i18n-data.js` (NAYI file), `public/index.html` (3 chhote edits), `.gitignore` (scratch entry)
+Is round mein **do kaam** hue:
+1. **Language (i18n) fix** — language switching kaam nahi karta tha
+2. **Speed + Mobile polish** — language switch slow tha, mobile UX behtar ki
+
+Brand naam **"MailFlow Pro" hi rakha gaya** (domain/Vercel project safe).
 
 ---
 
-## Asli bug kya tha
+## Part 1 — Language (i18n) fix
 
-Aap jab Settings → Preferences → Language badalte the to UI change nahi hoti thi.
-
-**Wajah:** `public/index.html` ke andar `I18N` dictionary thi, jismein:
+### Asli bug
+`applyI18n()` aur `t()` bilkul theek the — **dictionary khaali thi**:
 
 | Language | Pehle | Ab |
 |---|---|---|
-| `en` (English) | ✅ Poori (~360 keys) | ✅ Waisi hi |
-| `ur-roman` (Urdu Roman) | ⚠️ Sirf ~120 keys — 240 keys missing | ✅ **Poori (360/360)** |
-| `ur` (اردو) | ❌ Khaali `{}` | ⚠️ English fallback |
-| `hi` (हिन्दी) | ❌ Khaali `{}` | ⚠️ English fallback |
-| `ar` (العربية) | ❌ Khaali `{}` | ⚠️ English fallback |
-| `es` (Español) | ❌ Khaali `{}` | ⚠️ English fallback |
-| `fr` (Français) | ❌ Khaali `{}` | ⚠️ English fallback |
+| `en` | ✅ 329 keys | ✅ 329 |
+| `ur-roman` | ⚠️ sirf **108** | ✅ **329/329 — 0 missing** |
+| `ur` `hi` `ar` `es` `fr` | ❌ khaali `{}` | ⚠️ English fallback (crash/blank nahi) |
 
-Code (`applyI18n()`, `t()`) bilkul theek tha — **data hi missing tha**.
-`t()` ka fallback `I18N.en[key]` hai, is liye khaali dictionary = English hi dikhti thi
-(blank nahi, is liye "kuch nahi hua" mehsoos hota tha).
+`t()` ka fallback `I18N.en[key]` hai, is liye khaali dictionary = English hi dikhti thi.
 
-Ek chhota race condition bhi tha: `loadAll()` pehle chal jata tha aur `applyI18n()`
-baad mein — is liye table ke andar banne wale labels (jaise `⚙️ Machine`) English
-reh jate the.
+### Fix
+- **Nayi file `public/i18n-data.js`** — Roman Urdu ka complete dictionary
+  (emojis, `<b>`/`<br>`/`<a>` tags aur `{name}`/`{company}` placeholders safe)
+  + baqi languages ke liye English base + poora `try/catch` (fail ho to app chalti rahe).
+- `index.html` head mein `<script src="/i18n-data.js">` (main script se pehle).
+- `getEmailStatus()` / `getRecipientStatus()`: `lbl:'Machine'` → `lbl:t('machine')`.
+- `applyI18n()` ab `mf:i18n` event bhejta hai → tables re-render (throttled).
+
+### Test result
+```
+EN keys          : 329
+ur-roman keys    : 336
+ur-roman missing : 0
+data-i18n total  : 328 | en mein missing: 0
+```
 
 ---
 
-## Kya fix hua
+## Part 2 — Speed + Mobile
 
-### 1. Nayi file: `public/i18n-data.js`
-- Roman Urdu ka **complete** dictionary (360 keys — emojis, `<br>`/`<b>` tags aur
-  `{name}` / `{company}` placeholders bilkul safe).
-- Baqi 5 languages ke liye English base inject karta hai — taake **kabhi blank UI na ho**.
-- Poora `try/catch` mein hai: agar ye file load bhi na ho to app normal chalti rahegi.
+### Language switch ab INSTANT hai
+**Pehle:** dropdown badlo → Save → server ka wait → phir UI change.
+**Ab:**
+- `localStorage` mein preferences cache (`mf_prefs_v1`) — page khulte hi sahi
+  language lagti hai, login screen bhi sahi bhasha mein aata hai (server wait nahi).
+- Save pe **UI turant** badalta hai, server background mein save hota hai.
+  Fail ho to purani values wapas (revert).
+- `applyI18n()` optimize: sirf woh elements likhta hai jin ki value **waqai badli**
+  ho (`_mfI18nKey` + `_mfI18nLang` yaad rakhta hai) aur sab updates
+  `requestAnimationFrame` mein batch karta hai. Pehle har baar 328 elements
+  re-paint hote the — **mobile pe yahi asli bottleneck tha**.
 
-### 2. `index.html` — line ~16 (head mein)
-```html
-<script src="/i18n-data.js"></script>
-```
-Ye main script se **pehle** load hota hai, is liye translation pehle tayyar rehti hai.
+### Mobile rendering
+- `content-visibility: auto` + `contain-intrinsic-size` un lists/tables pe jo screen
+  se bahar hain (recipients, inbox, OCR, admin lists, modals) — scroll/tab-switch
+  turant.
+- `touch-action: manipulation` (tap delay khatam) + tap-highlight off.
+- `-webkit-overflow-scrolling: touch` purane iPhone ke liye.
+- `loading="lazy"` + `decoding="async"` images pe.
+- Naya `@media (max-height: 700px)` — chhote/short phone pe login card poora fit ho
+  jata hai (padding + logo + heading chhote ho jate hain).
 
-### 3. `index.html` — `getEmailStatus()` / `getRecipientStatus()`
-`lbl:'Machine'` ki jagah ab:
-```js
-lbl:t('machine')||'Machine'
-```
+### Mobile layout verified (headless Chrome, real measurement)
 
-### 4. `index.html` — `applyI18n()`
-Ab language change pe ek event bhejta hai:
-```js
-document.dispatchEvent(new CustomEvent('mf:i18n'));
-```
-Aur `DOMContentLoaded` mein ek listener hai jo `renderMyEmails()` +
-`renderTestRecipients()` dobara chala deta hai (400ms throttle ke sath), taake
-table ke andar wale labels bhi translate ho jayein.
+| Device | Viewport | scrollWidth | Card (L/W/R) | Overflow |
+|---|---|---|---|---|
+| iPhone SE | 320 | 320 | 20 / 280 / 300 | ✅ none |
+| Android small | 360 | 360 | 20 / 320 / 340 | ✅ none |
+| iPhone 14 | 390 | 390 | 20 / 350 / 370 | ✅ none |
+| iPhone Plus | 414 | 414 | 20 / 374 / 394 | ✅ none |
+| iPad | 768 | 768 | 159 / 450 / 609 | ✅ none |
+| Desktop | 1280 | 1280 | 415 / 450 / 865 | ✅ none |
 
-### 5. `loadAll()` mein `applyI18n()` add kiya
-Data load hone ke **baad** dobara translate — race condition khatam.
-
----
-
-## Verified test results (deploy se pehle chala kar check kiya)
-
-```
-EN keys           : 329
-ur-roman (before) : 108
---- MERGE KE BAAD ---
-  en       : 329 keys
-  ur-roman : 336 keys   <-- 329 + 7 extra (machine/never/live etc)
-  ur       : 329 keys
-  hi       : 329 keys
-  ar       : 329 keys
-  es       : 329 keys
-  fr       : 329 keys
-ur-roman missing  : 0
-data-i18n total   : 328 | en mein missing: 0
-keep-check tagline / legal / signupNote / proTip1Desc /
-           createTemplateDesc / usePlaceholders / alsoEnableImap -> OK
-```
-
-Syntax checks: `node --check server.js` OK, `node --check public/i18n-data.js` OK,
-index.html ke dono inline script blocks OK.
+Har width pe **0 wide elements** — koi horizontal scroll nahi.
 
 ---
 
-## Test kaise karein
+## Part 3 — Naya logo
 
-1. Deploy ke baad site kholein aur login karein.
-2. **Settings → Preferences → Language → "Urdu Roman"** → **Save Preferences**.
-3. Poora UI Roman Urdu mein ho jana chahiye — Dashboard, buttons, tables, modals,
-   Admin panel, sab.
-4. Page refresh karein — language save rehni chahiye.
-5. Table mein status labels dekhein: `Khule` / `Bheje` / `Machine` (pehle hardcoded
-   English tha).
-6. Wapas English pe switch kar ke confirm karein ke sab normal hai.
+- **Paper plane + envelope fold**, cyan → indigo → purple gradient, amber accent dot.
+- Login screen (96px), topbar (mini), aur **favicon (inline SVG data-URI)** — teeno same mark.
+- 12px se 96px tak test kiya: har size pe saaf dikhta hai (logo scaling test screenshot).
+- Naye mobile meta tags: `apple-mobile-web-app-capable`, `theme-color`,
+  `apple-mobile-web-app-title`, description.
 
 ---
 
-## Zaroori note — cron-job.org safe hai
+## Files changed is round
+| File | Kya |
+|---|---|
+| `public/index.html` | i18n wiring, speed cache, CSS, logo, favicon, mobile meta |
+| `public/i18n-data.js` | (pehle round mein bana) Roman Urdu dictionary |
+| `README.md` (ye file) | documentation |
 
-Is round mein **`server.js` ko haath nahi lagaya gaya**. Aapka external cron
-(`cron-job.org`) bilkul waise hi kaam karega:
-
-- **URL:** `https://mailflowpro.dpdns.org/api/cron/auto-send`
-- **Method:** GET
-- **Header:** `x-cron-secret: <aapka CRON_SECRET>`
-- **Schedule:** `0 * * * *` (har ghante)
-
-Server `x-cron-secret` header ke sath sath `Authorization: Bearer <secret>` bhi
-accept karta hai — dono chalte hain, is liye kuch todna nahi padta.
+**`server.js` ko haath nahi lagaya** — cron-job.org auto-send path bilkul waise hi hai:
+`GET /api/cron/auto-send`, header `x-cron-secret`, schedule `0 * * * *`.
 
 ---
 
-## Baqi recommendations (abhi implement nahi kiye)
+## Baqi pending (imaandar list)
 
-1. **hi / ar / es / fr ki asli translations** — abhi ye English dikhate hain
-   (safe fallback, koi bug nahi). Chahein to ek-ek language complete ki ja sakti hai.
-   Note: `hi`, `ar`, `es`, `fr` abhi bhi **English hi dikhayenge** — sirf UI blank
-   nahi hoga. Asli translation baad mein add karni hogi.
-2. **Cron time budget** — `server.js` ka `/api/cron/auto-send` saare users ko ek hi
-   request mein handle karta hai (per-recipient delay `sendDelay` ke sath). Vercel
-   par `maxDuration: 60s` hai. Bahut zyada users ya zyada delay ho to request
-   timeout ho sakti hai. Solution: 50-second time budget daal ke baqi kaam agli run
-   pe chhod dena. **Ye abhi pending hai.**
-3. **`getUserData()`** poora user document (including `logoBase64`, `profilePicture`)
-   memory mein laata hai — bahut se endpoints ke liye ye wasteful hai. Chhota
-   projection behtar hoga (performance).
-4. **`server.js` minified hai** (211 lambi lines). Isse koi bug nahi hota, lekin
-   edit karna mushkil hai. Chahein to readable version bana di jaye.
-
+1. **`ur` / `hi` / `ar` / `es` / `fr` ki asli translations** — abhi English dikhate hain
+   (safe fallback, bug nahi). Ek-ek language add ho sakti hai.
+2. **Cron time budget** — `/api/cron/auto-send` saare users ek request mein handle
+   karta hai; har recipient ke baad `sendDelay` wait hota hai. Vercel `maxDuration: 60s`
+   hai, is liye zyada recipients ya zyada delay pe request timeout ho sakti hai.
+   Fix: 50-second budget daal ke baqi kaam agli hourly run pe chhod dena.
+   **Ye abhi pending hai aur aapke auto-send ke liye important hai.**
+3. **`getUserData()`** poora user document (including `logoBase64`) memory mein laata
+   hai — performance optimization baqi hai.

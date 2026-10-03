@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#060912">
 <title>MailFlow Pro — AI Email Automation</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2338bdf8'/%3E%3Cstop offset='.5' stop-color='%236366f1'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='17' fill='url(%23g)'/%3E%3Cpath d='M56 15 L8 37 L25 40.5 Z' fill='%232c3aa8'/%3E%3Cpath d='M56 15 L25 40.5 L26.5 57 Z' fill='white'/%3E%3Ccircle cx='50.5' cy='15' r='4.4' fill='%23fbbf24'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="MailFlow Pro">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="MailFlow Pro — AI-powered email automation. Send bulk personalized emails from your own Gmail with real open and click tracking.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script>
@@ -72,6 +78,53 @@ body::before {
 
 .hidden {
   display: none !important;
+}
+
+/* ============ PERFORMANCE & MOBILE SMOOTHNESS ============ */
+/* Lambi lists/tables jo screen se bahar hain, unhe render skip karo.
+   Mobile pe scroll aur tab-switch turant mehsoos hota hai. */
+.tbl-wrap,
+#recipients,
+#testRecipientsRows,
+#ocrThumbs,
+#ocrResultCards,
+#inboxList,
+#sendersList,
+#adminBannedList,
+#adminRequestList,
+.modal-body {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 300px;
+}
+
+/* Tap highlight aur tap delay hatao — mobile pe instant feel */
+button, .btn, .tab, .maintab, .chip-btn, label, select {
+  touch-action: manipulation;
+}
+button, .btn, .tab, .maintab, .chip-btn {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Purane iPhone pe rubber-band scroll smooth karo */
+.inbox-list, .inbox-viewer, .tbl-wrap,
+.modal, .modal-body, .sig-preview-canvas, #ocrResultCards {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Bahut chhoti screen (<=380px) pe layout squeeze na ho */
+@media (max-width: 380px) {
+  button, input, textarea, select { font-size: 16px; }
+  .modal { max-width: 100% !important; border-radius: 14px; }
+}
+
+/* Chhoti height (landscape phone / chhota phone) pe login screen fit ho jaye */
+@media (max-height: 700px) {
+  .auth-wrap { min-height: auto; padding: 12px 16px; }
+  .auth-card { padding: 22px 20px; border-radius: 20px; }
+  .brand-logo { width: 68px; height: 68px; margin-bottom: 12px; }
+  .auth-card h1 { font-size: 24px; margin-bottom: 2px; }
+  .auth-card p.sub { margin-bottom: 14px; font-size: 13px; }
+  .auth-toggle { margin-bottom: 12px; }
 }
 
 button, input, textarea, select {
@@ -3714,7 +3767,7 @@ table.data-table tr.clickable {
 <!-- LOGIN -->
 <div id="loginView" class="auth-wrap">
 <div class="auth-card">
-<div class="brand-logo"><svg viewBox="0 0 64 64"><defs><linearGradient id="mfGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset=".5" stop-color="#6366f1"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="16" fill="url(#mfGrad)"/><path d="M14 22 L32 34 L50 22 L50 46 Q50 48 48 48 L16 48 Q14 48 14 46 Z" fill="#fff" opacity=".97"/><path d="M14 22 L32 34 L50 22" stroke="url(#mfGrad)" stroke-width="1.8" fill="none" stroke-linejoin="round"/><circle cx="49" cy="15" r="6" fill="#fbbf24"/></svg></div>
+<div class="brand-logo"><svg viewBox="0 0 64 64" role="img" aria-label="MailFlow Pro"><defs><linearGradient id="mfGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset=".5" stop-color="#6366f1"/><stop offset="1" stop-color="#a78bfa"/></linearGradient><linearGradient id="mfGrad2" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs><rect x="1.5" y="1.5" width="61" height="61" rx="17" fill="url(#mfGrad)"/><path d="M56 15 L8 37 L25 40.5 Z" fill="#2c3aa8" opacity=".92"/><path d="M56 15 L25 40.5 L26.5 57 Z" fill="#ffffff"/><path d="M56 15 L8 37 L25 40.5 L26.5 57 Z" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linejoin="round" opacity=".95"/><path d="M8 37 L25 40.5 L26.5 57" fill="none" stroke="url(#mfGrad2)" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="50.5" cy="15" r="4.4" fill="#fbbf24"/></svg></div>
 <h1>MailFlow Pro</h1>
 <p class="sub" data-i18n="tagline">AI-powered email automation.<br>Send smart. Land in inbox.</p>
 <div class="auth-toggle">
@@ -3774,12 +3827,12 @@ table.data-table tr.clickable {
 <div id="appView" class="hidden">
 <div class="topbar">
 <div class="logo-top">
-<div class="mini-logo"><svg viewBox="0 0 64 64"><defs><linearGradient id="mfGradM" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset=".5" stop-color="#6366f1"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="14" fill="url(#mfGradM)"/><path d="M14 22 L32 34 L50 22 L50 46 Q50 48 48 48 L16 48 Q14 48 14 46 Z" fill="#fff" opacity=".97"/><path d="M14 22 L32 34 L50 22" stroke="url(#mfGradM)" stroke-width="1.8" fill="none" stroke-linejoin="round"/><circle cx="49" cy="15" r="5.5" fill="#fbbf24"/></svg></div>
+<div class="mini-logo"><svg viewBox="0 0 64 64" role="img" aria-label="MailFlow Pro"><defs><linearGradient id="mfGradM" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset=".5" stop-color="#6366f1"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs><rect x="1.5" y="1.5" width="61" height="61" rx="15" fill="url(#mfGradM)"/><path d="M56 15 L8 37 L25 40.5 Z" fill="#2c3aa8" opacity=".92"/><path d="M56 15 L25 40.5 L26.5 57 Z" fill="#ffffff"/><path d="M56 15 L8 37 L25 40.5 L26.5 57 Z" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linejoin="round" opacity=".95"/><path d="M8 37 L25 40.5 L26.5 57" fill="none" stroke="#22d3ee" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="50.5" cy="15" r="4.4" fill="#fbbf24"/></svg></div>
 <span class="brand-text">MailFlow Pro</span>
 <span style="font-size:9px;color:var(--text3);font-weight:500;padding:2px 6px;background:rgba(56,189,248,.1);border-radius:6px;margin-left:4px">v2.0.9</span>
 </div>
 <div class="user-chip">
-<img id="userAvatar" class="user-avatar" src="" style="display:none" alt="" onclick="openProfileModal()">
+<img id="userAvatar" class="user-avatar" src="" style="display:none" alt="" decoding="async" onclick="openProfileModal()">
 <span id="topName" onclick="openProfileModal()" style="cursor:pointer;font-weight:600"></span>
 <span id="myAppId" class="app-id-pill hidden"></span>
 <span id="adminBadge" class="badge admin hidden">👑 ADMIN</span>
@@ -4327,7 +4380,7 @@ table.data-table tr.clickable {
 <button class="close-btn" onclick="closeProfileModal()">✕</button>
 <h3 data-i18n="myProfileH">👤 My Profile</h3>
 <div style="display:flex;flex-direction:column;align-items:center;gap:16px;margin-bottom:20px">
-<div style="position:relative"><img id="profileAvatar" class="profile-avatar" src=""><div onclick="document.getElementById('profilePicInput').click()" style="position:absolute;bottom:0;right:0;width:38px;height:38px;border-radius:50%;background:var(--grad);border:4px solid #0a0e1a;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px">📷</div><input type="file" id="profilePicInput" accept="image/*" style="display:none"></div>
+<div style="position:relative"><img id="profileAvatar" class="profile-avatar" src="" decoding="async"><div onclick="document.getElementById('profilePicInput').click()" style="position:absolute;bottom:0;right:0;width:38px;height:38px;border-radius:50%;background:var(--grad);border:4px solid #0a0e1a;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px">📷</div><input type="file" id="profilePicInput" accept="image/*" style="display:none"></div>
 <div style="text-align:center"><div style="font-size:18px;font-weight:700" id="profileNameDisplay">User</div><div style="font-size:12px;color:var(--text2);margin-top:4px" id="profileEmailDisplay"></div></div>
 </div>
 <div class="field"><label data-i18n="displayName">Display Name</label><input type="text" id="editProfileName" placeholder="Your display name"></div>
@@ -4642,7 +4695,7 @@ var INBOX_EMAILS=[],ACTIVE_EMAIL=null,MY_QUOTA={sent:0,limit:500,remaining:500,m
 var SENDERS=[],IMAP_CONNECTED=false,imapPage=1,USER_EMAIL_LOWER='';
 var POLL_TIMER=null,HOURLY_TIMER=null,analysisTimer=null,lastAnalyzedHash='',LIVE_INBOX_TIMER=null,lastInboxHash='';
 var ADMIN_LIVE_TIMER=null,ADMIN_EMAIL_LIVE_TIMER=null,MAX_UPLOAD_SIZE=3*1024*1024;
-var _currentSendId=null,_currentResendId=null,CV_SELECTED_FILE_ID=null;
+var _currentSendId=null,_currentResendId=null,CV_SELECTED_FILE_ID=null,_i18nPending=false;
 var BANNED_USER_EMAIL='',_banTargetUid=null,_banTargetEmail='';
 var adminPage=1,adminSearchQuery='',adminSearchTimer=null;
 var ADMIN_USERS_PER_PAGE=5;
@@ -4847,16 +4900,31 @@ function t(key){
 }
 
 function applyI18n(){
-  document.querySelectorAll('[data-i18n]').forEach(function(el){
-    var k=el.getAttribute('data-i18n');
-    var v=t(k);
-    if(v)el.innerHTML=v;
-  });
-  // Language badalne pe dynamically banaye gaye labels (jaise "Machine" status,
-  // pagination info) ko dobara render karne ke liye signal bhejo.
+  // Optimized: sirf woh elements likho jin ki value WAQAI badli ho, aur sab
+  // updates ek frame mein batch karo. Pehle har baar 328 elements re-paint hote
+  // the — mobile pe yahi "language change slow" ka asli sabab tha.
   try{
-    document.dispatchEvent(new CustomEvent('mf:i18n'));
+    if(_i18nPending)return;
+    _i18nPending=true;
   }catch(e){}
+  var run=function(){
+    _i18nPending=false;
+    var els=document.querySelectorAll('[data-i18n]');
+    for(var i=0;i<els.length;i++){
+      var el=els[i];
+      var k=el.getAttribute('data-i18n');
+      if(el._mfI18nKey===k&&el._mfI18nLang===CURRENT_LANG)continue; // pehle se sahi
+      var v=t(k);
+      if(v&&el.innerHTML!==v)el.innerHTML=v;
+      el._mfI18nKey=k;
+      el._mfI18nLang=CURRENT_LANG;
+    }
+    // Language badalne pe dynamically banaye gaye labels (jaise "Machine"
+    // status, pagination info) ko dobara render karne ke liye signal bhejo.
+    try{document.dispatchEvent(new CustomEvent('mf:i18n'));}catch(e){}
+  };
+  if(typeof requestAnimationFrame==='function')requestAnimationFrame(run);
+  else run();
 }
 
 // ============ HELPERS ============
@@ -5033,6 +5101,52 @@ function togglePw(id,btn){
 
 function getRememberedEmail(){try{return localStorage.getItem('mf_remember_email')||'';}catch(e){return '';}}
 function setRememberedEmail(email){try{if(email)localStorage.setItem('mf_remember_email',email);else localStorage.removeItem('mf_remember_email');}catch(e){}}
+
+// ============ PREFERENCES CACHE (speed) ============
+// Language/timezone/date-format ko device pe yaad rakhte hain taake:
+//  1) dobara login pe turant sahi language dikhe (server ka intezar na ho)
+//  2) language change karte waqt UI FORAN badle, server background mein save ho
+var PREF_CACHE_KEY='mf_prefs_v1';
+var PREF_CACHE_VERSION=1;
+
+function readCachedPrefs(){
+  try{
+    var raw=localStorage.getItem(PREF_CACHE_KEY);
+    if(!raw)return null;
+    var o=JSON.parse(raw);
+    if(!o||o.v!==PREF_CACHE_VERSION)return null;
+    return o.p||null;
+  }catch(e){return null;}
+}
+
+function writeCachedPrefs(p){
+  try{localStorage.setItem(PREF_CACHE_KEY,JSON.stringify({v:PREF_CACHE_VERSION,p:p,at:Date.now()}));}catch(e){}
+}
+
+// Page khulte hi cached language lagao — login screen bhi sahi language mein aaye
+function applyCachedPrefsEarly(){
+  var p=readCachedPrefs();
+  if(!p)return;
+  try{
+    PREFERENCES=p;
+    if(p.language)CURRENT_LANG=p.language;
+    document.documentElement.lang=CURRENT_LANG;
+  }catch(e){}
+}
+
+// Preference ka poora UI apply (dropdown values + translation)
+function applyPreferences(p){
+  if(!p)return;
+  PREFERENCES=p;
+  CURRENT_LANG=p.language||'en';
+  try{document.documentElement.lang=CURRENT_LANG;}catch(e){}
+  var map=[['prefLanguage',p.language],['prefTimezone',p.timezone],['prefDateFormat',p.dateFormat],['prefTimeFormat',p.timeFormat]];
+  for(var i=0;i<map.length;i++){
+    var el=$(map[i][0]);
+    if(el&&map[i][1])el.value=map[i][1];
+  }
+  applyI18n();
+}
 
 function getEmailStatus(e){
   if(e.openedAt)return{cls:'opened',icon:'👁',lbl:t('optOpened'),color:'#86efac'};
@@ -5607,16 +5721,19 @@ async function changePassword(){
 }
 
 function loadUserPreferences(){
+  // 1) Cached preferences FORAN lagao — zero wait, koi server round-trip nahi
+  var cached=readCachedPrefs();
+  if(cached)applyPreferences(cached);
+
+  // 2) Background mein server se fresh lo aur (agar badla ho) update kar do
   api('/api/user-preferences').then(function(r){
     if(!r.ok)return;
     var p=r.preferences||{};
-    PREFERENCES=p;
-    CURRENT_LANG=p.language||'en';
-    $('prefLanguage').value=p.language||'en';
-    $('prefTimezone').value=p.timezone||'Asia/Karachi';
-    $('prefDateFormat').value=p.dateFormat||'DD/MM/YYYY';
-    $('prefTimeFormat').value=p.timeFormat||'12h';
-    applyI18n();
+    writeCachedPrefs(p);
+    // Sirf tab re-apply karo jab waqai kuch badla ho (warna double render = slow)
+    var changed=!cached||cached.language!==p.language||cached.timezone!==p.timezone||
+                cached.dateFormat!==p.dateFormat||cached.timeFormat!==p.timeFormat;
+    if(changed)applyPreferences(p);
   });
 }
 
@@ -5627,13 +5744,18 @@ function savePreferences(){
     dateFormat:$('prefDateFormat').value,
     timeFormat:$('prefTimeFormat').value
   };
+  // SPEED: pehle UI turant badlo (instant feel), phir server pe save karo
+  applyPreferences(payload);
+  writeCachedPrefs(payload);
+
   api('/api/user-preferences','POST',payload).then(function(r){
     if(r.ok){
       toast('✅ Preferences saved');
-      PREFERENCES=r.preferences;
-      CURRENT_LANG=r.preferences.language;
-      applyI18n();
-    }else toast('Error','err');
+      if(r.preferences){writeCachedPrefs(r.preferences);applyPreferences(r.preferences);}
+    }else{
+      toast('❌ Save failed — revert kar diya','err');
+      loadUserPreferences(); // server se sahi values wapas le ao
+    }
   });
 }
 
@@ -7026,7 +7148,7 @@ function renderOCRThumbs(){
     var lbl=x.status==='done'?'✓ Done':(x.status==='processing'?'... OCR':(x.status==='retrying'?'↻ '+x.retries+'/'+OCR_MAX_RETRIES:(x.status==='reading'?'📖 Reading':(x.status==='queued'?'Queued':'✗ Failed'))));
     var src=x.dataUrl||ph;
     var sizeHint=x.compressedKB?(' · '+x.compressedKB+'KB'):'';
-    return '<div class="ocr-thumb '+cls+'" onclick="openImgPreview(\''+i+'\')" title="Click to preview"><img src="'+src+'"><div class="status">'+(i+1)+'. '+lbl+sizeHint+'</div></div>';
+    return '<div class="ocr-thumb '+cls+'" onclick="openImgPreview(\''+i+'\')" title="Click to preview"><img src="'+src+'" loading="lazy" decoding="async"><div class="status">'+(i+1)+'. '+lbl+sizeHint+'</div></div>';
   }).join('');
 }
 
@@ -8591,6 +8713,8 @@ function closeAdminUser(){$('adminUserModal').classList.add('hidden');}
 
 // ============ INIT ============
 document.addEventListener('DOMContentLoaded',function(){
+  // Speed: cached language FORAN lagao — login screen bhi sahi bhasha mein khule
+  try{applyCachedPrefsEarly();}catch(e){}
   var rem=getRememberedEmail();
   if(rem){
     var inp=$('loginEmail'),chk=$('rememberMe');
