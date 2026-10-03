@@ -5,7 +5,55 @@ Ye file har round ke kaam ka record rakhti hai. Brand naam **"MailFlow Pro"** ha
 
 ---
 
-## ROUND 6 — Scheduled System + Quota Diagnose (latest)
+## ROUND 7 — Duplicate Clock, Admin Tables, AI Error Spam (latest)
+
+### 1. 🐛 "⏰ ⏰ Scheduled" — duplicate clock emoji
+**Wajah:** `getRecipientStatus()` icon **aur** label dono mein clock tha:
+```js
+{icon:'⏰', lbl:t('optScheduled')}   // optScheduled tha "⏰ Scheduled"
+```
+Badge builder dono render karta hai → **⏰ ⏰ Scheduled**.
+**Fix:** label se emoji hataya (dono EN + Roman Urdu).
+
+### 2. 👥 Admin "Per-User OCR Usage" table
+- **"U" avatar circle hataya** — ab sirf email dikhta hai (saaf)
+- **Headers clear kiye** + tooltips:
+  `USER · APP ID · TODAY · SUCCESS · FAILED · CLIENT ERR · ALL TIME · RATE`
+  (pehle confusing the: `✓ ✗ Client All Succ`)
+
+### 3. ⚠️ AI Provider Errors — "No OmniRoute config" spam (asli bug)
+**Wajah:** AI fallback chain har call pe **saare** providers try karti hai. Jin ka key
+nahi hota (jaise OmniRoute) unka `"No OmniRoute config"` message
+`logAIError` se **error** ban ke count hota tha — is liye admin panel mein
+bewajah errors bharte rehte the.
+**Fix:** aise messages ab **`configSkips`** mein jate hain, `total` errors mein
+**nahi**. Admin panel mein alag line:
+> ℹ️ Config missing (error nahi): 2 calls skipped `omniroute: 2`
+
+### 4. 🐛 2 aur "Invalid Date" bugs (audit se mile)
+| Jagah | Pehle | Ab |
+|---|---|---|
+| Admin OCR log table | `new Date(l.at)` (Firestore Timestamp) | `toMs(l.at)` |
+| Profile "Registered" date | `new Date(p.createdAt)` | `toMs(p.createdAt)` |
+
+### 5. 🌐 Language files update
+`optScheduled` key 5 languages mein add hui:
+`شیڈول شدہ` · `शेड्यूल किया` · `مجدول` · `Programado` · `Programmé`
+
+### Full code audit (chalaya gaya)
+```
+A) icon/lbl duplicate emojis .......... saaf (8 badges check kiye)
+B) new Date() on Firestore timestamps . none found — OK
+C) data-i18n keys missing in EN ....... 0 missing (337 total)
+D) duplicate HTML ids ................. none
+E) language files key coverage ........ 344 keys each, naye keys add
+F) server risky new Date() ............ sirf lastAutoSendRun (try/catch mein)
+G) syntax: server.js / i18n-data.js / 5 languages / index.html -> sab OK
+```
+
+---
+
+## ROUND 6 — Scheduled System + Quota Diagnose
 
 ### 1. 🐛 "Invalid Date" fix (Scheduled Batches)
 **Wajah:** Firestore `Timestamp` object (`{_seconds,...}`) ko seedha `new Date()` diya

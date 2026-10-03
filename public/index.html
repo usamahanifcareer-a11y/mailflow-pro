@@ -4810,7 +4810,7 @@ var I18N={
     copyBtn:"📋 Copy",retryFailed:"🔄 Retry Failed",cancelBtn:"⏹ Cancel",
     recipientTracking:"📊 Recipient Tracking",
     trackingHelp:"💡 Click any row for full all-time history. Real opens only — bots filtered. Duplicate sends auto-blocked for 90s.",
-    optAllStatus:"All Status",optPending:"Pending",optSent:"Sent",optOpened:"Opened",optScheduled:"⏰ Scheduled",
+    optAllStatus:"All Status",optPending:"Pending",optSent:"Sent",optOpened:"Opened",optScheduled:"Scheduled",
     resendBtn:"🔁 Resend",deleteBtn:"🗑 Delete",clearSelBtn:"Clear",refreshBtn:"🔄 Refresh",
     selectPage:"☑️ Select Page",emailHistory:"📧 Email History",allTime:"All Time",today:"Today",
     last7:"Last 7 Days",last30:"Last 30 Days",
@@ -5740,7 +5740,8 @@ function loadProfile(){
     $('profileAppId').innerText=p.appAccountId||'MFP-XXXXXX';
     if(p.createdAt){
       try{
-        var d=p.createdAt._seconds?new Date(p.createdAt._seconds*1000):new Date(p.createdAt);
+        var _cMs=toMs(p.createdAt);
+        var d=_cMs>0?new Date(_cMs):null;
         $('profileJoined').innerText=d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
       }catch(e){}
     }
@@ -8585,12 +8586,12 @@ function loadOcrMonitor(){
     if(!rows.length){
       w.innerHTML='<div class="empty" style="padding:24px">No OCR usage yet</div>';
     }else{
-      var h='<table class="compact-table"><thead><tr><th>User</th><th>App ID</th><th style="text-align:center">Today</th><th style="text-align:center">✓</th><th style="text-align:center">✗</th><th style="text-align:center">Client</th><th style="text-align:center">All</th><th style="text-align:center">Succ</th></tr></thead><tbody>';
+      var h='<table class="compact-table"><thead><tr><th>User</th><th>App ID</th><th style="text-align:center" title="Aaj ke total OCR attempts">Today</th><th style="text-align:center;color:#86efac" title="Aaj kamyab">Success</th><th style="text-align:center;color:#fca5a5" title="Aaj fail">Failed</th><th style="text-align:center;color:#fcd34d" title="Client side errors (image read fail wagera)">Client Err</th><th style="text-align:center" title="All-time total attempts">All Time</th><th style="text-align:center" title="Success rate">Rate</th></tr></thead><tbody>';
       rows.slice(0,60).forEach(function(row){
         var sr=row.total>0?Math.round((row.success/row.total)*100):0;
         var src=sr>=80?'#86efac':sr>=50?'#fcd34d':'#fca5a5';
         var initial=(row.email||'?').charAt(0).toUpperCase();
-        h+='<tr class="clickable" onclick="openUserOcr(\''+esc(row.id)+'\')"><td><div class="user-cell"><div class="av">'+initial+'</div><div class="nm">'+esc(row.email)+'</div></div></td><td><span class="app-id-pill" style="font-size:9px">'+esc(row.appAccountId)+'</span></td><td class="num">'+fmtFull(row.todayTotal)+'</td><td class="num green">'+fmtFull(row.todaySuccess)+'</td><td class="num red">'+fmtFull(row.todayFailed)+'</td><td class="num amber">'+fmtFull(row.todayClientErrors||0)+'</td><td class="num blue">'+fmtFull(row.total)+'</td><td class="num" style="color:'+src+'">'+sr+'%</td></tr>';
+        h+='<tr class="clickable" onclick="openUserOcr(\''+esc(row.id)+'\')"><td><div class="user-cell"><div class="nm">'+esc(row.email)+'</div></div></td><td><span class="app-id-pill" style="font-size:9px">'+esc(row.appAccountId)+'</span></td><td class="num">'+fmtFull(row.todayTotal)+'</td><td class="num green">'+fmtFull(row.todaySuccess)+'</td><td class="num red">'+fmtFull(row.todayFailed)+'</td><td class="num amber">'+fmtFull(row.todayClientErrors||0)+'</td><td class="num blue">'+fmtFull(row.total)+'</td><td class="num" style="color:'+src+'">'+sr+'%</td></tr>';
       });
       h+='</tbody></table>';
       w.innerHTML=h;
@@ -8600,7 +8601,10 @@ function loadOcrMonitor(){
     if(!r.ok)return;
     var s=r.summary||{};
     var provs=Object.entries(s.providerTotals||{}).map(function(kv){return '<span class="tiny-badge fail" style="margin:1px">'+esc(kv[0])+': '+kv[1]+'</span>';}).join('');
-    $('aiErrSummary').innerHTML='Total today: <b style="color:#fca5a5">'+(s.grandTotal||0)+'</b> '+provs;
+    var skips=s.grandConfigSkips||0;
+    var skipProvs=Object.entries(s.configSkipTotals||{}).map(function(kv){return '<span class="tiny-badge" style="margin:1px;background:rgba(148,163,184,.15);color:#cbd5e1;border-color:rgba(148,163,184,.3)">'+esc(kv[0])+': '+kv[1]+'</span>';}).join('');
+    $('aiErrSummary').innerHTML='Errors today: <b style="color:#fca5a5">'+(s.grandTotal||0)+'</b> '+provs
+      +(skips>0?'<div style="margin-top:4px;font-size:10px;color:var(--text3)">ℹ️ Config missing (error nahi): '+skips+' calls skipped '+skipProvs+'</div>':'');
     var rows=r.rows||[];
     var w=$('aiErrorTable');
     if(!rows.length){
@@ -8661,7 +8665,8 @@ function reloadUserOcrLog(uid){
       if(l.isClientError)st='<span class="tiny-badge client">⚠ Client</span>';
       else if(l.success)st='<span class="tiny-badge ok">✓ OK</span>';
       else st='<span class="tiny-badge fail">✗ Fail</span>';
-      h+='<tr><td style="font-size:10px;white-space:nowrap">'+fmtTimeAgo(l.at?new Date(l.at).toISOString():null)+'</td><td style="font-size:10px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(l.fileName||'—')+'</td><td style="text-align:center">'+st+'</td><td class="num">'+fmtFull(l.chars||0)+'</td><td style="font-size:10px;color:#fca5a5;max-width:200px;word-break:break-word">'+esc((l.error||'').substring(0,80))+'</td></tr>';
+      var _atMs=toMs(l.at);
+      h+='<tr><td style="font-size:10px;white-space:nowrap">'+(_atMs>0?fmtTimeAgo(new Date(_atMs).toISOString()):'—')+'</td><td style="font-size:10px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(l.fileName||'—')+'</td><td style="text-align:center">'+st+'</td><td class="num">'+fmtFull(l.chars||0)+'</td><td style="font-size:10px;color:#fca5a5;max-width:200px;word-break:break-word">'+esc((l.error||'').substring(0,80))+'</td></tr>';
     });
     h+='</tbody></table>';
     w.innerHTML=h;

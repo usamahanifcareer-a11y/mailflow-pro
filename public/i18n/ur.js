@@ -1,5 +1,6 @@
 window.MF_I18N = window.MF_I18N || {};
 window.MF_I18N.ur = {
+  "optScheduled": "شیڈول شدہ",
   "tagline": "AI سے چلنے والی ای میل آٹومیشن۔<br>سمجھداری سے بھیجیں۔ اِن باکس میں پہنچیں۔",
   "login": "لاگ اِن",
   "register": "رجسٹر",

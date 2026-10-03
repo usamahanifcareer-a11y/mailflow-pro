@@ -1,5 +1,6 @@
 window.MF_I18N = window.MF_I18N || {};
 window.MF_I18N.ar = {
+  "optScheduled": "مجدول",
   "tagline": "أتمتة البريد الإلكتروني بالذكاء الاصطناعي.<br>أرسل بذكاء. وصلك إلى صندوق الوارد.",
   "login": "تسجيل الدخول",
   "register": "إنشاء حساب",

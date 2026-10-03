@@ -1,5 +1,6 @@
 window.MF_I18N = window.MF_I18N || {};
 window.MF_I18N.hi = {
+  "optScheduled": "शेड्यूल किया",
   "tagline": "AI-संचालित ईमेल ऑटोमेशन।<br>स्मार्ट भेजें। इनबॉक्स में पहुँचें।",
   "login": "लॉगिन",
   "register": "रजिस्टर करें",

@@ -1,5 +1,6 @@
 window.MF_I18N = window.MF_I18N || {};
 window.MF_I18N.es = {
+  "optScheduled": "Programado",
   "tagline": "Automatización de email con AI.<br>Envía con inteligencia. Llega a la bandeja de entrada.",
   "login": "Iniciar sesión",
   "register": "Registrarse",
