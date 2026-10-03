@@ -1079,6 +1079,13 @@ table.data-table tr.clickable {
   border: 1px solid rgba(148, 163, 184, 0.3);
 }
 
+/* Scheduled = bheja nahi gaya, waqt set hai (purple) */
+.badge.scheduled {
+  background: rgba(167, 139, 250, 0.18);
+  color: #c4b5fd;
+  border: 1px solid rgba(167, 139, 250, 0.45);
+}
+
 .badge.count {
   background: rgba(236, 72, 153, 0.15);
   color: #f9a8d4;
@@ -4119,7 +4126,7 @@ table.data-table tr.clickable {
 <div style="font-size:11px;color:var(--text2);margin-bottom:12px;padding:10px;background:rgba(56,189,248,.06);border-radius:8px;border-left:3px solid var(--cyan)" data-i18n="trackingHelp">💡 Click any row for full all-time history (MailFlow + Gmail auto-merged). Real opens only — bots filtered. Duplicate sends auto-blocked for 90s.</div>
 <div class="filter-bar">
 <input type="text" class="search-bar" id="recipSearch" placeholder="Search by email or company..." oninput="onRecipSearchChange()" autocomplete="off">
-<select id="statusFilter" onchange="recipPage=1;loadRecipients()"><option value="all" data-i18n="optAllStatus">All Status</option><option value="pending" data-i18n="optPending">Pending</option><option value="sent" data-i18n="optSent">Sent</option><option value="opened" data-i18n="optOpened">Opened</option></select>
+<select id="statusFilter" onchange="recipPage=1;loadRecipients()"><option value="all" data-i18n="optAllStatus">All Status</option><option value="scheduled" data-i18n="optScheduled">Scheduled</option><option value="pending" data-i18n="optPending">Pending</option><option value="sent" data-i18n="optSent">Sent</option><option value="opened" data-i18n="optOpened">Opened</option></select>
 </div>
 <div class="bulk-action-bar" id="bulkActionBar">
 <span id="selectedCount" style="color:#7dd3fc;font-weight:700;font-size:12px;margin-right:auto">0 selected</span>
@@ -4803,7 +4810,7 @@ var I18N={
     copyBtn:"📋 Copy",retryFailed:"🔄 Retry Failed",cancelBtn:"⏹ Cancel",
     recipientTracking:"📊 Recipient Tracking",
     trackingHelp:"💡 Click any row for full all-time history. Real opens only — bots filtered. Duplicate sends auto-blocked for 90s.",
-    optAllStatus:"All Status",optPending:"Pending",optSent:"Sent",optOpened:"Opened",
+    optAllStatus:"All Status",optPending:"Pending",optSent:"Sent",optOpened:"Opened",optScheduled:"⏰ Scheduled",
     resendBtn:"🔁 Resend",deleteBtn:"🗑 Delete",clearSelBtn:"Clear",refreshBtn:"🔄 Refresh",
     selectPage:"☑️ Select Page",emailHistory:"📧 Email History",allTime:"All Time",today:"Today",
     last7:"Last 7 Days",last30:"Last 30 Days",
@@ -5208,6 +5215,8 @@ function getRecipientStatus(r){
   var st=(r.status||'').toLowerCase();
   if(st.indexOf('opened')!==-1)return{cls:'opened',icon:'👁',lbl:t('optOpened')};
   if(st==='delivered'||st==='machine')return{cls:'machine',icon:'⚙️',lbl:t('machine')||'Machine'};
+  // Scheduled = bheja nahi gaya, agle waqt ke liye set hai (sab se pehle check)
+  if(st==='scheduled')return{cls:'scheduled',icon:'⏰',lbl:t('optScheduled')||'Scheduled'};
   if(st==='sent')return{cls:'sent',icon:'📤',lbl:t('optSent')};
   return{cls:'pending',icon:'⏳',lbl:t('optPending')};
 }
@@ -5457,10 +5466,35 @@ function refreshQuotaNow(){
   var b=$('quotaRefreshBtn');
   if(b){b.disabled=true;b.innerText='⏳ Syncing…';}
   api('/api/quota?force=1').then(function(r){
-    loadQuota(false);
     if(b){b.disabled=false;b.innerText='🔄 Sync now';}
-    if(r&&r.ok)toast(r.live?'✅ Gmail se live count aa gaya':'⚠️ Sirf MailFlow count (Inbox connect karein)');
+    loadQuota(false);
+    if(r&&r.ok){
+      if(r.live)toast('✅ Gmail se live count aa gaya: '+r.gmailSent);
+      else{toast('⚠️ Sirf MailFlow count — wajah check kar raha hoon…');showQuotaDiagnose();}
+    }else{
+      toast('❌ '+(r&&r.error?r.error:'Sync failed'));
+    }
   }).catch(function(){ if(b){b.disabled=false;b.innerText='🔄 Sync now';} });
+}
+// Exact wajah batata hai ke Gmail count kyun nahi aa raha
+function showQuotaDiagnose(){
+  var hint=$('quotaHint');
+  if(hint)hint.innerHTML='⏳ Wajah check ho rahi hai…';
+  api('/api/quota/diagnose').then(function(d){
+    if(!d.ok){ if(hint)hint.innerHTML='❌ '+(d.error||'Diagnose failed'); return; }
+    var L=[];
+    L.push('SMTP (Gmail): '+(d.smtpEnabled?'✅ connected':'❌ not connected'));
+    L.push('IMAP (Inbox): '+(d.imapEnabled&&d.hasImapPass?'✅ connected':'❌ not connected'));
+    L.push('MailFlow sends today: '+(d.mailflowSentToday!==undefined?d.mailflowSentToday:'—'));
+    (d.steps||[]).forEach(function(st){
+      L.push((st.ok?'✅ ':'❌ ')+st.step+(st.value!==undefined?' = '+st.value:'')+(st.method?' ('+st.method+')':'')+(st.error?' — '+st.error:''));
+    });
+    if(d.durationMs!==undefined)L.push('Gmail check time: '+d.durationMs+'ms');
+    var reason=d.reason?('⚠️ '+d.reason):'✅ Sab theek — Gmail count aa gaya'+(d.totalToday!==undefined?' ('+d.totalToday+' total, '+d.remaining+' baaki)':'');
+    if(hint){
+      hint.innerHTML='<div style="line-height:1.7"><b>'+esc(reason)+'</b><br><span style="color:var(--text3);font-size:9px">'+L.map(esc).join(' · ')+'</span></div>';
+    }
+  }).catch(function(){ if(hint)hint.innerHTML='❌ Diagnose failed'; });
 }
 function startAutoRefresh(){
   if(POLL_TIMER)clearInterval(POLL_TIMER);
@@ -5970,9 +6004,9 @@ function loadQuota(force){
         var src=r.gmailSource==='gmraw'?'Gmail Sent folder':(r.gmailSource==='since'?'Gmail Sent (since)':'Gmail Sent folder');
         $('quotaHint').innerHTML='✅ Live — '+src+' se sync hua ('+age+'). Manual sends bhi count ho rahe hain.';
       }else if(r.imapAvailable&&r.gmailError){
-        $('quotaHint').innerHTML='⚠️ Gmail Sent folder nahi parh saka: '+esc(String(r.gmailError).substring(0,70))+'. Inbox dobara connect karein.';
+        $('quotaHint').innerHTML='⚠️ Gmail Sent folder nahi parh saka: '+esc(String(r.gmailError).substring(0,70))+' <a href="#" onclick="showQuotaDiagnose();return false;" style="color:#7dd3fc">(wajah dekhein)</a>';
       }else{
-        $('quotaHint').innerHTML='⚠️ Sirf MailFlow sends count ho rahe hain. Manual Gmail sends count karne ke liye Inbox (IMAP) connect karein.';
+        $('quotaHint').innerHTML='⚠️ Sirf MailFlow sends count ho rahe hain (manual Gmail sends count nahi ho rahe). <a href="#" onclick="showQuotaDiagnose();return false;" style="color:#7dd3fc">(check karein)</a>';
       }
     }
   }).catch(function(){});
@@ -7486,12 +7520,21 @@ function loadRecipients(){
       var h='<table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" class="cbox" onchange="toggleAll(this.checked)"></th><th>Company</th><th>Email</th><th>Status</th><th>Sends</th><th>Last Sent</th><th>Actions</th></tr></thead><tbody>';
       CURRENT_ROWS.forEach(function(x){
         var st=getRecipientStatus(x);
+        var schedMs=toMs(x.scheduledFor);
+        var isSched=(x.status||'').toLowerCase()==='scheduled'&&schedMs>0;
+        var lastCol=isSched
+          ? '<span style="color:#c4b5fd">⏰ '+fmtDate(x.scheduledFor)+'</span>'
+          : fmtDate(x.lastSentAt!==undefined&&x.lastSentAt!==null?x.lastSentAt:x.sentAt);
         h+='<tr class="clickable '+(SELECTED[x.id]?'selected':'')+'" onclick="openRecipHistory(\''+x.id+'\')"><td onclick="event.stopPropagation()"><input type="checkbox" class="cbox" '+(SELECTED[x.id]?'checked':'')+' onchange="toggleOne(\''+x.id+'\',this.checked)"></td>';
         h+='<td>'+esc(x.company||'—')+'</td><td style="word-break:break-all">'+esc(x.email)+'</td>';
         h+='<td><span class="badge '+st.cls+'">'+st.icon+' '+st.lbl+'</span></td>';
         h+='<td><span class="badge count">'+(x.sendCount||0)+'×</span></td>';
-        h+='<td style="font-size:10px">'+fmtDate(x.lastSentAt||x.sentAt)+'</td>';
-        h+='<td style="white-space:nowrap" onclick="event.stopPropagation()"><button class="btn ghost small" onclick="openRecipHistory(\''+x.id+'\')">📊</button> <button class="btn ghost small" onclick="openSendOptions(\''+x.id+'\')">📤</button> <button class="btn warn small" onclick="openResendOptions(\''+x.id+'\')">🔁</button> <button class="btn danger small" onclick="delRec(\''+x.id+'\')">✕</button></td></tr>';
+        h+='<td style="font-size:10px">'+lastCol+'</td>';
+        h+='<td style="white-space:nowrap" onclick="event.stopPropagation()"><button class="btn ghost small" onclick="openRecipHistory(\''+x.id+'\')" title="History">📊</button>'
+          +(isSched
+            ?'<button class="btn warn small" onclick="openSchedulesList()" title="Scheduled — View Schedules">⏰</button>'
+            :'<button class="btn ghost small" onclick="openSendOptions(\''+x.id+'\')" title="Send now">📤</button> <button class="btn warn small" onclick="openResendOptions(\''+x.id+'\')" title="Resend">🔁</button>')
+          +' <button class="btn danger small" onclick="delRec(\''+x.id+'\')" title="Delete">✕</button></td></tr>';
       });
       h+='</tbody></table>';
       $('tableWrap').innerHTML=h;
@@ -7544,6 +7587,24 @@ function openRecipHistory(recipientId){
     $('recipHistoryInfo').innerHTML=info;
     var s='<div class="recipient-stat-grid"><div class="recipient-stat total"><div class="label">Sends</div><div class="value">'+(stats.totalSent||0)+'</div></div><div class="recipient-stat opened"><div class="label">Opened</div><div class="value">'+(stats.totalOpened||0)+'</div></div><div class="recipient-stat pending"><div class="label">Not Opened</div><div class="value">'+(stats.totalNotOpened||0)+'</div></div><div class="recipient-stat sent"><div class="label">Open Rate</div><div class="value">'+(stats.openRate||0)+'%</div></div></div>';
     $('recipHistoryStats').innerHTML=s;
+    // Scheduled banner — is recipient ki aane wali scheduled batches
+    try{
+      api('/api/recipient/'+recipientId+'/schedules').then(function(sr){
+        if(!sr||!sr.ok||!sr.items||!sr.items.length)return;
+        var sh='<div style="margin-top:12px;padding:12px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.4);border-radius:12px">';
+        sh+='<div style="font-size:12px;font-weight:800;color:#c4b5fd;margin-bottom:8px">⏰ Scheduled — '+(sr.items.length)+' batch'+(sr.items.length>1?'es':'')+'</div>';
+        sr.items.forEach(function(it){
+          var ms=it.scheduledForMs||toMs(it.scheduledFor);
+          var w=ms>0?new Date(ms).toLocaleString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,day:'numeric',month:'short'}):'Date missing';
+          var left=(it.status==='pending'&&ms>Date.now())?' · '+fmtDuration(ms-Date.now())+' baaki':'';
+          sh+='<div style="font-size:11px;color:#e2e8f0;padding:3px 0">📅 '+esc(w)+'<span style="color:#c4b5fd">'+esc(left)+'</span> <span class="badge '+((it.status||'pending')==='pending'?'pending-sched':'done-sched')+'">'+esc(String(it.status||'pending').toUpperCase())+'</span></div>';
+        });
+        sh+='<div style="font-size:10px;color:var(--text3);margin-top:6px">Ye emails abhi bheji nahi gayin — scheduled waqt pe khud chali jayengi.</div></div>';
+        var info=$('recipHistoryInfo');
+        if(info)info.insertAdjacentHTML('beforeend',sh);
+      }).catch(function(){});
+    }catch(e){}
+    var _histStatsShown=true;
     if(!emails.length){
       $('recipHistoryList').innerHTML='<div class="empty">No emails yet</div>';
       return;
@@ -7807,7 +7868,8 @@ document.getElementById('bulkScheduleConfirm').addEventListener('click',function
   api('/api/bulk/schedule','POST',payload).then(function(r){
     resetBtn(btn);
     if(r.ok){
-      var when=new Date(r.scheduledFor).toLocaleString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,day:'numeric',month:'short'});
+      var whenMs2=toMs(r.scheduledFor);
+      var when=whenMs2>0?new Date(whenMs2).toLocaleString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,day:'numeric',month:'short'}):'next occurrence';
       toast('✅ Scheduled '+r.count+' for '+when);
       closeBulkScheduleModal();
       clearSelection();
@@ -7830,13 +7892,27 @@ function openSchedulesList(){
     }
     var h='';
     list.forEach(function(s){
-      var when=new Date(s.scheduledFor).toLocaleString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,day:'numeric',month:'short'});
-      var status=s.status||'pending';
-      var cls=status==='pending'?'pending-sched':status==='done'?'done-sched':'failed-sched';
-      h+='<div class="schedule-item"><div class="info"><div class="ttl">📅 '+esc(when)+'</div><div class="sub">'+(s.recipientIds||[]).length+' recipients · Sent: '+(s.sentCount||0)+' · Failed: '+(s.failedCount||0)+'</div></div><span class="badge '+cls+'">'+esc(status.toUpperCase())+'</span>';
-      if(status==='pending')h+='<button class="btn danger small" onclick="deleteSchedule(\''+s.id+'\')">✕</button>';
+      var ms=toMs(s.scheduledFor);
+      var when=ms>0?new Date(ms).toLocaleString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,day:'numeric',month:'short'}):'Date missing';
+      var status=(s.status||'pending').toLowerCase();
+      var cls=status==='pending'?'pending-sched':status==='done'?'done-sched':status==='paused'?'pending-sched':'failed-sched';
+      var label=status==='pending'?'PENDING':status==='done'?'DONE':status==='paused'?'PAUSED':'FAILED';
+      // countdown / "kitna waqt bacha hai"
+      var extra='';
+      if(ms>0){
+        if(status==='pending'&&ms>Date.now())extra='<span style="color:#c4b5fd">· '+esc(fmtDuration(ms-Date.now()))+' baaki</span>';
+        else if(status==='pending')extra='<span style="color:#fcd34d">· abhi bhejna hai</span>';
+        else if(status==='done')extra='<span style="color:#86efac">· bhej diya</span>';
+      }
+      var recCount=(s.recipientIds||[]).length;
+      var tpl=s.templateName?' · 📝 '+esc(s.templateName):'';
+      h+='<div class="schedule-item"><div class="info"><div class="ttl">📅 '+esc(when)+' '+extra+'</div>'
+        +'<div class="sub">'+recCount+' recipients'+tpl+' · ✅ Sent: '+(s.sentCount||0)+' · ❌ Failed: '+(s.failedCount||0)+'</div></div>'
+        +'<span class="badge '+cls+'">'+esc(label)+'</span>';
+      if(status==='pending')h+='<button class="btn danger small" onclick="deleteSchedule(\''+s.id+'\')" title="Cancel schedule">✕</button>';
       h+='</div>';
     });
+    $('schedulesListContent').innerHTML=h;
     $('schedulesListContent').innerHTML=h;
   });
 }

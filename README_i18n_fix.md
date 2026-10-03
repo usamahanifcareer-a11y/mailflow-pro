@@ -5,7 +5,84 @@ Ye file har round ke kaam ka record rakhti hai. Brand naam **"MailFlow Pro"** ha
 
 ---
 
-## ROUND 5 — Live Quota + Har Open Count (latest)
+## ROUND 6 — Scheduled System + Quota Diagnose (latest)
+
+### 1. 🐛 "Invalid Date" fix (Scheduled Batches)
+**Wajah:** Firestore `Timestamp` object (`{_seconds,...}`) ko seedha `new Date()` diya
+ja raha tha — JavaScript isay parse nahi kar sakta → **Invalid Date**.
+**Fix:** `toMs(s.scheduledFor)` helper (jo `_seconds`/`seconds`/ISO sab handle karta
+hai) + graceful fallback "Date missing" / "next occurrence".
+**Do jagah fix hui:** Scheduled Batches list aur bulk-schedule toast.
+
+### 2. ⏰ Scheduled emails ka sahi status
+**Wajah:** `/api/bulk/schedule` recipients ko mark hi nahi karta tha — is liye
+Recipient Tracking mein **galat status** dikhta tha aur schedule ka koi nishan nahi tha.
+
+**Ab poora system:**
+
+| Kab | Recipient status |
+|---|---|
+| Schedule banate waqt | **`Scheduled`** (naya purple badge ⏰) |
+| Scheduled waqt aane pe | `sendOne` chalta hai → **`Sent`** |
+| Receiver khole to | **`Opened`** |
+| Schedule cancel/delete karein | wapas **`Pending`** (ya `Sent`/`Opened` agar pehle bhej chuke) |
+
+Ek recipient **kai batches** mein ho sakta hai — `scheduledBatchIds` array se track
+hota hai, aur jab aakhri batch chal jaye tab hi status badalta hai.
+
+### 3. 🔒 Duplicate send se bachao (atomic claim)
+**Bug:** `/api/scheduled/check` (client) aur **cron** dono ek hi batch utha sakte the
+→ **duplicate emails**.
+**Fix:** `claimBatch()` — Firestore transaction se batch `pending → processing` hota
+hai. Sirf **ek** processor jeetta hai, doosra chup chaap chhod deta hai.
+
+### 4. 📊 Quota diagnose (ab exact wajah pata chalti hai)
+Naya endpoint `GET /api/quota/diagnose` + UI mein link.
+Ye step-by-step batata hai:
+- SMTP connected hai ya nahi
+- IMAP (Inbox) connected hai ya nahi
+- MailFlow counter kitna hai
+- Gmail Sent folder **padha ja saka ya nahi** (aur error kya aaya)
+- Kitna waqt laga (ms)
+
+Hint mein link aata hai: **(wajah dekhein)** / **(check karein)** — click karne pe
+poori tafseel. "Sync now" bhi ab khud diagnose chala deta hai jab count na aaye.
+
+`/api/bulk/schedules` ab `templateName`, `recipientCount`, `scheduledForMs` bhi
+return karta hai → list mein **template ka naam** aur **"2h 15m baaki"** countdown
+dikhta hai.
+
+### 5. 📋 Recipient History mein scheduled banner
+Recipient click karne pe history modal mein purple banner:
+*"⏰ Scheduled — 2 batches"* + har batch ka waqt + baaki waqt + status. Saath saaf
+likha hota hai: *"Ye emails abhi bheji nahi gayin — scheduled waqt pe khud chali
+jayengi."*
+Naya endpoint: `GET /api/recipient/:id/schedules`
+
+### 6. 🎨 Recipient Tracking table
+- Naya **⏰ Scheduled** badge (purple) + filter dropdown mein "Scheduled" option
+- Scheduled recipients ki row mein **"Last Sent"** column ki jagah **scheduled waqt**
+  (`⏰ 3 Oct, 7:00 PM`) dikhta hai
+- Scheduled recipients ke liye 📤 Send / 🔁 Resend ki jagah **⏰ (View Schedules)**
+  button — ghalti se turant bhejne se bachao
+
+### Verified
+```
+Routes (401 = exists + auth required):
+  /api/quota/diagnose            OK
+  /api/bulk/schedules            OK
+  /api/recipient/:id/schedules   OK
+  /api/recipients?status=scheduled OK
+  /api/bulk/schedule             OK
+  /api/scheduled/check           OK
+UI: optScheduled, scheduled filter, badge.scheduled, toMs fix,
+    scheduled banner, template name, countdown, scheduled button -> sab OK
+syntax: server.js OK, i18n-data.js OK, ur/hi/ar/es/fr OK, index.html JS OK
+```
+
+---
+
+## ROUND 5 — Live Quota + Har Open Count
 
 ### 1. 📊 Live Quota — ab sach mein live hai
 

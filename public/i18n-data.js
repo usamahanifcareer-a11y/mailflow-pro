@@ -88,6 +88,7 @@
     recipientTracking: "📊 Recipient Tracking",
     trackingHelp: "💡 Poori all-time history ke liye kisi bhi row pe click karo. Sirf asli opens — bots filter. Duplicate sends 90s tak auto-block.",
     optAllStatus: "Saare Status", optPending: "Pending", optSent: "Bheje", optOpened: "Khule",
+    optScheduled: "⏰ Scheduled",
     resendBtn: "🔁 Dobara Bhejo", deleteBtn: "🗑 Delete", clearSelBtn: "Clear", refreshBtn: "🔄 Refresh",
     selectPage: "☑️ Page Select Karo", emailHistory: "📧 Email History", allTime: "Sab Time", today: "Aaj",
     last7: "Pichle 7 Din", last30: "Pichle 30 Din",
