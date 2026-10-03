@@ -19,7 +19,6 @@ window.va = window.va || function() {
 };
 </script>
 <script defer src="/_vercel/insights/script.js"></script>
-<script src="/i18n-data.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 :root {
@@ -543,6 +542,17 @@ table.data-table tr.clickable { cursor: pointer; }
 .live-warn.warn { background: rgba(245, 158, 11, 0.1); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.3); }
 .live-warn.err { background: rgba(239, 68, 68, 0.1); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
 .live-warn::before { content: '●'; font-size: 14px; line-height: 1; }
+.recip-schedule-options { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 14px; }
+.recip-schedule-option { display: flex; align-items: center; gap: 12px; padding: 14px; background: var(--bg2); border: 2px solid var(--border); border-radius: 12px; cursor: pointer; transition: 0.15s; }
+.recip-schedule-option:hover { border-color: var(--cyan); background: rgba(56, 189, 248, 0.05); }
+.recip-schedule-option.selected { border-color: var(--cyan); background: linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(99, 102, 241, 0.08)); box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15); }
+.recip-schedule-option .ico { font-size: 26px; flex-shrink: 0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: rgba(56, 189, 248, 0.1); border-radius: 10px; }
+.recip-schedule-option .body { flex: 1; min-width: 0; }
+.recip-schedule-option .ttl { font-size: 13px; font-weight: 700; color: var(--text); }
+.recip-schedule-option .dsc { font-size: 11px; color: var(--text2); margin-top: 3px; line-height: 1.5; }
+.recip-schedule-option .radio { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #475569; flex-shrink: 0; position: relative; background: var(--bg2); }
+.recip-schedule-option.selected .radio { border-color: var(--cyan); }
+.recip-schedule-option.selected .radio::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--cyan); }
 @media(max-width: 768px) {
   .maintabs { position: fixed; bottom: 0; top: auto; left: 0; right: 0; padding: 6px 8px; z-index: 2000; border-top: 1px solid var(--border); border-bottom: none; justify-content: space-around; box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5); padding-bottom: calc(6px + env(safe-area-inset-bottom)); background: rgba(10, 14, 26, 0.98); }
   .maintab { flex: 1; text-align: center; font-size: 10px; padding: 8px 4px; }
@@ -1177,7 +1187,7 @@ table.data-table tr.clickable { cursor: pointer; }
 <div class="panel"><h2><span data-i18n="accessRequests">📩 Access Requests</span> <span id="adminReqCount"></span></h2><div id="adminRequestList"></div></div>
 <div class="panel">
 <h2><span>🗑 Deleted Users (Recoverable)</span> <span id="adminDeletedCount" style="color:var(--green);font-size:11px">● Live</span></h2>
-<div style="font-size:11px;color:var(--text2);margin-bottom:12px;padding:8px 12px;background:rgba(56,189,248,.06);border-radius:8px;border-left:3px solid var(--cyan)">💡 Deleted users ab recover ho sakte hain. Snapshot se poora data wapas aa jayega.</div>
+<div style="font-size:11px;color:var(--text2);margin-bottom:12px;padding:8px 12px;background:rgba(56,189,248,.06);border-radius:8px;border-left:3px solid var(--cyan)">💡 Deleted users can be recovered. Full data snapshot is restored.</div>
 <button class="btn ghost small" onclick="loadAdminDeleted()" style="margin-bottom:12px">🔄 Refresh</button>
 <div id="adminDeletedList"></div>
 </div>
@@ -1366,6 +1376,41 @@ table.data-table tr.clickable { cursor: pointer; }
 </div>
 </div>
 
+<!-- Save Recipients Options Modal (NEW) -->
+<div id="saveRecipOptionsBackdrop" class="modal-backdrop hidden" onclick="if(event.target===this)closeSaveRecipOptions()">
+<div class="modal" style="max-width:560px">
+<button class="close-btn" onclick="closeSaveRecipOptions()">✕</button>
+<h3 data-i18n="saveRecipientsH">💾 Save Recipients — Choose Action</h3>
+<div id="saveRecipInfo" style="font-size:12px;color:var(--text2);margin-bottom:14px;padding:12px;background:var(--bg2);border-radius:10px;border:1px solid var(--border)"></div>
+<div class="recip-schedule-options" id="saveRecipOptions">
+<div class="recip-schedule-option selected" data-mode="save-only" onclick="selectSaveMode('save-only')">
+<div class="ico">💾</div>
+<div class="body"><div class="ttl" data-i18n="saveOnlyTtl">Save Only (No Send)</div><div class="dsc" data-i18n="saveOnlyDsc">Just add them as Pending. Send manually later OR let auto-send pick them up if enabled.</div></div>
+<div class="radio"></div>
+</div>
+<div class="recip-schedule-option" data-mode="schedule" onclick="selectSaveMode('schedule')">
+<div class="ico">⏰</div>
+<div class="body"><div class="ttl" data-i18n="saveScheduleTtl">Save & Schedule</div><div class="dsc" data-i18n="saveScheduleDsc">Save and choose a specific date & time to send automatically.</div></div>
+<div class="radio"></div>
+</div>
+</div>
+<div id="saveScheduleConfig" class="hidden" style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.35);border-radius:12px;padding:12px;margin-bottom:12px">
+<div style="font-size:10px;color:#c4b5fd;text-transform:uppercase;font-weight:700;margin-bottom:10px">⏰ Schedule Time</div>
+<div id="saveSchedulePresets" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<input type="date" id="saveScheduleDate" onchange="updateSaveSchedulePreview()" style="flex:1;min-width:150px;padding:10px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;font-size:14px">
+<input type="time" id="saveScheduleTime" onchange="updateSaveSchedulePreview()" style="flex:1;min-width:120px;padding:10px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;font-size:14px">
+</div>
+<div class="info-hint" id="saveSchedulePreview" style="margin-top:8px">—</div>
+<div class="info-hint" id="saveScheduleTz" style="margin-top:4px;color:var(--text3)"></div>
+</div>
+<div style="display:flex;gap:8px;margin-top:12px">
+<button class="btn success" id="saveRecipConfirm" style="flex:1" onclick="confirmSaveRecipients()" data-i18n="confirmSaveBtn">💾 Save Recipients</button>
+<button class="btn ghost" onclick="closeSaveRecipOptions()" data-i18n="cancelBtn2">Cancel</button>
+</div>
+</div>
+</div>
+
 <!-- Send Options Modal -->
 <div id="sendOptionsBackdrop" class="modal-backdrop hidden" onclick="if(event.target===this)closeSendOptions()">
 <div class="modal" style="max-width:560px">
@@ -1432,7 +1477,7 @@ table.data-table tr.clickable { cursor: pointer; }
 <div id="bulkSchedulePresets" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px"></div>
 </div>
 <div class="field">
-<label>📅 Date &amp; Time (aapki local time)</label>
+<label>📅 Date &amp; Time (your local time)</label>
 <div style="display:flex;gap:8px;flex-wrap:wrap">
 <input type="date" id="bulkScheduleDate" onchange="updateBulkSchedulePreview()" style="flex:1;min-width:150px;padding:10px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;font-size:14px">
 <input type="time" id="bulkScheduleTime" onchange="updateBulkSchedulePreview()" style="flex:1;min-width:120px;padding:10px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:10px;font-size:14px">
@@ -1440,7 +1485,6 @@ table.data-table tr.clickable { cursor: pointer; }
 <div class="info-hint" id="bulkSchedulePreview" style="margin-top:8px">—</div>
 <div class="info-hint" id="bulkScheduleTz" style="margin-top:4px;color:var(--text3)"></div>
 </div>
-<div class="field" style="display:none"><div class="hour-picker" id="bulkHourPicker"></div><span id="bulkScheduleHint"></span></div>
 <div class="bulk-options-block">
 <div style="font-size:10px;color:#7dd3fc;text-transform:uppercase;font-weight:700;margin-bottom:10px">📎 Include in Each Email</div>
 <div class="send-options-row" style="margin:0">
@@ -1514,7 +1558,7 @@ table.data-table tr.clickable { cursor: pointer; }
 <button class="close-btn" onclick="closeRecoverModal()">✕</button>
 <h3>♻️ Recover Deleted User</h3>
 <div id="recoverUserInfo" style="padding:12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;font-size:13px"></div>
-<div style="background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.3);border-radius:10px;padding:12px;font-size:12px;color:#7dd3fc;line-height:1.6;margin-bottom:14px">💡 User ka poora data snapshot se restore hoga — recipients, templates, email log, files, AI usage, sab kuch.</div>
+<div style="background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.3);border-radius:10px;padding:12px;font-size:12px;color:#7dd3fc;line-height:1.6;margin-bottom:14px">💡 Full user data will be restored from the snapshot — recipients, templates, email log, files, AI usage.</div>
 <div style="display:flex;gap:8px;margin-top:16px">
 <button class="btn success" onclick="confirmRecoverUser()" style="flex:1">♻️ Recover User</button>
 <button class="btn ghost" onclick="closeRecoverModal()">Cancel</button>
@@ -1573,6 +1617,7 @@ var FILE_READ_QUEUE=[],FILE_READING=false;
 var REPLY_TARGET_EMAIL='',REPLY_SELECTED_FILES={},OCR_MONITOR_DATA=[];
 var Q_AUTO_FILES={},SEND_MODAL_FILES={},RESEND_MODAL_FILES={},TEST_MODAL_FILES={};
 var BULK_RESEND_FILES={},BULK_SCHEDULE_FILES={},BULK_SCHEDULE_HOUR=null;
+var SAVE_RECIP_PENDING=null,SAVE_RECIP_MODE='save-only';
 var IMG_PREVIEW={list:[],idx:0,zoom:1,rotate:0,panX:0,panY:0,dragging:false,startX:0,startY:0};
 var recipPage=1,recipPerPage=10,recipTotal=0,recipTotalPages=1;
 var myEmailPage=1,myEmailPerPage=10,myEmailTotal=0,myEmailTotalPages=1;
@@ -1580,8 +1625,11 @@ var CURRENT_LANG='en',PREFERENCES={language:'en',timezone:'Asia/Karachi',dateFor
 var recipSearchTimer=null,myEmailSearchTimer=null,RECIP_SUMMARY={};
 var RECIP_SUMMARY_CACHE={recipientsTotal:0,pending:0,scheduled:0,sent:0,opened:0,totalSentAll:0};
 var RECIP_SUMMARY_CACHE_HAS=false;
-// Gmail free tier practical daily max — used to cap the input
 var GMAIL_DAILY_MAX=500;
+// Performance: throttle recipient list rendering
+var _recipRenderRAF=null,_pendingRecipData=null;
+var _bulkUpdateTimer=null;
+var _loadAllLastCall=0;
 
 // ============ i18n ============
 var I18N={
@@ -1627,7 +1675,7 @@ var I18N={
     saveAutomation:"💾 Save Automation Settings",totalAutoSent:"Total Auto-Sent",lastAutoRun:"Last Auto-Run",
     nextAutoRun:"Next Auto-Run",pendingRecipients:"Pending Recipients",
     gmailQuota:"📊 Gmail Sending Quota",mailflowSentToday:"📤 MailFlow sends today:",
-    gmailSentToday:"📧 Gmail sends today (all sources):",totalSentToday:"Total sent today:",
+    gmailSentToday:"📧 Gmail Sent folder (today):",totalSentToday:"Today total (both):",
     dailyLimit:"Daily limit:",remainingToday:"Remaining today:",
     todaySection:"Today",allTimeSection:"All Time",mailflowAllTime:"📤 MailFlow (all time):",gmailAllTime:"📧 Gmail (all time):",grandTotalAllTime:"🏆 Total sent (all time):",
     aiComposer:"✉️ AI Email Composer",multiProvider:"Multi-provider AI",templateName:"Template Name",
@@ -1737,7 +1785,7 @@ var I18N={
     recipSummarySent:"📤 Sent",
     recipSummaryOpened:"👁 Opened",
     recipSummaryTotalAll:"🏆 Total Sent (all time)",
-    recipSummaryTotalAllTip:"MailFlow + Gmail dono mila kar",
+    recipSummaryTotalAllTip:"MailFlow + Gmail combined",
     trackingSched:"Scheduled — not sent yet",
     trackingNotSent:"Not sent yet",
     trackingWasSent:"Sent",
@@ -1745,7 +1793,25 @@ var I18N={
     adminDeletedUsers:"🗑 Deleted Users",
     adminRecoverBtn:"♻️ Recover",
     adminRecoverUserH:"♻️ Recover Deleted User",
-    adminNoDeleted:"No deleted users"
+    adminNoDeleted:"No deleted users",
+    saveRecipientsH:"💾 Save Recipients — Choose Action",
+    saveOnlyTtl:"Save Only (No Send)",
+    saveOnlyDsc:"Just add them as Pending. Send manually later OR let auto-send pick them up if enabled.",
+    saveScheduleTtl:"Save & Schedule",
+    saveScheduleDsc:"Save and choose a specific date & time to send automatically.",
+    confirmSaveBtn:"💾 Save Recipients",
+    savedPending:"Saved as Pending. Send manually or wait for auto-send.",
+    savedScheduled:"Saved and scheduled successfully.",
+    saveScheduleInPast:"Please choose a future time.",
+    scheduleMin2Min:"Minimum 2 minutes ahead.",
+    // Common UI words
+    pleaseSelectTemplate:"Please select a template",
+    pleaseWait:"Please wait...",
+    loading:"Loading...",
+    refreshDone:"Refreshed",
+    errorPrefix:"Error: ",
+    saved:"Saved",
+    deleted:"Deleted"
   },
   "ur-roman":{
     tagline:"AI-powered email automation.<br>Smart bhejo. Inbox mein landing karo.",
@@ -1802,7 +1868,24 @@ var I18N={
     adminDeletedUsers:"🗑 Deleted Users",
     adminRecoverBtn:"♻️ Recover",
     adminRecoverUserH:"♻️ Deleted User Recover Karo",
-    adminNoDeleted:"Koi deleted user nahi"
+    adminNoDeleted:"Koi deleted user nahi",
+    saveRecipientsH:"💾 Recipients Save Karo — Action Chuno",
+    saveOnlyTtl:"Sirf Save Karo (Bhejna Nahi)",
+    saveOnlyDsc:"Pending mein add honge. Baad mein manually bhejo ya auto-send ON ho to khud jayenge.",
+    saveScheduleTtl:"Save + Schedule",
+    saveScheduleDsc:"Save karo aur specific date/time chuno — khud bhej diye jayenge.",
+    confirmSaveBtn:"💾 Recipients Save Karo",
+    savedPending:"Pending save ho gaye. Manually bhejo ya auto-send ka wait karo.",
+    savedScheduled:"Save + schedule ho gaya.",
+    saveScheduleInPast:"Aage ka waqt chunein.",
+    scheduleMin2Min:"Kam az kam 2 minute baad ka waqt.",
+    pleaseSelectTemplate:"Pehle template select karein",
+    pleaseWait:"Please wait...",
+    loading:"Loading...",
+    refreshDone:"Refresh ho gaya",
+    errorPrefix:"Error: ",
+    saved:"Save ho gaya",
+    deleted:"Delete ho gaya"
   },
   ur:{},hi:{},ar:{},es:{},fr:{}
 };
@@ -1816,18 +1899,15 @@ function applyI18n(){
   try{ _i18nPending=true; }catch(e){}
   var run=function(){
     _i18nPending=false;
-    var ver='0';
-    try{ if(typeof mfLangVersion==='function')ver=String(mfLangVersion(CURRENT_LANG)); }catch(e){}
     var els=document.querySelectorAll('[data-i18n]');
     for(var i=0;i<els.length;i++){
       var el=els[i];
       var k=el.getAttribute('data-i18n');
-      if(el._mfI18nKey===k&&el._mfI18nLang===CURRENT_LANG&&el._mfI18nVer===ver)continue;
+      if(el._mfI18nKey===k&&el._mfI18nLang===CURRENT_LANG)continue;
       var v=t(k);
       if(v&&el.innerHTML!==v)el.innerHTML=v;
       el._mfI18nKey=k;
       el._mfI18nLang=CURRENT_LANG;
-      el._mfI18nVer=ver;
     }
     try{document.dispatchEvent(new CustomEvent('mf:i18n'));}catch(e){}
   };
@@ -2035,7 +2115,6 @@ function applyCachedPrefsEarly(){
     PREFERENCES=p;
     if(p.language)CURRENT_LANG=p.language;
     document.documentElement.lang=CURRENT_LANG;
-    if(p.language&&typeof mfPrefetchLanguage==='function')mfPrefetchLanguage(p.language);
   }catch(e){}
 }
 
@@ -2049,10 +2128,7 @@ function applyPreferences(p){
     var el=$(map[i][0]);
     if(el&&map[i][1])el.value=map[i][1];
   }
-  try{
-    if(typeof mfApplyLanguage==='function')mfApplyLanguage(CURRENT_LANG,applyI18n);
-    else applyI18n();
-  }catch(e){applyI18n();}
+  applyI18n();
 }
 
 function getEmailStatus(e){
@@ -2098,7 +2174,7 @@ function setBtnLoading(btn,text){
   btn.disabled=true;
   btn.classList.add('loading');
   btn._orig=btn.innerHTML;
-  btn.innerHTML=text||'Please wait...';
+  btn.innerHTML=text||t('pleaseWait');
 }
 
 function resetBtn(btn){
@@ -2321,9 +2397,9 @@ function refreshQuotaNow(){
     if(r&&r.ok){
       if(r.live){
         var _src=(r.gmailSource==='since')?'Gmail Sent (since)':'Gmail Sent folder';
-        toast('✅ '+r.gmailSent+' email aaj Gmail ke '+_src+' mein · total '+r.sent+'/'+r.limit+' · '+r.remaining+' baaki');
+        toast('✅ '+r.gmailSent+' emails in Gmail '+_src+' today · '+r.sent+'/'+r.limit+' · '+r.remaining+' left');
       }else{
-        toast('⚠️ Sirf MailFlow count aa raha hai — wajah check kar raha hoon…');
+        toast('⚠️ Only MailFlow count available — checking reason…');
         showQuotaDiagnose();
       }
     }else{
@@ -2333,7 +2409,7 @@ function refreshQuotaNow(){
 }
 function showQuotaDiagnose(){
   var hint=$('quotaHint');
-  if(hint)hint.innerHTML='⏳ Wajah check ho rahi hai…';
+  if(hint)hint.innerHTML='⏳ Checking reason…';
   api('/api/quota/diagnose').then(function(d){
     if(!d.ok){ if(hint)hint.innerHTML='❌ '+(d.error||'Diagnose failed'); return; }
     var L=[];
@@ -2343,8 +2419,8 @@ function showQuotaDiagnose(){
     (d.steps||[]).forEach(function(st){
       L.push((st.ok?'✅ ':'❌ ')+st.step+(st.value!==undefined?' = '+st.value:'')+(st.method?' ('+st.method+')':'')+(st.error?' — '+st.error:''));
     });
-    if(d.durationMs!==undefined)L.push('Gmail check time: '+d.durationMs+'ms');
-    var reason=d.reason?('⚠️ '+d.reason):'✅ Sab theek — Gmail count aa gaya'+(d.totalToday!==undefined?' ('+d.totalToday+' total, '+d.remaining+' baaki)':'');
+    if(d.durationMs!==undefined)L.push('Gmail check: '+d.durationMs+'ms');
+    var reason=d.reason?('⚠️ '+d.reason):'✅ All good — Gmail count fetched'+(d.totalToday!==undefined?' ('+d.totalToday+' total, '+d.remaining+' left)':'');
     if(hint){
       hint.innerHTML='<div style="line-height:1.7"><b>'+esc(reason)+'</b><br><span style="color:var(--text3);font-size:9px">'+L.map(esc).join(' · ')+'</span></div>';
     }
@@ -2359,26 +2435,27 @@ function startAutoRefresh(){
       loadAll();
       loadMyEmails();
     }
-  },30000);
+  },45000);
 }
-// Scheduled batches safety-net: client every 60s server pe check bheje
-// (server bhi auto-run karta hai user activity pe, lekin ye extra safety)
+// Scheduled batches safety-net — server-side cron handles most, this is client backup
+// Runs every 20s regardless of focus (tabs get throttled by browser but at least this fires when visible)
 function startScheduledCheck(){
   if(SCHED_CHECK_TIMER)clearInterval(SCHED_CHECK_TIMER);
   function tick(){
-    if(document.visibilityState!=='visible')return;
     if(!USER)return;
     api('/api/scheduled/check','POST',{}).then(function(r){
-      if(r&&r.ok&&r.processed>0){
-        toast('⏰ '+r.processed+' scheduled batch'+(r.processed>1?'es':'')+' sent');
-        loadAll();
-        loadMyEmails();
-        loadQuota(true);
+      if(r&&r.ok){
+        if(r.processed>0){
+          toast('⏰ '+r.processed+' scheduled batch'+(r.processed>1?'es':'')+' sent');
+          loadAll();
+          loadMyEmails();
+          loadQuota(true);
+        }
       }
     }).catch(function(){});
   }
   setTimeout(tick,3000);
-  SCHED_CHECK_TIMER=setInterval(tick,30000);
+  SCHED_CHECK_TIMER=setInterval(tick,20000);
 }
 
 function startLiveInbox(){
@@ -2388,7 +2465,7 @@ function startLiveInbox(){
     if(!$('inboxView').classList.contains('hidden')&&IMAP_CONNECTED){
       loadIMAPInbox(true);
     }
-  },3000);
+  },4000);
 }
 
 function switchMain(x){
@@ -2451,14 +2528,14 @@ function startAdminLive(){
       loadOcrMonitor();
       loadOcrQuota();
     }
-  },15000);
+  },20000);
   if(ADMIN_EMAIL_LIVE_TIMER)clearInterval(ADMIN_EMAIL_LIVE_TIMER);
   ADMIN_EMAIL_LIVE_TIMER=setInterval(function(){
     if(document.visibilityState!=='visible')return;
     if(!$('adminView').classList.contains('hidden')){
       loadAdminEmailsPage(adminEmailsPage,true);
     }
-  },20000);
+  },25000);
 }
 
 // ============ QUICK AUTO ============
@@ -2501,7 +2578,7 @@ function loadQuickAuto(){
       if(nextMs<Date.now())nextMs=Date.now();
       $('qNextRun').innerText=new Date(nextMs).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
     }else{
-      $('qLastRun').innerText='Never';
+      $('qLastRun').innerText=t('never');
       $('qNextRun').innerText='—';
     }
     $('qQuietEnabled').checked=p.quietEnabled===true;
@@ -2536,51 +2613,47 @@ function onQuickAutoToggle(v){$('qAutoConfig').style.display=v?'block':'none';}
 function onQuietToggle(v){$('qQuietConfig').style.display=v?'block':'none';}
 function onWindowToggle(v){$('qWindowConfig').style.display=v?'block':'none';}
 
-// Live delay hint — 20+ good, <20 spam warning
 function updateDelayHint(){
   var el=$('qDelay'),hint=$('qDelayHint');
   if(!el||!hint)return;
   var n=parseInt(el.value,10);
   hint.className='info-hint';
-  if(isNaN(n)||n<0){hint.innerText='0 se 120 ke darmiyan number likhein.';return;}
+  if(isNaN(n)||n<0){hint.innerText='Enter a number between 0 and 120.';return;}
   if(n>=20){
     hint.className='info-hint ok';
-    hint.innerHTML='✅ '+n+'s delay — Gmail-safe. Spam folder mein jaane ka risk kam.';
+    hint.innerHTML='✅ '+n+'s delay — Gmail-safe. Lower spam risk.';
   }else if(n>=10){
     hint.className='info-hint warn';
-    hint.innerHTML='⚠️ '+n+'s thora tez hai. Kam az kam 20s recommend karte hain taake spam na ho.';
+    hint.innerHTML='⚠️ '+n+'s is a bit fast. At least 20s recommended to avoid spam.';
   }else if(n>=1){
     hint.className='info-hint err';
-    hint.innerHTML='❌ '+n+'s bohat tez hai! Emails spam folder mein jayengi. 20+ karein.';
+    hint.innerHTML='❌ '+n+'s is too fast! Emails may land in spam. Use 20+.';
   }else{
     hint.className='info-hint warn';
-    hint.innerHTML='⚠️ 0 = koi delay nahi. Ye spam flag kar sakta hai. 20+ use karein.';
+    hint.innerHTML='⚠️ 0 = no delay. Can trigger spam flags. Use 20+.';
   }
 }
 
-// Live daily limit hint — cap GMAIL_DAILY_MAX, warn if user has used some already
 function updateDailyLimitHint(){
   var el=$('qDailyLimit'),hint=$('qDailyLimitHint');
   if(!el||!hint)return;
   var n=parseInt(el.value,10);
   var max=GMAIL_DAILY_MAX;
-  // Enforce cap in UI
   if(!isNaN(n)&&n>max){el.value=max;n=max;}
   hint.className='info-hint';
-  if(isNaN(n)||n<1){hint.innerText='1 se '+max+' ke darmiyan number likhein.';return;}
-  // Realtime remaining info
+  if(isNaN(n)||n<1){hint.innerText='Enter a number between 1 and '+max+'.';return;}
   var remainingToday=(MY_QUOTA&&MY_QUOTA.remaining!==undefined)?MY_QUOTA.remaining:null;
   var sentToday=(MY_QUOTA&&MY_QUOTA.sent!==undefined)?MY_QUOTA.sent:0;
   var parts=[];
   if(n===max){
-    parts.push('✅ '+max+'/din — Gmail ka max safe limit.');
+    parts.push('✅ '+max+'/day — Gmail max safe limit.');
   }else if(n>max*0.8){
-    parts.push('⚠️ '+n+'/din — Gmail limit ke qareeb. Risk thora hai.');
+    parts.push('⚠️ '+n+'/day — close to Gmail limit. Slight risk.');
   }else{
-    parts.push('✅ '+n+'/din — safe range.');
+    parts.push('✅ '+n+'/day — safe range.');
   }
   if(remainingToday!==null){
-    parts.push('Aaj aapke paas <b>'+remainingToday+'</b> remaining '+(sentToday>0?('(already '+sentToday+' bhej chuke) '):'')+'hain.');
+    parts.push('Today you have <b>'+remainingToday+'</b> remaining '+(sentToday>0?('(already sent '+sentToday+') '):'')+'.');
   }
   parts.push('Cap: <b>'+max+'</b> per day (Gmail).');
   hint.innerHTML=parts.join(' ');
@@ -2618,7 +2691,6 @@ function saveQuickAuto(){
   var wEnd=parseTimeInputVal($('qWindowEnd').value);
   var dl=parseInt($('qDailyLimit').value,10);
   if(isNaN(dl)||dl<1)dl=GMAIL_DAILY_MAX;
-  // Hard cap on client too — must match server
   if(dl>GMAIL_DAILY_MAX)dl=GMAIL_DAILY_MAX;
   var payload={
     autoSend:$('qAutoSend').checked,
@@ -2801,7 +2873,7 @@ function savePreferences(){
       toast('✅ Preferences saved');
       if(r.preferences){writeCachedPrefs(r.preferences);applyPreferences(r.preferences);}
     }else{
-      toast('❌ Save failed — revert kar diya','err');
+      toast('❌ Save failed — reverted','err');
       loadUserPreferences();
     }
   });
@@ -2901,8 +2973,6 @@ function loadQuota(force){
     }
     MY_QUOTA={sent:r.sent,limit:r.limit,remaining:r.remaining,mailflowSent:r.mailflowSent,gmailSent:r.gmailSent,allTime:r.allTime||null,gmailDailyMax:r.gmailDailyMax||500};
     if(r.gmailDailyMax)GMAIL_DAILY_MAX=r.gmailDailyMax;
-    try{if(typeof renderRecipSummary==='function')renderRecipSummary(recipTotal);}catch(e){}
-    // Refresh delay/daily-limit hints with new remaining info
     try{updateDailyLimitHint();}catch(e){}
     QUOTA_LAST_SYNC=Date.now();
     $('quotaMailflowSent').innerText=(r.mailflowSent!==undefined&&r.mailflowSent!==null)?r.mailflowSent:'—';
@@ -2929,11 +2999,11 @@ function loadQuota(force){
       var age=fmtTimeAgo(new Date(QUOTA_LAST_SYNC).toISOString());
       if(r.live){
         var src=r.gmailSource==='gmraw'?'Gmail Sent folder':(r.gmailSource==='since'?'Gmail Sent (since)':'Gmail Sent folder');
-        $('quotaHint').innerHTML='✅ Live — '+src+' se sync hua ('+age+'). Manual sends bhi count ho rahe hain.';
+        $('quotaHint').innerHTML='✅ Live — synced from '+src+' ('+age+'). Manual sends also counted.';
       }else if(r.imapAvailable&&r.gmailError){
-        $('quotaHint').innerHTML='⚠️ Gmail Sent folder nahi parh saka: '+esc(String(r.gmailError).substring(0,70))+' <a href="#" onclick="showQuotaDiagnose();return false;" style="color:#7dd3fc">(wajah dekhein)</a>';
+        $('quotaHint').innerHTML='⚠️ Could not read Gmail Sent folder: '+esc(String(r.gmailError).substring(0,70))+' <a href="#" onclick="showQuotaDiagnose();return false;" style="color:#7dd3fc">(view reason)</a>';
       }else{
-        $('quotaHint').innerHTML='⚠️ Sirf MailFlow sends count ho rahe hain (manual Gmail sends count nahi ho rahe). <a href="#" onclick="showQuotaDiagnose();return false;" style="color:#7dd3fc">(check karein)</a>';
+        $('quotaHint').innerHTML='⚠️ Only MailFlow sends are counted (manual Gmail sends not counted). <a href="#" onclick="showQuotaDiagnose();return false;" style="color:#7dd3fc">(check)</a>';
       }
     }
   }).catch(function(){});
@@ -2976,7 +3046,7 @@ function runDeliverabilityCheck(){
   var subject=$('composerSubject').value.trim();
   var body=$('composerBody').value.trim();
   var box=$('deliverabilityBox');
-  if(!subject&&!body){toast('Subject ya body likhein pehle','err');return;}
+  if(!subject&&!body){toast('Write subject or body first','err');return;}
   box.style.display='block';
   box.innerHTML='<div style="font-size:12px;color:var(--text2)">⏳ Checking inbox deliverability…</div>';
   api('/api/deliverability/check','POST',{subject:subject,body:body}).then(function(r){
@@ -2987,13 +3057,13 @@ function runDeliverabilityCheck(){
       +'<div style="font-size:11px;color:var(--text3)">'+t('deliverabilityLbl')+'</div></div>';
     html+='<div class="quota-bar" style="margin-bottom:12px"><div class="quota-fill" style="width:'+Math.max(3,r.score)+'%;background:'+col+'"></div></div>';
     if(r.issues&&r.issues.length){
-      html+='<div style="font-size:11px;font-weight:700;color:#fcd34d;margin-bottom:6px">⚠️ Issues mile ('+r.issues.length+'):</div>';
+      html+='<div style="font-size:11px;font-weight:700;color:#fcd34d;margin-bottom:6px">⚠️ Issues found ('+r.issues.length+'):</div>';
       r.issues.forEach(function(it){
         var c=it.severity==='high'?'#fca5a5':it.severity==='medium'?'#fcd34d':'#94a3b8';
         html+='<div style="font-size:11px;color:'+c+';padding:3px 0">• '+esc(it.message)+'</div>';
       });
     }else{
-      html+='<div style="font-size:11px;color:#86efac">✅ Koi masla nahi mila — email inbox ke liye tayyar hai.</div>';
+      html+='<div style="font-size:11px;color:#86efac">✅ No issues found — email is ready for inbox.</div>';
     }
     var meta=[];
     meta.push(r.hasSignature?'✍️ Signature ✓':'✍️ Signature ✗');
@@ -3808,7 +3878,163 @@ function addRow(){
   w.appendChild(d);
 }
 
-// UPDATED: Show what happens after add — saved only, no send, clear hint
+// ============ SAVE RECIPIENTS WITH OPTIONS MODAL (NEW) ============
+function openSaveRecipientsModal(items,sourceLabel){
+  SAVE_RECIP_PENDING={items:items,sourceLabel:sourceLabel||''};
+  SAVE_RECIP_MODE='save-only';
+  selectSaveMode('save-only');
+  $('saveRecipInfo').innerHTML='<div><b>'+items.length+' recipient'+(items.length>1?'s':'')+'</b> ready to save'+(sourceLabel?' ('+esc(sourceLabel)+')':'')+'</div><div style="margin-top:6px;font-size:11px;color:var(--text3)">Choose what happens after saving:</div>';
+  try{ setSaveScheduleDate(new Date(Date.now()+60*60*1000)); }catch(e){}
+  renderSaveSchedulePresets();
+  $('saveRecipOptionsBackdrop').classList.remove('hidden');
+}
+
+function closeSaveRecipOptions(){
+  $('saveRecipOptionsBackdrop').classList.add('hidden');
+  SAVE_RECIP_PENDING=null;
+}
+
+function selectSaveMode(mode){
+  SAVE_RECIP_MODE=mode;
+  document.querySelectorAll('#saveRecipOptions .recip-schedule-option').forEach(function(el){
+    if(el.getAttribute('data-mode')===mode)el.classList.add('selected');
+    else el.classList.remove('selected');
+  });
+  if(mode==='schedule'){
+    $('saveScheduleConfig').classList.remove('hidden');
+    updateSaveSchedulePreview();
+  }else{
+    $('saveScheduleConfig').classList.add('hidden');
+  }
+}
+
+function renderSaveSchedulePresets(){
+  var box=$('saveSchedulePresets');
+  if(!box)return;
+  function mkNow(h,mn){var d=new Date();d.setHours(h,mn,0,0);if(d.getTime()<=Date.now())d.setDate(d.getDate()+1);return d;}
+  var t1=new Date(Date.now()+60*60*1000);
+  var s1=new Date(Date.now()+3*60*60*1000);
+  var presets=[
+    ['⏱ +1 hour',t1],
+    ['⏱ +3 hours',s1],
+    ['🌅 Tomorrow 9 AM',mkNow(9,0)],
+    ['☀️ Tomorrow 12 PM',mkNow(12,0)],
+    ['🌆 Tomorrow 6 PM',mkNow(18,0)],
+    ['🌙 Tonight 9 PM',mkNow(21,0)]
+  ];
+  box.innerHTML='';
+  presets.forEach(function(p){
+    var b=document.createElement('div');
+    b.className='hour-chip';
+    b.setAttribute('data-ms',String(p[1].getTime()));
+    b.innerText=p[0];
+    b.onclick=function(){
+      var ms=parseInt(this.getAttribute('data-ms'),10);
+      setSaveScheduleDate(new Date(ms));
+      document.querySelectorAll('#saveSchedulePresets .hour-chip').forEach(function(c){c.classList.remove('active');});
+      this.classList.add('active');
+    };
+    box.appendChild(b);
+  });
+}
+
+function pad2(n){return (n<10?'0':'')+n;}
+function localDateStr(d){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
+function localTimeStr(d){return pad2(d.getHours())+':'+pad2(d.getMinutes());}
+function getScheduleTz(){try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';}catch(e){return 'UTC';}}
+function fmtInTz(ms,tz){try{return new Intl.DateTimeFormat('en-GB',{timeZone:tz,day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).format(new Date(ms));}catch(e){return new Date(ms).toLocaleString();}}
+
+function setSaveScheduleDate(d){
+  if(!d||isNaN(d.getTime()))return;
+  var de=$('saveScheduleDate'),te=$('saveScheduleTime');
+  if(de)de.value=localDateStr(d);
+  if(te)te.value=localTimeStr(d);
+  updateSaveSchedulePreview();
+}
+
+function getSaveScheduleMs(){
+  var dEl=$('saveScheduleDate'),tEl=$('saveScheduleTime');
+  if(!dEl||!tEl||!dEl.value||!tEl.value)return 0;
+  var dp=dEl.value.split('-'),tp=tEl.value.split(':');
+  if(dp.length!==3||tp.length<2)return 0;
+  var dt=new Date(parseInt(dp[0],10),parseInt(dp[1],10)-1,parseInt(dp[2],10),parseInt(tp[0],10),parseInt(tp[1],10),0,0);
+  return isNaN(dt.getTime())?0:dt.getTime();
+}
+
+function updateSaveSchedulePreview(){
+  var ms=getSaveScheduleMs();
+  var p=$('saveSchedulePreview'),z=$('saveScheduleTz');
+  if(z)z.innerText='🌍 Your timezone: '+getScheduleTz();
+  if(!p)return;
+  if(!ms){p.innerHTML='Please choose date and time.';return;}
+  if(ms<=Date.now()){p.innerHTML='<span style="color:#fca5a5">⚠️ This time has passed — will be scheduled for the next occurrence.</span>';return;}
+  p.innerHTML='📅 <b style="color:#c4b5fd">'+new Date(ms).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true})+'</b> · '+fmtDuration(ms-Date.now())+' left';
+}
+
+async function confirmSaveRecipients(){
+  if(!SAVE_RECIP_PENDING||!SAVE_RECIP_PENDING.items.length)return closeSaveRecipOptions();
+  var items=SAVE_RECIP_PENDING.items;
+  var templateId=$('tplSelect')?$('tplSelect').value:'';
+  var btn=$('saveRecipConfirm');
+
+  // Step 1: Save recipients
+  setBtnLoading(btn,'💾 Saving...');
+  try{
+    var saveRes=await api('/api/recipients','POST',{list:items,templateId:templateId});
+    if(!saveRes.ok){
+      resetBtn(btn);
+      return toast('❌ Save failed: '+(saveRes.error||''),'err');
+    }
+    // Step 2: If scheduled, fetch just-saved recipient IDs and create schedule
+    if(SAVE_RECIP_MODE==='schedule'){
+      var ms=getSaveScheduleMs();
+      if(!ms){resetBtn(btn);return toast(t('saveScheduleInPast'),'err');}
+      if(ms<=Date.now()){resetBtn(btn);return toast(t('saveScheduleInPast'),'err');}
+      var mins=Math.round((ms-Date.now())/60000);
+      if(mins<2){resetBtn(btn);return toast(t('scheduleMin2Min'),'err');}
+      // Fetch newly created recipients (last N sorted by creation desc), pick by email match
+      var fetchRes=await api('/api/recipients?limit=100&page=1');
+      if(!fetchRes.ok){resetBtn(btn);return toast('❌ Could not fetch saved recipients','err');}
+      var emailSet={};
+      items.forEach(function(it){emailSet[String(it.email||'').toLowerCase()]=true;});
+      var ids=(fetchRes.recipients||[]).filter(function(r){return emailSet[String(r.email||'').toLowerCase()];}).map(function(r){return r.id;});
+      if(!ids.length){resetBtn(btn);return toast('❌ Could not match saved recipients','err');}
+      if(!templateId){resetBtn(btn);return toast(t('pleaseSelectTemplate'),'err');}
+      var sched=await api('/api/bulk/schedule','POST',{
+        recipientIds:ids,
+        templateId:templateId,
+        scheduleAt:new Date(ms).toISOString(),
+        timezone:getScheduleTz(),
+        includeSignature:true,
+        includeLogo:true,
+        includeAttachments:false
+      });
+      if(sched.ok){
+        toast('✅ '+saveRes.added+' saved + scheduled for '+new Date(ms).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit',hour12:true}));
+      }else{
+        toast('⚠️ Saved '+saveRes.added+' but scheduling failed: '+(sched.error||''),'warn');
+      }
+    }else{
+      // Save only
+      var autoSendOn=$('qAutoSend')&&$('qAutoSend').checked;
+      if(autoSendOn){
+        toast('✅ '+saveRes.added+' saved · Auto-send is ON — they will send at the next hour');
+      }else{
+        toast('✅ '+saveRes.added+' '+t('savedPending'));
+      }
+    }
+    // Clear inputs and refresh
+    $('recipients').innerHTML='';addRow();
+    $('bulkInput').value='';updateBulk();
+    closeSaveRecipOptions();
+    loadAll();
+    loadQuickAuto();
+  }catch(e){
+    toast('❌ '+(e.message||'Save failed'),'err');
+  }
+  resetBtn(btn);
+}
+
 function submitRecipients(){
   var rows=$('recipients').querySelectorAll('.recip-row'),list=[];
   rows.forEach(function(r){
@@ -3816,20 +4042,8 @@ function submitRecipients(){
     if(i[1].value.trim())list.push({company:i[0].value.trim(),email:i[1].value.trim()});
   });
   if(!list.length)return toast('Please add at least one email','err');
-  var autoSendOn=$('qAutoSend')&&$('qAutoSend').checked;
-  api('/api/recipients','POST',{list:list,templateId:$('tplSelect').value}).then(function(r){
-    if(r.ok){
-      $('recipients').innerHTML='';
-      addRow();
-      loadAll();
-      loadQuickAuto();
-      if(autoSendOn){
-        toast('✅ '+r.added+' saved · Auto-send ON — bhej diye jayenge agle hour pe');
-      }else{
-        toast('✅ '+r.added+' saved · Status: Pending · 📤 button se bhejein');
-      }
-    }else toast('Error','err');
-  });
+  if(!$('tplSelect').value)return toast(t('pleaseSelectTemplate'),'err');
+  openSaveRecipientsModal(list,'Manual');
 }
 
 function switchTab(t){
@@ -3880,23 +4094,27 @@ function parseBulk(text){
 }
 
 function updateBulk(){
-  var text=$('bulkInput').value;
-  var r=parseBulk(text);
-  var wrap=$('bulkPreviewWrap');
-  var table=$('bulkPreviewTable');
-  $('bulkValidPill').innerText='✅ '+r.valid.length;
-  $('bulkDupPill').innerText='🔁 '+r.dup;
-  if(!text.trim()||r.valid.length===0){
-    wrap.classList.remove('show');
-    return;
-  }
-  wrap.classList.add('show');
-  var h='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px">#</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px">Company</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px">Email</th></tr></thead><tbody>';
-  r.valid.slice(0,50).forEach(function(row,idx){
-    h+='<tr><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:var(--text3);font-size:11px">'+(idx+1)+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#cbd5e1">'+(row.company?esc(row.company):'—')+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#7dd3fc;font-size:11px;word-break:break-all">'+esc(row.email)+'</td></tr>';
-  });
-  h+='</tbody></table>';
-  table.innerHTML=h;
+  if(_bulkUpdateTimer)return;
+  _bulkUpdateTimer=setTimeout(function(){
+    _bulkUpdateTimer=null;
+    var text=$('bulkInput').value;
+    var r=parseBulk(text);
+    var wrap=$('bulkPreviewWrap');
+    var table=$('bulkPreviewTable');
+    $('bulkValidPill').innerText='✅ '+r.valid.length;
+    $('bulkDupPill').innerText='🔁 '+r.dup;
+    if(!text.trim()||r.valid.length===0){
+      wrap.classList.remove('show');
+      return;
+    }
+    wrap.classList.add('show');
+    var h='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px">#</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px">Company</th><th style="text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase;padding:8px 12px">Email</th></tr></thead><tbody>';
+    r.valid.slice(0,50).forEach(function(row,idx){
+      h+='<tr><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:var(--text3);font-size:11px">'+(idx+1)+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#cbd5e1">'+(row.company?esc(row.company):'—')+'</td><td style="padding:8px 12px;border-bottom:1px solid rgba(26,35,56,.5);color:#7dd3fc;font-size:11px;word-break:break-all">'+esc(row.email)+'</td></tr>';
+    });
+    h+='</tbody></table>';
+    table.innerHTML=h;
+  },250);
 }
 
 function clearBulk(){$('bulkInput').value='';updateBulk();}
@@ -3904,27 +4122,9 @@ function clearBulk(){$('bulkInput').value='';updateBulk();}
 function submitBulk(){
   var r=parseBulk($('bulkInput').value);
   if(!r.valid.length)return toast('No valid emails','err');
-  sendBulkRecipients(r.valid);
+  if(!$('tplSelect').value)return toast(t('pleaseSelectTemplate'),'err');
+  openSaveRecipientsModal(r.valid,'Bulk');
 }
-
-function sendBulkRecipients(items){
-  var autoSendOn=$('qAutoSend')&&$('qAutoSend').checked;
-  api('/api/recipients','POST',{list:items,templateId:$('tplSelect').value}).then(function(res){
-    if(res.ok){
-      $('bulkInput').value='';
-      updateBulk();
-      loadAll();
-      loadQuickAuto();
-      switchTab('manual');
-      if(autoSendOn){
-        toast('✅ '+res.added+' saved · Auto-send ON — bhej diye jayenge agle hour pe');
-      }else{
-        toast('✅ '+res.added+' saved · Status: Pending · 📤 button se bhejein');
-      }
-    }else toast('Error','err');
-  });
-}
-
 // ============ OCR ============
 document.getElementById('ocrInput').addEventListener('change',function(e){
   var files=e.target.files;
@@ -4410,7 +4610,7 @@ function imgDownload(){
 
 // ============ RECIPIENTS ============
 function loadAll(isManual){
-  if(isManual)toast('🔄 Refreshing...');
+  if(isManual)toast('🔄 '+t('refreshDone'));
   api('/api/stats').then(function(r){
     if(!r.ok)return;
     $('stTotal').innerText=r.stats.total;
@@ -4428,16 +4628,15 @@ function onRecipSearchChange(){
   recipSearchTimer=setTimeout(function(){recipPage=1;loadRecipients();},400);
 }
 
-// Blink-free summary: cached values turant dikhao
 function renderRecipSummary(total){
   var box=$('recipSummary');
   if(!box)return;
-  var t=parseInt(total,10)||0;
-  if(!t&&!RECIP_SUMMARY_CACHE_HAS){box.innerHTML='';return;}
+  var t2=parseInt(total,10)||0;
+  if(!t2&&!RECIP_SUMMARY_CACHE_HAS){box.innerHTML='';return;}
   var sum=RECIP_SUMMARY||{};
   var useCache=(sum.recipientsTotal===undefined);
   if(useCache)sum=RECIP_SUMMARY_CACHE;
-  var recipCount=(sum.recipientsTotal!==undefined)?sum.recipientsTotal:t;
+  var recipCount=(sum.recipientsTotal!==undefined)?sum.recipientsTotal:t2;
   var mfSends=(sum.mailflowSendsAllTime!==undefined)?sum.mailflowSendsAllTime:0;
   var pending=(sum.pending!==undefined)?sum.pending:0;
   var scheduled=(sum.scheduled!==undefined)?sum.scheduled:0;
@@ -4498,47 +4697,13 @@ function loadRecipients(){
       return;
     }
     if(!CURRENT_ROWS.length){
-      $('tableWrap').innerHTML='<div class="empty">🔍 No matching on this page</div>';
+      $('tableWrap').innerHTML='<div class="empty">🔍 No matches on this page</div>';
     }else{
-      // Faster: only essential columns, no over-styling
-      var h='<table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" class="cbox" onclick="event.stopPropagation()" onchange="toggleAll(this.checked)"></th><th style="width:110px;text-align:center">Sent?</th><th>Company</th><th>Email</th><th>Status</th><th style="text-align:center" title="'+t('trackingTimesSentTip')+'">Times</th><th>Last Sent</th><th style="text-align:right;width:170px">Actions</th></tr></thead><tbody>';
-      CURRENT_ROWS.forEach(function(x){
-        var st=getRecipientStatus(x);
-        var schedMs=toMs(x.scheduledFor);
-        var isSched=(x.status||'').toLowerCase()==='scheduled'&&schedMs>0;
-        var sc=parseInt(x.sendCount,10)||0;
-        var rawSt=(x.status||'').toLowerCase();
-        var looksSent=rawSt==='sent'||rawSt==='opened'||rawSt==='delivered'||rawSt.indexOf('opened')!==-1;
-        var scDisplay=(sc===0&&looksSent)?1:sc;
-        var wasSent=scDisplay>0;
-        // Sent? column: proper text label (not just "?")
-        var sentCellHtml='';
-        if(wasSent){
-          sentCellHtml='<span class="sent-status-cell yes" title="'+t('trackingWasSent')+'">✅ Sent</span>';
-        }else if(isSched){
-          sentCellHtml='<span class="sent-status-cell sched" title="'+t('trackingSched')+'">⏰ Scheduled</span>';
-        }else{
-          sentCellHtml='<span class="sent-status-cell no" title="'+t('trackingNotSent')+'">— Pending</span>';
-        }
-        var lastCol=isSched
-          ? '<span style="color:#c4b5fd">⏰ '+fmtDate(x.scheduledFor)+'</span>'
-          : (x.lastSentAt!==undefined&&x.lastSentAt!==null?fmtDate(x.lastSentAt):(x.sentAt?fmtDate(x.sentAt):'—'));
-        h+='<tr class="clickable '+(SELECTED[x.id]?'selected':'')+'" onclick="openRecipHistory(\''+x.id+'\')"><td onclick="event.stopPropagation()"><input type="checkbox" class="cbox" '+(SELECTED[x.id]?'checked':'')+' onchange="toggleOne(\''+x.id+'\',this.checked)"></td>';
-        h+='<td style="text-align:center">'+sentCellHtml+'</td>';
-        h+='<td>'+esc(x.company||'—')+'</td><td style="word-break:break-all">'+esc(x.email)+'</td>';
-        h+='<td><span class="badge '+st.cls+'">'+st.icon+' '+st.lbl+'</span></td>';
-        h+='<td style="text-align:center">'+(scDisplay>0
-          ? '<span class="badge count">'+scDisplay+'×</span>'
-          : '<span style="color:var(--text3);font-size:11px">—</span>')+'</td>';
-        h+='<td style="font-size:10px">'+lastCol+'</td>';
-        h+='<td style="white-space:nowrap" onclick="event.stopPropagation()"><button class="btn ghost small" onclick="openRecipHistory(\''+x.id+'\')" title="History">📊</button>'
-          +(isSched
-            ?'<button class="btn warn small" onclick="openSchedulesList()" title="Scheduled — View Schedules">⏰</button>'
-            :'<button class="btn ghost small" onclick="openSendOptions(\''+x.id+'\')" title="Send now">📤</button> <button class="btn warn small" onclick="openResendOptions(\''+x.id+'\')" title="Resend">🔁</button>')
-          +' <button class="btn danger small" onclick="delRec(\''+x.id+'\')" title="Delete">✕</button></td></tr>';
-      });
-      h+='</tbody></table>';
-      $('tableWrap').innerHTML=h;
+      // Use requestAnimationFrame for smooth rendering
+      _pendingRecipData={rows:CURRENT_ROWS,total:total,totalPages:totalPages};
+      if(_recipRenderRAF)cancelAnimationFrame(_recipRenderRAF);
+      _recipRenderRAF=requestAnimationFrame(renderRecipientsTable);
+      return;
     }
     if(totalPages>1){
       $('recipPagination').style.display='flex';
@@ -4549,6 +4714,61 @@ function loadRecipients(){
     updateBulkBar();
     renderRecipSummary(total);
   });
+}
+
+function renderRecipientsTable(){
+  _recipRenderRAF=null;
+  if(!_pendingRecipData)return;
+  var rows=_pendingRecipData.rows;
+  var total=_pendingRecipData.total;
+  var totalPages=_pendingRecipData.totalPages;
+  // Build as string chunks to avoid string concat overhead
+  var parts=[];
+  parts.push('<table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" class="cbox" onclick="event.stopPropagation()" onchange="toggleAll(this.checked)"></th><th style="width:110px;text-align:center">Sent?</th><th>Company</th><th>Email</th><th>Status</th><th style="text-align:center" title="'+t('trackingTimesSentTip')+'">Times</th><th>Last Sent</th><th style="text-align:right;width:170px">Actions</th></tr></thead><tbody>');
+  for(var i=0;i<rows.length;i++){
+    var x=rows[i];
+    var st=getRecipientStatus(x);
+    var schedMs=toMs(x.scheduledFor);
+    var isSched=(x.status||'').toLowerCase()==='scheduled'&&schedMs>0;
+    var sc=parseInt(x.sendCount,10)||0;
+    var rawSt=(x.status||'').toLowerCase();
+    var looksSent=rawSt==='sent'||rawSt==='opened'||rawSt==='delivered'||rawSt.indexOf('opened')!==-1;
+    var scDisplay=(sc===0&&looksSent)?1:sc;
+    var wasSent=scDisplay>0;
+    var sentCellHtml='';
+    if(wasSent){
+      sentCellHtml='<span class="sent-status-cell yes" title="'+t('trackingWasSent')+'">✅ Sent</span>';
+    }else if(isSched){
+      sentCellHtml='<span class="sent-status-cell sched" title="'+t('trackingSched')+'">⏰ Scheduled</span>';
+    }else{
+      sentCellHtml='<span class="sent-status-cell no" title="'+t('trackingNotSent')+'">— Pending</span>';
+    }
+    var lastCol=isSched
+      ? '<span style="color:#c4b5fd">⏰ '+fmtDate(x.scheduledFor)+'</span>'
+      : (x.lastSentAt!==undefined&&x.lastSentAt!==null?fmtDate(x.lastSentAt):(x.sentAt?fmtDate(x.sentAt):'—'));
+    parts.push('<tr class="clickable '+(SELECTED[x.id]?'selected':'')+'" onclick="openRecipHistory(\''+x.id+'\')"><td onclick="event.stopPropagation()"><input type="checkbox" class="cbox" '+(SELECTED[x.id]?'checked':'')+' onchange="toggleOne(\''+x.id+'\',this.checked)"></td>');
+    parts.push('<td style="text-align:center">'+sentCellHtml+'</td>');
+    parts.push('<td>'+esc(x.company||'—')+'</td><td style="word-break:break-all">'+esc(x.email)+'</td>');
+    parts.push('<td><span class="badge '+st.cls+'">'+st.icon+' '+st.lbl+'</span></td>');
+    parts.push('<td style="text-align:center">'+(scDisplay>0?'<span class="badge count">'+scDisplay+'×</span>':'<span style="color:var(--text3);font-size:11px">—</span>')+'</td>');
+    parts.push('<td style="font-size:10px">'+lastCol+'</td>');
+    parts.push('<td style="white-space:nowrap" onclick="event.stopPropagation()"><button class="btn ghost small" onclick="openRecipHistory(\''+x.id+'\')" title="History">📊</button>'
+      +(isSched
+        ?'<button class="btn warn small" onclick="openSchedulesList()" title="Scheduled">⏰</button>'
+        :'<button class="btn ghost small" onclick="openSendOptions(\''+x.id+'\')" title="Send now">📤</button> <button class="btn warn small" onclick="openResendOptions(\''+x.id+'\')" title="Resend">🔁</button>')
+      +' <button class="btn danger small" onclick="delRec(\''+x.id+'\')" title="Delete">✕</button></td></tr>');
+  }
+  parts.push('</tbody></table>');
+  $('tableWrap').innerHTML=parts.join('');
+  if(totalPages>1){
+    $('recipPagination').style.display='flex';
+    $('recipPageInfo').innerText='Page '+recipPage+' of '+totalPages+' ('+total+' total)';
+    $('recipPrevBtn').disabled=recipPage<=1;
+    $('recipNextBtn').disabled=recipPage>=totalPages;
+  }else $('recipPagination').style.display='none';
+  updateBulkBar();
+  renderRecipSummary(total);
+  _pendingRecipData=null;
 }
 
 function toggleOne(id,c){if(c)SELECTED[id]=true;else delete SELECTED[id];loadRecipients();}
@@ -4593,16 +4813,16 @@ function openRecipHistory(recipientId){
       api('/api/recipient/'+recipientId+'/schedules').then(function(sr){
         if(!sr||!sr.ok||!sr.items||!sr.items.length)return;
         var sh='<div style="margin-top:12px;padding:12px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.4);border-radius:12px">';
-        sh+='<div style="font-size:12px;font-weight:800;color:#c4b5fd;margin-bottom:8px">⏰ Scheduled — '+(sr.items.length)+' batch'+(sr.items.length>1?'es':'')+'</div>';
+        sh+='<div style="font-size:12px;font-weight:800;color:#c4b5fd;margin-bottom:8px">⏰ Scheduled — '+sr.items.length+' batch'+(sr.items.length>1?'es':'')+'</div>';
         sr.items.forEach(function(it){
           var ms=it.scheduledForMs||toMs(it.scheduledFor);
           var w=ms>0?new Date(ms).toLocaleString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,day:'numeric',month:'short'}):'Date missing';
-          var left=(it.status==='pending'&&ms>Date.now())?' · '+fmtDuration(ms-Date.now())+' baaki':'';
+          var left=(it.status==='pending'&&ms>Date.now())?' · '+fmtDuration(ms-Date.now())+' left':'';
           sh+='<div style="font-size:11px;color:#e2e8f0;padding:3px 0">📅 '+esc(w)+'<span style="color:#c4b5fd">'+esc(left)+'</span> <span class="badge '+((it.status||'pending')==='pending'?'pending-sched':'done-sched')+'">'+esc(String(it.status||'pending').toUpperCase())+'</span></div>';
         });
-        sh+='<div style="font-size:10px;color:var(--text3);margin-top:6px">Ye emails abhi bheji nahi gayin — scheduled waqt pe khud chali jayengi.</div></div>';
-        var info=$('recipHistoryInfo');
-        if(info)info.insertAdjacentHTML('beforeend',sh);
+        sh+='<div style="font-size:10px;color:var(--text3);margin-top:6px">These emails haven\'t been sent yet — they will go automatically at their scheduled time.</div></div>';
+        var info2=$('recipHistoryInfo');
+        if(info2)info2.insertAdjacentHTML('beforeend',sh);
       }).catch(function(){});
     }catch(e){}
     if(!emails.length){
@@ -4611,7 +4831,7 @@ function openRecipHistory(recipientId){
     }
     var list='<div style="font-size:11px;color:var(--text2);text-transform:uppercase;font-weight:700;margin-bottom:12px">📧 Emails ('+emails.length+') — newest first</div>';
     emails.forEach(function(e,i){
-      var st=getEmailStatus(e);
+      var st2=getEmailStatus(e);
       var isReply=!!e.isReply;
       var isGmail=!!e.isGmailExternal;
       var pred=e.aiPrediction||'GOOD';
@@ -4619,7 +4839,7 @@ function openRecipHistory(recipientId){
       var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';
       var attHtml='';
       if(e.attachmentNames&&e.attachmentNames.length>0)attHtml='<div class="attachment-list">'+e.attachmentNames.map(function(n){return '<span class="attachment-name">📎 '+esc(n)+'</span>';}).join('')+'</div>';
-      var itemCls=isGmail?'gmail':(st.cls+(isReply?' reply':''));
+      var itemCls=isGmail?'gmail':(st2.cls+(isReply?' reply':''));
       var typeBadge=isGmail?'<span class="badge gmail">📧 Gmail</span>':(isReply?'<span class="badge reply-badge">📩 Reply</span>':'<span class="badge sent">📤 Send</span>');
       var clickInfo='';
       if(e.clickCount>0)clickInfo='<span class="badge click">🖱️ '+e.clickCount+' click'+(e.clickCount>1?'s':'')+'</span>';
@@ -4665,7 +4885,7 @@ document.getElementById('sendOptionsConfirm').addEventListener('click',function(
   if(!_currentSendId)return;
   var id=_currentSendId;
   var selectedTemplate=$('sendTemplateSelect').value;
-  if(!selectedTemplate){return toast('Please select a template','err');}
+  if(!selectedTemplate){return toast(t('pleaseSelectTemplate'),'err');}
   var attachChecked=$('optAttachments').checked;
   var fileIds=attachChecked?Object.keys(SEND_MODAL_FILES):[];
   var payload={recipientId:id,templateId:selectedTemplate,includeSignature:$('optSignature').checked,includeLogo:$('optLogo').checked,includeAttachments:attachChecked,selectedFileIds:fileIds};
@@ -4730,7 +4950,7 @@ document.getElementById('resendOptionsConfirm').addEventListener('click',functio
   if(!_currentResendId)return;
   var id=_currentResendId;
   var selectedTemplate=$('resendTemplateSelect').value;
-  if(!selectedTemplate){return toast('Please select a template','err');}
+  if(!selectedTemplate){return toast(t('pleaseSelectTemplate'),'err');}
   var attachChecked=$('resendOptAttachments').checked;
   var fileIds=attachChecked?Object.keys(RESEND_MODAL_FILES):[];
   var payload={recipientId:id,templateId:selectedTemplate,includeSignature:$('resendOptSignature').checked,includeLogo:$('resendOptLogo').checked,includeAttachments:attachChecked,selectedFileIds:fileIds};
@@ -4802,7 +5022,7 @@ document.getElementById('bulkResendConfirm').addEventListener('click',function()
   var ids=Object.keys(SELECTED);
   if(!ids.length){closeBulkResendModal();return toast('No recipients selected','err');}
   var templateId=$('bulkResendTemplateSelect').value;
-  if(!templateId)return toast('Please select a template','err');
+  if(!templateId)return toast(t('pleaseSelectTemplate'),'err');
   var attachChecked=$('bulkResendOptAttachments').checked;
   var payload={recipientIds:ids,templateId:templateId,includeSignature:$('bulkResendOptSignature').checked,includeLogo:$('bulkResendOptLogo').checked,includeAttachments:attachChecked,selectedFileIds:attachChecked?Object.keys(BULK_RESEND_FILES):[]};
   var btn=this;
@@ -4821,11 +5041,25 @@ document.getElementById('bulkResendConfirm').addEventListener('click',function()
   }).catch(function(){resetBtn(btn);});
 });
 
-function pad2(n){return (n<10?'0':'')+n;}
-function localDateStr(d){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
-function localTimeStr(d){return pad2(d.getHours())+':'+pad2(d.getMinutes());}
-function getScheduleTz(){try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';}catch(e){return 'UTC';}}
-function fmtInTz(ms,tz){try{return new Intl.DateTimeFormat('en-GB',{timeZone:tz,day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).format(new Date(ms));}catch(e){return new Date(ms).toLocaleString();}}
+function updateBulkSchedulePreview(){
+  var ms=getSaveScheduleMs.call(null)||0;
+  // Note: use bulk-specific date/time inputs
+  var dEl=$('bulkScheduleDate'),tEl=$('bulkScheduleTime');
+  if(dEl&&tEl&&dEl.value&&tEl.value){
+    var dp=dEl.value.split('-'),tp=tEl.value.split(':');
+    if(dp.length===3&&tp.length>=2){
+      var dt=new Date(parseInt(dp[0],10),parseInt(dp[1],10)-1,parseInt(dp[2],10),parseInt(tp[0],10),parseInt(tp[1],10),0,0);
+      ms=isNaN(dt.getTime())?0:dt.getTime();
+    }
+  }
+  var p=$('bulkSchedulePreview'),z=$('bulkScheduleTz');
+  if(z)z.innerText='🌍 Your timezone: '+getScheduleTz();
+  if(!p)return;
+  if(!ms){p.innerHTML='Choose date and time first.';return;}
+  if(ms<=Date.now()){p.innerHTML='<span style="color:#fca5a5">⚠️ This time has passed — will schedule for next occurrence.</span>';return;}
+  p.innerHTML='📅 <b style="color:#c4b5fd">'+new Date(ms).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true})+'</b> · '+fmtDuration(ms-Date.now())+' left';
+}
+
 function setBulkScheduleDate(d){
   if(!d||isNaN(d.getTime()))return;
   var de=$('bulkScheduleDate'),te=$('bulkScheduleTime');
@@ -4833,6 +5067,7 @@ function setBulkScheduleDate(d){
   if(te)te.value=localTimeStr(d);
   updateBulkSchedulePreview();
 }
+
 function getBulkScheduleMs(){
   var dEl=$('bulkScheduleDate'),tEl=$('bulkScheduleTime');
   if(!dEl||!tEl||!dEl.value||!tEl.value)return 0;
@@ -4841,15 +5076,7 @@ function getBulkScheduleMs(){
   var dt=new Date(parseInt(dp[0],10),parseInt(dp[1],10)-1,parseInt(dp[2],10),parseInt(tp[0],10),parseInt(tp[1],10),0,0);
   return isNaN(dt.getTime())?0:dt.getTime();
 }
-function updateBulkSchedulePreview(){
-  var ms=getBulkScheduleMs();
-  var p=$('bulkSchedulePreview'),z=$('bulkScheduleTz');
-  if(z)z.innerText='🌍 Aapki timezone: '+getScheduleTz();
-  if(!p)return;
-  if(!ms){p.innerHTML='Pehle date aur time chunein.';return;}
-  if(ms<=Date.now()){p.innerHTML='<span style="color:#fca5a5">⚠️ Ye waqt guzar chuka hai — agli baar ke liye set hoga.</span>';return;}
-  p.innerHTML='📅 <b style="color:#c4b5fd">'+new Date(ms).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true})+'</b> · '+fmtDuration(ms-Date.now())+' baaki';
-}
+
 function renderBulkSchedulePresets(){
   var box=$('bulkSchedulePresets');
   if(!box)return;
@@ -4857,12 +5084,12 @@ function renderBulkSchedulePresets(){
   var t1=new Date(Date.now()+60*60*1000);
   var s1=new Date(Date.now()+3*60*60*1000);
   var presets=[
-    ['⏱ +1 ghanta',t1],
-    ['⏱ +3 ghante',s1],
-    ['🌅 Kal subah 9',mkNow(9,0)],
-    ['☀️ Kal 12 baje',mkNow(12,0)],
-    ['🌆 Kal 6 baje',mkNow(18,0)],
-    ['🌙 Aaj raat 9',mkNow(21,0)]
+    ['⏱ +1 hour',t1],
+    ['⏱ +3 hours',s1],
+    ['🌅 Tomorrow 9 AM',mkNow(9,0)],
+    ['☀️ Tomorrow 12 PM',mkNow(12,0)],
+    ['🌆 Tomorrow 6 PM',mkNow(18,0)],
+    ['🌙 Tonight 9 PM',mkNow(21,0)]
   ];
   box.innerHTML='';
   presets.forEach(function(p){
@@ -4879,12 +5106,13 @@ function renderBulkSchedulePresets(){
     box.appendChild(b);
   });
 }
+
 function openBulkScheduleModal(){
   var ids=Object.keys(SELECTED);
   if(!ids.length)return toast('Please select recipients first','err');
   BULK_SCHEDULE_FILES={};
   BULK_SCHEDULE_HOUR=null;
-  $('bulkScheduleInfo').innerHTML='<div><b>'+ids.length+' recipients selected</b></div><div style="margin-top:6px;font-size:11px;color:#c4b5fd">⏰ Neeche se waqt chunein — preset dabayein ya date/time khud set karein.</div>';
+  $('bulkScheduleInfo').innerHTML='<div><b>'+ids.length+' recipients selected</b></div><div style="margin-top:6px;font-size:11px;color:#c4b5fd">⏰ Choose time below — click a preset or set date/time manually.</div>';
   var sel=$('bulkScheduleTemplateSelect');
   sel.innerHTML='';
   if(!TEMPLATES.length){sel.innerHTML='<option value="">(No templates)</option>';}
@@ -4904,13 +5132,13 @@ document.getElementById('bulkScheduleConfirm').addEventListener('click',function
   var ids=Object.keys(SELECTED);
   if(!ids.length){closeBulkScheduleModal();return toast('No recipients selected','err');}
   var templateId=$('bulkScheduleTemplateSelect').value;
-  if(!templateId)return toast('Please select a template','err');
+  if(!templateId)return toast(t('pleaseSelectTemplate'),'err');
   var attachChecked=$('bulkScheduleOptAttachments').checked;
   var _ms=getBulkScheduleMs();
-  if(!_ms){toast('Pehle date aur time chunein','err');return;}
-  if(_ms<=Date.now()){toast('Ye waqt guzar chuka hai — aage ka waqt chunein','err');return;}
+  if(!_ms){toast('Please choose date and time first','err');return;}
+  if(_ms<=Date.now()){toast('This time has passed — choose a future time','err');return;}
   var _mins=Math.round((_ms-Date.now())/60000);
-  if(_mins<2){toast('Kam az kam 2 minute baad ka waqt chunein','err');return;}
+  if(_mins<2){toast(t('scheduleMin2Min'),'err');return;}
   var payload={recipientIds:ids,templateId:templateId,scheduleAt:new Date(_ms).toISOString(),timezone:getScheduleTz(),includeSignature:$('bulkScheduleOptSignature').checked,includeLogo:$('bulkScheduleOptLogo').checked,includeAttachments:attachChecked,selectedFileIds:attachChecked?Object.keys(BULK_SCHEDULE_FILES):[]};
   var btn=this;
   setBtnLoading(btn,'⏰ '+new Date(_ms).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit',hour12:true})+' — scheduled');
@@ -4922,7 +5150,6 @@ document.getElementById('bulkScheduleConfirm').addEventListener('click',function
       toast('✅ Scheduled '+r.count+' for '+when);
       closeBulkScheduleModal();
       clearSelection();
-      // Immediately try check (in case time already passed)
       api('/api/scheduled/check','POST',{}).then(function(){loadAll();});
     }else toast('❌ '+(r.error||'Failed'),'err');
   }).catch(function(){resetBtn(btn);});
@@ -4950,9 +5177,9 @@ function openSchedulesList(){
       var label=status==='pending'?'PENDING':status==='done'?'DONE':status==='paused'?'PAUSED':'FAILED';
       var extra='';
       if(ms>0){
-        if(status==='pending'&&ms>Date.now())extra='<span style="color:#c4b5fd">· '+esc(fmtDuration(ms-Date.now()))+' baaki</span>';
-        else if(status==='pending')extra='<span style="color:#fcd34d">· abhi bhejna hai</span>';
-        else if(status==='done')extra='<span style="color:#86efac">· bhej diya</span>';
+        if(status==='pending'&&ms>Date.now())extra='<span style="color:#c4b5fd">· '+esc(fmtDuration(ms-Date.now()))+' left</span>';
+        else if(status==='pending')extra='<span style="color:#fcd34d">· ready to send</span>';
+        else if(status==='done')extra='<span style="color:#86efac">· sent</span>';
       }
       var recCount=(s.recipientIds||[]).length;
       var tpl=s.templateName?' · 📝 '+esc(s.templateName):'';
@@ -5271,7 +5498,7 @@ function openReplyModal(useAI){
   var toEmail=extractEmailFromString(ACTIVE_EMAIL.to);
   if(fromEmail===USER_EMAIL_LOWER&&toEmail===USER_EMAIL_LOWER){
     warn.classList.remove('hidden');
-    warn.innerHTML='<b>⚠️ Ye email tumne khud ko bheji hai</b>. Reply pointless.';
+    warn.innerHTML='<b>⚠️ You sent this email to yourself</b>. Reply is pointless.';
     $('sendReplyBtn').disabled=true;
   }else if(!target){
     warn.classList.remove('hidden');
@@ -5651,7 +5878,7 @@ function loadOcrMonitor(){
     var skips=s.grandConfigSkips||0;
     var skipProvs=Object.entries(s.configSkipTotals||{}).map(function(kv){return '<span class="tiny-badge" style="margin:1px;background:rgba(148,163,184,.15);color:#cbd5e1;border-color:rgba(148,163,184,.3)">'+esc(kv[0])+': '+kv[1]+'</span>';}).join('');
     $('aiErrSummary').innerHTML='Errors today: <b style="color:#fca5a5">'+(s.grandTotal||0)+'</b> '+provs
-      +(skips>0?'<div style="margin-top:4px;font-size:10px;color:var(--text3)">ℹ️ Config missing (error nahi): '+skips+' calls skipped '+skipProvs+'</div>':'');
+      +(skips>0?'<div style="margin-top:4px;font-size:10px;color:var(--text3)">ℹ️ Config missing (not errors): '+skips+' calls skipped '+skipProvs+'</div>':'');
     var rows=r.rows||[];
     var w=$('aiErrorTable');
     if(!rows.length){
@@ -5981,9 +6208,8 @@ async function confirmBanUser(ev){
   if(btn)resetBtn(btn);
 }
 
-// UPDATED: Now the delete endpoint soft-deletes and stores recoverable snapshot
 async function deleteUserAccount(uid,email){
-  var ok=await showConfirm({icon:'⚠️',title:'Delete User?',message:'This removes '+email+' from active users. Data snapshot save hoga — admin baad mein recover kar sakta hai.',okText:'Delete (Recoverable)'});
+  var ok=await showConfirm({icon:'⚠️',title:'Delete User?',message:'This removes '+email+' from active users. A data snapshot will be saved — admin can recover later.',okText:'Delete (Recoverable)'});
   if(!ok)return;
   toast('Deleting user (recoverable)...');
   api('/api/admin/user/'+uid,'DELETE').then(function(r){
