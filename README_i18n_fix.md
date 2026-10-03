@@ -5,7 +5,87 @@ Ye file har round ke kaam ka record rakhti hai. Brand naam **"MailFlow Pro"** ha
 
 ---
 
-## ROUND 4 — Saari 7 Languages (latest)
+## ROUND 5 — Live Quota + Har Open Count (latest)
+
+### 1. 📊 Live Quota — ab sach mein live hai
+
+**Pehle kyun 0 rehta tha (2 bugs):**
+
+| # | Bug | Asar |
+|---|---|---|
+| 1 | `fetchGmailSentTodayCount` mein `mailboxOpen(f)` **bina `{readOnly:true}`** | Gmail folder theek se nahi khulta |
+| 2 | `search({since: date})` Gmail pe **unreliable** hai | Aaj ke bheje emails miss ho jate hain → count 0 |
+| 3 | Frontend `/api/quota` **kabhi `force=1` nahi** bhejta tha | 30s ka purana cache hi dikhta rehta |
+
+**Ab:**
+- `mailboxOpen(f, {readOnly:true})` — safe read
+- **3-level search fallback:** `gmraw` (X-GM-RAW — Gmail ka asli search, sab se
+  reliable) → `since` → `all + internalDate filter` (aakhri 400 emails se aaj ke
+  ginte hain)
+- Frontend **har 15 second** poll karta hai; **55s se purana ho to `force=1`** se
+  asli IMAP sync karta hai
+- **"🔄 Sync now"** button — foran sync
+- Hint mein **sync age** dikhta hai: *"✅ Live — Gmail Sent folder se sync hua (4s ago).
+  Manual sends bhi count ho rahe hain."*
+- Server pe per-user IMAP cache 60s (IMAP call mehnga hai, Vercel slow na ho)
+
+### 2. 📧 Manual Gmail sends bhi count hote hain
+Gmail ke **Sent folder** se aaj ka count aata hai — is liye jo email aap ne **Gmail
+app / phone / website se manually** bheji ho, wo bhi total mein aa jati hai.
+`Total = max(MailFlow sends, Gmail Sent count)` — double counting nahi hoti.
+
+> Agar Inbox (IMAP) connect nahi hai to sirf MailFlow sends count honge, aur card
+> saaf saaf batayega: *"⚠️ Sirf MailFlow sends count ho rahe hain. Manual Gmail sends
+> count karne ke liye Inbox (IMAP) connect karein."*
+
+### 3. 👁 Har open count — lekin aap khud kholein to NAHI
+
+**Pehle:** `openCount` sirf **pehle** open pe barhta tha; dobara kholne pe `reopenCount`
+alag barhta tha → UI mein 1 hi dikhta tha.
+
+**Ab:** `openCount` **HAR asli open** pe barhta hai (teeno tracking paths mein), aur
+`firstOpenAt` alag save hota hai. Matlab — email 5 baar khuli to **5 count** hoga.
+
+**Aur aap khud khol rahe hain to count nahi hoga** — 8 guards:
+
+| Guard | Kya karta hai |
+|---|---|
+| Session owner | Aap logged in ho aur wahi email kholo → skip |
+| Referer | MailFlow UI se aayi request → skip |
+| Sender IP | Aapka IP = sender ka IP → skip |
+| Sender IP+UA | IP + browser dono match → skip |
+| Sender active | Aap 10 min se active ho + email 5 min purani → self-view samajh ke skip |
+| Known bots | Gmail proxy, scanners, prefetchers → ignore |
+| Delivery prefetch | Send ke 15s ke andar aaya hit → ignore |
+| Reopen gap | 60s ke andar dobara hit → ignore (double-count nahi) |
+
+### Verification (chalaya gaya)
+```
+Gmail count function (fake IMAP client, 6 tests):
+  gmraw works            -> count 5,  method=gmraw        OK
+  gmraw fail -> since    -> count 3,  method=since        OK
+  dono fail -> date_filter -> sirf aaj ke (kal wala exclude) OK
+  no Sent folder         -> {ok:false, error}             OK
+  readOnly flag passed   -> {"readOnly":true}             OK
+  folder fallback order  -> Sent Mail > Sent > Sent       OK
+
+Self-open guards  : 9/9 maujood (track), 3/3 (click)
+openCount paths   : 3/3 har open pe barhta hai
+Quota UI elements : 9/9 present + live badge + 15s tick + Sync now
+syntax            : server.js OK, index.html JS OK
+```
+
+### `/api/quota` response (ab)
+```json
+{ "ok":true, "sent":11, "mailflowSent":4, "gmailSent":11,
+  "gmailSource":"gmraw", "gmailError":null, "imapAvailable":true,
+  "limit":500, "remaining":489, "usedPercent":2,
+  "lastSyncAt":"...", "syncMs":1240, "live":true }
+```
+
+---
+
+## ROUND 4 — Saari 7 Languages
 
 ### Ab poora UI 6 zabanon mein
 | Language | Keys | Direction |

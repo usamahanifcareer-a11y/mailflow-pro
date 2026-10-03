@@ -3964,6 +3964,7 @@ table.data-table tr.clickable {
 <div class="quota-bar"><div class="quota-fill" id="quotaFill"></div></div>
 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:8px;flex-wrap:wrap">
 <div style="font-size:10px;color:var(--text3);flex:1" id="quotaHint">Loading…</div>
+<button class="btn ghost small" id="quotaRefreshBtn" onclick="refreshQuotaNow()" style="font-size:10px;padding:4px 10px">🔄 Sync now</button>
 <button class="btn ghost small" onclick="loadQuota(true)" style="font-size:10px;padding:4px 10px">🔄</button>
 </div>
 </div>
@@ -5393,6 +5394,7 @@ function enterApp(){
   checkGmailStatus();
   startHourlyAutoSend();
   startAutoRefresh();
+  startQuotaLive();
   loadQuickAuto();
 }
 
@@ -5440,6 +5442,26 @@ async function connectGmail(){
   resetBtn(btn);
 }
 
+var QUOTA_LAST_SYNC=0,QUOTA_TIMER=null,QUOTA_TICK_MS=15000;
+function startQuotaLive(){
+  if(QUOTA_TIMER)clearInterval(QUOTA_TIMER);
+  QUOTA_TIMER=setInterval(function(){
+    if(document.visibilityState!=='visible')return;
+    var v=$('myView');
+    if(!v||v.classList.contains('hidden'))return;
+    var stale=(Date.now()-QUOTA_LAST_SYNC)>55000;
+    loadQuota(stale);
+  },QUOTA_TICK_MS);
+}
+function refreshQuotaNow(){
+  var b=$('quotaRefreshBtn');
+  if(b){b.disabled=true;b.innerText='⏳ Syncing…';}
+  api('/api/quota?force=1').then(function(r){
+    loadQuota(false);
+    if(b){b.disabled=false;b.innerText='🔄 Sync now';}
+    if(r&&r.ok)toast(r.live?'✅ Gmail se live count aa gaya':'⚠️ Sirf MailFlow count (Inbox connect karein)');
+  }).catch(function(){ if(b){b.disabled=false;b.innerText='🔄 Sync now';} });
+}
 function startAutoRefresh(){
   if(POLL_TIMER)clearInterval(POLL_TIMER);
   POLL_TIMER=setInterval(function(){
@@ -5926,26 +5948,32 @@ function loadQuota(force){
       return;
     }
     MY_QUOTA={sent:r.sent,limit:r.limit,remaining:r.remaining,mailflowSent:r.mailflowSent,gmailSent:r.gmailSent};
-    $('quotaMailflowSent').innerText=r.mailflowSent!==undefined?r.mailflowSent:'—';
-    $('quotaGmailSent').innerText=r.gmailSent!==null&&r.gmailSent!==undefined?r.gmailSent:(r.imapAvailable===false?'N/A (enable Inbox)':'—');
+    QUOTA_LAST_SYNC=Date.now();
+    $('quotaMailflowSent').innerText=(r.mailflowSent!==undefined&&r.mailflowSent!==null)?r.mailflowSent:'—';
+    $('quotaGmailSent').innerText=(r.gmailSent!==null&&r.gmailSent!==undefined)?r.gmailSent:(r.imapAvailable===false?'N/A (enable Inbox)':'—');
     $('quotaSent').innerText=r.sent;
     $('quotaLimit').innerText=r.limit;
     $('quotaRemaining').innerText=r.remaining;
     var li=$('quotaLiveIndicator');
-    if(r.live){
-      li.className='quota-live';
-      li.innerHTML='<span class="dot"></span>Live';
-    }else{
-      li.className='quota-live offline';
-      li.innerHTML='⚡ MailFlow only';
+    if(li){
+      if(r.live){li.className='quota-live';li.innerHTML='<span class="dot"></span>Live';}
+      else{li.className='quota-live offline';li.innerHTML='⚡ MailFlow only';}
     }
-    var pct=(r.sent/r.limit)*100;
-    $('quotaFill').style.width=Math.min(100,pct)+'%';
-    $('quotaFill').className='quota-fill'+(pct>90?' crit':(pct>70?' warn':''));
-    if(r.live){
-      $('quotaHint').innerHTML='✅ Real-time from Gmail Sent folder.';
-    }else{
-      $('quotaHint').innerHTML='⚠️ Connect Inbox (IMAP) to see real Gmail daily count.';
+    var pct=(r.limit>0)?(r.sent/r.limit)*100:0;
+    if($('quotaFill')){
+      $('quotaFill').style.width=Math.min(100,pct)+'%';
+      $('quotaFill').className='quota-fill'+(pct>90?' crit':(pct>70?' warn':''));
+    }
+    if($('quotaHint')){
+      var age=fmtTimeAgo(new Date(QUOTA_LAST_SYNC).toISOString());
+      if(r.live){
+        var src=r.gmailSource==='gmraw'?'Gmail Sent folder':(r.gmailSource==='since'?'Gmail Sent (since)':'Gmail Sent folder');
+        $('quotaHint').innerHTML='✅ Live — '+src+' se sync hua ('+age+'). Manual sends bhi count ho rahe hain.';
+      }else if(r.imapAvailable&&r.gmailError){
+        $('quotaHint').innerHTML='⚠️ Gmail Sent folder nahi parh saka: '+esc(String(r.gmailError).substring(0,70))+'. Inbox dobara connect karein.';
+      }else{
+        $('quotaHint').innerHTML='⚠️ Sirf MailFlow sends count ho rahe hain. Manual Gmail sends count karne ke liye Inbox (IMAP) connect karein.';
+      }
     }
   }).catch(function(){});
 }
