@@ -13,6 +13,7 @@ window.va = window.va || function() {
 };
 </script>
 <script defer src="/_vercel/insights/script.js"></script>
+<script src="/i18n-data.js"></script>
 <style>
 * {
   box-sizing: border-box;
@@ -4851,6 +4852,11 @@ function applyI18n(){
     var v=t(k);
     if(v)el.innerHTML=v;
   });
+  // Language badalne pe dynamically banaye gaye labels (jaise "Machine" status,
+  // pagination info) ko dobara render karne ke liye signal bhejo.
+  try{
+    document.dispatchEvent(new CustomEvent('mf:i18n'));
+  }catch(e){}
 }
 
 // ============ HELPERS ============
@@ -5030,14 +5036,14 @@ function setRememberedEmail(email){try{if(email)localStorage.setItem('mf_remembe
 
 function getEmailStatus(e){
   if(e.openedAt)return{cls:'opened',icon:'👁',lbl:t('optOpened'),color:'#86efac'};
-  if(e.lastMachineHitAt||e.machineHits>0)return{cls:'machine',icon:'⚙️',lbl:'Machine',color:'#cbd5e1'};
+  if(e.lastMachineHitAt||e.machineHits>0)return{cls:'machine',icon:'⚙️',lbl:t('machine')||'Machine',color:'#cbd5e1'};
   return{cls:'sent',icon:'📤',lbl:t('optSent'),color:'#7dd3fc'};
 }
 
 function getRecipientStatus(r){
   var st=(r.status||'').toLowerCase();
   if(st.indexOf('opened')!==-1)return{cls:'opened',icon:'👁',lbl:t('optOpened')};
-  if(st==='delivered'||st==='machine')return{cls:'machine',icon:'⚙️',lbl:'Machine'};
+  if(st==='delivered'||st==='machine')return{cls:'machine',icon:'⚙️',lbl:t('machine')||'Machine'};
   if(st==='sent')return{cls:'sent',icon:'📤',lbl:t('optSent')};
   return{cls:'pending',icon:'⏳',lbl:t('optPending')};
 }
@@ -7184,6 +7190,7 @@ function loadAll(isManual){
     $('stOpened').innerText=r.stats.opened;
     $('stPending').innerText=r.stats.pending;
     $('stTotalSends').innerText=r.stats.totalSends||0;
+    applyI18n();
   });
   loadRecipients();
 }
@@ -8611,6 +8618,16 @@ document.addEventListener('DOMContentLoaded',function(){
       if(e.key==='-')imgZoom(-1);
       if(e.key==='0')imgZoomReset();
     }
+  });
+  // Language change hone pe dynamic tables dobara render karo (throttled).
+  var _i18nReRenderTimer=null;
+  document.addEventListener('mf:i18n',function(){
+    if(_i18nReRenderTimer)return;
+    _i18nReRenderTimer=setTimeout(function(){
+      _i18nReRenderTimer=null;
+      try{ if(typeof renderMyEmails==='function')renderMyEmails(); }catch(e){}
+      try{ if(typeof renderTestRecipients==='function')renderTestRecipients(); }catch(e){}
+    },400);
   });
 });
 

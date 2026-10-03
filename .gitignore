@@ -9,6 +9,11 @@ lerna-debug.log*
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
+# Local scratch / temp helper scripts (not part of the app)
+_extract_en.js
+_en_dict.js
+_en_keys.txt
+
 # Runtime data
 pids
 *.pid
