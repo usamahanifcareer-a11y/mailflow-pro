@@ -2377,8 +2377,8 @@ function startScheduledCheck(){
       }
     }).catch(function(){});
   }
-  setTimeout(tick,5000);
-  SCHED_CHECK_TIMER=setInterval(tick,60000);
+  setTimeout(tick,3000);
+  SCHED_CHECK_TIMER=setInterval(tick,30000);
 }
 
 function startLiveInbox(){
