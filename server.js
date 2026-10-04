@@ -11,11 +11,12 @@ const ADMIN_EMAIL=(process.env.ADMIN_EMAIL||'usama.hanif.career@gmail.com').toLo
 const DEFAULT_DAILY_LIMIT=500,DEFAULT_SEND_DELAY=20;
 const IS_VERCEL=!!process.env.VERCEL,CRON_SECRET=process.env.CRON_SECRET||'';
 const BACKEND_URL=process.env.BACKEND_URL||'https://mailflowpro.dpdns.org';
-const APP_VERSION='2.2.1';
+const APP_VERSION='2.2.2';
 const OCR_SPACE_API_KEY=process.env.OCR_SPACE_API_KEY||'helloworld',OCR_FREE_MONTHLY_LIMIT=25000;
 const TRACK_EARLY_PREFETCH_MS=30*1000,TRACK_SENDER_SELFVIEW_MS=8*60*1000,TRACK_SENDER_ACTIVE_MS=15*60*1000,TRACK_REOPEN_MIN_GAP_MS=2*60*1000,TRACK_FIRST_OPEN_MIN_DELAY_MS=30*1000,TRACK_GOOGLE_PROXY_GRACE_MS=30*1000,TRACK_SENDER_ACTIVITY_WINDOW_MS=20*60*1000,TRACK_MIN_INTERVAL_BETWEEN_OPENS_MS=5*60*1000;
 const DUPLICATE_SEND_WINDOW_MS=90*1000,AUTO_SEND_LOCK_MS=55*60*1000,SENT_STRIP_SYNC_WAIT_MS=2500,SENT_STRIP_RETRY_COUNT=3;
 const SCHEDULE_POLL_THROTTLE_MS=40*1000;
+const SCHEDULED_BATCH_LOCK_MS=5*60*1000;
 const MAX_FILE_SIZE=3*1024*1024,MAX_LOGO_SIZE=2*1024*1024,MAX_PROFILE_PIC_SIZE=1*1024*1024,MAX_OCR_IMAGE_SIZE=1*1024*1024;
 const GMAIL_DAILY_MAX=500;
 if(!process.env.SESSION_SECRET)console.error('WARN: SESSION_SECRET missing');
@@ -69,11 +70,27 @@ const ALLOWED_ORIGINS=(process.env.ALLOWED_ORIGINS||'').split(',').map(x=>x.trim
 app.use(cors({origin:function(origin,cb){if(!origin)return cb(null,true);if(ALLOWED_ORIGINS.length===0)return cb(null,true);if(ALLOWED_ORIGINS.indexOf(origin)!==-1)return cb(null,true);cb(null,false);},credentials:true}));
 app.use(express.json({limit:'12mb'}));
 app.use(cookieSession({name:'mf_session',keys:[process.env.SESSION_SECRET||'fallback-secret-change-me'],maxAge:SESSION_DAYS_LONG*24*60*60*1000,secure:IS_VERCEL,sameSite:IS_VERCEL?'none':'lax',httpOnly:true,signed:true,overwrite:true}));
-const POLLING_PATHS=['/api/stats','/api/quota','/api/my-emails','/api/recipients','/api/prefs','/api/imap/status','/api/imap/inbox','/api/quiet-status','/api/admin/dashboard','/api/admin/users/paginated','/api/admin/all-emails-paginated','/api/admin/ai-usage','/api/admin/banned-users','/api/admin/access-requests','/api/admin/ocr-usage','/api/admin/ocr-quota','/api/admin/ai-errors','/api/admin/ocr-log','/api/scheduled/check'];
+const POLLING_PATHS=['/api/stats','/api/quota','/api/my-emails','/api/recipients','/api/prefs','/api/imap/status','/api/imap/inbox','/api/quiet-status','/api/admin/dashboard','/api/admin/users/paginated','/api/admin/all-emails-paginated','/api/admin/ai-usage','/api/admin/banned-users','/api/admin/access-requests','/api/admin/ocr-usage','/api/admin/ocr-quota','/api/admin/ai-errors','/api/admin/ocr-log'];
 function isPollingPath(p){for(let i=0;i<POLLING_PATHS.length;i++){if(p.indexOf(POLLING_PATHS[i])===0)return true;}return false;}
 const schedThrottle=new Map();
 function maybeRunScheduledCheck(uid){const last=schedThrottle.get(uid)||0;if(Date.now()-last<SCHEDULE_POLL_THROTTLE_MS)return;schedThrottle.set(uid,Date.now());runScheduledForUser(uid).catch(()=>{});}
-app.use((req,res,next)=>{if(req.session&&req.session.user&&req.session.user.id){const shouldSkip=req.method==='GET'&&isPollingPath(req.path);if(!shouldSkip){const uid=req.session.user.id;const ip=getClientIP(req);const ua=String(req.headers['user-agent']||'').substring(0,300);db.collection('users').doc(uid).set({lastActivityAt:new Date(),lastIP:ip,lastUserAgent:ua},{merge:true}).catch(()=>{});}try{maybeRunScheduledCheck(req.session.user.id);}catch(e){}}next();});
+app.use((req,res,next)=>{
+  if(req.session&&req.session.user&&req.session.user.id){
+    const path=req.path;
+    const shouldSkipActivity=req.method==='GET'&&isPollingPath(path);
+    const skipScheduledAuto=(path==='/api/scheduled/check'||path==='/api/auto-send-check'||path==='/api/cron/scheduled'||path==='/api/cron/auto-send');
+    if(!shouldSkipActivity){
+      const uid=req.session.user.id;
+      const ip=getClientIP(req);
+      const ua=String(req.headers['user-agent']||'').substring(0,300);
+      db.collection('users').doc(uid).set({lastActivityAt:new Date(),lastIP:ip,lastUserAgent:ua},{merge:true}).catch(()=>{});
+    }
+    if(!skipScheduledAuto){
+      try{maybeRunScheduledCheck(req.session.user.id);}catch(e){}
+    }
+  }
+  next();
+});
 app.use(express.static(path.join(__dirname,'public')));
 app.get('/privacy',(req,res)=>res.sendFile(path.join(__dirname,'public','privacy.html')));
 app.get('/terms',(req,res)=>res.sendFile(path.join(__dirname,'public','terms.html')));
@@ -118,62 +135,219 @@ function naivePdfExtract(buf){try{const raw=Buffer.isBuffer(buf)?buf.toString('l
 async function extractPdfText(buf){try{const pdfParse=require('pdf-parse');const data=await pdfParse(buf);const t=(data&&data.text?data.text:'').replace(/\u0000/g,'').trim();if(t.replace(/\s/g,'').length>30)return t;}catch(e){}return naivePdfExtract(buf);}
 function extractDocxText(buf){try{const zip=Buffer.isBuffer(buf)?buf:Buffer.from(buf);const name='word/document.xml';let pos=zip.indexOf(Buffer.from(name));if(pos<0)return '';let local=-1;for(let i=Math.max(0,pos-80);i<pos;i++){if(zip[i]===0x50&&zip[i+1]===0x4b&&zip[i+2]===0x03&&zip[i+3]===0x04){local=i;break;}}if(local<0)return '';const compression=zip.readUInt16LE(local+8);const compSize=zip.readUInt32LE(local+18);const nameLen=zip.readUInt16LE(local+26);const extraLen=zip.readUInt16LE(local+28);const dataStart=local+30+nameLen+extraLen;const data=zip.slice(dataStart,dataStart+compSize);let xml='';if(compression===0)xml=data.toString('utf8');else{const zlib=require('zlib');xml=zlib.inflateRawSync(data).toString('utf8');}return xml.replace(/<w:p[^>]*>/g,'\n').replace(/<w:tab[^/]*\/>/g,'\t').replace(/<[^>]+>/g,' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#(\d+);/g,function(_,n){return String.fromCharCode(Number(n));}).replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').replace(/[ \t]{2,}/g,' ').trim();}catch(e){return '';}}
 async function extractCvFromBuffer(buf,filename,mimeType){const name=(filename||'').toLowerCase();const mime=(mimeType||'').toLowerCase();if(mime.includes('pdf')||name.endsWith('.pdf')||buf.slice(0,5).toString()==='%PDF-'){const pdf=await extractPdfText(buf);if(pdf)return pdf;return '';}if(mime.includes('wordprocessingml')||name.endsWith('.docx'))return extractDocxText(buf);if(mime.startsWith('text/')||name.endsWith('.txt')||name.endsWith('.md')||name.endsWith('.rtf')){let t=buf.toString('utf8');if(t.charCodeAt(0)===0xFEFF)t=t.slice(1);return t.replace(/\u0000/g,'').trim();}const asText=buf.toString('utf8');if(!looksLikeBinaryCv(asText))return asText.trim();const pdfTry=await extractPdfText(buf);if(pdfTry)return pdfTry;const docxTry=await extractDocxText(buf);if(docxTry)return docxTry;return '';}
-async function claimBatch(doc){try{let got=false;await db.runTransaction(async(t)=>{const fresh=await t.get(doc.ref);if(!fresh.exists)return;const ds=fresh.data();if(ds.status!=='pending')return;if(toMs(ds.scheduledFor)>Date.now())return;t.update(doc.ref,{status:'processing',processingAt:new Date()});got=true;});return got;}catch(e){return false;}}
+async function claimBatch(doc){try{let got=false;await db.runTransaction(async(t)=>{const fresh=await t.get(doc.ref);if(!fresh.exists)return;const ds=fresh.data();if(ds.status!=='pending')return;if(toMs(ds.scheduledFor)>Date.now()+2000)return;t.update(doc.ref,{status:'processing',processingAt:new Date(),claimToken:crypto.randomBytes(8).toString('hex')});got=true;});return got;}catch(e){return false;}}
 async function clearScheduledLinks(uid,batchId){try{const col=db.collection('users').doc(uid).collection('recipients');const snap=await col.where('scheduledBatchIds','array-contains',batchId).limit(500).get();if(snap.empty)return 0;const b=db.batch();let n=0;snap.forEach(function(d){const data=d.data();const remaining=Array.isArray(data.scheduledBatchIds)?data.scheduledBatchIds.filter(function(x){return x!==batchId;}):[];const upd={scheduledBatchIds:remaining};if(remaining.length===0){upd.scheduledFor=null;if((data.status||'').toLowerCase()==='scheduled')upd.status=data.everOpened===true?'Opened':(data.sendCount>0?'Sent':'Pending');}b.set(d.ref,upd,{merge:true});n++;});await b.commit();cacheDel('recipients:'+uid);cacheDel('rechist:'+uid);return n;}catch(e){return 0;}}
-async function runScheduledForUser(uid){try{const u=await getUserData(uid);if(!u||!u.smtpEnabled)return{processed:0};const now=new Date();const[pendSnap,stuckSnap]=await Promise.all([db.collection('users').doc(uid).collection('scheduledBatches').where('status','==','pending').get(),db.collection('users').doc(uid).collection('scheduledBatches').where('status','==','processing').get().catch(()=>({docs:[]}))]);for(const doc of (stuckSnap.docs||[])){const d=doc.data();const pa=toMs(d.processingAt);if(pa>0&&(Date.now()-pa)>5*60*1000){await doc.ref.update({status:'pending',recoveredAt:new Date()}).catch(()=>{});}}const allPending=await db.collection('users').doc(uid).collection('scheduledBatches').where('status','==','pending').get();let processed=0;for(const doc of allPending.docs){const d=doc.data();if(toMs(d.scheduledFor)>now.getTime())continue;const _claimed=await claimBatch(doc);if(!_claimed)continue;let sent=0,failed=0,dup=0;for(const rid of (d.recipientIds||[])){try{await sendOne(uid,u.email,rid,{force:true,skipDelay:true,forceResend:true,includeSignature:d.includeSignature!==false,includeLogo:d.includeLogo!==false,includeAttachments:d.includeAttachments===true,selectedFileIds:d.selectedFileIds||[],templateId:d.templateId});sent++;await sleep(500);}catch(err){if(err.code==='DAILY_LIMIT_REACHED'){await doc.ref.update({status:'paused',error:'Daily limit',sentCount:sent});break;}if(err.code==='DUPLICATE_SEND_SKIP'){dup++;continue;}failed++;}}await doc.ref.update({status:'done',sentCount:sent,failedCount:failed,duplicatesSkipped:dup,completedAt:new Date()});await clearScheduledLinks(uid,doc.id);processed++;}return{processed};}catch(e){return{processed:0,error:e.message};}}
-async function sendOne(userId,userEmail,recipientId,options){options=options||{};const u=await getUserData(userId);if(!u.smtpEnabled||!u.smtpAppPassword)throw new Error('Please connect Gmail first to send emails');if(!options.forceResend){const lockId='lock_'+userId+'_'+recipientId;const lockRef=db.collection('users').doc(userId).collection('sendLocks').doc(lockId);try{await db.runTransaction(async(t)=>{const snap=await t.get(lockRef);const now=Date.now();if(snap.exists){const at=toMs(snap.data().at);if(now-at<DUPLICATE_SEND_WINDOW_MS){const e=new Error('DUPLICATE_SEND_SKIP');e.code='DUPLICATE_SEND_SKIP';throw e;}}t.set(lockRef,{at:new Date(),recipientId:recipientId},{merge:true});});}catch(lockErr){if(lockErr.code==='DUPLICATE_SEND_SKIP')throw lockErr;console.error('Lock error:',lockErr.message);}}if(isQuietHours(u)&&!options.force){const e=new Error('QUIET_HOURS');e.code='QUIET_HOURS';e.quietEnd=u.quietEnd;throw e;}const today=new Date().toISOString().split('T')[0];const sdChk=await db.collection('users').doc(userId).collection('stats').doc(today).get();const sentToday=sdChk.exists?(sdChk.data().sent||0):0;const limit=u.dailyLimit||DEFAULT_DAILY_LIMIT;if(sentToday>=limit){const err=new Error('DAILY_LIMIT_REACHED');err.code='DAILY_LIMIT_REACHED';err.limit=limit;throw err;}const r=await db.collection('users').doc(userId).collection('recipients').doc(recipientId).get();if(!r.exists)throw new Error('Recipient not found');const rec=r.data();if(!options.forceResend&&!options.isManualSend){const st=(rec.status||'').toLowerCase();if(st==='sent'||st==='opened'||st==='delivered'||st.indexOf('opened')!==-1){const e=new Error('ALREADY_SENT_SKIP');e.code='ALREADY_SENT_SKIP';throw e;}}if(u.lastSendTime&&!options.skipDelay){const l=toMs(u.lastSendTime);const delaySec=u.sendDelay!==undefined?Number(u.sendDelay):DEFAULT_SEND_DELAY;const delayMs=Math.max(0,delaySec*1000);const jitter=Math.floor(Math.random()*1000);const el=Date.now()-l;const mg=delayMs+jitter;if(el<mg)await sleep(mg-el);}
-let t=null;const templateIdToUse=options.templateId||rec.templateId;if(templateIdToUse){const tt=await db.collection('users').doc(userId).collection('templates').doc(templateIdToUse).get();if(tt.exists)t=tt.data();else if(options.templateId)throw new Error('Selected template was not found.');}if(!t){const ts=await db.collection('users').doc(userId).collection('templates').limit(1).get();if(!ts.empty)t=ts.docs[0].data();}if(!t)throw new Error('No template available.');if(!t.subject||!String(t.subject).trim())throw new Error('Template has no subject.');if(!t.body||!String(t.body).trim())throw new Error('Template has no body.');
-const recipientName=(rec.company||'').split(' ')[0]||'there';const recipientCompany=rec.company||'';const recipientEmail=rec.email||'';let subject=t.subject||'';let body=t.body||'';const replacements={'{name}':recipientName,'{company}':recipientCompany,'{email}':recipientEmail,'{firstName}':recipientName};for(const k in replacements){if(replacements.hasOwnProperty(k)){subject=subject.split(k).join(replacements[k]);body=body.split(k).join(replacements[k]);}}
-let sigHtml='';const hasSignature=!!(u.signature&&u.signature.trim().length>20);if(hasSignature&&options.includeSignature!==false){let sig=u.signature;if(options.includeLogo===false)sig=sig.replace(/<td[^>]*>\s*<img[\s\S]*?<\/td>/gi,'').replace(/<img[^>]*>/gi,'').replace(/<td[^>]*>\s*<\/td>/gi,'');else sig=replaceInlineLogoWithPublicUrl(sig,userId);sigHtml='<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">'+sig+'</div>';}
-const bodyHtml=body.replace(/\n/g,'<br>');
-const innerContent='<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;line-height:1.6;max-width:640px;">'+bodyHtml+sigHtml+'</div>';
-const fullHtmlWrapped=wrapHtmlDocument(innerContent,subject,userEmail);
-const lp=localAnalysis(subject,fullHtmlWrapped);
-const sendTrackToken=crypto.randomBytes(16).toString('hex');
-const atts=[];const attNames=[];if(options.includeAttachments===true&&Array.isArray(options.selectedFileIds)&&options.selectedFileIds.length>0){for(const fid of options.selectedFileIds){try{const fd=await db.collection('users').doc(userId).collection('files').doc(fid).get();if(fd.exists){const f=fd.data();if(f.base64){atts.push({filename:f.name,content:Buffer.from(f.base64,'base64'),contentType:f.mimeType||'application/octet-stream'});attNames.push(f.name);}}}catch(fe){}}}
-const totalAttSize=atts.reduce(function(s,a){return s+a.content.length;},0);if(totalAttSize>20*1024*1024)throw new Error('Total attachments exceed 20MB.');
-const now=new Date();
-const footerTxt=buildPlainTextFooter(u);
-const plainBody=(htmlToPlainText(fullHtmlWrapped)+(footerTxt?'\n\n'+footerTxt:'')).replace(/\n{3,}/g,'\n\n').trim();
-const dlv=analyzeDeliverability(subject,fullHtmlWrapped,plainBody||'');
-const cleanSubjectForDb=sanitizeSubject(subject);
-const uniqueSubjectForSend=makeUniqueSubject(subject);
-const logRef=await db.collection('users').doc(userId).collection('emailLog').add({recipientId,recipientEmail:rec.email,company:rec.company||'',subject:cleanSubjectForDb,sentAt:now,attachmentsCount:atts.length,attachmentNames:attNames,aiPrediction:lp.prediction,aiScore:lp.score,aiInboxProb:lp.inboxProbability,sendTrackToken,openedAt:null,hasSignature:hasSignature,templateName:t.name||'',isReply:false,deliverabilityScore:dlv.score,deliverabilityLabel:dlv.label,deliverabilityIssues:dlv.issues.slice(0,6)});
-const logId=logRef.id;const trackUrl=BACKEND_URL+'/track/'+logId+'?u='+userId+'&t='+sendTrackToken;const pix='<img src="'+trackUrl+'" width="1" height="1" alt="" style="border:0;display:block;width:1px;height:1px">';
-const withClickLinks=rewriteLinksForTracking(fullHtmlWrapped,logId,userId,sendTrackToken);const finalHtmlWithTracking=withClickLinks+pix;
-const transporter=createTransporter(userEmail,u.smtpAppPassword);
-const uniqueEntityId=crypto.randomBytes(12).toString('hex');
-const messageId='<'+uniqueEntityId+'.'+Date.now()+'@mailflowpro.dpdns.org>';
-const recipientMailOptions={
-  from:'"'+(u.name||'MailFlow User')+'" <'+userEmail+'>',
-  replyTo:'"'+(u.name||'MailFlow User')+'" <'+userEmail+'>',
-  to:rec.email,
-  subject:uniqueSubjectForSend,
-  text:plainBody,
-  html:finalHtmlWithTracking,
-  messageId:messageId,
-  date:now,
-  headers:{
-    'X-Entity-Ref-ID':uniqueEntityId,
-    'Message-ID':messageId,
-    'X-Mailer':'MailFlow Pro v'+APP_VERSION,
-    'X-Priority':'3',
-    'List-Unsubscribe':'<mailto:'+userEmail+'?subject=unsubscribe>',
-    'List-Unsubscribe-Post':'List-Unsubscribe=One-Click',
-    'Precedence':'bulk',
-    'Auto-Submitted':'no'
+async function runScheduledForUser(uid){
+  try{
+    const u=await getUserData(uid);
+    if(!u||!u.smtpEnabled)return{processed:0};
+    const now=new Date();
+    const stuckSnap=await db.collection('users').doc(uid).collection('scheduledBatches').where('status','==','processing').get().catch(()=>({docs:[]}));
+    for(const doc of (stuckSnap.docs||[])){
+      const d=doc.data();
+      const pa=toMs(d.processingAt);
+      if(pa>0&&(Date.now()-pa)>SCHEDULED_BATCH_LOCK_MS){
+        await doc.ref.update({status:'pending',recoveredAt:new Date()}).catch(()=>{});
+      }
+    }
+    const allPending=await db.collection('users').doc(uid).collection('scheduledBatches').where('status','==','pending').get();
+    let processed=0;
+    for(const doc of allPending.docs){
+      const d=doc.data();
+      if(toMs(d.scheduledFor)>now.getTime())continue;
+      const _claimed=await claimBatch(doc);
+      if(!_claimed)continue;
+      let sent=0,failed=0,dup=0;
+      for(const rid of (d.recipientIds||[])){
+        try{
+          await sendOne(uid,u.email,rid,{
+            force:true,
+            skipDelay:true,
+            forceResend:false,
+            includeSignature:d.includeSignature!==false,
+            includeLogo:d.includeLogo!==false,
+            includeAttachments:d.includeAttachments===true,
+            selectedFileIds:d.selectedFileIds||[],
+            templateId:d.templateId,
+            isManualSend:false,
+            isScheduledSend:true
+          });
+          sent++;
+          await sleep(500);
+        }catch(err){
+          if(err.code==='DAILY_LIMIT_REACHED'){
+            await doc.ref.update({status:'paused',error:'Daily limit',sentCount:sent});
+            break;
+          }
+          if(err.code==='DUPLICATE_SEND_SKIP'){dup++;continue;}
+          if(err.code==='ALREADY_SENT_SKIP'){dup++;continue;}
+          failed++;
+        }
+      }
+      await doc.ref.update({status:'done',sentCount:sent,failedCount:failed,duplicatesSkipped:dup,completedAt:new Date()});
+      await clearScheduledLinks(uid,doc.id);
+      processed++;
+    }
+    return{processed};
+  }catch(e){
+    return{processed:0,error:e.message};
   }
-};
-if(atts.length>0)recipientMailOptions.attachments=atts;
-await transporter.sendMail(recipientMailOptions);
-if(u.imapEnabled&&u.imapAppPassword){
-  const cleanMailOptions={
+}
+async function runScheduledForAllUsers(deadline){
+  const results=[];
+  try{
+    const us=await db.collection('users').get();
+    for(const u of us.docs){
+      if(deadline&&Date.now()>deadline)break;
+      try{
+        const r=await runScheduledForUser(u.id);
+        if(r.processed>0)results.push({uid:u.id,processed:r.processed});
+      }catch(e){}
+    }
+  }catch(e){}
+  return results;
+}
+async function sendOne(userId,userEmail,recipientId,options){
+  options=options||{};
+  const u=await getUserData(userId);
+  if(!u.smtpEnabled||!u.smtpAppPassword)throw new Error('Please connect Gmail first to send emails');
+  if(!options.forceResend){
+    const lockId='lock_'+userId+'_'+recipientId;
+    const lockRef=db.collection('users').doc(userId).collection('sendLocks').doc(lockId);
+    try{
+      await db.runTransaction(async(t)=>{
+        const snap=await t.get(lockRef);
+        const now=Date.now();
+        if(snap.exists){
+          const at=toMs(snap.data().at);
+          if(now-at<DUPLICATE_SEND_WINDOW_MS){
+            const e=new Error('DUPLICATE_SEND_SKIP');
+            e.code='DUPLICATE_SEND_SKIP';
+            throw e;
+          }
+        }
+        t.set(lockRef,{at:new Date(),recipientId:recipientId},{merge:true});
+      });
+    }catch(lockErr){
+      if(lockErr.code==='DUPLICATE_SEND_SKIP')throw lockErr;
+    }
+  }
+  if(isQuietHours(u)&&!options.force){
+    const e=new Error('QUIET_HOURS');e.code='QUIET_HOURS';e.quietEnd=u.quietEnd;throw e;
+  }
+  const today=new Date().toISOString().split('T')[0];
+  const sdChk=await db.collection('users').doc(userId).collection('stats').doc(today).get();
+  const sentToday=sdChk.exists?(sdChk.data().sent||0):0;
+  const limit=u.dailyLimit||DEFAULT_DAILY_LIMIT;
+  if(sentToday>=limit){
+    const err=new Error('DAILY_LIMIT_REACHED');err.code='DAILY_LIMIT_REACHED';err.limit=limit;throw err;
+  }
+  const r=await db.collection('users').doc(userId).collection('recipients').doc(recipientId).get();
+  if(!r.exists)throw new Error('Recipient not found');
+  const rec=r.data();
+  if(!options.forceResend&&!options.isManualSend){
+    const st=(rec.status||'').toLowerCase();
+    if(st==='sent'||st==='opened'||st==='delivered'||st.indexOf('opened')!==-1){
+      const e=new Error('ALREADY_SENT_SKIP');e.code='ALREADY_SENT_SKIP';throw e;
+    }
+  }
+  if(u.lastSendTime&&!options.skipDelay){
+    const l=toMs(u.lastSendTime);
+    const delaySec=u.sendDelay!==undefined?Number(u.sendDelay):DEFAULT_SEND_DELAY;
+    const delayMs=Math.max(0,delaySec*1000);
+    const jitter=Math.floor(Math.random()*1000);
+    const el=Date.now()-l;
+    const mg=delayMs+jitter;
+    if(el<mg)await sleep(mg-el);
+  }
+  let t=null;
+  const templateIdToUse=options.templateId||rec.templateId;
+  if(templateIdToUse){
+    const tt=await db.collection('users').doc(userId).collection('templates').doc(templateIdToUse).get();
+    if(tt.exists)t=tt.data();
+    else if(options.templateId)throw new Error('Selected template was not found.');
+  }
+  if(!t){
+    const ts=await db.collection('users').doc(userId).collection('templates').limit(1).get();
+    if(!ts.empty)t=ts.docs[0].data();
+  }
+  if(!t)throw new Error('No template available.');
+  if(!t.subject||!String(t.subject).trim())throw new Error('Template has no subject.');
+  if(!t.body||!String(t.body).trim())throw new Error('Template has no body.');
+  const recipientName=(rec.company||'').split(' ')[0]||'there';
+  const recipientCompany=rec.company||'';
+  const recipientEmail=rec.email||'';
+  let subject=t.subject||'';
+  let body=t.body||'';
+  const replacements={'{name}':recipientName,'{company}':recipientCompany,'{email}':recipientEmail,'{firstName}':recipientName};
+  for(const k in replacements){
+    if(replacements.hasOwnProperty(k)){
+      subject=subject.split(k).join(replacements[k]);
+      body=body.split(k).join(replacements[k]);
+    }
+  }
+  let sigHtml='';
+  const hasSignature=!!(u.signature&&u.signature.trim().length>20);
+  if(hasSignature&&options.includeSignature!==false){
+    let sig=u.signature;
+    if(options.includeLogo===false)sig=sig.replace(/<td[^>]*>\s*<img[\s\S]*?<\/td>/gi,'').replace(/<img[^>]*>/gi,'').replace(/<td[^>]*>\s*<\/td>/gi,'');
+    else sig=replaceInlineLogoWithPublicUrl(sig,userId);
+    sigHtml='<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;">'+sig+'</div>';
+  }
+  const bodyHtml=body.replace(/\n/g,'<br>');
+  const innerContent='<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;line-height:1.6;max-width:640px;">'+bodyHtml+sigHtml+'</div>';
+  const fullHtmlWrapped=wrapHtmlDocument(innerContent,subject,userEmail);
+  const lp=localAnalysis(subject,fullHtmlWrapped);
+  const sendTrackToken=crypto.randomBytes(16).toString('hex');
+  const atts=[];const attNames=[];
+  if(options.includeAttachments===true&&Array.isArray(options.selectedFileIds)&&options.selectedFileIds.length>0){
+    for(const fid of options.selectedFileIds){
+      try{
+        const fd=await db.collection('users').doc(userId).collection('files').doc(fid).get();
+        if(fd.exists){
+          const f=fd.data();
+          if(f.base64){
+            atts.push({filename:f.name,content:Buffer.from(f.base64,'base64'),contentType:f.mimeType||'application/octet-stream'});
+            attNames.push(f.name);
+          }
+        }
+      }catch(fe){}
+    }
+  }
+  const totalAttSize=atts.reduce(function(s,a){return s+a.content.length;},0);
+  if(totalAttSize>20*1024*1024)throw new Error('Total attachments exceed 20MB.');
+  const now=new Date();
+  const footerTxt=buildPlainTextFooter(u);
+  const plainBody=(htmlToPlainText(fullHtmlWrapped)+(footerTxt?'\n\n'+footerTxt:'')).replace(/\n{3,}/g,'\n\n').trim();
+  const dlv=analyzeDeliverability(subject,fullHtmlWrapped,plainBody||'');
+  const cleanSubjectForDb=sanitizeSubject(subject);
+  const uniqueSubjectForSend=makeUniqueSubject(subject);
+  const logRef=await db.collection('users').doc(userId).collection('emailLog').add({
+    recipientId,recipientEmail:rec.email,company:rec.company||'',
+    subject:cleanSubjectForDb,sentAt:now,
+    attachmentsCount:atts.length,attachmentNames:attNames,
+    aiPrediction:lp.prediction,aiScore:lp.score,aiInboxProb:lp.inboxProbability,
+    sendTrackToken,openedAt:null,hasSignature:hasSignature,
+    templateName:t.name||'',isReply:false,
+    isScheduled:!!options.isScheduledSend,
+    deliverabilityScore:dlv.score,deliverabilityLabel:dlv.label,
+    deliverabilityIssues:dlv.issues.slice(0,6)
+  });
+  const logId=logRef.id;
+  const trackUrl=BACKEND_URL+'/track/'+logId+'?u='+userId+'&t='+sendTrackToken;
+  const pix='<img src="'+trackUrl+'" width="1" height="1" alt="" style="border:0;display:block;width:1px;height:1px">';
+  const withClickLinks=rewriteLinksForTracking(fullHtmlWrapped,logId,userId,sendTrackToken);
+  const finalHtmlWithTracking=withClickLinks+pix;
+  const transporter=createTransporter(userEmail,u.smtpAppPassword);
+  const uniqueEntityId=crypto.randomBytes(12).toString('hex');
+  const messageId='<'+uniqueEntityId+'.'+Date.now()+'@mailflowpro.dpdns.org>';
+  const recipientMailOptions={
     from:'"'+(u.name||'MailFlow User')+'" <'+userEmail+'>',
     replyTo:'"'+(u.name||'MailFlow User')+'" <'+userEmail+'>',
     to:rec.email,
-    subject:cleanSubjectForDb,
+    subject:uniqueSubjectForSend,
     text:plainBody,
-    html:fullHtmlWrapped,
+    html:finalHtmlWithTracking,
     messageId:messageId,
     date:now,
     headers:{
@@ -187,21 +361,45 @@ if(u.imapEnabled&&u.imapAppPassword){
       'Auto-Submitted':'no'
     }
   };
-  if(atts.length>0)cleanMailOptions.attachments=atts;
-  stripPixelFromSentFolder(userEmail,u.imapAppPassword,uniqueEntityId,cleanMailOptions,logId,userId).catch(function(){});
+  if(atts.length>0)recipientMailOptions.attachments=atts;
+  await transporter.sendMail(recipientMailOptions);
+  if(u.imapEnabled&&u.imapAppPassword){
+    const cleanMailOptions={
+      from:'"'+(u.name||'MailFlow User')+'" <'+userEmail+'>',
+      replyTo:'"'+(u.name||'MailFlow User')+'" <'+userEmail+'>',
+      to:rec.email,
+      subject:cleanSubjectForDb,
+      text:plainBody,
+      html:fullHtmlWrapped,
+      messageId:messageId,
+      date:now,
+      headers:{
+        'X-Entity-Ref-ID':uniqueEntityId,
+        'Message-ID':messageId,
+        'X-Mailer':'MailFlow Pro v'+APP_VERSION,
+        'X-Priority':'3',
+        'List-Unsubscribe':'<mailto:'+userEmail+'?subject=unsubscribe>',
+        'List-Unsubscribe-Post':'List-Unsubscribe=One-Click',
+        'Precedence':'bulk',
+        'Auto-Submitted':'no'
+      }
+    };
+    if(atts.length>0)cleanMailOptions.attachments=atts;
+    stripPixelFromSentFolder(userEmail,u.imapAppPassword,uniqueEntityId,cleanMailOptions,logId,userId).catch(function(){});
+  }
+  const everOpenedFlag=rec.everOpened===true||rec.status==='Opened';
+  const recUpdate={status:'Sent',lastSentAt:now,sentAt:now,everOpened:everOpenedFlag,bumpAt:now,sendCount:FieldValue.increment(1),scheduledFor:null,scheduledBatchIds:[]};
+  if(rec.status==='Opened'||rec.status==='Scheduled'&&everOpenedFlag)recUpdate.status='Opened';
+  await db.collection('users').doc(userId).collection('recipients').doc(recipientId).update(recUpdate);
+  await db.collection('users').doc(userId).update({lastSendTime:now,lastActivityAt:now});
+  const todayKey=new Date().toISOString().split('T')[0];
+  const sr=db.collection('users').doc(userId).collection('stats').doc(todayKey);
+  await sr.set({sent:FieldValue.increment(1),updatedAt:new Date()},{merge:true});
+  cacheDel('quota:'+userId);cacheDel('stats:'+userId);cacheDel('recipients:'+userId);cacheDel('rechist:'+userId);
+  return{email:rec.email,attachmentsCount:atts.length};
 }
-const everOpenedFlag=rec.everOpened===true||rec.status==='Opened';
-const recUpdate={status:'Sent',lastSentAt:now,sentAt:now,everOpened:everOpenedFlag,bumpAt:now,sendCount:FieldValue.increment(1),scheduledFor:null,scheduledBatchIds:[]};
-if(rec.status==='Opened'||rec.status==='Scheduled'&&everOpenedFlag)recUpdate.status='Opened';
-await db.collection('users').doc(userId).collection('recipients').doc(recipientId).update(recUpdate);
-await db.collection('users').doc(userId).update({lastSendTime:now,lastActivityAt:now});
-const todayKey=new Date().toISOString().split('T')[0];
-const sr=db.collection('users').doc(userId).collection('stats').doc(todayKey);
-await sr.set({sent:FieldValue.increment(1),updatedAt:new Date()},{merge:true});
-cacheDel('quota:'+userId);cacheDel('stats:'+userId);cacheDel('recipients:'+userId);cacheDel('rechist:'+userId);
-return{email:rec.email,attachmentsCount:atts.length};}
 async function stripPixelFromSentFolder(userEmail,appPassword,uniqueRefId,cleanMailOptions,logId,uid){const client=createImapClient(userEmail,appPassword);try{await client.connect();let opened=false;let usedFolder='[Gmail]/Sent Mail';const folders=['[Gmail]/Sent Mail','[Gmail]/Sent','Sent','Sent Items'];for(const f of folders){try{await client.mailboxOpen(f);opened=true;usedFolder=f;break;}catch(e){}}if(!opened){try{await client.logout();}catch(x){}await logSentStrip(uid,logId,'no_sent_folder',0,'No Sent folder found');return{ok:false,error:'No Sent folder'};}await sleep(SENT_STRIP_SYNC_WAIT_MS);let searchRes=[];for(let attempt=0;attempt<SENT_STRIP_RETRY_COUNT;attempt++){try{searchRes=await client.search({header:{'X-Entity-Ref-ID':uniqueRefId}},{uid:true});}catch(e){searchRes=[];}if(searchRes&&searchRes.length>0)break;try{searchRes=await client.search({subject:cleanMailOptions.subject,since:new Date(Date.now()-120000)},{uid:true});}catch(e2){searchRes=[];}if(searchRes&&searchRes.length>0)break;await sleep(1500);}let deleted=0;if(searchRes&&searchRes.length){for(const uidMsg of searchRes){try{await client.messageDelete(String(uidMsg),{uid:true});deleted++;}catch(e){}}}const streamTransport=nodemailer.createTransport({streamTransport:true,buffer:true,newline:'unix'});const cleanInfo=await streamTransport.sendMail(cleanMailOptions);const rawMessage=cleanInfo.message;let appended=false;try{await client.append(usedFolder,rawMessage,['\\Seen']);appended=true;}catch(e){try{await client.append('[Gmail]/Sent Mail',rawMessage,['\\Seen']);appended=true;}catch(e2){}}try{await client.logout();}catch(x){}await logSentStrip(uid,logId,appended?'success':'append_failed',deleted,appended?'':'Append failed');return{ok:true,deleted,appended,folder:usedFolder};}catch(e){try{await client.close();}catch(x){}await logSentStrip(uid,logId,'error',0,e.message);return{ok:false,error:e.message};}}
-app.get('/api/health',(req,res)=>res.json({ok:true,vercel:IS_VERCEL,version:APP_VERSION,method:'smtp',trackingMode:'advanced-15-layer-accurate-zw-subject',earlyPrefetchMs:TRACK_EARLY_PREFETCH_MS,selfViewMs:TRACK_SENDER_SELFVIEW_MS,senderActiveMs:TRACK_SENDER_ACTIVE_MS,reopenGapMs:TRACK_REOPEN_MIN_GAP_MS,firstOpenDelayMs:TRACK_FIRST_OPEN_MIN_DELAY_MS,duplicateWindowMs:DUPLICATE_SEND_WINDOW_MS,gmailDailyMax:GMAIL_DAILY_MAX,gmailThreadingFix:true,deliverabilityBoost:true,fastSave:true}));
+app.get('/api/health',(req,res)=>res.json({ok:true,vercel:IS_VERCEL,version:APP_VERSION,method:'smtp',trackingMode:'advanced-15-layer-accurate-zw-subject',earlyPrefetchMs:TRACK_EARLY_PREFETCH_MS,selfViewMs:TRACK_SENDER_SELFVIEW_MS,senderActiveMs:TRACK_SENDER_ACTIVE_MS,reopenGapMs:TRACK_REOPEN_MIN_GAP_MS,firstOpenDelayMs:TRACK_FIRST_OPEN_MIN_DELAY_MS,duplicateWindowMs:DUPLICATE_SEND_WINDOW_MS,gmailDailyMax:GMAIL_DAILY_MAX,gmailThreadingFix:true,deliverabilityBoost:true,fastSave:true,scheduledFixV2:true,noDuplicateScheduled:true}));
 app.get('/track/:id',async(req,res)=>{const px=Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7','base64');res.set('Content-Type','image/gif');res.set('Cache-Control','no-store, no-cache, must-revalidate, private, max-age=0');res.set('Pragma','no-cache');res.set('Expires','0');try{const u=String(req.query.u||'');const t=String(req.query.t||'');const type=String(req.query.type||'');if(!u||!t||!req.params.id)return res.send(px);try{if(req.session&&req.session.user&&req.session.user.id===u)return res.send(px);}catch(e){}
 const ref=String(req.headers['referer']||req.headers['referrer']||'');if(ref&&ref.indexOf(BACKEND_URL)!==-1)return res.send(px);
 let senderData={};try{const s=await db.collection('users').doc(u).get();if(s.exists)senderData=s.data();}catch(e){}
@@ -292,14 +490,11 @@ app.get('/api/templates',authRequired,async(req,res)=>{try{const s=await db.coll
 app.post('/api/deliverability/check',authRequired,rateLimit(60*1000,40,null),async(req,res)=>{try{const{subject,body}=req.body||{};const u=await getUserData(req.session.user.id);const bodyHtml=String(body||'').replace(/\n/g,'<br>');const footerTxt=buildPlainTextFooter(u||{});const plain=(htmlToPlainText(bodyHtml)+(footerTxt?'\n\n'+footerTxt:'')).replace(/\n{3,}/g,'\n\n').trim();const full=wrapHtmlDocument('<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;max-width:640px;">'+bodyHtml+'</div>',subject||'Check',req.session.user.email);const r=analyzeDeliverability(subject,full,plain);r.ok=true;r.hasSignature=!!(u&&u.signature&&u.signature.trim().length>20);r.hasLogo=!!(u&&(u.logoBase64||u.logoUrl));r.smtpConnected=!!(u&&u.smtpEnabled);res.json(r);}catch(e){res.json({ok:false,error:e.message});}});
 app.post('/api/templates',authRequired,async(req,res)=>{try{const{id,name,subject,body}=req.body;if(!name||!subject||!body)return res.json({ok:false,error:'Name, subject, and body are required'});const ref=db.collection('users').doc(req.session.user.id).collection('templates');if(id){await ref.doc(id).set({name,subject,body,updatedAt:new Date()},{merge:true});res.json({ok:true,id,name});}else{const existing=await ref.get();const names=[];existing.forEach(d=>{const n=d.data().name;if(n)names.push(n);});let fn=name;if(names.indexOf(name)!==-1){let c=1;while(names.indexOf(name+' '+c)!==-1)c++;fn=name+' '+c;}const d=await ref.add({name:fn,subject,body,createdAt:new Date()});res.json({ok:true,id:d.id,name:fn,renamed:fn!==name});}}catch(e){res.json({ok:false,error:e.message});}});
 app.delete('/api/templates/:id',authRequired,async(req,res)=>{try{await db.collection('users').doc(req.session.user.id).collection('templates').doc(req.params.id).delete();res.json({ok:true});}catch(e){res.json({ok:false,error:e.message});}});
-// ═══════════════ FAST RECIPIENTS — Lightweight LIST (no stats, no backfill) ═══════════════
 app.get('/api/recipients',authRequired,async(req,res)=>{try{const uid=req.session.user.id;const page=Math.max(1,parseInt(req.query.page)||1);const limit=Math.min(200,parseInt(req.query.limit)||10);const search=String(req.query.search||'').toLowerCase().trim();const statusFilter=String(req.query.status||'all');const ck='recipients:'+uid+':'+page+':'+limit+':'+search+':'+statusFilter;const cached=cacheGet(ck);if(cached)return res.json(cached);const colRef=db.collection('users').doc(uid).collection('recipients');const allSnap=await colRef.limit(2000).get();let all=[];const backfill=db.batch();let bfCount=0;allSnap.forEach(d=>{const data=d.data();const rec=Object.assign({id:d.id},data);let sc=parseInt(data.sendCount,10)||0;const st=(data.status||'').toLowerCase();if(sc===0&&(st==='sent'||st==='opened'||st==='delivered'||st.indexOf('opened')!==-1)){sc=1;rec.sendCount=1;}else{rec.sendCount=sc;}all.push(rec);if(!data.bumpAt||data.sendCount===undefined){const u={};if(!data.bumpAt)u.bumpAt=data.createdAt||new Date();if(data.sendCount===undefined)u.sendCount=sc;backfill.set(d.ref,u,{merge:true});bfCount++;}});if(bfCount>0)backfill.commit().catch(function(){});all.sort((a,b)=>toMs(b.bumpAt||b.lastSentAt||b.sentAt||b.createdAt)-toMs(a.bumpAt||a.lastSentAt||a.sentAt||a.createdAt));if(statusFilter!=='all'){const want=statusFilter.toLowerCase();all=all.filter(r=>{const s=(r.status||'').toLowerCase();if(want==='pending')return s==='pending';if(want==='sent')return s==='sent';if(want==='opened')return s==='opened';if(want==='scheduled')return s==='scheduled';return s===want;});}if(search)all=all.filter(r=>(r.email||'').toLowerCase().indexOf(search)!==-1||(r.company||'').toLowerCase().indexOf(search)!==-1);const total=all.length;const totalPages=Math.max(1,Math.ceil(total/limit));const safePage=Math.min(page,totalPages);const offset=(safePage-1)*limit;const sliced=all.slice(offset,offset+limit);let sendsAllTime=0,pendingCount=0,scheduledCount=0,sentCount2=0,openedCount=0;for(let ri=0;ri<all.length;ri++){const rr=all[ri];const sc=parseInt(rr.sendCount,10)||0;sendsAllTime+=sc;const stx=(rr.status||'').toLowerCase();if(stx==='pending')pendingCount++;else if(stx==='scheduled')scheduledCount++;else if(stx==='opened'||stx.indexOf('opened')!==-1)openedCount++;else if(stx==='sent')sentCount2++;}const summary={recipientsTotal:total,mailflowSendsAllTime:sendsAllTime,pending:pendingCount,scheduled:scheduledCount,sent:sentCount2,opened:openedCount};const out={ok:true,recipients:sliced,summary:summary,pagination:{page:safePage,limit,total,totalPages,hasMore:safePage<totalPages}};cacheSet(ck,out,CACHE_TTL.recipients);res.json(out);}catch(e){res.json({ok:false,error:e.message});}});
-// ═══════════════ POST — Save recipients (returns IDs for optimistic UI) ═══════════════
 app.post('/api/recipients',authRequired,async(req,res)=>{try{const{list,templateId}=req.body;if(!list||!list.length)return res.json({ok:false,error:'No recipients provided'});const uid=req.session.user.id;const batch=db.batch();const ref=db.collection('users').doc(uid).collection('recipients');const created=[];const now=new Date();for(const r of list){if(!r.email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email))continue;const doc=ref.doc();const rec={company:(r.company||'').trim(),email:r.email.toLowerCase(),templateId:templateId||'',status:'Pending',sentAt:null,openedAt:null,everOpened:false,createdAt:now,bumpAt:now,sendCount:0};batch.set(doc,rec);created.push({id:doc.id,company:rec.company,email:rec.email,templateId:rec.templateId,status:'Pending',sentAt:null,openedAt:null,everOpened:false,createdAt:now.toISOString(),bumpAt:now.toISOString(),sendCount:0});}await batch.commit();cacheDel('recipients:'+uid);cacheDel('stats:'+uid);res.json({ok:true,added:created.length,recipients:created});}catch(e){res.json({ok:false,error:e.message});}});
-// ═══════════════ NEW — Save + Send Now in ONE fast call ═══════════════
 app.post('/api/recipients/save-and-send',authRequired,rateLimit(60*1000,20,null),async(req,res)=>{try{const uid=req.session.user.id;const ue=req.session.user.email;const{list,templateId,includeSignature,includeLogo,includeAttachments,selectedFileIds}=req.body||{};if(!Array.isArray(list)||!list.length)return res.json({ok:false,error:'No recipients'});if(!templateId)return res.json({ok:false,error:'Template required'});const u=await getUserData(uid);if(!u||!u.smtpEnabled)return res.json({ok:false,error:'Connect Gmail first to send'});const today=new Date().toISOString().split('T')[0];const sdChk=await db.collection('users').doc(uid).collection('stats').doc(today).get();const sentToday=sdChk.exists?(sdChk.data().sent||0):0;const limit=u.dailyLimit||DEFAULT_DAILY_LIMIT;if(sentToday>=limit)return res.json({ok:false,error:'DAILY_LIMIT_REACHED',sent:sentToday,limit});const ref=db.collection('users').doc(uid).collection('recipients');const batch=db.batch();const created=[];const now=new Date();for(const r of list){if(!r.email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email))continue;const doc=ref.doc();const rec={company:(r.company||'').trim(),email:r.email.toLowerCase(),templateId:templateId||'',status:'Pending',sentAt:null,openedAt:null,everOpened:false,createdAt:now,bumpAt:now,sendCount:0};batch.set(doc,rec);created.push({id:doc.id,email:rec.email,company:rec.company});}await batch.commit();cacheDel('recipients:'+uid);cacheDel('stats:'+uid);let sent=0,failed=0,dupSkipped=0;const sentDetails=[];const errors=[];for(let i=0;i<created.length;i++){const rec=created[i];try{const result=await sendOne(uid,ue,rec.id,{force:true,skipDelay:true,forceResend:true,isManualSend:true,includeSignature:includeSignature!==false,includeLogo:includeLogo!==false,includeAttachments:includeAttachments===true,selectedFileIds:Array.isArray(selectedFileIds)?selectedFileIds:[],templateId:templateId});sent++;sentDetails.push({id:rec.id,email:result.email,attachmentsCount:result.attachmentsCount});if(i<created.length-1)await sleep(600);}catch(err){if(err.code==='DAILY_LIMIT_REACHED'){errors.push({id:rec.id,error:'Daily limit reached'});break;}if(err.code==='DUPLICATE_SEND_SKIP'){dupSkipped++;continue;}failed++;errors.push({id:rec.id,error:err.message});}}res.json({ok:true,added:created.length,recipients:created,sent,failed,duplicatesSkipped:dupSkipped,sentDetails,errors:errors.slice(0,10)});}catch(e){res.json({ok:false,error:e.message});}});
-app.delete('/api/recipients/:id',authRequired,async(req,res)=>{try{await db.collection('users').doc(req.session.user.id).collection('recipients').doc(req.params.id).delete();cacheDel('recipients:'+req.session.user.id);cacheDel('stats:'+req.session.user.id);res.json({ok:true});}catch(e){res.json({ok:false,error:e.message});}});
-app.post('/api/recipients/bulk-delete',authRequired,async(req,res)=>{try{const{ids}=req.body;if(!ids||!ids.length)return res.json({ok:false});const b=db.batch();const r=db.collection('users').doc(req.session.user.id).collection('recipients');ids.forEach(id=>b.delete(r.doc(id)));await b.commit();cacheDel('recipients:'+req.session.user.id);cacheDel('stats:'+req.session.user.id);res.json({ok:true,deleted:ids.length});}catch(e){res.json({ok:false,error:e.message});}});
+app.delete('/api/recipients/:id',authRequired,async(req,res)=>{try{const uid=req.session.user.id;const id=req.params.id;await db.collection('users').doc(uid).collection('recipients').doc(id).delete();cacheDel('recipients:'+uid);cacheDel('stats:'+uid);res.json({ok:true});}catch(e){res.json({ok:false,error:e.message});}});
+app.post('/api/recipients/bulk-delete',authRequired,async(req,res)=>{try{const{ids}=req.body;if(!ids||!ids.length)return res.json({ok:false});const uid=req.session.user.id;const b=db.batch();const r=db.collection('users').doc(uid).collection('recipients');ids.forEach(id=>b.delete(r.doc(id)));await b.commit();cacheDel('recipients:'+uid);cacheDel('stats:'+uid);res.json({ok:true,deleted:ids.length});}catch(e){res.json({ok:false,error:e.message});}});
 app.get('/api/recipient/:id/history',authRequired,async(req,res)=>{try{const uid=req.session.user.id;const recipientId=req.params.id;const force=req.query.force==='1';const ck='rechist:'+uid+':'+recipientId;if(!force){const cached=cacheGet(ck);if(cached)return res.json(cached);}const recSnap=await db.collection('users').doc(uid).collection('recipients').doc(recipientId).get();if(!recSnap.exists)return res.json({ok:false,error:'Recipient not found'});const rec=recSnap.data();const recEmailLower=String(rec.email||'').toLowerCase().trim();const[byIdSnap,byEmailSnap]=await Promise.all([db.collection('users').doc(uid).collection('emailLog').where('recipientId','==',recipientId).limit(500).get(),recEmailLower?db.collection('users').doc(uid).collection('emailLog').where('recipientEmail','==',recEmailLower).limit(500).get().catch(()=>({docs:[]})):Promise.resolve({docs:[]})]);const seenIds=new Set();const allEmails=[];byIdSnap.forEach(d=>{if(!seenIds.has(d.id)){seenIds.add(d.id);allEmails.push(Object.assign({id:d.id},d.data()));}});byEmailSnap.forEach(d=>{if(!seenIds.has(d.id)){seenIds.add(d.id);allEmails.push(Object.assign({id:d.id},d.data()));}});let gmailEmails=[];let gmailError=null;let gmailCached=false;const gk='imapsent:'+uid+':'+recEmailLower;let gRes=cacheGet(gk);if(gRes)gmailCached=true;else{try{const u=await getUserData(uid);if(u&&u.imapEnabled&&u.imapAppPassword){gRes=await fetchImapSentForRecipient(u.email,u.imapAppPassword,rec.email,100);if(gRes&&gRes.ok)cacheSet(gk,gRes,CACHE_TTL.imapSent);}}catch(ge){gmailError=ge.message;}}if(gRes&&gRes.ok&&gRes.emails&&gRes.emails.length){const mfKeys=new Set();allEmails.forEach(function(e){const dt=toMs(e.sentAt);const key=String(e.subject||'').substring(0,60).toLowerCase().trim()+'|'+Math.floor(dt/60000);mfKeys.add(key);});gmailEmails=gRes.emails.filter(function(g){if(!g.date)return true;const dt=new Date(g.date).getTime();const key=String(g.subject||'').substring(0,60).toLowerCase().trim()+'|'+Math.floor(dt/60000);return !mfKeys.has(key);}).map(function(g){return{id:'gmail_'+g.uid,subject:g.subject,sentAt:g.date,recipientEmail:rec.email,isGmailExternal:true,source:'gmail_imap'};});}const combined=allEmails.concat(gmailEmails);combined.sort(function(a,b){return toMs(b.sentAt)-toMs(a.sentAt);});const totalSent=combined.length;const totalOpened=combined.filter(function(e){return !!e.openedAt;}).length;const totalNotOpened=totalSent-totalOpened;const openRate=totalSent>0?Math.round((totalOpened/totalSent)*100):0;const out={ok:true,recipient:{id:recipientId,email:rec.email,company:rec.company||'',status:rec.status||'Pending',everOpened:rec.everOpened===true,openedAt:rec.openedAt||null,templateId:rec.templateId||''},stats:{totalSent,totalOpened,totalNotOpened,openRate,firstSent:combined.length?combined[combined.length-1].sentAt:null,lastSent:combined.length?combined[0].sentAt:null,gmailMerged:gmailEmails.length,gmailError,gmailCached},emails:combined};cacheSet(ck,out,CACHE_TTL.history);res.json(out);}catch(e){res.json({ok:false,error:e.message});}});
 app.get('/api/recipient/:id/schedules',authRequired,async(req,res)=>{try{const uid=req.session.user.id;const recId=req.params.id;const recSnap=await db.collection('users').doc(uid).collection('recipients').doc(recId).get();if(!recSnap.exists)return res.json({ok:false,error:'Recipient not found'});const rec=recSnap.data();const ids=Array.isArray(rec.scheduledBatchIds)?rec.scheduledBatchIds:[];const items=[];for(const bid of ids){try{const d=await db.collection('users').doc(uid).collection('scheduledBatches').doc(bid).get();if(!d.exists)continue;const dd=d.data();items.push({id:d.id,status:dd.status||'pending',scheduledFor:dd.scheduledFor,scheduledForMs:toMs(dd.scheduledFor),sendAtHour:dd.sendAtHour,recipientCount:(dd.recipientIds||[]).length,createdAt:dd.createdAt,sentCount:dd.sentCount||0,failedCount:dd.failedCount||0});}catch(e){}}items.sort(function(a,b){return (a.scheduledForMs||0)-(b.scheduledForMs||0);});res.json({ok:true,scheduledFor:rec.scheduledFor||null,scheduledForMs:toMs(rec.scheduledFor),scheduledBatchIds:ids,items:items});}catch(e){res.json({ok:false,error:e.message});}});
 app.get('/api/recipient/:id/gmail-history',authRequired,async(req,res)=>{try{const uid=req.session.user.id;const recipientId=req.params.id;const force=req.query.force==='1';const ck='gmailhist:'+uid+':'+recipientId;if(!force){const cached=cacheGet(ck);if(cached)return res.json(cached);}const recSnap=await db.collection('users').doc(uid).collection('recipients').doc(recipientId).get();if(!recSnap.exists)return res.json({ok:false,error:'Recipient not found'});const u=await getUserData(uid);if(!u.imapEnabled||!u.imapAppPassword)return res.json({ok:false,error:'Please connect your Inbox (IMAP) first',needsImap:true});const result=await fetchImapSentForRecipient(u.email,u.imapAppPassword,recSnap.data().email,0);if(!result.ok)return res.json({ok:false,error:result.error});const mfLogs=await db.collection('users').doc(uid).collection('emailLog').where('recipientId','==',recipientId).get();const mfKeys=new Set();mfLogs.forEach(d=>{const da=d.data();const dt=toMs(da.sentAt);const key=String(da.subject||'').substring(0,60).toLowerCase().trim()+'|'+Math.floor(dt/60000);mfKeys.add(key);});const allGmail=result.emails||[];const deduped=allGmail.filter(function(e){if(!e.date)return true;const dt=new Date(e.date).getTime();const key=String(e.subject||'').substring(0,60).toLowerCase().trim()+'|'+Math.floor(dt/60000);return !mfKeys.has(key);});const duplicatesRemoved=allGmail.length-deduped.length;const out={ok:true,emails:deduped,count:deduped.length,duplicatesRemoved:duplicatesRemoved,totalInGmail:allGmail.length,fetchedAt:new Date().toISOString()};cacheSet(ck,out,CACHE_TTL.history);res.json(out);}catch(e){res.json({ok:false,error:e.message});}});
@@ -320,16 +515,18 @@ app.post('/api/signature',authRequired,async(req,res)=>{try{const u={signature:r
 app.get('/api/prefs',authRequired,async(req,res)=>{try{const d=await getUserData(req.session.user.id);let lastRunISO=null;if(d.lastAutoSendRun){try{if(d.lastAutoSendRun._seconds)lastRunISO=new Date(d.lastAutoSendRun._seconds*1000).toISOString();else lastRunISO=new Date(d.lastAutoSendRun).toISOString();}catch(e){lastRunISO=null;}}res.json({ok:true,prefs:{quietEnabled:d.quietEnabled===true,quietStart:d.quietStart!==undefined?d.quietStart:22,quietEnd:d.quietEnd!==undefined?d.quietEnd:7,autoSend:d.autoSend===true,autoSendBatchSize:d.autoSendBatchSize!==undefined?d.autoSendBatchSize:5,appAccountId:d.appAccountId||'',totalAutoSent:d.totalAutoSent||0,autoSendIncludeLogo:d.autoSendIncludeLogo!==false,autoSendIncludeSignature:d.autoSendIncludeSignature!==false,autoSendIncludeAttachments:d.autoSendIncludeAttachments===true,autoSendTemplateId:d.autoSendTemplateId||'',autoSendFileIds:Array.isArray(d.autoSendFileIds)?d.autoSendFileIds:[],sendDelay:d.sendDelay!==undefined?d.sendDelay:DEFAULT_SEND_DELAY,lastAutoSendRun:lastRunISO,dailyLimit:d.dailyLimit||DEFAULT_DAILY_LIMIT,gmailDailyMax:GMAIL_DAILY_MAX,sendWindowEnabled:d.sendWindowEnabled===true,sendWindowStart:d.sendWindowStart!==undefined?d.sendWindowStart:9,sendWindowEnd:d.sendWindowEnd!==undefined?d.sendWindowEnd:18}});}catch(e){res.json({ok:false,error:e.message});}});
 app.post('/api/prefs',authRequired,async(req,res)=>{try{const{quietEnabled,quietStart,quietEnd,autoSend,autoSendBatchSize,autoSendIncludeLogo,autoSendIncludeSignature,autoSendIncludeAttachments,autoSendTemplateId,autoSendFileIds,sendDelay,dailyLimit,sendWindowEnabled,sendWindowStart,sendWindowEnd}=req.body;let bs=Number(autoSendBatchSize);if(isNaN(bs)||bs<1)bs=5;if(bs>500)bs=500;let sd=Number(sendDelay);if(isNaN(sd)||sd<0)sd=DEFAULT_SEND_DELAY;if(sd>120)sd=120;let qs=Number(quietStart);if(isNaN(qs)||qs<0)qs=22;if(qs>23)qs=23;let qe=Number(quietEnd);if(isNaN(qe)||qe<0)qe=7;if(qe>23)qe=23;let ws=Number(sendWindowStart);if(isNaN(ws)||ws<0)ws=9;if(ws>23)ws=23;let we=Number(sendWindowEnd);if(isNaN(we)||we<0)we=18;if(we>23)we=23;const update={quietEnabled:!!quietEnabled,quietStart:qs,quietEnd:qe,autoSend:!!autoSend,autoSendBatchSize:bs,sendDelay:sd,updatedAt:new Date()};if(dailyLimit!==undefined){let dl=parseInt(dailyLimit,10);if(isNaN(dl)||dl<1)dl=DEFAULT_DAILY_LIMIT;if(dl>GMAIL_DAILY_MAX)dl=GMAIL_DAILY_MAX;update.dailyLimit=dl;}if(sendWindowEnabled!==undefined){update.sendWindowEnabled=!!sendWindowEnabled;update.sendWindowStart=ws;update.sendWindowEnd=we;}if(autoSendIncludeLogo!==undefined)update.autoSendIncludeLogo=!!autoSendIncludeLogo;if(autoSendIncludeSignature!==undefined)update.autoSendIncludeSignature=!!autoSendIncludeSignature;if(autoSendIncludeAttachments!==undefined)update.autoSendIncludeAttachments=!!autoSendIncludeAttachments;if(autoSendTemplateId!==undefined)update.autoSendTemplateId=String(autoSendTemplateId||'').substring(0,200);if(Array.isArray(autoSendFileIds))update.autoSendFileIds=autoSendFileIds.map(function(x){return String(x);}).slice(0,50);await db.collection('users').doc(req.session.user.id).update(update);res.json({ok:true,dailyLimit:update.dailyLimit,gmailDailyMax:GMAIL_DAILY_MAX});}catch(e){res.json({ok:false,error:e.message});}});
 app.get('/api/stats',authRequired,async(req,res)=>{try{const uid=req.session.user.id;const ck='stats:'+uid;const cached=cacheGet(ck);if(cached)return res.json(cached);const[t,s,p,ts,o]=await Promise.all([db.collection('users').doc(uid).collection('recipients').count().get(),db.collection('users').doc(uid).collection('recipients').where('status','in',['Sent','Opened']).count().get(),db.collection('users').doc(uid).collection('recipients').where('status','==','Pending').count().get(),db.collection('users').doc(uid).collection('emailLog').count().get(),db.collection('users').doc(uid).collection('recipients').where('status','==','Opened').count().get()]);const out={ok:true,stats:{total:t.data().count,sent:s.data().count,opened:o.data().count,pending:p.data().count,totalSends:ts.data().count}};cacheSet(ck,out,CACHE_TTL.stats);res.json(out);}catch(e){res.json({ok:false,error:e.message});}});
-app.get('/api/my-emails',authRequired,async(req,res)=>{try{const{range,search}=req.query;const page=Math.max(1,parseInt(req.query.page)||1);const limit=Math.min(100,parseInt(req.query.limit)||10);const uid=req.session.user.id;let baseQ=db.collection('users').doc(uid).collection('emailLog').orderBy('sentAt','desc');if(range&&range!=='all'){const n=new Date();let f;if(range==='today')f=new Date(n.setHours(0,0,0,0));else if(range==='7d')f=new Date(Date.now()-7*24*60*60*1000);else if(range==='30d')f=new Date(Date.now()-30*24*60*60*1000);else if(range==='90d')f=new Date(Date.now()-90*24*60*60*1000);if(f)baseQ=baseQ.where('sentAt','>=',f);}const countSnap=await baseQ.count().get();const total=countSnap.data().count;const totalPages=Math.max(1,Math.ceil(total/limit));const safePage=Math.min(page,totalPages);const offset=(safePage-1)*limit;const s=await baseQ.offset(offset).limit(limit).get();let l=[];s.forEach(d=>l.push(Object.assign({id:d.id},d.data())));if(search){const sq=search.toLowerCase();l=l.filter(function(e){return (e.recipientEmail||'').toLowerCase().indexOf(sq)!==-1||(e.subject||'').toLowerCase().indexOf(sq)!==-1;});}res.json({ok:true,emails:l,pagination:{page:safePage,limit,total,totalPages,hasMore:safePage<totalPages}});}catch(e){res.json({ok:false,error:e.message});}});
+app.get('/api/my-emails',authRequired,async(req,res)=>{try{const{range,search}=req.query;const page=Math.max(1,parseInt(req.query.page)||1);const limit=Math.min(100,parseInt(req.query.limit)||10);const uid=req.session.user.id;let baseQ=db.collection('users').doc(uid).collection('emailLog').orderBy('sentAt','desc');if(range&&range!=='all'){const n=new Date();let f;if(range==='today')f=new Date(n.setHours(0,0,0,0));else if(range==='7d')f=new Date(Date.now()-7*24*60*60*1000);else if(range==='30d')f=new Date(Date.now()-30*24*60*60*1000);else if(range==='90d')f=new Date(Date.now()-90*24*60*60*1000);if(f)baseQ=baseQ.where('sentAt','>=',f);}const countSnap=await baseQ.count().get();const total=countSnap.data().count;const totalPages=Math.max(1,Math.ceil(total/limit));const safePage=Math.min(page,totalPages);const offset=(safePage-1)*limit;const s=await baseQ.offset(offset).limit(limit).get();let l=[];s.forEach(d=>l.push(Object.assign({id:d.id},d.data())));if(search){const sq=search.toLowerCase();l=l.filter(function(e){return (e.recipientEmail||'').toLowerCase().indexOf(sq)!==-1||(e.subject||'').toLowerCase().indexOf(sq)!==-1||(e.company||'').toLowerCase().indexOf(sq)!==-1;});}res.json({ok:true,emails:l,pagination:{page:safePage,limit,total,totalPages,hasMore:safePage<totalPages}});}catch(e){res.json({ok:false,error:e.message});}});
 app.post('/api/send',authRequired,rateLimit(60*1000,30,null),async(req,res)=>{try{const result=await sendOne(req.session.user.id,req.session.user.email,req.body.recipientId,{force:req.body.force===true,skipDelay:req.body.skipDelay===true,includeSignature:req.body.includeSignature!==false,includeLogo:req.body.includeLogo!==false,includeAttachments:req.body.includeAttachments===true,selectedFileIds:req.body.selectedFileIds||[],templateId:req.body.templateId||null,isManualSend:true,forceResend:true});res.json({ok:true,email:result.email,attachmentsCount:result.attachmentsCount});}catch(e){if(e.code==='QUIET_HOURS')return res.json({ok:false,error:'QUIET_HOURS',quietEnd:e.quietEnd});if(e.code==='DAILY_LIMIT_REACHED')return res.json({ok:false,error:'DAILY_LIMIT_REACHED',limit:e.limit});if(e.code==='DUPLICATE_SEND_SKIP')return res.json({ok:false,error:'DUPLICATE_SEND_SKIP',message:'This recipient already received an email in the last 90 seconds.'});if(e.code==='ALREADY_SENT_SKIP')return res.json({ok:false,error:'ALREADY_SENT_SKIP',message:'This recipient has already been emailed.'});res.json({ok:false,error:e.message});}});
 app.post('/api/resend',authRequired,rateLimit(60*1000,30,null),async(req,res)=>{try{const result=await sendOne(req.session.user.id,req.session.user.email,req.body.recipientId,{force:true,skipDelay:true,forceResend:true,isManualSend:true,includeSignature:req.body.includeSignature!==false,includeLogo:req.body.includeLogo!==false,includeAttachments:req.body.includeAttachments===true,selectedFileIds:req.body.selectedFileIds||[],templateId:req.body.templateId||null});res.json({ok:true,email:result.email,attachmentsCount:result.attachmentsCount});}catch(e){if(e.code==='DAILY_LIMIT_REACHED')return res.json({ok:false,error:'DAILY_LIMIT_REACHED',limit:e.limit});res.json({ok:false,error:e.message});}});
 async function runAutoSend(uid,ue,ud,budget){if(isQuietHours(ud))return{skipped:true,reason:'quiet_hours'};if(!isInSendWindow(ud))return{skipped:true,reason:'outside_send_window',windowStart:ud.sendWindowStart,windowEnd:ud.sendWindowEnd};budget=budget||{};const deadline=budget.deadline||0;const now=Date.now();if(ud.lastAutoSendRun){const lastMs=toMs(ud.lastAutoSendRun);const elapsed=now-lastMs;if(elapsed<AUTO_SEND_LOCK_MS)return{skipped:true,reason:'hourly_lock',nextRunIn:AUTO_SEND_LOCK_MS-elapsed};}const bs=Number(ud.autoSendBatchSize)||5;const ps=await db.collection('users').doc(uid).collection('recipients').where('status','==','Pending').limit(bs).get();if(ps.empty)return{sent:0,failed:0};let s=0,f=0,dup=0;const delaySec=ud.sendDelay!==undefined?Number(ud.sendDelay):DEFAULT_SEND_DELAY;const autoFileIds=Array.isArray(ud.autoSendFileIds)?ud.autoSendFileIds:[];const includeAtt=ud.autoSendIncludeAttachments===true&&autoFileIds.length>0;const autoTemplateId=ud.autoSendTemplateId||null;for(const r of ps.docs){if(deadline&&Date.now()>deadline)break;try{await sendOne(uid,ue,r.id,{force:true,skipDelay:true,includeSignature:ud.autoSendIncludeSignature!==false,includeLogo:ud.autoSendIncludeLogo!==false,includeAttachments:includeAtt,templateId:autoTemplateId,selectedFileIds:autoFileIds,isManualSend:false,forceResend:false});s++;if(delaySec>0){const dms=delaySec*1000+Math.floor(Math.random()*1000);if(deadline&&Date.now()+dms>deadline)break;await sleep(dms);}}catch(e){if(e.code==='DUPLICATE_SEND_SKIP'){dup++;continue;}if(e.code==='ALREADY_SENT_SKIP'){f++;continue;}f++;if(e.code==='QUIET_HOURS'||e.code==='DAILY_LIMIT_REACHED')break;}}if(s>0)await db.collection('users').doc(uid).update({totalAutoSent:FieldValue.increment(s),lastAutoSendRun:new Date()});else await db.collection('users').doc(uid).update({lastAutoSendRun:new Date()});return{sent:s,failed:f,duplicatesSkipped:dup};}
-async function runScheduledBatches(){const results=[];try{const now=new Date();const snap=await db.collectionGroup('scheduledBatches').where('status','==','pending').limit(50).get().catch(()=>({docs:[]}));for(const doc of snap.docs){const d=doc.data();const uid=d.userId;if(!uid)continue;const schedMs=toMs(d.scheduledFor);if(schedMs>now.getTime())continue;const _claimed=await claimBatch(doc);if(!_claimed)continue;try{const userSnap=await db.collection('users').doc(uid).get();if(!userSnap.exists){await doc.ref.update({status:'failed',error:'User not found'});continue;}const ud=userSnap.data();if(!ud.smtpEnabled||!ud.smtpAppPassword){await doc.ref.update({status:'failed',error:'SMTP not connected'});continue;}const ue=ud.email;let sent=0,failed=0,dup=0;for(const rid of (d.recipientIds||[])){try{await sendOne(uid,ue,rid,{force:true,skipDelay:true,forceResend:true,includeSignature:d.includeSignature!==false,includeLogo:d.includeLogo!==false,includeAttachments:d.includeAttachments===true,selectedFileIds:d.selectedFileIds||[],templateId:d.templateId,isManualSend:false});sent++;await sleep(600);}catch(err){if(err.code==='DAILY_LIMIT_REACHED'){await doc.ref.update({status:'paused',error:'Daily limit',sentCount:sent});break;}if(err.code==='DUPLICATE_SEND_SKIP'){dup++;continue;}failed++;}}if(sent>0||failed>0)await doc.ref.update({status:'done',sentCount:sent,failedCount:failed,duplicatesSkipped:dup,completedAt:new Date()});await clearScheduledLinks(uid,doc.id);results.push({id:doc.id,sent,failed});}catch(e){await doc.ref.update({status:'failed',error:e.message}).catch(()=>{});}}}catch(e){}return results;}
 app.get('/api/cron/auto-send',async(req,res)=>{try{const startedAt=Date.now();const CRON_BUDGET_MS=52000;const deadline=startedAt+CRON_BUDGET_MS;const authHeader=req.headers.authorization||'';const bearer=authHeader.indexOf('Bearer ')===0?authHeader.substring(7):'';const sec=bearer||req.headers['x-cron-secret']||'';if(!CRON_SECRET||sec!==CRON_SECRET)return res.status(401).json({ok:false,error:'Unauthorized'});
 const us=await db.collection('users').where('autoSend','==',true).get();let ts=0,tu=0,sk=0,er=0;const details=[];
 for(const u of us.docs){if(Date.now()>deadline){details.push({stopped:'time_budget'});break;}const d=u.data();if(!d.smtpEnabled||!d.email)continue;try{const r=await runAutoSend(u.id,d.email,d,{deadline});if(r.skipped)sk++;else if(r.sent>0){ts+=r.sent;tu++;}details.push({userId:u.id,email:d.email,result:r});}catch(e){er++;details.push({userId:u.id,email:d.email,error:e.message});}}
-let scheduledResult=[];if(Date.now()<deadline){try{scheduledResult=await runScheduledBatches();}catch(e){scheduledResult=[{error:e.message}];}}
+let scheduledResult=[];if(Date.now()<deadline){try{scheduledResult=await runScheduledForAllUsers(deadline);}catch(e){scheduledResult=[{error:e.message}];}}
 const elapsed=Date.now()-startedAt;res.json({ok:true,totalSent:ts,totalUsers:tu,skipped:sk,errors:er,scheduledProcessed:scheduledResult,elapsedMs:elapsed,budgetMs:CRON_BUDGET_MS,timestamp:new Date().toISOString(),details});}catch(e){res.json({ok:false,error:e.message});}});
+app.get('/api/cron/scheduled',async(req,res)=>{try{const startedAt=Date.now();const CRON_BUDGET_MS=25000;const deadline=startedAt+CRON_BUDGET_MS;const authHeader=req.headers.authorization||'';const bearer=authHeader.indexOf('Bearer ')===0?authHeader.substring(7):'';const sec=bearer||req.headers['x-cron-secret']||'';if(!CRON_SECRET||sec!==CRON_SECRET)return res.status(401).json({ok:false,error:'Unauthorized'});
+const results=await runScheduledForAllUsers(deadline);
+const elapsed=Date.now()-startedAt;res.json({ok:true,processed:results.length,details:results,elapsedMs:elapsed,timestamp:new Date().toISOString()});}catch(e){res.json({ok:false,error:e.message});}});
 app.post('/api/auto-send-check',authRequired,async(req,res)=>{try{const u=await getUserData(req.session.user.id);if(!u||!u.autoSend)return res.json({ok:true,skipped:true});const r=await runAutoSend(req.session.user.id,req.session.user.email,u);res.json(Object.assign({ok:true},r));}catch(e){res.json({ok:false,error:e.message});}});
 app.post('/api/scheduled/check',authRequired,async(req,res)=>{try{const uid=req.session.user.id;const r=await runScheduledForUser(uid);res.json({ok:true,processed:r.processed||0,error:r.error});}catch(e){res.json({ok:false,error:e.message});}});
 app.get('/api/quota/diagnose',authRequired,async(req,res)=>{try{const uid=req.session.user.id;const u=await getUserData(uid);const out={ok:true,userId:uid,email:u.email,smtpEnabled:!!u.smtpEnabled,imapEnabled:!!u.imapEnabled,hasImapPass:!!u.imapAppPassword,dailyLimit:u.dailyLimit||DEFAULT_DAILY_LIMIT,gmailDailyMax:GMAIL_DAILY_MAX,steps:[]};const today=new Date().toISOString().split('T')[0];const sd=await db.collection('users').doc(uid).collection('stats').doc(today).get();const mfSent=sd.exists?(sd.data().sent||0):0;out.mailflowSentToday=mfSent;out.steps.push({step:'mailflow_counter',ok:true,value:mfSent,note:'MailFlow sends today'});if(!u.smtpEnabled){out.reason='Gmail not connected';out.steps.push({step:'smtp',ok:false,note:'Connect Gmail first'});return res.json(out);}if(!u.imapEnabled||!u.imapAppPassword){out.reason='Inbox (IMAP) not connected';out.steps.push({step:'imap',ok:false,note:'Connect Inbox from Settings'});return res.json(out);}out.steps.push({step:'imap',ok:true,note:'Inbox connected'});const t0=Date.now();const g=await fetchGmailSentTodayCount(u.email,u.imapAppPassword);const ms=Date.now()-t0;out.gmailCount=g;out.durationMs=ms;if(g&&g.ok){out.steps.push({step:'sent_folder',ok:true,value:g.count,method:g.method,folder:g.folder,note:'Gmail Sent folder count for today'});out.totalToday=Math.max(mfSent,g.count);out.remaining=Math.max(0,(u.dailyLimit||DEFAULT_DAILY_LIMIT)-out.totalToday);out.reason=null;}else{out.steps.push({step:'sent_folder',ok:false,error:(g&&g.error)||'unknown',note:'Could not read Gmail Sent folder'});out.reason='Gmail Sent folder read failed: '+((g&&g.error)||'unknown');}res.json(out);}catch(e){res.json({ok:false,error:e.message});}});

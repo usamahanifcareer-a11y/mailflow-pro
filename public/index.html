@@ -44,7 +44,8 @@ button, input, textarea, select { font-family: inherit; font-size: 15px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-@keyframes fadeInRow { from { opacity: 0; background: rgba(34, 197, 94, 0.15); } to { opacity: 1; background: transparent; } }
+@keyframes fadeInRow { from { opacity: 0; background: rgba(34, 197, 94, 0.18); } to { opacity: 1; background: transparent; } }
+@keyframes fadeOutRow { from { opacity: 1; } to { opacity: 0; transform: translateX(-20px); } }
 select, option { background-color: #0a0e1a !important; color: #e2e8f0 !important; }
 select:focus { outline: none; border-color: #38bdf8 !important; }
 .auth-wrap { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; position: relative; z-index: 1; background: radial-gradient(circle at 20% 10%, rgba(56, 189, 248, 0.12), transparent 40%), radial-gradient(circle at 80% 90%, rgba(168, 85, 247, 0.12), transparent 40%); }
@@ -151,12 +152,13 @@ input:checked + .slider:before { transform: translateX(20px); background: #fff; 
 .search-bar:focus { border-color: var(--cyan); }
 .filter-bar .search-bar { flex: 1; min-width: 200px; margin: 0; }
 .tbl-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
-table.data-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 600px; }
-table.data-table th { text-align: left; font-size: 10px; color: var(--text2); text-transform: uppercase; padding: 12px 10px; border-bottom: 1px solid var(--border); font-weight: 700; background: rgba(10, 14, 26, 0.7); white-space: nowrap; }
+table.data-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 700px; }
+table.data-table th { text-align: left; font-size: 10px; color: var(--text2); text-transform: uppercase; padding: 12px 10px; border-bottom: 1px solid var(--border); font-weight: 700; background: rgba(10, 14, 26, 0.7); white-space: nowrap; letter-spacing: 0.4px; }
 table.data-table td { padding: 12px 10px; border-bottom: 1px solid rgba(26, 35, 56, 0.5); color: #cbd5e1; vertical-align: middle; }
 table.data-table tbody tr:hover td { background: rgba(56, 189, 248, 0.04); }
 table.data-table tr.clickable { cursor: pointer; }
 table.data-table tr.optimistic-new td { animation: fadeInRow 1.6s ease-out; }
+table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; opacity: 0.4; pointer-events: none; }
 .badge { display: inline-flex; align-items: center; gap: 3px; padding: 4px 9px; border-radius: 20px; font-size: 10px; font-weight: 700; white-space: nowrap; }
 .badge.pending { background: rgba(245, 158, 11, 0.15); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.3); }
 .badge.sent { background: rgba(56, 189, 248, 0.15); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.3); }
@@ -516,10 +518,11 @@ table.data-table tr.optimistic-new td { animation: fadeInRow 1.6s ease-out; }
 .schedule-item .info .ttl { font-size: 13px; font-weight: 700; }
 .schedule-item .info .sub { font-size: 11px; color: var(--text2); margin-top: 3px; }
 .opened-time-badge { background: rgba(34, 197, 94, 0.15); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.3); padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-family: monospace; }
-.sent-status-cell { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
-.sent-status-cell.yes { background: rgba(34, 197, 94, 0.12); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.3); }
-.sent-status-cell.no { background: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.25); }
-.sent-status-cell.sched { background: rgba(167, 139, 250, 0.12); color: #c4b5fd; border: 1px solid rgba(167, 139, 250, 0.4); }
+.sent-status-cell { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 8px; white-space: nowrap; }
+.sent-status-cell.sent { background: rgba(34, 197, 94, 0.12); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.35); }
+.sent-status-cell.pending { background: rgba(148, 163, 184, 0.12); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3); }
+.sent-status-cell.sched { background: rgba(167, 139, 250, 0.14); color: #c4b5fd; border: 1px solid rgba(167, 139, 250, 0.45); }
+.sent-status-cell.opened { background: rgba(56, 189, 248, 0.14); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.4); }
 .recip-schedule-options { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 14px; }
 .recip-schedule-option { display: flex; align-items: center; gap: 12px; padding: 14px; background: var(--bg2); border: 2px solid var(--border); border-radius: 12px; cursor: pointer; transition: 0.15s; }
 .recip-schedule-option:hover { border-color: var(--cyan); background: rgba(56, 189, 248, 0.05); }
@@ -537,7 +540,6 @@ table.data-table tr.optimistic-new td { animation: fadeInRow 1.6s ease-out; }
 .recip-schedule-option.selected.send-mode .radio::after { background: #22c55e; }
 .save-send-config { background: rgba(34, 197, 94, 0.06); border: 1px solid rgba(34, 197, 94, 0.35); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
 .save-send-config .ttl { font-size: 10px; color: #86efac; text-transform: uppercase; font-weight: 700; margin-bottom: 8px; }
-.optimistic-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(56, 189, 248, 0.3); border-top-color: var(--cyan); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
 @media(max-width: 768px) {
   .maintabs { position: fixed; bottom: 0; top: auto; left: 0; right: 0; padding: 6px 8px; z-index: 2000; border-top: 1px solid var(--border); border-bottom: none; justify-content: space-around; box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5); padding-bottom: calc(6px + env(safe-area-inset-bottom)); background: rgba(10, 14, 26, 0.98); }
   .maintab { flex: 1; text-align: center; font-size: 10px; padding: 8px 4px; }
@@ -629,7 +631,7 @@ table.data-table tr.optimistic-new td { animation: fadeInRow 1.6s ease-out; }
 <div class="logo-top">
 <div class="mini-logo"><svg viewBox="0 0 64 64" role="img" aria-label="MailFlow Pro"><defs><linearGradient id="mfGradM" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset=".5" stop-color="#6366f1"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs><rect x="1.5" y="1.5" width="61" height="61" rx="15" fill="url(#mfGradM)"/><path d="M56 15 L8 37 L25 40.5 Z" fill="#2c3aa8" opacity=".92"/><path d="M56 15 L25 40.5 L26.5 57 Z" fill="#ffffff"/><path d="M56 15 L8 37 L25 40.5 L26.5 57 Z" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linejoin="round" opacity=".95"/><path d="M8 37 L25 40.5 L26.5 57" fill="none" stroke="#22d3ee" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="50.5" cy="15" r="4.4" fill="#fbbf24"/></svg></div>
 <span class="brand-text">MailFlow Pro</span>
-<span style="font-size:9px;color:var(--text3);font-weight:500;padding:2px 6px;background:rgba(56,189,248,.1);border-radius:6px;margin-left:4px">v2.2.1</span>
+<span style="font-size:9px;color:var(--text3);font-weight:500;padding:2px 6px;background:rgba(56,189,248,.1);border-radius:6px;margin-left:4px">v2.2.2</span>
 </div>
 <div class="user-chip">
 <img id="userAvatar" class="user-avatar" src="" style="display:none" alt="" decoding="async" onclick="openProfileModal()">
@@ -946,7 +948,7 @@ table.data-table tr.optimistic-new td { animation: fadeInRow 1.6s ease-out; }
 <div class="panel">
 <h2><span>📧 Email History</span> <span id="myEmailCount"></span> <span class="live-dot" title="Live updating"></span></h2>
 <div class="filter-bar">
-<input type="text" class="search-bar" id="myEmailSearch" placeholder="Search recipient or subject..." oninput="onMyEmailSearchChange()" autocomplete="off">
+<input type="text" class="search-bar" id="myEmailSearch" placeholder="Search recipient, subject, or company..." oninput="onMyEmailSearchChange()" autocomplete="off">
 <select id="myEmailRange" onchange="myEmailPage=1;loadMyEmails()"><option value="all">All Time</option><option value="today">Today</option><option value="7d">Last 7 Days</option><option value="30d">Last 30 Days</option></select>
 </div>
 <div id="myEmailsWrap" class="tbl-wrap"></div>
@@ -1338,6 +1340,7 @@ table.data-table tr.optimistic-new td { animation: fadeInRow 1.6s ease-out; }
 </div>
 <div class="info-hint" id="saveSchedulePreview" style="margin-top:8px">—</div>
 <div class="info-hint" id="saveScheduleTz" style="margin-top:4px;color:var(--text3)"></div>
+<div style="margin-top:10px;padding-top:10px;border-top:1px dashed rgba(167,139,250,.3);font-size:10px;color:#c4b5fd;line-height:1.5">💡 <b>Note:</b> Scheduled emails are sent automatically by our server every few minutes — you don't need to keep this page open.</div>
 </div>
 <div style="display:flex;gap:8px;margin-top:12px">
 <button class="btn success" id="saveRecipConfirm" style="flex:1" onclick="confirmSaveRecipients()">💾 Save Recipients</button>
@@ -1563,7 +1566,8 @@ var _recipRenderRAF=null,_pendingRecipData=null;
 var _myEmailRenderRAF=null,_pendingMyEmailData=null;
 var RECIP_LIVE_TIMER=null,MYEMAIL_LIVE_TIMER=null;
 var LIVE_REFRESH_MS=10000;
-var OPTIMISTIC_ROWS={}; // tracks pending optimistic rows for fast UI
+var OPTIMISTIC_ROWS={};
+var DELETING_ROWS={};
 
 // ============ HELPERS ============
 function $(id){return document.getElementById(id);}
@@ -1595,10 +1599,9 @@ function toTimeInputVal(h){h=parseInt(h,10);if(isNaN(h))h=0;return (h<10?'0':'')
 
 function getRecipientStatus(r){
   var st=(r.status||'').toLowerCase();
-  if(st==='scheduled')return{cls:'scheduled',icon:'⏰',lbl:'Scheduled'};
-  if(st==='sent')return{cls:'sent',icon:'📤',lbl:'Sent'};
-  if(st==='opened'||st.indexOf('opened')!==-1)return{cls:'sent',icon:'📤',lbl:'Sent'};
-  if(st==='delivered')return{cls:'sent',icon:'📤',lbl:'Sent'};
+  if(st==='scheduled')return{cls:'sched',icon:'⏰',lbl:'Scheduled'};
+  if(st==='opened'||st.indexOf('opened')!==-1)return{cls:'opened',icon:'👁',lbl:'Opened'};
+  if(st==='sent'||st==='delivered')return{cls:'sent',icon:'✅',lbl:'Sent'};
   return{cls:'pending',icon:'⏳',lbl:'Pending'};
 }
 
@@ -2018,8 +2021,8 @@ function loadAIPredictions(){
     s+='<div class="info-box" style="text-align:center;margin:0"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">👍 Good</div><div style="font-size:22px;color:#7dd3fc;font-weight:800">'+good+'</div></div>';
     s+='<div class="info-box" style="text-align:center;margin:0"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">⚠️ Risky</div><div style="font-size:22px;color:#fcd34d;font-weight:800">'+risky+'</div></div>';
     s+='<div class="info-box" style="text-align:center;margin:0"><div style="font-size:10px;color:var(--text2);text-transform:uppercase">❌ Spam</div><div style="font-size:22px;color:#fca5a5;font-weight:800">'+spam+'</div></div></div>';
-    var h=s+'<table class="data-table"><thead><tr><th>Recipient</th><th>Subject</th><th>Sent</th><th>AI</th></tr></thead><tbody>';
-    emails.slice(0,100).forEach(function(e){var pred=e.aiPrediction||'GOOD';var prob=e.aiInboxProb||75;var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';h+='<tr><td style="word-break:break-all;font-size:11px">'+esc(e.recipientEmail)+'</td><td style="font-size:11px">'+esc(e.subject||'—')+'</td><td style="font-size:10px">'+fmtDate(e.sentAt)+'</td><td><span style="padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:'+pc+'22;color:'+pc+'">'+pred+' '+prob+'%</span></td></tr>';});
+    var h=s+'<table class="data-table"><thead><tr><th>Recipient</th><th>Company</th><th>Subject</th><th>Sent</th><th>AI</th></tr></thead><tbody>';
+    emails.slice(0,100).forEach(function(e){var pred=e.aiPrediction||'GOOD';var prob=e.aiInboxProb||75;var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';h+='<tr><td style="word-break:break-all;font-size:11px">'+esc(e.recipientEmail)+'</td><td style="font-size:11px">'+esc(e.company||'—')+'</td><td style="font-size:11px">'+esc(e.subject||'—')+'</td><td style="font-size:10px">'+fmtDate(e.sentAt)+'</td><td><span style="padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:'+pc+'22;color:'+pc+'">'+pred+' '+prob+'%</span></td></tr>';});
     h+='</tbody></table>';w.innerHTML=h;
   });
 }
@@ -2154,7 +2157,6 @@ function renderBulkScheduleFiles(){
 }
 function toggleBulkScheduleFile(id){if(BULK_SCHEDULE_FILES[id])delete BULK_SCHEDULE_FILES[id];else BULK_SCHEDULE_FILES[id]=true;renderBulkScheduleFiles();}
 function onBulkScheduleAttachToggle(v){$('bulkScheduleFilePicker').classList.toggle('hidden',!v);if(v)renderBulkScheduleFiles();}
-// === Save & Send files ===
 function renderSaveSendFiles(){
   var w=$('saveSendFilesList');if(!w)return;
   if(!FILES.length){w.innerHTML='<div style="text-align:center;color:var(--text3);font-size:12px;padding:12px">No files uploaded yet.</div>';return;}
@@ -2173,7 +2175,6 @@ function loadTemplates(){
     if(!TEMPLATES.length)s.innerHTML='<option value="">(None available)</option>';
     else TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;s.appendChild(o);});
     if($('qAutoTemplateId')){var cur=$('qAutoTemplateId').value;var qt=$('qAutoTemplateId');qt.innerHTML='<option value="">(First available / default)</option>';TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;if(t.id===cur)o.selected=true;qt.appendChild(o);});}
-    // Also fill save-and-send template picker
     if($('saveSendTemplateId')){var cur2=$('saveSendTemplateId').value;var st=$('saveSendTemplateId');st.innerHTML='';if(!TEMPLATES.length)st.innerHTML='<option value="">(No templates)</option>';else TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;if(t.id===cur2)o.selected=true;st.appendChild(o);});}
   });
 }
@@ -2192,7 +2193,6 @@ function openSaveRecipientsModal(items,sourceLabel){
   $('saveRecipInfo').innerHTML='<div><b>'+items.length+' recipient'+(items.length>1?'s':'')+'</b> ready to save'+(sourceLabel?' ('+esc(sourceLabel)+')':'')+'</div><div style="margin-top:6px;font-size:11px;color:var(--text3)">Choose what happens after saving:</div>';
   try{setSaveScheduleDate(new Date(Date.now()+60*60*1000));}catch(e){}
   renderSaveSchedulePresets();
-  // populate save-send template list
   if($('saveSendTemplateId')){
     var cur=$('saveSendTemplateId').value;
     var st=$('saveSendTemplateId');st.innerHTML='';
@@ -2244,12 +2244,7 @@ function updateSaveSchedulePreview(){
   if(ms<=Date.now()){p.innerHTML='<span style="color:#fca5a5">⚠️ This time has passed — choose future time.</span>';return;}
   p.innerHTML='📅 <b style="color:#c4b5fd">'+new Date(ms).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true})+'</b> · '+fmtDuration(ms-Date.now())+' left';
 }
-
-// ═══════════════════════════════════════════════════════════════
-// OPTIMISTIC UI — instantly show new recipients in table
-// ═══════════════════════════════════════════════════════════════
 function buildOptimisticRows(created){
-  // Convert server-provided recipient objects into table rows
   return created.map(function(r){
     return {
       id:r.id,
@@ -2269,37 +2264,28 @@ function buildOptimisticRows(created){
 }
 function insertOptimisticRows(newRows){
   if(!newRows||!newRows.length)return;
-  // Dedupe against existing CURRENT_ROWS by id
   var existingIds={};
   CURRENT_ROWS.forEach(function(r){existingIds[r.id]=true;});
   var toAdd=newRows.filter(function(r){return !existingIds[r.id];});
   if(!toAdd.length)return;
-  // Prepend to CURRENT_ROWS and mark as optimistic
   toAdd.forEach(function(r){OPTIMISTIC_ROWS[r.id]=true;});
   CURRENT_ROWS=toAdd.concat(CURRENT_ROWS);
-  // Bump counts
   recipTotal+=toAdd.length;
   $('trackCount').innerText=recipTotal+' total';
   var currentTotal=parseInt($('stTotal').innerText||'0',10)||0;
   $('stTotal').innerText=currentTotal+toAdd.length;
   var currentPending=parseInt($('stPending').innerText||'0',10)||0;
   $('stPending').innerText=currentPending+toAdd.length;
-  // Render immediately with the new data
   _pendingRecipData={rows:CURRENT_ROWS,total:recipTotal,totalPages:Math.max(1,Math.ceil(recipTotal/recipPerPage))};
   if(_recipRenderRAF)cancelAnimationFrame(_recipRenderRAF);
   _recipRenderRAF=requestAnimationFrame(renderRecipientsTable);
 }
-
-// ═══════════════════════════════════════════════════════════════
-// MAIN confirm handler — handles 3 modes
-// ═══════════════════════════════════════════════════════════════
 async function confirmSaveRecipients(){
   if(!SAVE_RECIP_PENDING||!SAVE_RECIP_PENDING.items.length)return closeSaveRecipOptions();
   var items=SAVE_RECIP_PENDING.items;
   var btn=$('saveRecipConfirm');
   setBtnLoading(btn,'💾 Saving...');
 
-  // ═══════════ MODE 3: SAVE & SEND NOW (fast combined endpoint) ═══════════
   if(SAVE_RECIP_MODE==='save-and-send'){
     var sendTemplateId=$('saveSendTemplateId')?$('saveSendTemplateId').value:'';
     if(!sendTemplateId){resetBtn(btn);return toast('Please select a template','err');}
@@ -2319,9 +2305,7 @@ async function confirmSaveRecipients(){
         else toast('❌ '+(r.error||'Save & Send failed'),'err');
         return;
       }
-      // optimistic insert (they'll show as Pending first, then Sent)
       insertOptimisticRows(buildOptimisticRows(r.recipients||[]));
-      // reset form instantly
       $('recipients').innerHTML='';addRow();
       $('bulkInput').value='';updateBulk();
       closeSaveRecipOptions();
@@ -2330,7 +2314,6 @@ async function confirmSaveRecipients(){
       if(r.duplicatesSkipped>0)msg+=' · '+r.duplicatesSkipped+' dup skipped';
       if(r.failed>0)msg+=' · '+r.failed+' failed';
       toast(msg,r.failed>0?'warn':'ok');
-      // background refresh to reconcile
       setTimeout(function(){loadAll();loadMyEmails();loadQuota(true);loadQuickAuto();},600);
     }catch(e){
       toast('❌ '+(e.message||'Save & Send failed'),'err');
@@ -2339,12 +2322,10 @@ async function confirmSaveRecipients(){
     return;
   }
 
-  // ═══════════ MODE 1 & 2: SAVE ONLY / SAVE & SCHEDULE ═══════════
   var templateId=$('tplSelect')?$('tplSelect').value:'';
   try{
     var saveRes=await api('/api/recipients','POST',{list:items,templateId:templateId});
     if(!saveRes.ok){resetBtn(btn);return toast('❌ Save failed: '+(saveRes.error||''),'err');}
-    // ⚡ Optimistic UI — instantly show in table
     insertOptimisticRows(buildOptimisticRows(saveRes.recipients||[]));
 
     if(SAVE_RECIP_MODE==='schedule'){
@@ -2354,7 +2335,6 @@ async function confirmSaveRecipients(){
       var mins=Math.round((ms-Date.now())/60000);
       if(mins<2){resetBtn(btn);return toast('Minimum 2 minutes ahead','err');}
       if(!templateId){resetBtn(btn);return toast('Please select a template','err');}
-      // Use IDs we already have — no refetch needed
       var ids=(saveRes.recipients||[]).map(function(x){return x.id;});
       if(!ids.length){resetBtn(btn);return toast('❌ Could not match saved recipients','err');}
       var sched=await api('/api/bulk/schedule','POST',{recipientIds:ids,templateId:templateId,scheduleAt:new Date(ms).toISOString(),timezone:getScheduleTz(),includeSignature:true,includeLogo:true,includeAttachments:false});
@@ -2368,12 +2348,10 @@ async function confirmSaveRecipients(){
     $('recipients').innerHTML='';addRow();
     $('bulkInput').value='';updateBulk();
     closeSaveRecipOptions();
-    // Background refresh to reconcile
     setTimeout(function(){loadAll();loadQuickAuto();},500);
   }catch(e){toast('❌ '+(e.message||'Save failed'),'err');}
   resetBtn(btn);
 }
-
 function submitRecipients(){
   var rows=$('recipients').querySelectorAll('.recip-row'),list=[];
   rows.forEach(function(r){var i=r.querySelectorAll('input');if(i[1].value.trim())list.push({company:i[0].value.trim(),email:i[1].value.trim()});});
@@ -2728,9 +2706,10 @@ function renderRecipientsTable(){
   _recipRenderRAF=null;if(!_pendingRecipData)return;
   var rows=_pendingRecipData.rows;var total=_pendingRecipData.total;var totalPages=_pendingRecipData.totalPages;
   var parts=[];
-  parts.push('<table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" class="cbox" onclick="event.stopPropagation()" onchange="toggleAll(this.checked)"></th><th style="width:100px;text-align:center">Sent?</th><th>Company</th><th>Email</th><th style="text-align:center">Times</th><th>Last Sent</th><th style="text-align:right;width:170px">Actions</th></tr></thead><tbody>');
+  parts.push('<table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" class="cbox" onclick="event.stopPropagation()" onchange="toggleAll(this.checked)"></th><th style="width:110px;text-align:center">Status</th><th>Company</th><th>Email</th><th style="text-align:center;width:70px">Sends</th><th style="width:150px">Last Activity</th><th style="text-align:right;width:170px">Actions</th></tr></thead><tbody>');
   for(var i=0;i<rows.length;i++){
     var x=rows[i];
+    if(DELETING_ROWS[x.id])continue;
     var schedMs=toMs(x.scheduledFor);
     var isSched=(x.status||'').toLowerCase()==='scheduled'&&schedMs>0;
     var sc=parseInt(x.sendCount,10)||0;
@@ -2739,16 +2718,22 @@ function renderRecipientsTable(){
     var scDisplay=(sc===0&&looksSent)?1:sc;
     var wasSent=scDisplay>0;
     var isNew=!!x._optimistic;
-    var sentCellHtml='';
-    if(wasSent)sentCellHtml='<span class="sent-status-cell yes">✅ Sent</span>';
-    else if(isSched)sentCellHtml='<span class="sent-status-cell sched">⏰ Scheduled</span>';
-    else sentCellHtml='<span class="sent-status-cell no">— Pending</span>';
-    var lastCol=isSched?'<span style="color:#c4b5fd">⏰ '+fmtDate(x.scheduledFor)+'</span>':(x.lastSentAt!==undefined&&x.lastSentAt!==null?fmtDate(x.lastSentAt):(x.sentAt?fmtDate(x.sentAt):'—'));
+    var statusHtml='';
+    if(isSched)statusHtml='<span class="sent-status-cell sched">⏰ Scheduled</span>';
+    else if(rawSt==='opened'||rawSt.indexOf('opened')!==-1)statusHtml='<span class="sent-status-cell opened">👁 Opened</span>';
+    else if(wasSent)statusHtml='<span class="sent-status-cell sent">✅ Sent</span>';
+    else statusHtml='<span class="sent-status-cell pending">⏳ Pending</span>';
+    var lastCol='—';
+    if(isSched)lastCol='<span style="color:#c4b5fd;font-size:11px">⏰ '+fmtDate(x.scheduledFor)+'</span>';
+    else if(x.lastSentAt!==undefined&&x.lastSentAt!==null)lastCol='<span style="font-size:11px">📤 '+fmtDate(x.lastSentAt)+'</span>';
+    else if(x.sentAt)lastCol='<span style="font-size:11px">📤 '+fmtDate(x.sentAt)+'</span>';
+    else if(x.createdAt)lastCol='<span style="font-size:11px;color:var(--text3)">Added '+fmtDate(x.createdAt)+'</span>';
     parts.push('<tr class="clickable'+(isNew?' optimistic-new':'')+' '+(SELECTED[x.id]?'selected':'')+'" onclick="openRecipHistory(\''+x.id+'\')"><td onclick="event.stopPropagation()"><input type="checkbox" class="cbox" '+(SELECTED[x.id]?'checked':'')+' onchange="toggleOne(\''+x.id+'\',this.checked)"></td>');
-    parts.push('<td style="text-align:center">'+sentCellHtml+'</td>');
-    parts.push('<td>'+esc(x.company||'—')+'</td><td style="word-break:break-all">'+esc(x.email)+'</td>');
+    parts.push('<td style="text-align:center">'+statusHtml+'</td>');
+    parts.push('<td style="font-weight:600">'+esc(x.company||'—')+'</td>');
+    parts.push('<td style="word-break:break-all;font-size:12px">'+esc(x.email)+'</td>');
     parts.push('<td style="text-align:center">'+(scDisplay>0?'<span class="badge count">'+scDisplay+'×</span>':'<span style="color:var(--text3);font-size:11px">—</span>')+'</td>');
-    parts.push('<td style="font-size:10px">'+lastCol+'</td>');
+    parts.push('<td>'+lastCol+'</td>');
     parts.push('<td style="white-space:nowrap" onclick="event.stopPropagation()"><button class="btn ghost small" onclick="openRecipHistory(\''+x.id+'\')" title="History">📊</button>'
       +(isSched
         ?'<button class="btn warn small" onclick="openSchedulesList()" title="Scheduled">⏰</button>'
@@ -2758,7 +2743,8 @@ function renderRecipientsTable(){
       +' <button class="btn danger small" onclick="delRec(\''+x.id+'\')" title="Delete">✕</button></td></tr>');
   }
   parts.push('</tbody></table>');
-  $('tableWrap').innerHTML=parts.join('');
+  if(rows.length===0||parts.length<=1){$('tableWrap').innerHTML='<div class="empty">📭 No recipients</div>';}
+  else $('tableWrap').innerHTML=parts.join('');
   if(totalPages>1){
     $('recipPagination').style.display='flex';
     $('recipPageInfo').innerText='Page '+recipPage+' of '+totalPages+' ('+total+' total)';
@@ -2899,11 +2885,52 @@ document.getElementById('resendOptionsConfirm').addEventListener('click',functio
     else toast('❌ '+r.error,'err');
   }).catch(function(){resetBtn(btn);});
 });
-async function delRec(id){var ok=await showConfirm({icon:'🗑',title:'Delete recipient?',message:'Permanently remove.',okText:'Delete'});if(!ok)return;api('/api/recipients/'+id,'DELETE').then(function(r){if(r.ok){toast('✅ Deleted');delete SELECTED[id];loadAll();loadQuickAuto();}});}
+async function delRec(id){
+  var ok=await showConfirm({icon:'🗑',title:'Delete recipient?',message:'Permanently remove.',okText:'Delete'});
+  if(!ok)return;
+  DELETING_ROWS[id]=true;
+  var row=null;
+  var trs=document.querySelectorAll('#tableWrap tr.clickable');
+  for(var i=0;i<trs.length;i++){
+    if(trs[i].outerHTML.indexOf("delRec('"+id+"')")!==-1){row=trs[i];break;}
+  }
+  if(row)row.classList.add('deleting');
+  CURRENT_ROWS=CURRENT_ROWS.filter(function(r){return r.id!==id;});
+  recipTotal=Math.max(0,recipTotal-1);
+  $('trackCount').innerText=recipTotal+' total';
+  var ct=parseInt($('stTotal').innerText||'0',10)||0;if(ct>0)$('stTotal').innerText=ct-1;
+  api('/api/recipients/'+id,'DELETE').then(function(r){
+    delete DELETING_ROWS[id];
+    delete SELECTED[id];
+    if(r.ok){
+      toast('✅ Deleted');
+      setTimeout(function(){loadAll();loadQuickAuto();},300);
+    }else{
+      toast('❌ Delete failed','err');
+      loadAll();
+    }
+  }).catch(function(){
+    delete DELETING_ROWS[id];
+    toast('❌ Network error','err');
+    loadAll();
+  });
+}
 async function deleteSelected(){
   var ids=Object.keys(SELECTED);if(!ids.length)return toast('Please select recipients first','err');
   var ok=await showConfirm({icon:'⚠️',title:'Delete '+ids.length+'?',message:'Cannot be undone.',okText:'Delete All'});if(!ok)return;
-  api('/api/recipients/bulk-delete','POST',{ids:ids}).then(function(r){if(r.ok){toast('✅ '+r.deleted+' deleted');clearSelection();loadAll();loadQuickAuto();}});
+  ids.forEach(function(id){DELETING_ROWS[id]=true;});
+  CURRENT_ROWS=CURRENT_ROWS.filter(function(r){return !SELECTED[r.id];});
+  recipTotal=Math.max(0,recipTotal-ids.length);
+  $('trackCount').innerText=recipTotal+' total';
+  var ct=parseInt($('stTotal').innerText||'0',10)||0;if(ct>0)$('stTotal').innerText=Math.max(0,ct-ids.length);
+  SELECTED={};
+  _pendingRecipData={rows:CURRENT_ROWS,total:recipTotal,totalPages:Math.max(1,Math.ceil(recipTotal/recipPerPage))};
+  renderRecipientsTable();
+  api('/api/recipients/bulk-delete','POST',{ids:ids}).then(function(r){
+    ids.forEach(function(id){delete DELETING_ROWS[id];});
+    if(r.ok){toast('✅ '+r.deleted+' deleted');setTimeout(function(){loadAll();loadQuickAuto();},300);}
+    else {toast('❌ Failed','err');loadAll();}
+  }).catch(function(){ids.forEach(function(id){delete DELETING_ROWS[id];});toast('❌ Network error','err');loadAll();});
 }
 
 // ============ BULK RESEND / SCHEDULE ============
@@ -3037,7 +3064,7 @@ function openSchedulesList(){
 function closeSchedulesList(){$('schedulesListBackdrop').classList.add('hidden');}
 async function deleteSchedule(id){var ok=await showConfirm({icon:'🗑',title:'Delete schedule?',message:'',okText:'Delete'});if(!ok)return;api('/api/bulk/schedules/'+id,'DELETE').then(function(r){if(r.ok){toast('✅ Deleted');openSchedulesList();loadAll();}});}
 
-// ============ EMAIL HISTORY (LIVE) ============
+// ============ EMAIL HISTORY (LIVE) — with COMPANY column ============
 function onMyEmailSearchChange(){
   if(myEmailSearchTimer)clearTimeout(myEmailSearchTimer);
   myEmailSearchTimer=setTimeout(function(){myEmailPage=1;loadMyEmails();},400);
@@ -3062,7 +3089,7 @@ function renderMyEmails(){
   _myEmailRenderRAF=null;var w=$('myEmailsWrap');
   if(!MY_EMAILS.length){w.innerHTML='<div class="empty"><div class="ico">📧</div>No email history yet</div>';$('myEmailsPagination').style.display='none';if($('myEmailCount'))$('myEmailCount').innerText='0 shown';return;}
   if($('myEmailCount'))$('myEmailCount').innerText=MY_EMAILS.length+' shown';
-  var h='<table class="data-table"><thead><tr><th>Type</th><th>Recipient</th><th>Subject</th><th>Sent</th><th>Status</th><th>Opened Time</th><th>Clicks</th><th>Files</th></tr></thead><tbody>';
+  var h='<table class="data-table"><thead><tr><th>Type</th><th>Company</th><th>Recipient</th><th>Subject</th><th>Sent</th><th>Status</th><th>Opened</th><th>Clicks</th><th>Files</th></tr></thead><tbody>';
   MY_EMAILS.forEach(function(e){
     var st=getEmailStatus(e);var isReply=!!e.isReply;
     var typeBadge=isReply?'<span class="badge reply-badge">📩 Reply</span>':'<span class="badge sent">📤 Send</span>';
@@ -3074,7 +3101,7 @@ function renderMyEmails(){
     if(e.openedAt)openedTimeCell='<span class="opened-time-badge" title="Opened on '+fmtDate(e.openedAt)+'">👁 '+fmtDateShort(e.openedAt)+'</span>';
     else if(e.lastMachineHitAt||e.machineHits>0)openedTimeCell='<span style="font-size:10px;color:var(--text3)">⚙️ Machine</span>';
     else openedTimeCell='<span style="font-size:10px;color:var(--text3)">⏳ Not opened</span>';
-    h+='<tr><td>'+typeBadge+'</td><td style="word-break:break-all;font-size:11px">'+esc(e.recipientEmail)+'</td><td style="font-size:11px">'+esc(e.subject||'—')+'</td><td style="font-size:10px">'+fmtDate(e.sentAt)+'</td><td><span class="badge '+st.cls+'">'+st.icon+' '+st.lbl+'</span></td><td style="font-size:10px">'+openedTimeCell+'</td><td>'+clickCell+'</td><td>'+attCell+'</td></tr>';
+    h+='<tr><td>'+typeBadge+'</td><td style="font-size:12px;font-weight:600">'+esc(e.company||'—')+'</td><td style="word-break:break-all;font-size:11px">'+esc(e.recipientEmail)+'</td><td style="font-size:11px">'+esc(e.subject||'—')+'</td><td style="font-size:10px">'+fmtDate(e.sentAt)+'</td><td><span class="badge '+st.cls+'">'+st.icon+' '+st.lbl+'</span></td><td style="font-size:10px">'+openedTimeCell+'</td><td>'+clickCell+'</td><td>'+attCell+'</td></tr>';
   });
   h+='</tbody></table>';w.innerHTML=h;
   if(myEmailTotalPages>1){
