@@ -34,16 +34,13 @@ html, body { min-height: 100vh; overflow-x: hidden; background: var(--bg); }
 body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: var(--text); font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
 body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse at top left, rgba(56, 189, 248, 0.08), transparent 50%), radial-gradient(ellipse at bottom right, rgba(168, 85, 247, 0.08), transparent 50%); pointer-events: none; z-index: 0; }
 .hidden { display: none !important; }
-
 input[type=number]::-webkit-outer-spin-button,
 input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !important; appearance: none !important; margin: 0 !important; }
 input[type=number] { -moz-appearance: textfield !important; appearance: textfield !important; }
-
 textarea { resize: none !important; }
 .bulk-area, .ban-reason-input { resize: none !important; }
 select { appearance: none; -webkit-appearance: none; }
 select::-ms-expand { display: none; }
-
 .tbl-wrap, #recipients, #ocrThumbs, #ocrResultCards, #inboxList, #sendersList, #adminBannedList, #adminRequestList, #adminDeletedList, .modal-body { content-visibility: auto; contain-intrinsic-size: auto 300px; }
 button, .btn, .tab, .maintab, .chip-btn, label, select { touch-action: manipulation; }
 .inbox-list, .inbox-viewer, .tbl-wrap, .modal, .modal-body, .sig-preview-canvas, #ocrResultCards { -webkit-overflow-scrolling: touch; }
@@ -150,8 +147,6 @@ select:focus { outline: none; border-color: #38bdf8 !important; }
 .field > input, .field > textarea, .field > select { width: 100%; background: var(--bg2); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 12px 13px; font-size: 15px; outline: none; -webkit-appearance: none; appearance: none; }
 .field > select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
 .field > input:focus, .field > textarea:focus, .field > select:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15); }
-
-/* ===== NEW: Number Stepper (theme-matched) ===== */
 .num-stepper { display: flex; align-items: stretch; width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; transition: 0.2s; }
 .num-stepper:focus-within { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15); }
 .num-stepper input { flex: 1; background: transparent !important; color: var(--text) !important; border: none !important; padding: 12px 8px; font-size: 15px; text-align: center; outline: none; font-weight: 700; min-width: 0; }
@@ -160,10 +155,6 @@ select:focus { outline: none; border-color: #38bdf8 !important; }
 .num-stepper button:hover { background: rgba(56, 189, 248, 0.2); color: #fff; }
 .num-stepper button:active { background: var(--grad); color: #fff; }
 .num-stepper button:disabled { opacity: 0.35; cursor: not-allowed; }
-.num-stepper .num-divider { width: 1px; background: var(--border); }
-.num-stepper.mini input { padding: 8px 6px; font-size: 13px; }
-.num-stepper.mini button { width: 34px; font-size: 15px; }
-
 .btn { background: var(--grad); color: white; border: none; padding: 11px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; justify-content: center; white-space: nowrap; transition: 0.2s; }
 .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(56, 189, 248, 0.35); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
@@ -223,6 +214,8 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 .cbox:checked::after { content: '✓'; position: absolute; color: white; font-size: 13px; font-weight: 700; top: 50%; left: 50%; transform: translate(-50%, -50%); }
 .empty { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 13px; }
 .empty .ico { font-size: 44px; margin-bottom: 12px; opacity: 0.5; display: block; }
+.empty.error-box { color: #fca5a5; }
+.empty.error-box .retry-btn { margin-top: 14px; }
 .tpl-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
 .tpl-card .info { flex: 1; min-width: 0; }
 .tpl-card .name { font-size: 14px; font-weight: 700; word-break: break-word; }
@@ -239,7 +232,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 .bulk-preview-head .stat-pill { padding: 4px 10px; border-radius: 20px; font-weight: 700; font-size: 11px; }
 .bulk-preview-head .stat-pill.ok { background: rgba(34, 197, 94, 0.15); color: #86efac; }
 .bulk-preview-head .stat-pill.dup { background: rgba(245, 158, 11, 0.15); color: #fcd34d; }
-/* NEW: bulk file drop zone */
 .bulk-file-zone { display: flex; align-items: center; gap: 12px; padding: 14px; border: 2px dashed rgba(56,189,248,.4); border-radius: 12px; margin-bottom: 12px; cursor: pointer; background: linear-gradient(135deg, rgba(56,189,248,.06), rgba(99,102,241,.05)); transition: 0.2s; }
 .bulk-file-zone:hover { border-color: var(--cyan); background: linear-gradient(135deg, rgba(56,189,248,.12), rgba(99,102,241,.08)); }
 .bulk-file-zone.dragover { border-color: var(--green); background: rgba(34,197,94,.1); }
@@ -385,7 +377,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 .inbox-pagination button { padding: 10px 20px; font-size: 13px; font-weight: 600; border-radius: 10px; border: 1px solid var(--border2); background: var(--bg2); color: #cbd5e1; cursor: pointer; }
 .inbox-pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
 .live-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 1.5s infinite; display: inline-block; margin-right: 4px; }
-/* NEW: fast inbox bar */
 .inbox-fast-bar { height: 3px; background: rgba(56, 189, 248, 0.08); border-radius: 3px; overflow: hidden; position: relative; margin-top: 8px; display: none; }
 .inbox-fast-bar.show { display: block; }
 .inbox-fast-bar .fill { position: absolute; top: 0; bottom: 0; left: 0; width: 30%; background: linear-gradient(90deg, transparent, #38bdf8, transparent); animation: barStripe 1.2s linear infinite; }
@@ -621,6 +612,13 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 .save-send-config .ttl { font-size: 10px; color: #86efac; text-transform: uppercase; font-weight: 700; margin-bottom: 8px; }
 .save-sched-config { background: rgba(167, 139, 250, 0.08); border: 1px solid rgba(167, 139, 250, 0.4); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
 .save-sched-config .ttl { font-size: 10px; color: #c4b5fd; text-transform: uppercase; font-weight: 700; margin-bottom: 10px; }
+.quota-warning { background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(220, 38, 38, 0.08)); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; display: none; align-items: center; gap: 10px; flex-wrap: wrap; }
+.quota-warning.show { display: flex; }
+.quota-warning .qw-ico { font-size: 20px; }
+.quota-warning .qw-txt { flex: 1; min-width: 180px; font-size: 12px; color: #fca5a5; line-height: 1.5; }
+.quota-warning .qw-txt b { color: #fecaca; }
+.quota-warning button { padding: 6px 14px; font-size: 11px; font-weight: 700; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.5); background: rgba(239, 68, 68, 0.15); color: #fca5a5; cursor: pointer; }
+.quota-warning button:hover { background: rgba(239, 68, 68, 0.25); }
 @media(max-width: 768px) {
   .maintabs { position: fixed; bottom: 0; top: auto; left: 0; right: 0; padding: 6px 8px; z-index: 2000; border-top: 1px solid var(--border); border-bottom: none; justify-content: space-around; box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5); padding-bottom: calc(6px + env(safe-area-inset-bottom)); background: rgba(10, 14, 26, 0.98); }
   .maintab { flex: 1; text-align: center; font-size: 10px; padding: 8px 4px; }
@@ -648,7 +646,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </head>
 <body>
 
-<!-- LOGIN -->
 <div id="loginView" class="auth-wrap">
 <div class="auth-card">
 <div class="brand-logo"><svg viewBox="0 0 64 64" role="img" aria-label="MailFlow Pro"><defs><linearGradient id="mfGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset=".5" stop-color="#6366f1"/><stop offset="1" stop-color="#a78bfa"/></linearGradient><linearGradient id="mfGrad2" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs><rect x="1.5" y="1.5" width="61" height="61" rx="17" fill="url(#mfGrad)"/><path d="M56 15 L8 37 L25 40.5 Z" fill="#2c3aa8" opacity=".92"/><path d="M56 15 L25 40.5 L26.5 57 Z" fill="#ffffff"/><path d="M56 15 L8 37 L25 40.5 L26.5 57 Z" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linejoin="round" opacity=".95"/><path d="M8 37 L25 40.5 L26.5 57" fill="none" stroke="url(#mfGrad2)" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="50.5" cy="15" r="4.4" fill="#fbbf24"/></svg></div>
@@ -688,7 +685,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- BANNED -->
 <div id="bannedView" class="auth-wrap hidden">
 <div class="auth-card" style="max-width:600px">
 <div style="font-size:64px;margin-bottom:16px">🚫</div>
@@ -707,13 +703,12 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- APP -->
 <div id="appView" class="hidden">
 <div class="topbar">
 <div class="logo-top">
 <div class="mini-logo"><svg viewBox="0 0 64 64" role="img" aria-label="MailFlow Pro"><defs><linearGradient id="mfGradM" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset=".5" stop-color="#6366f1"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs><rect x="1.5" y="1.5" width="61" height="61" rx="15" fill="url(#mfGradM)"/><path d="M56 15 L8 37 L25 40.5 Z" fill="#2c3aa8" opacity=".92"/><path d="M56 15 L25 40.5 L26.5 57 Z" fill="#ffffff"/><path d="M56 15 L8 37 L25 40.5 L26.5 57 Z" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linejoin="round" opacity=".95"/><path d="M8 37 L25 40.5 L26.5 57" fill="none" stroke="#22d3ee" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="50.5" cy="15" r="4.4" fill="#fbbf24"/></svg></div>
 <span class="brand-text">MailFlow Pro</span>
-<span style="font-size:9px;color:var(--text3);font-weight:500;padding:2px 6px;background:rgba(56,189,248,.1);border-radius:6px;margin-left:4px">v2.2.5</span>
+<span style="font-size:9px;color:var(--text3);font-weight:500;padding:2px 6px;background:rgba(56,189,248,.1);border-radius:6px;margin-left:4px">v2.2.6</span>
 </div>
 <div class="user-chip">
 <img id="userAvatar" class="user-avatar" src="" style="display:none" alt="" decoding="async" onclick="openProfileModal()">
@@ -732,8 +727,12 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 <div class="maintab hidden" id="tabAdmin" onclick="switchMain('admin')">👑 Admin</div>
 </div>
 
-<!-- DASHBOARD -->
 <div class="container" id="myView">
+<div class="quota-warning" id="quotaWarning">
+<span class="qw-ico">⚠️</span>
+<div class="qw-txt"><b>Server busy:</b> <span id="quotaWarningMsg">Temporary capacity limit reached. Please wait a few minutes.</span></div>
+<button onclick="retryQuotaNow()">🔄 Retry</button>
+</div>
 <div class="page-layout">
 <aside class="sidebar">
 <div class="panel" style="background:linear-gradient(135deg,rgba(56,189,248,.08),rgba(168,85,247,.06));border-color:rgba(56,189,248,.3)">
@@ -969,7 +968,7 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 <button class="btn" onclick="submitRecipients()" style="margin-left:6px;margin-top:10px">💾 Save</button>
 </div>
 <div id="bulkTab" class="hidden">
-<div class="bulk-help">📋 <div>Paste emails in any format — or upload a CSV/TXT/DOCX/XLSX file below. Emails & company names are auto-extracted.</div></div>
+<div class="bulk-help">📋 <div>Paste emails in any format — or upload a CSV/TXT/DOCX file below. Emails & company names are auto-extracted.</div></div>
 <div class="bulk-file-zone" id="bulkFileZone" onclick="document.getElementById('bulkFileInput').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleBulkFileDrop(event)">
 <input type="file" id="bulkFileInput" accept=".csv,.txt,.tsv,.xlsx,.xls,.docx,.pdf,.rtf" onchange="handleBulkFileSelect(event)">
 <div class="bfz-ico">📁</div>
@@ -1043,6 +1042,7 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
 <button class="btn ghost small" onclick="loadAll(true)">🔄 Refresh</button>
 <button class="btn ghost small" onclick="selectAllVisible()">☑️ Select Page</button>
+<button class="btn ghost small" onclick="selectAllPages()" id="selectAllPagesBtn" style="border-color:var(--green);color:#86efac">✅ Select ALL Pages</button>
 <button class="btn ghost small" onclick="openSchedulesList()" style="border-color:var(--purple);color:#c4b5fd">⏰ View Schedules</button>
 </div>
 <div id="tableWrap" class="tbl-wrap"></div>
@@ -1074,7 +1074,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- INBOX -->
 <div class="container hidden" id="inboxView">
 <div id="imapSetupPanel" class="hidden">
 <div class="setup-card">
@@ -1098,7 +1097,7 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 <select id="inboxLimit" onchange="imapPage=1;loadIMAPInbox(true)"><option value="20" selected>20</option><option value="30">30</option><option value="50">50</option></select>
 <button class="btn small" onclick="refreshInboxNow()">🔄 Sync</button>
 <button class="btn ghost small" onclick="disconnectIMAP()">🔌</button>
-<span id="imapSyncInfo" style="margin-left:auto;font-size:11px"><span class="live-dot"></span><span style="color:var(--green)">LIVE • 2.5s ⚡</span></span>
+<span id="imapSyncInfo" style="margin-left:auto;font-size:11px"><span class="live-dot"></span><span style="color:var(--green)">LIVE • 5s</span></span>
 </div>
 <div class="inbox-fast-bar show" id="inboxFastBar"><div class="fill"></div></div>
 <div class="inbox-layout">
@@ -1125,7 +1124,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- AI PROFILE -->
 <div class="container hidden" id="aiprofileView">
 <div class="panel">
 <h2><span>🧠 AI Profile</span> <span>AI writes as YOU</span></h2>
@@ -1141,7 +1139,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- TOOLS -->
 <div class="container hidden" id="testView">
 <div class="panel" style="background:linear-gradient(135deg,rgba(168,85,247,.08),rgba(56,189,248,.08))"><h2>🤖 AI Tools</h2></div>
 <div class="panel"><h2>⏰ Best Sending Time</h2><div id="bestTimeContent"><div class="empty">Click analyze</div></div><button class="btn" onclick="loadBestTime()" style="margin-top:12px">✨ Analyze</button></div>
@@ -1166,7 +1163,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- ADMIN -->
 <div class="container hidden" id="adminView">
 <div class="stats">
 <div class="stat s1"><div class="label">Users</div><div class="value" id="adTotalUsers">0</div></div>
@@ -1251,7 +1247,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- Gmail Connect Modal -->
 <div id="gmailConnectModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeGmailConnectModal()">
 <div class="modal" style="max-width:560px">
 <button class="close-btn" onclick="closeGmailConnectModal()">✕</button>
@@ -1265,7 +1260,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- Profile Modal -->
 <div id="profileModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeProfileModal()">
 <div class="modal" style="max-width:560px">
 <button class="close-btn" onclick="closeProfileModal()">✕</button>
@@ -1293,7 +1287,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- Settings Modal -->
 <div id="settingsModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeSettingsModal()">
 <div class="modal" style="max-width:680px">
 <button class="close-btn" onclick="closeSettingsModal()">✕</button>
@@ -1337,7 +1330,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- Reply Modal -->
 <div id="replyModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeReplyModal()">
 <div class="modal" style="max-width:640px">
 <button class="close-btn" onclick="closeReplyModal()">✕</button>
@@ -1364,7 +1356,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- AI Writer Modal -->
 <div id="aiWriterModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeAIWriter()">
 <div class="modal" style="max-width:560px">
 <button class="close-btn" onclick="closeAIWriter()">✕</button>
@@ -1381,7 +1372,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- CV Analyzer Modal -->
 <div id="cvAnalyzerModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeCVAnalyzer()">
 <div class="modal" style="max-width:700px">
 <button class="close-btn" onclick="closeCVAnalyzer()">✕</button>
@@ -1402,7 +1392,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- Recip History Modal -->
 <div id="recipHistoryModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeRecipHistory()">
 <div class="modal" style="max-width:800px">
 <button class="close-btn" onclick="closeRecipHistory()">✕</button>
@@ -1413,7 +1402,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- Save Recipients Options Modal -->
 <div id="saveRecipOptionsBackdrop" class="modal-backdrop hidden" onclick="if(event.target===this)closeSaveRecipOptions()">
 <div class="modal" style="max-width:620px">
 <button class="close-btn" onclick="closeSaveRecipOptions()">✕</button>
@@ -1487,7 +1475,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- Send Options Modal -->
 <div id="sendOptionsBackdrop" class="modal-backdrop hidden" onclick="if(event.target===this)closeSendOptions()">
 <div class="modal" style="max-width:560px">
 <button class="close-btn" onclick="closeSendOptions()">✕</button>
@@ -1504,7 +1491,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- Resend Options Modal -->
 <div id="resendOptionsBackdrop" class="modal-backdrop hidden" onclick="if(event.target===this)closeResendOptions()">
 <div class="modal" style="max-width:560px">
 <button class="close-btn" onclick="closeResendOptions()">✕</button>
@@ -1521,7 +1507,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- Bulk Resend Modal -->
 <div id="bulkResendBackdrop" class="modal-backdrop hidden" onclick="if(event.target===this)closeBulkResendModal()">
 <div class="modal" style="max-width:600px">
 <button class="close-btn" onclick="closeBulkResendModal()">✕</button>
@@ -1541,7 +1526,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- Bulk Schedule Modal -->
 <div id="bulkScheduleBackdrop" class="modal-backdrop hidden" onclick="if(event.target===this)closeBulkScheduleModal()">
 <div class="modal" style="max-width:600px">
 <button class="close-btn" onclick="closeBulkScheduleModal()">✕</button>
@@ -1574,7 +1558,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- Schedules List Modal -->
 <div id="schedulesListBackdrop" class="modal-backdrop hidden" onclick="if(event.target===this)closeSchedulesList()">
 <div class="modal" style="max-width:640px">
 <button class="close-btn" onclick="closeSchedulesList()">✕</button>
@@ -1583,7 +1566,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- Template Preview Modal -->
 <div id="tplPreviewBackdrop" class="modal-backdrop hidden" onclick="if(event.target===this)closeTplPreview()">
 <div class="modal" style="max-width:680px">
 <button class="close-btn" onclick="closeTplPreview()">✕</button>
@@ -1595,7 +1577,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- User OCR Modal -->
 <div id="userOcrModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeUserOcr()">
 <div class="modal" style="max-width:800px">
 <button class="close-btn" onclick="closeUserOcr()">✕</button>
@@ -1604,7 +1585,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- Admin User Details Modal -->
 <div id="adminUserModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeAdminUser()">
 <div class="modal" style="max-width:640px">
 <button class="close-btn" onclick="closeAdminUser()">✕</button>
@@ -1613,7 +1593,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- Ban Modal -->
 <div id="banUserModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeBanModal()">
 <div class="modal" style="max-width:480px">
 <button class="close-btn" onclick="closeBanModal()">✕</button>
@@ -1628,7 +1607,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- Recover User Modal -->
 <div id="recoverUserModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeRecoverModal()">
 <div class="modal" style="max-width:520px">
 <button class="close-btn" onclick="closeRecoverModal()">✕</button>
@@ -1642,7 +1620,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- Image Preview -->
 <div id="imgPreviewBackdrop" class="img-preview-backdrop hidden">
 <div class="img-preview-header">
 <div class="file-info"><b id="imgPrevIdx">1</b> / <span id="imgPrevTotal">1</span> · <span id="imgPrevName">image.jpg</span> · <span id="imgPrevSize">—</span></div>
@@ -1663,7 +1640,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 
-<!-- Confirm -->
 <div id="confirmBackdrop" class="confirm-backdrop hidden">
 <div class="confirm-box">
 <div class="icon" id="confirmIcon">⚠️</div>
@@ -1703,19 +1679,31 @@ var GMAIL_DAILY_MAX=500;
 var _recipRenderRAF=null,_pendingRecipData=null;
 var _myEmailRenderRAF=null,_pendingMyEmailData=null;
 var RECIP_LIVE_TIMER=null,MYEMAIL_LIVE_TIMER=null;
-var LIVE_REFRESH_MS=10000;
+// v2.2.6: Reduced polling to save Firestore reads
+var LIVE_REFRESH_MS=30000;            // was 10s
+var QUOTA_LIVE_MS=45000;              // was 15s
+var AUTO_REFRESH_MS=90000;            // was 45s
+var ADMIN_LIVE_MS=60000;              // was 20s
+var ADMIN_EMAIL_LIVE_MS=45000;        // was 25s
+var INBOX_FAST_MS=5000;               // was 2.5s
+var _inboxReqInFlight=false;
+var _recipReqInFlight=false;
+var _statsReqInFlight=false;
+var _myEmailReqInFlight=false;
+var _quotaReqInFlight=false;
+// Quota backoff
+var QUOTA_BACKOFF_UNTIL=0;
+var QUOTA_BACKOFF_MS=60000;
 var OPTIMISTIC_ROWS={};
 var DELETING_ROWS={};
 var senderPage=1,senderPerPage=10,SENDERS_ALL=[],senderSearchQuery='';
 var aiPredPage=1,aiPredPerPage=10,AI_PRED_ALL=[];
 var RECIP_HISTORY_PREFETCH={};
 var PREFETCH_INFLIGHT={};
-var INBOX_FAST_MS=2500;
-var _inboxReqInFlight=false;
 
 // ============ HELPERS ============
 function $(id){return document.getElementById(id);}
-function api(p,m,b){return fetch(p,{method:m||'GET',credentials:'include',headers:{'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined}).then(function(r){return r.text().then(function(txt){try{return JSON.parse(txt);}catch(e){return{ok:false,error:'Server error '+r.status};}});}).catch(function(e){var msg;if(e&&e.message)msg=e.message;else if(e&&e.type)msg='Network '+e.type;else msg='Network error';return{ok:false,error:msg};});}
+function api(p,m,b){return fetch(p,{method:m||'GET',credentials:'include',headers:{'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined}).then(function(r){return r.text().then(function(txt){try{return JSON.parse(txt);}catch(e){return{ok:false,error:'Server error '+r.status,_httpStatus:r.status};}});}).catch(function(e){var msg;if(e&&e.message)msg=e.message;else if(e&&e.type)msg='Network '+e.type;else msg='Network error';return{ok:false,error:msg};});}
 function reportOcrClientError(errorMsg,fileName,stage){try{fetch('/api/ocr/client-error',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({error:errorMsg,fileName:fileName||'',stage:stage||'client'})}).catch(function(){});}catch(e){}}
 function toast(m,tp){var el=$('toast');el.innerText=m;el.className='toast show '+(tp||'ok');clearTimeout(el._t);el._t=setTimeout(function(){el.className='toast';},4500);}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -1740,8 +1728,6 @@ function localTimeStr(d){return pad2(d.getHours())+':'+pad2(d.getMinutes());}
 function getScheduleTz(){try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';}catch(e){return 'UTC';}}
 function parseTimeInputVal(s){if(!s)return 0;var p=String(s).split(':');return parseInt(p[0],10)||0;}
 function toTimeInputVal(h){h=parseInt(h,10);if(isNaN(h))h=0;return (h<10?'0':'')+h+':00';}
-
-// NEW: number stepper helper
 function stepNum(id,delta,min,max){
   var el=$(id);if(!el)return;
   var cur=parseInt(el.value,10);if(isNaN(cur))cur=min||0;
@@ -1782,6 +1768,31 @@ function renderSkeletonTable(wrapId,rows,cols){
   if(!w)return;
   w.innerHTML='<div style="border:1px solid var(--border);border-radius:12px;overflow:hidden">'+skeletonTableRows(rows||5,cols||['sk-w-20','sk-w-30','sk-w-40','sk-w-20','sk-w-15'])+'</div>';
 }
+function isQuotaResponseError(r){
+  if(!r)return false;
+  if(r.quotaHit||r._httpStatus===503||r._httpStatus===429)return true;
+  var m=String(r.error||'').toLowerCase();
+  if(m.indexOf('capacity')!==-1||m.indexOf('quota')!==-1||m.indexOf('resource_exhausted')!==-1||m.indexOf('busy')!==-1)return true;
+  return false;
+}
+function showQuotaWarning(msg){
+  var w=$('quotaWarning');var t=$('quotaWarningMsg');
+  if(t)t.innerText=msg||'Temporary capacity limit reached. Please wait a few minutes and retry.';
+  if(w)w.classList.add('show');
+}
+function hideQuotaWarning(){
+  var w=$('quotaWarning');if(w)w.classList.remove('show');
+}
+function retryQuotaNow(){
+  QUOTA_BACKOFF_UNTIL=0;
+  hideQuotaWarning();
+  loadAll(true);loadQuota(true);loadMyEmails();
+  toast('🔄 Retrying…');
+}
+function renderErrorState(wrapId,msg,retryFn){
+  var w=$(wrapId);if(!w)return;
+  w.innerHTML='<div class="empty error-box"><div class="ico">⚠️</div><div>'+esc(msg||'Could not load data')+'</div><button class="btn ghost small retry-btn" onclick="'+(retryFn||'loadAll(true)')+'">🔄 Retry</button></div>';
+}
 
 // ============ AUTH ============
 function switchAuthTab(x){
@@ -1798,7 +1809,11 @@ async function doEmailLogin(){
   try{var r=await api('/api/auth/login','POST',{email:email,password:password,remember:remember});
     if(r.ok){if(remember)setRememberedEmail(email);else setRememberedEmail(null);USER=r.user;enterApp();}
     else if(r.banned){BANNED_USER_EMAIL=email;$('loginView').classList.add('hidden');$('bannedView').classList.remove('hidden');if(r.reason)$('banReasonText').innerText=r.reason;}
-    else{$('loginError').innerText=r.error||'Login failed';$('loginError').classList.remove('hidden');}
+    else{
+      var em=r.error||'Login failed';
+      if(isQuotaResponseError(r)){em='⚠️ Server is temporarily at capacity. Please try again in a few minutes.';}
+      $('loginError').innerText=em;$('loginError').classList.remove('hidden');
+    }
   }catch(e){$('loginError').innerText='Error: '+e.message;$('loginError').classList.remove('hidden');}
   resetBtn(btn);
 }
@@ -1809,7 +1824,11 @@ async function doEmailRegister(){
   $('registerError').classList.add('hidden');var btn=$('registerBtn');setBtnLoading(btn,'✨ Creating account...');
   try{var r=await api('/api/auth/register','POST',{name:name,email:email,password:password});
     if(r.ok){USER=r.user;enterApp();}
-    else{$('registerError').innerText=r.error||'Registration failed';$('registerError').classList.remove('hidden');}
+    else{
+      var em=r.error||'Registration failed';
+      if(isQuotaResponseError(r))em='⚠️ Server is temporarily at capacity. Please try again in a few minutes.';
+      $('registerError').innerText=em;$('registerError').classList.remove('hidden');
+    }
   }catch(e){$('registerError').innerText='Error: '+e.message;$('registerError').classList.remove('hidden');}
   resetBtn(btn);
 }
@@ -1852,26 +1871,35 @@ async function connectGmail(){
   resetBtn(btn);
 }
 
-// ============ LIVE DATA POLLING ============
+// ============ LIVE DATA POLLING (v2.2.6 - throttled) ============
 var QUOTA_LAST_SYNC=0,QUOTA_TIMER=null;
 function startQuotaLive(){
   if(QUOTA_TIMER)clearInterval(QUOTA_TIMER);
-  QUOTA_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;var v=$('myView');if(!v||v.classList.contains('hidden'))return;var stale=(Date.now()-QUOTA_LAST_SYNC)>55000;loadQuota(stale);},15000);
+  QUOTA_TIMER=setInterval(function(){
+    if(document.visibilityState!=='visible')return;
+    var v=$('myView');if(!v||v.classList.contains('hidden'))return;
+    if(Date.now()<QUOTA_BACKOFF_UNTIL)return;
+    var stale=(Date.now()-QUOTA_LAST_SYNC)>60000;
+    loadQuota(stale);
+  },QUOTA_LIVE_MS);
 }
 function startLiveDataPolling(){
   if(RECIP_LIVE_TIMER)clearInterval(RECIP_LIVE_TIMER);
   RECIP_LIVE_TIMER=setInterval(function(){
     if(document.visibilityState!=='visible')return;
+    if(Date.now()<QUOTA_BACKOFF_UNTIL)return;
     if(!$('myView').classList.contains('hidden'))loadRecipients(true);
   },LIVE_REFRESH_MS);
   if(MYEMAIL_LIVE_TIMER)clearInterval(MYEMAIL_LIVE_TIMER);
   MYEMAIL_LIVE_TIMER=setInterval(function(){
     if(document.visibilityState!=='visible')return;
+    if(Date.now()<QUOTA_BACKOFF_UNTIL)return;
     if(!$('myView').classList.contains('hidden'))loadMyEmails(true);
   },LIVE_REFRESH_MS);
 }
 function refreshQuotaNow(){
   var b=$('quotaRefreshBtn');if(b){b.disabled=true;b.innerText='⏳ Syncing…';}
+  QUOTA_BACKOFF_UNTIL=0;
   api('/api/quota?force=1').then(function(r){
     if(b){b.disabled=false;b.innerText='🔄 Sync now';}
     loadQuota(false);
@@ -1891,15 +1919,24 @@ function showQuotaDiagnose(){
 }
 function startAutoRefresh(){
   if(POLL_TIMER)clearInterval(POLL_TIMER);
-  POLL_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('myView').classList.contains('hidden')){loadQuota();loadAll();loadMyEmails();}},45000);
+  POLL_TIMER=setInterval(function(){
+    if(document.visibilityState!=='visible')return;
+    if(Date.now()<QUOTA_BACKOFF_UNTIL)return;
+    if(!$('myView').classList.contains('hidden')){loadQuota();loadAll();loadMyEmails();}
+  },AUTO_REFRESH_MS);
 }
 function startScheduledCheck(){
   if(SCHED_CHECK_TIMER)clearInterval(SCHED_CHECK_TIMER);
-  function tick(){if(!USER)return;api('/api/scheduled/check','POST',{}).then(function(r){if(r&&r.ok&&r.processed>0){toast('⏰ '+r.processed+' scheduled batch sent');loadAll();loadMyEmails();loadQuota(true);}}).catch(function(){});}
+  function tick(){
+    if(!USER)return;
+    if(Date.now()<QUOTA_BACKOFF_UNTIL)return;
+    api('/api/scheduled/check','POST',{}).then(function(r){
+      if(r&&r.ok&&r.processed>0){toast('⏰ '+r.processed+' scheduled batch sent');loadAll();loadMyEmails();loadQuota(true);}
+    }).catch(function(){});
+  }
   setTimeout(tick,3000);
-  SCHED_CHECK_TIMER=setInterval(tick,20000);
+  SCHED_CHECK_TIMER=setInterval(tick,60000);
 }
-// NEW: fast inbox polling
 function startLiveInbox(){
   if(LIVE_INBOX_TIMER)clearInterval(LIVE_INBOX_TIMER);
   LIVE_INBOX_TIMER=setInterval(function(){
@@ -1921,29 +1958,21 @@ function switchMain(x){
 }
 function startAdminLive(){
   if(ADMIN_LIVE_TIMER)clearInterval(ADMIN_LIVE_TIMER);
-  ADMIN_LIVE_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('adminView').classList.contains('hidden')){loadAdminUsersPage(adminPage,true);loadAdminAIUsage();loadAdminBanned();loadAdminRequests();loadAdminDeleted();loadOcrMonitor();loadOcrQuota();}},20000);
+  ADMIN_LIVE_TIMER=setInterval(function(){
+    if(document.visibilityState!=='visible')return;
+    if(Date.now()<QUOTA_BACKOFF_UNTIL)return;
+    if(!$('adminView').classList.contains('hidden')){loadAdminUsersPage(adminPage,true);loadAdminAIUsage();loadAdminBanned();loadAdminRequests();loadAdminDeleted();loadOcrMonitor();loadOcrQuota();}
+  },ADMIN_LIVE_MS);
   if(ADMIN_EMAIL_LIVE_TIMER)clearInterval(ADMIN_EMAIL_LIVE_TIMER);
-  ADMIN_EMAIL_LIVE_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('adminView').classList.contains('hidden'))loadAdminEmailsPage(adminEmailsPage,true);},25000);
+  ADMIN_EMAIL_LIVE_TIMER=setInterval(function(){
+    if(document.visibilityState!=='visible')return;
+    if(Date.now()<QUOTA_BACKOFF_UNTIL)return;
+    if(!$('adminView').classList.contains('hidden'))loadAdminEmailsPage(adminEmailsPage,true);
+  },ADMIN_EMAIL_LIVE_MS);
 }
 
-function fmtRoundHour(dt){
-  var h=dt.getHours();
-  var ampm=h>=12?'PM':'AM';
-  var h12=h%12||12;
-  return h12+':00 '+ampm;
-}
-function calcNextAutoRunHour(lastRunMs){
-  var d=new Date(lastRunMs);
-  d.setMinutes(0,0,0);
-  d.setHours(d.getHours()+1);
-  if(d.getTime()<=Date.now()){
-    var now=new Date();
-    now.setMinutes(0,0,0);
-    now.setHours(now.getHours()+1);
-    d=now;
-  }
-  return d;
-}
+function fmtRoundHour(dt){var h=dt.getHours();var ampm=h>=12?'PM':'AM';var h12=h%12||12;return h12+':00 '+ampm;}
+function calcNextAutoRunHour(lastRunMs){var d=new Date(lastRunMs);d.setMinutes(0,0,0);d.setHours(d.getHours()+1);if(d.getTime()<=Date.now()){var now=new Date();now.setMinutes(0,0,0);now.setHours(now.getHours()+1);d=now;}return d;}
 
 // ============ QUICK AUTO ============
 function loadQuickAuto(){
@@ -1956,16 +1985,8 @@ function loadQuickAuto(){
     $('qWindowEnabled').checked=p.sendWindowEnabled===true;$('qWindowConfig').style.display=p.sendWindowEnabled?'block':'none';
     $('qWindowStart').value=toTimeInputVal(p.sendWindowStart!==undefined?p.sendWindowStart:9);$('qWindowEnd').value=toTimeInputVal(p.sendWindowEnd!==undefined?p.sendWindowEnd:18);
     $('qTotalSent').innerText=p.totalAutoSent||0;
-    if(p.lastAutoSendRun){
-      $('qLastRun').innerText=fmtTimeAgo(p.lastAutoSendRun);
-      var lastMs=new Date(p.lastAutoSendRun).getTime();
-      var nextDt=calcNextAutoRunHour(lastMs);
-      $('qNextRun').innerText=fmtRoundHour(nextDt);
-    } else {
-      $('qLastRun').innerText='Never';
-      var now=new Date();now.setMinutes(0,0,0);now.setHours(now.getHours()+1);
-      $('qNextRun').innerText=fmtRoundHour(now);
-    }
+    if(p.lastAutoSendRun){$('qLastRun').innerText=fmtTimeAgo(p.lastAutoSendRun);var lastMs=new Date(p.lastAutoSendRun).getTime();var nextDt=calcNextAutoRunHour(lastMs);$('qNextRun').innerText=fmtRoundHour(nextDt);}
+    else{$('qLastRun').innerText='Never';var now=new Date();now.setMinutes(0,0,0);now.setHours(now.getHours()+1);$('qNextRun').innerText=fmtRoundHour(now);}
     $('qQuietEnabled').checked=p.quietEnabled===true;$('qQuietConfig').style.display=p.quietEnabled?'block':'none';
     $('qQuietStart').value=toTimeInputVal(p.quietStart!==undefined?p.quietStart:22);$('qQuietEnd').value=toTimeInputVal(p.quietEnd!==undefined?p.quietEnd:7);
     var tsel=$('qAutoTemplateId');tsel.innerHTML='<option value="">(First available / default)</option>';
@@ -1990,9 +2011,7 @@ function updateDelayHint(){
 }
 function updateDailyLimitHint(){
   var el=$('qDailyLimit'),hint=$('qDailyLimitHint');if(!el||!hint)return;
-  var max=GMAIL_DAILY_MAX;
-  var remMax=getDailyLimitMax();
-  var n=parseInt(el.value,10);
+  var max=GMAIL_DAILY_MAX;var remMax=getDailyLimitMax();var n=parseInt(el.value,10);
   if(isNaN(n)||n<1){el.value=1;n=1;}
   if(n>remMax){el.value=remMax;n=remMax;}
   el.max=remMax;
@@ -2018,8 +2037,7 @@ function saveQuickAuto(){
   var bs=parseInt($('qBatchSize').value)||5;var sd=parseInt($('qDelay').value);if(isNaN(sd)||sd<0)sd=20;if(sd>120)sd=120;
   var qStart=parseTimeInputVal($('qQuietStart').value);var qEnd=parseTimeInputVal($('qQuietEnd').value);
   var wStart=parseTimeInputVal($('qWindowStart').value);var wEnd=parseTimeInputVal($('qWindowEnd').value);
-  var dl=parseInt($('qDailyLimit').value,10);
-  var remMax=getDailyLimitMax();
+  var dl=parseInt($('qDailyLimit').value,10);var remMax=getDailyLimitMax();
   if(isNaN(dl)||dl<1)dl=GMAIL_DAILY_MAX;
   if(dl>remMax)dl=remMax;
   if(dl>GMAIL_DAILY_MAX)dl=GMAIL_DAILY_MAX;
@@ -2096,13 +2114,29 @@ function checkQuietStatus(){
 function startHourlyAutoSend(){
   setTimeout(function(){runAutoCheck();},8000);
   if(HOURLY_TIMER)clearInterval(HOURLY_TIMER);
-  HOURLY_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;runAutoCheck();},60*60*1000);
+  HOURLY_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(Date.now()<QUOTA_BACKOFF_UNTIL)return;runAutoCheck();},60*60*1000);
 }
-function runAutoCheck(){api('/api/auto-send-check','POST').then(function(r){if(r.ok&&r.sent>0){toast('🤖 Auto-sent: '+r.sent+' emails');loadAll();loadQuota(true);loadMyEmails();loadQuickAuto();}}).catch(function(){});}
+function runAutoCheck(){
+  if(_statsReqInFlight)return;
+  _statsReqInFlight=true;
+  api('/api/auto-send-check','POST').then(function(r){
+    _statsReqInFlight=false;
+    if(r.ok&&r.sent>0){toast('🤖 Auto-sent: '+r.sent+' emails');loadAll();loadQuota(true);loadMyEmails();loadQuickAuto();}
+  }).catch(function(){_statsReqInFlight=false;});
+}
 function loadQuota(force){
+  if(_quotaReqInFlight)return;
+  if(Date.now()<QUOTA_BACKOFF_UNTIL){return;}
+  _quotaReqInFlight=true;
   var url='/api/quota?all=1'+(force?'&force=1':'');
   api(url).then(function(r){
-    if(!r.ok){if(r.noTokens){$('quotaMailflowSent').innerText='—';$('quotaGmailSent').innerText='—';$('quotaSent').innerText='—';}return;}
+    _quotaReqInFlight=false;
+    if(!r.ok){
+      if(isQuotaResponseError(r)){QUOTA_BACKOFF_UNTIL=Date.now()+QUOTA_BACKOFF_MS;showQuotaWarning(r.error);return;}
+      if(r.noTokens){$('quotaMailflowSent').innerText='—';$('quotaGmailSent').innerText='—';$('quotaSent').innerText='—';}
+      return;
+    }
+    hideQuotaWarning();
     MY_QUOTA={sent:r.sent,limit:r.limit,remaining:r.remaining,mailflowSent:r.mailflowSent,gmailSent:r.gmailSent,allTime:r.allTime||null,gmailDailyMax:r.gmailDailyMax||500};
     if(r.gmailDailyMax)GMAIL_DAILY_MAX=r.gmailDailyMax;
     try{updateDailyLimitHint();}catch(e){}
@@ -2116,7 +2150,7 @@ function loadQuota(force){
     var pct=(r.limit>0)?(r.sent/r.limit)*100:0;
     if($('quotaFill')){$('quotaFill').style.width=Math.min(100,pct)+'%';$('quotaFill').className='quota-fill'+(pct>90?' crit':(pct>70?' warn':''));}
     if($('quotaHint')){var age=fmtTimeAgo(new Date(QUOTA_LAST_SYNC).toISOString());if(r.live){var src=r.gmailSource==='gmraw'?'Gmail Sent folder':(r.gmailSource==='since'?'Gmail Sent (since)':'Gmail Sent folder');$('quotaHint').innerHTML='✅ Live — '+src+' ('+age+').';}else if(r.imapAvailable&&r.gmailError){$('quotaHint').innerHTML='⚠️ '+esc(String(r.gmailError).substring(0,70))+' <a href="#" onclick="showQuotaDiagnose();return false;" style="color:#7dd3fc">(check)</a>';}else{$('quotaHint').innerHTML='⚠️ Only MailFlow count. <a href="#" onclick="showQuotaDiagnose();return false;" style="color:#7dd3fc">(check)</a>';}}
-  }).catch(function(){});
+  }).catch(function(){_quotaReqInFlight=false;});
 }
 
 // ============ AI ANALYSIS ============
@@ -2466,18 +2500,8 @@ function openSaveRecipientsModal(items,sourceLabel){
   $('saveRecipInfo').innerHTML='<div><b>'+items.length+' recipient'+(items.length>1?'s':'')+'</b> ready to save'+(sourceLabel?' ('+esc(sourceLabel)+')':'')+'</div><div style="margin-top:6px;font-size:11px;color:var(--text3)">Choose what happens after saving:</div>';
   try{setSaveScheduleDate(new Date(Date.now()+60*60*1000));}catch(e){}
   renderSaveSchedulePresets();
-  if($('saveSendTemplateId')){
-    var cur=$('saveSendTemplateId').value;
-    var st=$('saveSendTemplateId');st.innerHTML='';
-    if(!TEMPLATES.length)st.innerHTML='<option value="">(No templates)</option>';
-    else TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;if(t.id===cur)o.selected=true;st.appendChild(o);});
-  }
-  if($('saveSchedTemplateId')){
-    var cur2=$('saveSchedTemplateId').value;
-    var st2=$('saveSchedTemplateId');st2.innerHTML='';
-    if(!TEMPLATES.length)st2.innerHTML='<option value="">(No templates)</option>';
-    else TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;if(t.id===cur2)o.selected=true;st2.appendChild(o);});
-  }
+  if($('saveSendTemplateId')){var cur=$('saveSendTemplateId').value;var st=$('saveSendTemplateId');st.innerHTML='';if(!TEMPLATES.length)st.innerHTML='<option value="">(No templates)</option>';else TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;if(t.id===cur)o.selected=true;st.appendChild(o);});}
+  if($('saveSchedTemplateId')){var cur2=$('saveSchedTemplateId').value;var st2=$('saveSchedTemplateId');st2.innerHTML='';if(!TEMPLATES.length)st2.innerHTML='<option value="">(No templates)</option>';else TEMPLATES.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.text=t.name;if(t.id===cur2)o.selected=true;st2.appendChild(o);});}
   $('saveSendOptSignature').checked=true;$('saveSendOptLogo').checked=true;$('saveSendOptAttachments').checked=false;
   $('saveSendFilePicker').classList.add('hidden');
   $('saveSchedOptSignature').checked=true;$('saveSchedOptLogo').checked=true;$('saveSchedOptAttachments').checked=false;
@@ -2636,7 +2660,6 @@ async function confirmSaveRecipients(){
     return;
   }
 
-  /* save-only mode */
   var templateId=$('tplSelect')?$('tplSelect').value:'';
   try{
     var saveRes2=await api('/api/recipients','POST',{list:items,templateId:templateId,saveOnly:true});
@@ -2705,8 +2728,6 @@ function submitBulk(){
   if(!$('tplSelect').value)return toast('Please select a template first','err');
   openSaveRecipientsModal(r.valid,'Bulk');
 }
-
-// NEW: Bulk file upload
 function setBulkFileStatus(msg,type){
   var el=$('bulkFileStatus');if(!el)return;
   if(!msg){el.className='bulk-file-status';el.innerHTML='';return;}
@@ -2744,7 +2765,7 @@ async function processBulkFile(file){
     var combined=existing?(existing+'\n'+lines.join('\n')):lines.join('\n');
     $('bulkInput').value=combined;
     updateBulk();
-    setBulkFileStatus('✅ Loaded <b>'+r.total+'</b> emails from <b>'+esc(file.name)+'</b>'+(r.duplicatesSkipped>0?(' · '+r.duplicatesSkipped+' duplicates skipped inside file'):'')+'. Review below and click "Add All".','ok');
+    setBulkFileStatus('✅ Loaded <b>'+r.total+'</b> emails from <b>'+esc(file.name)+'</b>'+(r.duplicatesSkipped>0?(' · '+r.duplicatesSkipped+' duplicates skipped'):'')+'. Review below and click "Add All".','ok');
   }catch(e){
     setBulkFileStatus('❌ '+(e.message||'File processing failed'),'err');
   }
@@ -2967,7 +2988,6 @@ function renderOCRResultCards(){
 function onOCRCardEdit(idx,val){if(OCR_FILES[idx]){OCR_FILES[idx].text=val;OCR_FILES[idx].emails=val.split(/\s+/).map(function(s){return s.trim().replace(/[.,;:]+$/,'').toLowerCase();}).filter(function(s){return s&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);});}}
 function collectOCREmails(){
   var all=[];
-  OCR_FILES.forEach(function(x){if(x.status==='done'||x.status==='noemail'||x.status==='failed'){return;}if(x.emails&&x.emails.length)all=all.concat(x.emails);});
   OCR_FILES.forEach(function(x){if(x.status==='done'&&x.emails&&x.emails.length)all=all.concat(x.emails);});
   var uniq=[];var seen={};
   all.forEach(function(e){var k=String(e||'').toLowerCase();if(!k||seen[k])return;seen[k]=1;uniq.push(k);});
@@ -3030,7 +3050,8 @@ function imgDownload(){var cur=IMG_PREVIEW.list[IMG_PREVIEW.idx];if(!cur)return;
 function loadAll(isManual){
   if(isManual)toast('🔄 Refreshed');
   api('/api/stats').then(function(r){
-    if(!r.ok)return;
+    if(!r.ok){if(isQuotaResponseError(r)){QUOTA_BACKOFF_UNTIL=Date.now()+QUOTA_BACKOFF_MS;showQuotaWarning(r.error);}return;}
+    hideQuotaWarning();
     $('stTotal').innerText=r.stats.total;
     $('stSent').innerText=r.stats.sent;
     $('stOpened').innerText=r.stats.opened||0;
@@ -3045,6 +3066,9 @@ function onRecipSearchChange(){
   recipSearchTimer=setTimeout(function(){recipPage=1;loadRecipients();},400);
 }
 function loadRecipients(silent){
+  if(_recipReqInFlight)return;
+  if(Date.now()<QUOTA_BACKOFF_UNTIL&&silent)return;
+  _recipReqInFlight=true;
   var q=($('recipSearch').value||'').trim();
   var stF=$('statusFilter').value;
   var url='/api/recipients?page='+recipPage+'&limit='+recipPerPage;
@@ -3052,7 +3076,13 @@ function loadRecipients(silent){
   if(stF&&stF!=='all')url+='&status='+encodeURIComponent(stF);
   if(!silent&&!CURRENT_ROWS.length)renderSkeletonTable('tableWrap',6,['sk-w-20','sk-w-30','sk-w-40','sk-w-20','sk-w-20','sk-w-15']);
   api(url).then(function(r){
-    if(!r.ok){if(!silent)$('tableWrap').innerHTML='<div class="empty">Error loading</div>';return;}
+    _recipReqInFlight=false;
+    if(!r.ok){
+      if(isQuotaResponseError(r)){QUOTA_BACKOFF_UNTIL=Date.now()+QUOTA_BACKOFF_MS;showQuotaWarning(r.error);if(!silent)renderErrorState('tableWrap','Server busy — temporary capacity limit. Retry in a few minutes.','loadRecipients()');return;}
+      if(!silent)renderErrorState('tableWrap',r.error||'Error loading recipients','loadRecipients()');
+      return;
+    }
+    hideQuotaWarning();
     CURRENT_ROWS=r.recipients||[];
     var total=r.pagination?r.pagination.total:0;
     var totalPages=r.pagination?r.pagination.totalPages:1;
@@ -3077,7 +3107,7 @@ function loadRecipients(silent){
       $('recipPrevBtn').disabled=recipPage<=1;$('recipNextBtn').disabled=recipPage>=totalPages;
     }else $('recipPagination').style.display='none';
     updateBulkBar();
-  });
+  }).catch(function(){_recipReqInFlight=false;if(!silent)renderErrorState('tableWrap','Network error','loadRecipients()');});
 }
 function renderRecipientsTable(){
   _recipRenderRAF=null;if(!_pendingRecipData)return;
@@ -3139,6 +3169,33 @@ function toggleAll(c){
   loadRecipients();
 }
 function selectAllVisible(){CURRENT_ROWS.forEach(function(r){SELECTED[r.id]=true;});loadRecipients();}
+async function selectAllPages(){
+  var btn=$('selectAllPagesBtn');
+  if(btn)setBtnLoading(btn,'⏳');
+  try{
+    var q=($('recipSearch').value||'').trim();
+    var stF=$('statusFilter').value;
+    var url='/api/recipients/all-ids';
+    var params=[];
+    if(q)params.push('search='+encodeURIComponent(q));
+    if(stF&&stF!=='all')params.push('status='+encodeURIComponent(stF));
+    if(params.length)url+='?'+params.join('&');
+    var r=await api(url);
+    if(!r.ok){
+      if(btn)resetBtn(btn);
+      if(isQuotaResponseError(r)){toast('⚠️ Server busy — retry in a few minutes','err');return;}
+      toast('❌ '+(r.error||'Failed to load all IDs'),'err');return;
+    }
+    var ids=r.ids||[];
+    ids.forEach(function(id){SELECTED[id]=true;});
+    toast('✅ Selected all '+ids.length+' recipients across all pages');
+    if(btn)resetBtn(btn);
+    loadRecipients();
+  }catch(e){
+    if(btn)resetBtn(btn);
+    toast('❌ '+(e.message||'Failed'),'err');
+  }
+}
 function clearSelection(){SELECTED={};loadRecipients();}
 function updateBulkBar(){
   var ids=Object.keys(SELECTED);var b=$('bulkActionBar');
@@ -3469,13 +3526,22 @@ function onMyEmailSearchChange(){
   myEmailSearchTimer=setTimeout(function(){myEmailPage=1;loadMyEmails();},400);
 }
 function loadMyEmails(silent){
+  if(_myEmailReqInFlight)return;
+  if(Date.now()<QUOTA_BACKOFF_UNTIL&&silent)return;
+  _myEmailReqInFlight=true;
   var range=$('myEmailRange')?$('myEmailRange').value:'all';
   var q=($('myEmailSearch').value||'').trim();
   var url='/api/my-emails?range='+encodeURIComponent(range)+'&page='+myEmailPage+'&limit='+myEmailPerPage;
   if(q)url+='&search='+encodeURIComponent(q);
   if(!silent&&!MY_EMAILS.length)renderSkeletonTable('myEmailsWrap',6,['sk-w-20','sk-w-30','sk-w-40','sk-w-20','sk-w-20']);
   api(url).then(function(r){
-    if(!r.ok)return;
+    _myEmailReqInFlight=false;
+    if(!r.ok){
+      if(isQuotaResponseError(r)){QUOTA_BACKOFF_UNTIL=Date.now()+QUOTA_BACKOFF_MS;showQuotaWarning(r.error);if(!silent)renderErrorState('myEmailsWrap','Server busy — retry in a few minutes.','loadMyEmails()');return;}
+      if(!silent)renderErrorState('myEmailsWrap',r.error||'Error loading emails','loadMyEmails()');
+      return;
+    }
+    hideQuotaWarning();
     MY_EMAILS=(r.emails||[]);
     if(r.pagination){myEmailPage=r.pagination.page;myEmailTotal=r.pagination.total;myEmailTotalPages=r.pagination.totalPages;}
     if(silent){
@@ -3483,7 +3549,7 @@ function loadMyEmails(silent){
       if(_myEmailRenderRAF)cancelAnimationFrame(_myEmailRenderRAF);
       _myEmailRenderRAF=requestAnimationFrame(renderMyEmails);
     }else renderMyEmails();
-  });
+  }).catch(function(){_myEmailReqInFlight=false;if(!silent)renderErrorState('myEmailsWrap','Network error','loadMyEmails()');});
 }
 function renderMyEmails(){
   _myEmailRenderRAF=null;var w=$('myEmailsWrap');
@@ -3935,13 +4001,17 @@ document.addEventListener('DOMContentLoaded',function(){
       if(e.key==='0')imgZoomReset();
     }
   });
-  // Stepper keydown support (arrow up/down in num inputs)
   ['qBatchSize','qDelay','qDailyLimit'].forEach(function(id){
     var el=$(id);if(!el)return;
     el.addEventListener('keydown',function(e){
       if(e.key==='ArrowUp'){e.preventDefault();var mx=(id==='qDailyLimit')?getDailyLimitMax():null;stepNum(id,1,(id==='qDelay')?0:1,mx);}
       else if(e.key==='ArrowDown'){e.preventDefault();var mx=(id==='qDailyLimit')?getDailyLimitMax():null;stepNum(id,-1,(id==='qDelay')?0:1,mx);}
     });
+  });
+  document.addEventListener('visibilitychange',function(){
+    if(document.visibilityState==='visible'){
+      if(USER&&Date.now()>QUOTA_BACKOFF_UNTIL){if(!$('myView').classList.contains('hidden')){loadRecipients(true);loadMyEmails(true);}}
+    }
   });
 });
 (function(){
