@@ -35,16 +35,14 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Robo
 body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse at top left, rgba(56, 189, 248, 0.08), transparent 50%), radial-gradient(ellipse at bottom right, rgba(168, 85, 247, 0.08), transparent 50%); pointer-events: none; z-index: 0; }
 .hidden { display: none !important; }
 
-/* ========== FIX #4: Remove number input spinners everywhere ========== */
+/* FIX: Remove number input spinners everywhere */
 input[type=number]::-webkit-outer-spin-button,
 input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !important; appearance: none !important; margin: 0 !important; }
 input[type=number] { -moz-appearance: textfield !important; appearance: textfield !important; }
 
-/* ========== FIX #11: Remove textarea resize handles everywhere ========== */
+/* FIX: Remove textarea resize handles everywhere */
 textarea { resize: none !important; }
 .bulk-area, .ban-reason-input { resize: none !important; }
-
-/* Remove select arrow double in some browsers */
 select { appearance: none; -webkit-appearance: none; }
 select::-ms-expand { display: none; }
 
@@ -61,6 +59,13 @@ button, input, textarea, select { font-family: inherit; font-size: 15px; }
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @keyframes fadeInRow { from { opacity: 0; background: rgba(34, 197, 94, 0.18); } to { opacity: 1; background: transparent; } }
 @keyframes fadeOutRow { from { opacity: 1; } to { opacity: 0; transform: translateX(-20px); } }
+/* FIX: Skeleton shimmer animation */
+@keyframes shimmer { 0% { background-position: -800px 0; } 100% { background-position: 800px 0; } }
+.skeleton { background: linear-gradient(90deg, rgba(30, 41, 59, 0.4) 25%, rgba(51, 65, 85, 0.7) 37%, rgba(30, 41, 59, 0.4) 63%); background-size: 800px 100%; animation: shimmer 1.4s infinite linear; border-radius: 6px; display: inline-block; }
+.skeleton-row { padding: 14px 12px; border-bottom: 1px solid rgba(26, 35, 56, 0.5); display: flex; align-items: center; gap: 12px; }
+.skeleton-row .sk-line { height: 12px; border-radius: 6px; }
+.sk-w-20 { width: 20%; } .sk-w-30 { width: 30%; } .sk-w-40 { width: 40%; } .sk-w-60 { width: 60%; } .sk-w-80 { width: 80%; }
+.skeleton-card { padding: 14px; background: rgba(10, 14, 26, 0.5); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; }
 select, option { background-color: #0a0e1a !important; color: #e2e8f0 !important; }
 select:focus { outline: none; border-color: #38bdf8 !important; }
 .auth-wrap { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; position: relative; z-index: 1; background: radial-gradient(circle at 20% 10%, rgba(56, 189, 248, 0.12), transparent 40%), radial-gradient(circle at 80% 90%, rgba(168, 85, 247, 0.12), transparent 40%); }
@@ -118,8 +123,6 @@ select:focus { outline: none; border-color: #38bdf8 !important; }
 .sidebar { width: 300px; flex-shrink: 0; position: sticky; top: 140px; }
 .main-area { flex: 1; min-width: 0; }
 @media(max-width: 1000px) { .page-layout { flex-direction: column; } .sidebar { width: 100%; position: static; order: 2; } .main-area { order: 1; } }
-
-/* ========== FIX #3: Dashboard stats — 6 cards, nice layout ========== */
 .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
 @media(min-width: 640px) { .stats { grid-template-columns: repeat(3, 1fr); } }
 @media(min-width: 1000px) { .stats { grid-template-columns: repeat(6, 1fr); } }
@@ -140,7 +143,6 @@ select:focus { outline: none; border-color: #38bdf8 !important; }
 .stat.s4 .value { color: var(--amber); }
 .stat.s5 .value { color: var(--purple); }
 .stat.s6 .value { color: var(--pink); }
-
 .panel { background: var(--panel); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
 @media(max-width: 640px) { .panel { padding: 12px; border-radius: 14px; } }
 .panel h2 { font-size: 15px; margin-bottom: 14px; color: var(--text); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; font-weight: 700; }
@@ -365,8 +367,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 .setup-steps ol { padding-left: 20px; font-size: 13px; color: #cbd5e1; line-height: 2; }
 .setup-steps a { color: var(--cyan); text-decoration: none; }
 .setup-steps code { background: rgba(56, 189, 248, 0.1); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: #7dd3fc; font-family: monospace; }
-
-/* ========== FIX #10: Sender memory nicer cards + count badge ========== */
 .memory-item { padding: 14px; background: linear-gradient(135deg, rgba(30, 41, 59, 0.55), rgba(15, 23, 42, 0.65)); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; transition: 0.2s; }
 .memory-item:hover { border-color: rgba(56, 189, 248, 0.35); transform: translateY(-1px); }
 .memory-item .top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
@@ -379,7 +379,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 .memory-count-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 800; padding: 5px 12px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(168, 85, 247, 0.15)); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 20px; white-space: nowrap; }
 .memory-count-badge::before { content: '📨'; font-size: 11px; }
 .memory-count-badge .num { color: #fff; font-weight: 900; }
-
 .ai-profile-banner { background: linear-gradient(135deg, rgba(168, 85, 247, 0.12), rgba(56, 189, 248, 0.08)); border: 1px solid rgba(168, 85, 247, 0.35); border-radius: 12px; padding: 12px 16px; margin-bottom: 14px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .ai-profile-banner .ico { font-size: 22px; }
 .ai-profile-banner .txt { font-size: 12px; color: #c4b5fd; font-weight: 600; flex: 1; min-width: 160px; }
@@ -457,13 +456,10 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 .ocr-card .head .st.queued { background: rgba(100, 116, 139, 0.15); color: #94a3b8; }
 .ocr-card .head .st.retrying { background: rgba(168, 85, 247, 0.15); color: #c4b5fd; }
 .ocr-card textarea { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 12px; font-family: monospace; min-height: 80px; resize: none !important; outline: none; }
-
-/* ========== FIX #8 & #9: Pagination component (reusable) ========== */
 .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 14px; flex-wrap: wrap; padding: 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; }
 .pagination button { padding: 8px 14px; font-size: 12px; font-weight: 600; border-radius: 8px; border: 1px solid var(--border2); background: var(--bg2); color: #cbd5e1; cursor: pointer; }
 .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
 .pagination .page-info { font-size: 12px; color: var(--text2); font-weight: 600; padding: 6px 12px; background: var(--bg3); border-radius: 8px; }
-
 .ban-reason-input { width: 100%; background: var(--bg2); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 14px; outline: none; resize: none !important; min-height: 90px; font-family: inherit; }
 .ban-ip-toggle { display: flex; align-items: center; gap: 8px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 10px; padding: 12px; margin-top: 10px; cursor: pointer; }
 .ban-ip-toggle input[type=checkbox] { accent-color: var(--amber); width: 18px; height: 18px; cursor: pointer; }
@@ -590,7 +586,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 .save-send-config .ttl { font-size: 10px; color: #86efac; text-transform: uppercase; font-weight: 700; margin-bottom: 8px; }
 .save-sched-config { background: rgba(167, 139, 250, 0.08); border: 1px solid rgba(167, 139, 250, 0.4); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
 .save-sched-config .ttl { font-size: 10px; color: #c4b5fd; text-transform: uppercase; font-weight: 700; margin-bottom: 10px; }
-
 @media(max-width: 768px) {
   .maintabs { position: fixed; bottom: 0; top: auto; left: 0; right: 0; padding: 6px 8px; z-index: 2000; border-top: 1px solid var(--border); border-bottom: none; justify-content: space-around; box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5); padding-bottom: calc(6px + env(safe-area-inset-bottom)); background: rgba(10, 14, 26, 0.98); }
   .maintab { flex: 1; text-align: center; font-size: 10px; padding: 8px 4px; }
@@ -682,7 +677,7 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 <div class="logo-top">
 <div class="mini-logo"><svg viewBox="0 0 64 64" role="img" aria-label="MailFlow Pro"><defs><linearGradient id="mfGradM" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset=".5" stop-color="#6366f1"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs><rect x="1.5" y="1.5" width="61" height="61" rx="15" fill="url(#mfGradM)"/><path d="M56 15 L8 37 L25 40.5 Z" fill="#2c3aa8" opacity=".92"/><path d="M56 15 L25 40.5 L26.5 57 Z" fill="#ffffff"/><path d="M56 15 L8 37 L25 40.5 L26.5 57 Z" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linejoin="round" opacity=".95"/><path d="M8 37 L25 40.5 L26.5 57" fill="none" stroke="#22d3ee" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="50.5" cy="15" r="4.4" fill="#fbbf24"/></svg></div>
 <span class="brand-text">MailFlow Pro</span>
-<span style="font-size:9px;color:var(--text3);font-weight:500;padding:2px 6px;background:rgba(56,189,248,.1);border-radius:6px;margin-left:4px">v2.2.3</span>
+<span style="font-size:9px;color:var(--text3);font-weight:500;padding:2px 6px;background:rgba(56,189,248,.1);border-radius:6px;margin-left:4px">v2.2.4</span>
 </div>
 <div class="user-chip">
 <img id="userAvatar" class="user-avatar" src="" style="display:none" alt="" decoding="async" onclick="openProfileModal()">
@@ -723,11 +718,8 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </aside>
 <main class="main-area">
-
 <div id="gmailBanner" class="notice-banner hidden" style="background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(239,68,68,.1));border-color:rgba(245,158,11,.4);color:#fcd34d;cursor:pointer" onclick="openGmailConnectModal()">📧 <b>Gmail not connected.</b> <span>Click here to connect your Gmail App Password.</span></div>
 <div class="quiet-banner" id="quietBanner"><span class="icn">🌙</span><div class="info"><div class="ttl">Quiet Hours Active</div><div class="dsc"><span>Auto-send is paused.</span> <span id="quietMsg"></span></div></div></div>
-
-<!-- ========== FIX #3: Dashboard stats — 6 cards ========== -->
 <div class="stats">
 <div class="stat s1"><div class="label">Recipients</div><div class="value" id="stTotal">0</div></div>
 <div class="stat s2"><div class="label">Sent</div><div class="value" id="stSent">0</div></div>
@@ -736,7 +728,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 <div class="stat s5"><div class="label">Scheduled</div><div class="value" id="stScheduled">0</div></div>
 <div class="stat s6"><div class="label">Total Sends</div><div class="value" id="stTotalSends">0</div></div>
 </div>
-
 <div class="panel quick-auto-panel">
 <h2><span>⚡ Quick Automation</span> <span id="quickStatus" style="color:var(--green);font-size:14px">●</span></h2>
 <div class="toggle-row">
@@ -805,7 +796,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 <div class="quick-stat"><span>Pending Recipients</span><b id="qPending">0</b></div>
 </div>
 </div>
-
 <div class="panel" style="max-width:none">
 <h2><span>📊 Gmail Sending Quota</span> <span class="quota-live" id="quotaLiveIndicator"><span class="dot"></span>Live</span></h2>
 <div class="info-box">
@@ -827,7 +817,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 <button class="btn ghost small" id="quotaRefreshBtn" onclick="refreshQuotaNow()" style="font-size:10px;padding:4px 10px">🔄 Sync now</button>
 </div>
 </div>
-
 <div class="panel">
 <h2><span>✉️ AI Email Composer</span> <span>Multi-provider AI</span></h2>
 <div class="composer-layout">
@@ -877,12 +866,10 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 </div>
-
 <div class="panel">
 <h2><span>📝 Templates</span> <span id="tplCount"></span></h2>
 <div id="tplList"></div>
 </div>
-
 <div class="panel" id="signaturePanel">
 <h2><span>✍️ Email Signature</span> <span>Appears in every email</span></h2>
 <div class="upload-area">
@@ -905,7 +892,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 <div class="sig-preview-outer" id="sigPreviewBox"><div style="font-size:11px;color:var(--text2);margin-bottom:8px">📧 Preview</div><div class="sig-preview-canvas" id="sigPreviewContent"></div></div>
 </div>
-
 <div class="panel" id="filesPanel">
 <h2><span>📎 Attachments</span> <span>Max 3MB per file</span></h2>
 <div class="upload-area">
@@ -919,7 +905,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 <div id="filesList"></div>
 </div>
-
 <div class="panel">
 <h2>➕ Add Recipients</h2>
 <div class="field"><label>Template</label><select id="tplSelect"></select></div>
@@ -972,8 +957,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 </div>
 </div>
-
-<!-- ========== FIX #7: Recipient Tracking — organized layout ========== -->
 <div class="panel">
 <h2><span>📊 Recipient Tracking</span> <span id="trackCount"></span> <span class="live-dot" title="Live updating"></span></h2>
 <div class="filter-bar">
@@ -1006,8 +989,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 <button id="recipNextBtn" onclick="recipPage=recipPage+1;loadRecipients()">Next →</button>
 </div>
 </div>
-
-<!-- ========== FIX #6: Email History — organized layout ========== -->
 <div class="panel">
 <h2><span>📧 Email History</span> <span id="myEmailCount"></span> <span class="live-dot" title="Live updating"></span></h2>
 <div class="filter-bar">
@@ -1100,8 +1081,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 <div class="container hidden" id="testView">
 <div class="panel" style="background:linear-gradient(135deg,rgba(168,85,247,.08),rgba(56,189,248,.08))"><h2>🤖 AI Tools</h2></div>
 <div class="panel"><h2>⏰ Best Sending Time</h2><div id="bestTimeContent"><div class="empty">Click analyze</div></div><button class="btn" onclick="loadBestTime()" style="margin-top:12px">✨ Analyze</button></div>
-
-<!-- FIX #9: Email Predictions with pagination -->
 <div class="panel">
 <h2><span>📊 Email Predictions</span> <span id="aiPredictionsCount"></span></h2>
 <div id="aiPredictionsWrap" class="tbl-wrap"></div>
@@ -1111,8 +1090,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 <button id="aiPredNextBtn" onclick="aiPredPage=aiPredPage+1;renderAIPredictions()">Next →</button>
 </div>
 </div>
-
-<!-- FIX #8: Sender Memory with pagination -->
 <div class="panel">
 <h2><span>🧠 Sender Memory</span> <span id="sendersCount"></span></h2>
 <input type="text" class="search-bar" id="senderSearch" placeholder="Search senders..." oninput="onSenderSearchChange()" style="margin-bottom:12px">
@@ -1395,8 +1372,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 <div class="radio"></div>
 </div>
 </div>
-
-<!-- Save & Send Now config -->
 <div id="saveSendConfig" class="save-send-config hidden">
 <div class="ttl">📧 Send Options</div>
 <div class="template-picker" style="background:rgba(34,197,94,.06);border-color:rgba(34,197,94,.3)">
@@ -1414,8 +1389,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 <div class="info-hint ok" style="margin-top:10px">⚡ Emails will be sent immediately after saving. Fast mode — no waiting.</div>
 </div>
-
-<!-- ========== FIX #2: Save & Schedule config — full template/logo/signature/attach options ========== -->
 <div id="saveScheduleConfig" class="save-sched-config hidden">
 <div class="ttl">⏰ Schedule Time</div>
 <div id="saveSchedulePresets" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
@@ -1425,7 +1398,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 </div>
 <div class="info-hint" id="saveSchedulePreview" style="margin-top:8px">—</div>
 <div class="info-hint" id="saveScheduleTz" style="margin-top:4px;color:var(--text3)"></div>
-
 <div style="margin-top:14px;padding-top:12px;border-top:1px dashed rgba(167,139,250,.35)">
 <div class="ttl">📧 Send Options</div>
 <div class="template-picker" style="background:rgba(167,139,250,.06);border-color:rgba(167,139,250,.35)">
@@ -1442,7 +1414,6 @@ table.data-table tr.deleting td { animation: fadeOutRow 0.3s ease-in forwards; o
 <div id="saveSchedFilesList" style="max-height:180px;overflow-y:auto"></div>
 </div>
 </div>
-
 <div style="margin-top:10px;padding-top:10px;border-top:1px dashed rgba(167,139,250,.3);font-size:10px;color:#c4b5fd;line-height:1.5">💡 <b>Note:</b> Scheduled emails are sent automatically by our server every few minutes — you don't need to keep this page open.</div>
 </div>
 <div style="display:flex;gap:8px;margin-top:12px">
@@ -1671,9 +1642,11 @@ var RECIP_LIVE_TIMER=null,MYEMAIL_LIVE_TIMER=null;
 var LIVE_REFRESH_MS=10000;
 var OPTIMISTIC_ROWS={};
 var DELETING_ROWS={};
-/* FIX #8 & #9: pagination state */
 var senderPage=1,senderPerPage=10,SENDERS_ALL=[],senderSearchQuery='';
 var aiPredPage=1,aiPredPerPage=10,AI_PRED_ALL=[];
+// v2.2.4: Prefetch cache for recipient history
+var RECIP_HISTORY_PREFETCH={};
+var PREFETCH_INFLIGHT={};
 
 // ============ HELPERS ============
 function $(id){return document.getElementById(id);}
@@ -1710,6 +1683,22 @@ function getRecipientStatus(r){
   if(st==='opened'||st.indexOf('opened')!==-1)return{cls:'opened',icon:'👁',lbl:'Opened'};
   if(st==='sent'||st==='delivered')return{cls:'sent',icon:'✅',lbl:'Sent'};
   return{cls:'pending',icon:'⏳',lbl:'Pending'};
+}
+
+// v2.2.4: Skeleton loaders
+function skeletonTableRows(n,cols){
+  var h='';
+  for(var i=0;i<n;i++){
+    h+='<div class="skeleton-row">';
+    for(var j=0;j<cols.length;j++){h+='<span class="skeleton sk-line '+(cols[j]||'sk-w-30')+'"></span>';}
+    h+='</div>';
+  }
+  return h;
+}
+function renderSkeletonTable(wrapId,rows,cols){
+  var w=$(wrapId);
+  if(!w)return;
+  w.innerHTML='<div style="border:1px solid var(--border);border-radius:12px;overflow:hidden">'+skeletonTableRows(rows||5,cols||['sk-w-20','sk-w-30','sk-w-40','sk-w-20','sk-w-15'])+'</div>';
 }
 
 // ============ AUTH ============
@@ -1848,7 +1837,7 @@ function startAdminLive(){
   ADMIN_EMAIL_LIVE_TIMER=setInterval(function(){if(document.visibilityState!=='visible')return;if(!$('adminView').classList.contains('hidden'))loadAdminEmailsPage(adminEmailsPage,true);},25000);
 }
 
-// ============ FIX #5: Next Auto-Run — round hour style (8 AM, 9 AM) ============
+// v2.2.4: Round-hour Next Auto-Run
 function fmtRoundHour(dt){
   var h=dt.getHours();
   var ampm=h>=12?'PM':'AM';
@@ -2139,7 +2128,6 @@ function loadAIProfile(){api('/api/ai-profile').then(function(r){if(!r.ok)return
 function saveAIProfile(){var payload={fullName:$('aipFullName').value.trim(),industry:$('aipIndustry').value.trim(),tone:$('aipTone').value,aboutMe:$('aipAboutMe').value.trim(),commonPhrases:$('aipCommonPhrases').value.trim()};api('/api/ai-profile','POST',payload).then(function(r){if(r.ok)toast('✅ AI profile saved');else toast('Error','err');});}
 function loadSenders(){api('/api/memory/senders').then(function(r){if(!r.ok)return;SENDERS=r.senders||[];senderPage=1;renderSenders();});}
 function onSenderSearchChange(){senderSearchQuery=($('senderSearch').value||'').toLowerCase();senderPage=1;renderSenders();}
-/* FIX #8 + #10: Sender Memory paginated + nicer cards */
 function renderSenders(){
   var w=$('sendersList');if(!w)return;
   var q=senderSearchQuery;
@@ -2169,7 +2157,6 @@ function renderSenders(){
     $('sendersPagination').style.display='none';
   }
 }
-/* FIX #9: Email Predictions paginated */
 function loadAIPredictions(){
   api('/api/my-emails?range=all&limit=100').then(function(r){
     if(!r.ok)return;
@@ -2346,7 +2333,6 @@ function renderSaveSendFiles(){
 }
 function toggleSaveSendFile(id){if(SAVE_SEND_FILES[id])delete SAVE_SEND_FILES[id];else SAVE_SEND_FILES[id]=true;renderSaveSendFiles();}
 function onSaveSendAttachToggle(v){$('saveSendFilePicker').classList.toggle('hidden',!v);if(v)renderSaveSendFiles();}
-/* FIX #2: Save & Schedule file picker */
 function renderSaveSchedFiles(){
   var w=$('saveSchedFilesList');if(!w)return;
   if(!FILES.length){w.innerHTML='<div style="text-align:center;color:var(--text3);font-size:12px;padding:12px">No files uploaded yet.</div>';return;}
@@ -2554,7 +2540,7 @@ async function confirmSaveRecipients(){
     return;
   }
 
-  /* save-only mode: FIX #1 — save with saveOnly=true so auto-send skips */
+  /* save-only mode */
   var templateId=$('tplSelect')?$('tplSelect').value:'';
   try{
     var saveRes2=await api('/api/recipients','POST',{list:items,templateId:templateId,saveOnly:true});
@@ -2892,6 +2878,7 @@ function loadRecipients(silent){
   var url='/api/recipients?page='+recipPage+'&limit='+recipPerPage;
   if(q)url+='&search='+encodeURIComponent(q);
   if(stF&&stF!=='all')url+='&status='+encodeURIComponent(stF);
+  if(!silent&&!CURRENT_ROWS.length)renderSkeletonTable('tableWrap',6,['sk-w-20','sk-w-30','sk-w-40','sk-w-20','sk-w-20','sk-w-15']);
   api(url).then(function(r){
     if(!r.ok){if(!silent)$('tableWrap').innerHTML='<div class="empty">Error loading</div>';return;}
     CURRENT_ROWS=r.recipients||[];
@@ -2920,7 +2907,6 @@ function loadRecipients(silent){
     updateBulkBar();
   });
 }
-/* FIX #7: Recipient Tracking — cleaner table, Status & Last Activity clear */
 function renderRecipientsTable(){
   _recipRenderRAF=null;if(!_pendingRecipData)return;
   var rows=_pendingRecipData.rows;var total=_pendingRecipData.total;var totalPages=_pendingRecipData.totalPages;
@@ -2949,7 +2935,7 @@ function renderRecipientsTable(){
     else if(x.lastSentAt!==undefined&&x.lastSentAt!==null)lastCol='<span style="font-size:11px">📤 '+fmtDate(x.lastSentAt)+'</span>';
     else if(x.sentAt)lastCol='<span style="font-size:11px">📤 '+fmtDate(x.sentAt)+'</span>';
     else if(x.createdAt)lastCol='<span style="font-size:11px;color:var(--text3)">Added '+fmtDate(x.createdAt)+'</span>';
-    parts.push('<tr class="clickable'+(isNew?' optimistic-new':'')+' '+(SELECTED[x.id]?'selected':'')+'" onclick="openRecipHistory(\''+x.id+'\')"><td onclick="event.stopPropagation()"><input type="checkbox" class="cbox" '+(SELECTED[x.id]?'checked':'')+' onchange="toggleOne(\''+x.id+'\',this.checked)"></td>');
+    parts.push('<tr class="clickable'+(isNew?' optimistic-new':'')+' '+(SELECTED[x.id]?'selected':'')+'" onmouseenter="prefetchRecipHistory(\''+x.id+'\')" onclick="openRecipHistory(\''+x.id+'\')"><td onclick="event.stopPropagation()"><input type="checkbox" class="cbox" '+(SELECTED[x.id]?'checked':'')+' onchange="toggleOne(\''+x.id+'\',this.checked)"></td>');
     parts.push('<td style="text-align:center">'+statusHtml+'</td>');
     parts.push('<td style="font-weight:600">'+esc(x.company||'—')+'</td>');
     parts.push('<td style="word-break:break-all;font-size:12px">'+esc(x.email)+'</td>');
@@ -2987,55 +2973,75 @@ function updateBulkBar(){
   if(ids.length>0){b.classList.add('show');$('selectedCount').innerText=ids.length+' selected';}
   else b.classList.remove('show');
 }
+// v2.2.4: Prefetch on hover
+function prefetchRecipHistory(id){
+  if(!id)return;
+  if(RECIP_HISTORY_PREFETCH[id])return;
+  if(PREFETCH_INFLIGHT[id])return;
+  PREFETCH_INFLIGHT[id]=true;
+  api('/api/recipient/'+id+'/history').then(function(r){
+    delete PREFETCH_INFLIGHT[id];
+    if(r&&r.ok)RECIP_HISTORY_PREFETCH[id]=r;
+  }).catch(function(){delete PREFETCH_INFLIGHT[id];});
+}
 function openRecipHistory(recipientId){
   $('recipHistoryTitle').innerText='📊 Recipient History';
-  $('recipHistoryInfo').innerHTML='<div class="empty" style="padding:20px">Loading… (merging MailFlow + Gmail)</div>';
-  $('recipHistoryStats').innerHTML='';$('recipHistoryList').innerHTML='';
   $('recipHistoryModal').classList.remove('hidden');
+  if(RECIP_HISTORY_PREFETCH[recipientId]){
+    renderRecipHistoryData(RECIP_HISTORY_PREFETCH[recipientId],recipientId);
+    return;
+  }
+  $('recipHistoryInfo').innerHTML='<div style="padding:12px"><div class="skeleton sk-line sk-w-80" style="height:14px;margin-bottom:8px"></div><div class="skeleton sk-line sk-w-60" style="height:12px;margin-bottom:6px"></div><div class="skeleton sk-line sk-w-40" style="height:12px"></div></div>';
+  $('recipHistoryStats').innerHTML='';
+  $('recipHistoryList').innerHTML='<div class="skeleton-card"><div class="skeleton sk-line sk-w-80" style="height:14px;margin-bottom:8px"></div><div class="skeleton sk-line sk-w-60" style="height:12px"></div></div><div class="skeleton-card"><div class="skeleton sk-line sk-w-80" style="height:14px;margin-bottom:8px"></div><div class="skeleton sk-line sk-w-60" style="height:12px"></div></div>';
   api('/api/recipient/'+recipientId+'/history').then(function(r){
     if(!r.ok){$('recipHistoryInfo').innerHTML='<div class="empty">Error</div>';return;}
-    var rec=r.recipient||{},stats=r.stats||{},emails=r.emails||[];
-    var info='<div style="font-size:14px;font-weight:700;margin-bottom:6px;word-break:break-all">'+esc(rec.email||'')+'</div>';
-    if(rec.company)info+='<div style="font-size:12px;color:var(--text2)">Company: <b>'+esc(rec.company)+'</b></div>';
-    var st=getRecipientStatus(rec);
-    info+='<div style="font-size:12px;color:var(--text2);margin-top:4px">Status: <span class="badge '+st.cls+'">'+st.icon+' '+st.lbl+'</span></div>';
-    info+='<div style="font-size:11px;color:var(--green);margin-top:6px">🟢 Real tracking — bots filtered'+(stats.gmailMerged?' · '+stats.gmailMerged+' Gmail sent merged':'')+'</div>';
-    if(stats.gmailError)info+='<div style="font-size:10px;color:#fcd34d;margin-top:4px">⚠️ Gmail merge: '+esc(stats.gmailError)+'</div>';
-    $('recipHistoryInfo').innerHTML=info;
-    var s='<div class="recipient-stat-grid"><div class="recipient-stat total"><div class="label">Sends</div><div class="value">'+(stats.totalSent||0)+'</div></div><div class="recipient-stat opened"><div class="label">Opened</div><div class="value">'+(stats.totalOpened||0)+'</div></div><div class="recipient-stat pending"><div class="label">Not Opened</div><div class="value">'+(stats.totalNotOpened||0)+'</div></div><div class="recipient-stat sent"><div class="label">Open Rate</div><div class="value">'+(stats.openRate||0)+'%</div></div></div>';
-    $('recipHistoryStats').innerHTML=s;
-    try{
-      api('/api/recipient/'+recipientId+'/schedules').then(function(sr){
-        if(!sr||!sr.ok||!sr.items||!sr.items.length)return;
-        var sh='<div style="margin-top:12px;padding:12px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.4);border-radius:12px">';
-        sh+='<div style="font-size:12px;font-weight:800;color:#c4b5fd;margin-bottom:8px">⏰ Scheduled — '+sr.items.length+' batch'+(sr.items.length>1?'es':'')+'</div>';
-        sr.items.forEach(function(it){
-          var ms=it.scheduledForMs||toMs(it.scheduledFor);
-          var w=ms>0?new Date(ms).toLocaleString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,day:'numeric',month:'short'}):'Date missing';
-          var left=(it.status==='pending'&&ms>Date.now())?' · '+fmtDuration(ms-Date.now())+' left':'';
-          sh+='<div style="font-size:11px;color:#e2e8f0;padding:3px 0">📅 '+esc(w)+'<span style="color:#c4b5fd">'+esc(left)+'</span> <span class="badge '+((it.status||'pending')==='pending'?'pending-sched':'done-sched')+'">'+esc(String(it.status||'pending').toUpperCase())+'</span></div>';
-        });
-        sh+='<div style="font-size:10px;color:var(--text3);margin-top:6px">These emails have not been sent yet — they will go automatically at their scheduled time.</div></div>';
-        var info2=$('recipHistoryInfo');
-        if(info2)info2.insertAdjacentHTML('beforeend',sh);
-      }).catch(function(){});
-    }catch(e){}
-    if(!emails.length){$('recipHistoryList').innerHTML='<div class="empty">No emails yet</div>';return;}
-    var list='<div style="font-size:11px;color:var(--text2);text-transform:uppercase;font-weight:700;margin-bottom:12px">📧 Emails ('+emails.length+') — newest first</div>';
-    emails.forEach(function(e,i){
-      var st2=getEmailStatus(e);var isReply=!!e.isReply;var isGmail=!!e.isGmailExternal;
-      var pred=e.aiPrediction||'GOOD';var prob=e.aiInboxProb||75;
-      var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';
-      var attHtml='';
-      if(e.attachmentNames&&e.attachmentNames.length>0)attHtml='<div class="attachment-list">'+e.attachmentNames.map(function(n){return '<span class="attachment-name">📎 '+esc(n)+'</span>';}).join('')+'</div>';
-      var itemCls=isGmail?'gmail':(st2.cls+(isReply?' reply':''));
-      var typeBadge=isGmail?'<span class="badge gmail">📧 Gmail</span>':(isReply?'<span class="badge reply-badge">📩 Reply</span>':'<span class="badge sent">📤 Send</span>');
-      var clickInfo='';
-      if(e.clickCount>0)clickInfo='<span class="badge click">🖱️ '+e.clickCount+' click'+(e.clickCount>1?'s':'')+'</span>';
-      list+='<div class="send-history-item '+itemCls+'"><div class="top"><div class="subj">#'+(emails.length-i)+' · '+esc(e.subject||'(no subject)')+'</div>'+typeBadge+'</div><div class="meta"><span>📅 '+fmtDate(e.sentAt)+'</span>'+(isGmail?'<span style="color:#94a3b8">📧 From Gmail Sent folder</span>':(e.openedAt?'<span style="color:#86efac">👁 Opened '+fmtDate(e.openedAt)+'</span>':(e.lastMachineHitAt?'<span style="color:#94a3b8">⚙️ Machine hit</span>':'<span style="color:#fcd34d">⏳ Not opened</span>')))+clickInfo+(!isGmail?('<span style="color:'+pc+'">🤖 '+pred+'</span>'):'')+'</div>'+attHtml+'</div>';
-    });
-    $('recipHistoryList').innerHTML=list;
+    RECIP_HISTORY_PREFETCH[recipientId]=r;
+    renderRecipHistoryData(r,recipientId);
   });
+}
+function renderRecipHistoryData(r,recipientId){
+  var rec=r.recipient||{},stats=r.stats||{},emails=r.emails||[];
+  var info='<div style="font-size:14px;font-weight:700;margin-bottom:6px;word-break:break-all">'+esc(rec.email||'')+'</div>';
+  if(rec.company)info+='<div style="font-size:12px;color:var(--text2)">Company: <b>'+esc(rec.company)+'</b></div>';
+  var st=getRecipientStatus(rec);
+  info+='<div style="font-size:12px;color:var(--text2);margin-top:4px">Status: <span class="badge '+st.cls+'">'+st.icon+' '+st.lbl+'</span></div>';
+  info+='<div style="font-size:11px;color:var(--green);margin-top:6px">🟢 Real tracking — bots filtered'+(stats.gmailMerged?' · '+stats.gmailMerged+' Gmail sent merged':'')+'</div>';
+  if(stats.gmailError)info+='<div style="font-size:10px;color:#fcd34d;margin-top:4px">⚠️ Gmail merge: '+esc(stats.gmailError)+'</div>';
+  $('recipHistoryInfo').innerHTML=info;
+  var s='<div class="recipient-stat-grid"><div class="recipient-stat total"><div class="label">Sends</div><div class="value">'+(stats.totalSent||0)+'</div></div><div class="recipient-stat opened"><div class="label">Opened</div><div class="value">'+(stats.totalOpened||0)+'</div></div><div class="recipient-stat pending"><div class="label">Not Opened</div><div class="value">'+(stats.totalNotOpened||0)+'</div></div><div class="recipient-stat sent"><div class="label">Open Rate</div><div class="value">'+(stats.openRate||0)+'%</div></div></div>';
+  $('recipHistoryStats').innerHTML=s;
+  try{
+    api('/api/recipient/'+recipientId+'/schedules').then(function(sr){
+      if(!sr||!sr.ok||!sr.items||!sr.items.length)return;
+      var sh='<div style="margin-top:12px;padding:12px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.4);border-radius:12px">';
+      sh+='<div style="font-size:12px;font-weight:800;color:#c4b5fd;margin-bottom:8px">⏰ Scheduled — '+sr.items.length+' batch'+(sr.items.length>1?'es':'')+'</div>';
+      sr.items.forEach(function(it){
+        var ms=it.scheduledForMs||toMs(it.scheduledFor);
+        var w=ms>0?new Date(ms).toLocaleString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,day:'numeric',month:'short'}):'Date missing';
+        var left=(it.status==='pending'&&ms>Date.now())?' · '+fmtDuration(ms-Date.now())+' left':'';
+        sh+='<div style="font-size:11px;color:#e2e8f0;padding:3px 0">📅 '+esc(w)+'<span style="color:#c4b5fd">'+esc(left)+'</span> <span class="badge '+((it.status||'pending')==='pending'?'pending-sched':'done-sched')+'">'+esc(String(it.status||'pending').toUpperCase())+'</span></div>';
+      });
+      sh+='<div style="font-size:10px;color:var(--text3);margin-top:6px">These emails have not been sent yet — they will go automatically at their scheduled time.</div></div>';
+      var info2=$('recipHistoryInfo');
+      if(info2)info2.insertAdjacentHTML('beforeend',sh);
+    }).catch(function(){});
+  }catch(e){}
+  if(!emails.length){$('recipHistoryList').innerHTML='<div class="empty">No emails yet</div>';return;}
+  var list='<div style="font-size:11px;color:var(--text2);text-transform:uppercase;font-weight:700;margin-bottom:12px">📧 Emails ('+emails.length+') — newest first</div>';
+  emails.forEach(function(e,i){
+    var st2=getEmailStatus(e);var isReply=!!e.isReply;var isGmail=!!e.isGmailExternal;
+    var pred=e.aiPrediction||'GOOD';var prob=e.aiInboxProb||75;
+    var pc=pred==='EXCELLENT'?'#86efac':pred==='GOOD'?'#7dd3fc':pred==='RISKY'?'#fcd34d':'#fca5a5';
+    var attHtml='';
+    if(e.attachmentNames&&e.attachmentNames.length>0)attHtml='<div class="attachment-list">'+e.attachmentNames.map(function(n){return '<span class="attachment-name">📎 '+esc(n)+'</span>';}).join('')+'</div>';
+    var itemCls=isGmail?'gmail':(st2.cls+(isReply?' reply':''));
+    var typeBadge=isGmail?'<span class="badge gmail">📧 Gmail</span>':(isReply?'<span class="badge reply-badge">📩 Reply</span>':'<span class="badge sent">📤 Send</span>');
+    var clickInfo='';
+    if(e.clickCount>0)clickInfo='<span class="badge click">🖱️ '+e.clickCount+' click'+(e.clickCount>1?'s':'')+'</span>';
+    list+='<div class="send-history-item '+itemCls+'"><div class="top"><div class="subj">#'+(emails.length-i)+' · '+esc(e.subject||'(no subject)')+'</div>'+typeBadge+'</div><div class="meta"><span>📅 '+fmtDate(e.sentAt)+'</span>'+(isGmail?'<span style="color:#94a3b8">📧 From Gmail Sent folder</span>':(e.openedAt?'<span style="color:#86efac">👁 Opened '+fmtDate(e.openedAt)+'</span>':(e.lastMachineHitAt?'<span style="color:#94a3b8">⚙️ Machine hit</span>':'<span style="color:#fcd34d">⏳ Not opened</span>')))+clickInfo+(!isGmail?('<span style="color:'+pc+'">🤖 '+pred+'</span>'):'')+'</div>'+attHtml+'</div>';
+  });
+  $('recipHistoryList').innerHTML=list;
 }
 function closeRecipHistory(){$('recipHistoryModal').classList.add('hidden');}
 function getEmailStatus(e){
@@ -3070,8 +3076,8 @@ document.getElementById('sendOptionsConfirm').addEventListener('click',function(
   var btn=this;setBtnLoading(btn,'📤 Sending...');
   api('/api/send','POST',payload).then(function(r){
     resetBtn(btn);
-    if(r.ok){toast('✅ Email sent'+(r.attachmentsCount?' with '+r.attachmentsCount+' file(s)':''));closeSendOptions();loadAll();loadMyEmails();loadQuota(true);loadQuickAuto();}
-    else if(r.error==='QUIET_HOURS'){closeSendOptions();showConfirm({icon:'🌙',title:'Quiet Hours Active',message:'Send anyway?',okText:'Send Now',primary:true}).then(function(f){if(!f)return;api('/api/send','POST',Object.assign({force:true},payload)).then(function(r2){if(r2.ok){toast('✅ Sent');loadAll();}else toast('Error: '+r2.error,'err');});});}
+    if(r.ok){toast('✅ Email sent'+(r.attachmentsCount?' with '+r.attachmentsCount+' file(s)':''));closeSendOptions();delete RECIP_HISTORY_PREFETCH[id];loadAll();loadMyEmails();loadQuota(true);loadQuickAuto();}
+    else if(r.error==='QUIET_HOURS'){closeSendOptions();showConfirm({icon:'🌙',title:'Quiet Hours Active',message:'Send anyway?',okText:'Send Now',primary:true}).then(function(f){if(!f)return;api('/api/send','POST',Object.assign({force:true},payload)).then(function(r2){if(r2.ok){toast('✅ Sent');delete RECIP_HISTORY_PREFETCH[id];loadAll();}else toast('Error: '+r2.error,'err');});});}
     else if(r.error==='DAILY_LIMIT_REACHED')toast('❌ Daily limit reached','err');
     else if(r.error==='DUPLICATE_SEND_SKIP'){toast('🛡️ Duplicate blocked','warn');loadAll();}
     else toast('❌ '+r.error,'err');
@@ -3101,7 +3107,7 @@ document.getElementById('resendOptionsConfirm').addEventListener('click',functio
   var btn=this;setBtnLoading(btn,'🔁 Resending...');
   api('/api/resend','POST',payload).then(function(r){
     resetBtn(btn);
-    if(r.ok){toast('✅ Email resent'+(r.attachmentsCount?' with '+r.attachmentsCount+' file(s)':''));closeResendOptions();loadAll();loadMyEmails();loadQuota(true);loadQuickAuto();}
+    if(r.ok){toast('✅ Email resent'+(r.attachmentsCount?' with '+r.attachmentsCount+' file(s)':''));closeResendOptions();delete RECIP_HISTORY_PREFETCH[id];loadAll();loadMyEmails();loadQuota(true);loadQuickAuto();}
     else if(r.error==='DAILY_LIMIT_REACHED')toast('❌ Daily limit reached','err');
     else toast('❌ '+r.error,'err');
   }).catch(function(){resetBtn(btn);});
@@ -3123,6 +3129,7 @@ async function delRec(id){
   api('/api/recipients/'+id,'DELETE').then(function(r){
     delete DELETING_ROWS[id];
     delete SELECTED[id];
+    delete RECIP_HISTORY_PREFETCH[id];
     if(r.ok){
       toast('✅ Deleted');
       setTimeout(function(){loadAll();loadQuickAuto();},300);
@@ -3139,7 +3146,7 @@ async function delRec(id){
 async function deleteSelected(){
   var ids=Object.keys(SELECTED);if(!ids.length)return toast('Please select recipients first','err');
   var ok=await showConfirm({icon:'⚠️',title:'Delete '+ids.length+'?',message:'Cannot be undone.',okText:'Delete All'});if(!ok)return;
-  ids.forEach(function(id){DELETING_ROWS[id]=true;});
+  ids.forEach(function(id){DELETING_ROWS[id]=true;delete RECIP_HISTORY_PREFETCH[id];});
   CURRENT_ROWS=CURRENT_ROWS.filter(function(r){return !SELECTED[r.id];});
   recipTotal=Math.max(0,recipTotal-ids.length);
   $('trackCount').innerText=recipTotal+' total';
@@ -3176,7 +3183,7 @@ document.getElementById('bulkResendConfirm').addEventListener('click',function()
   var btn=this;setBtnLoading(btn,'🔁 Resending...');
   api('/api/bulk/resend','POST',payload).then(function(r){
     resetBtn(btn);
-    if(r.ok){toast('✅ '+r.sent+' sent'+(r.duplicatesSkipped?', '+r.duplicatesSkipped+' dup skipped':'')+(r.failed?', '+r.failed+' failed':''));closeBulkResendModal();clearSelection();loadAll();loadMyEmails();loadQuota(true);loadQuickAuto();}
+    if(r.ok){toast('✅ '+r.sent+' sent'+(r.duplicatesSkipped?', '+r.duplicatesSkipped+' dup skipped':'')+(r.failed?', '+r.failed+' failed':''));closeBulkResendModal();ids.forEach(function(id){delete RECIP_HISTORY_PREFETCH[id];});clearSelection();loadAll();loadMyEmails();loadQuota(true);loadQuickAuto();}
     else toast('❌ '+(r.error||'Failed'),'err');
   }).catch(function(){resetBtn(btn);});
 });
@@ -3250,14 +3257,14 @@ document.getElementById('bulkScheduleConfirm').addEventListener('click',function
       var whenMs2=toMs(r.scheduledFor);
       var when=whenMs2>0?new Date(whenMs2).toLocaleString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,day:'numeric',month:'short'}):'next occurrence';
       toast('✅ Scheduled '+r.count+' for '+when);
-      closeBulkScheduleModal();clearSelection();
+      closeBulkScheduleModal();ids.forEach(function(id){delete RECIP_HISTORY_PREFETCH[id];});clearSelection();
       api('/api/scheduled/check','POST',{}).then(function(){loadAll();});
     }else toast('❌ '+(r.error||'Failed'),'err');
   }).catch(function(){resetBtn(btn);});
 });
 function openSchedulesList(){
   $('schedulesListBackdrop').classList.remove('hidden');
-  $('schedulesListContent').innerHTML='<div class="empty">Loading...</div>';
+  $('schedulesListContent').innerHTML='<div class="skeleton-card"><div class="skeleton sk-line sk-w-60" style="height:14px;margin-bottom:8px"></div><div class="skeleton sk-line sk-w-40" style="height:12px"></div></div><div class="skeleton-card"><div class="skeleton sk-line sk-w-60" style="height:14px;margin-bottom:8px"></div><div class="skeleton sk-line sk-w-40" style="height:12px"></div></div>';
   api('/api/bulk/schedules').then(function(r){
     if(!r.ok){$('schedulesListContent').innerHTML='<div class="empty">Error</div>';return;}
     var list=r.schedules||[];
@@ -3285,7 +3292,7 @@ function openSchedulesList(){
 function closeSchedulesList(){$('schedulesListBackdrop').classList.add('hidden');}
 async function deleteSchedule(id){var ok=await showConfirm({icon:'🗑',title:'Delete schedule?',message:'',okText:'Delete'});if(!ok)return;api('/api/bulk/schedules/'+id,'DELETE').then(function(r){if(r.ok){toast('✅ Deleted');openSchedulesList();loadAll();}});}
 
-// ============ FIX #6: Email History — reorganized, clean ============
+// ============ EMAIL HISTORY ============
 function onMyEmailSearchChange(){
   if(myEmailSearchTimer)clearTimeout(myEmailSearchTimer);
   myEmailSearchTimer=setTimeout(function(){myEmailPage=1;loadMyEmails();},400);
@@ -3295,6 +3302,7 @@ function loadMyEmails(silent){
   var q=($('myEmailSearch').value||'').trim();
   var url='/api/my-emails?range='+encodeURIComponent(range)+'&page='+myEmailPage+'&limit='+myEmailPerPage;
   if(q)url+='&search='+encodeURIComponent(q);
+  if(!silent&&!MY_EMAILS.length)renderSkeletonTable('myEmailsWrap',6,['sk-w-20','sk-w-30','sk-w-40','sk-w-20','sk-w-20']);
   api(url).then(function(r){
     if(!r.ok)return;
     MY_EMAILS=(r.emails||[]);
@@ -3306,7 +3314,6 @@ function loadMyEmails(silent){
     }else renderMyEmails();
   });
 }
-/* FIX #6: Email History — better organized, cleaner columns */
 function renderMyEmails(){
   _myEmailRenderRAF=null;var w=$('myEmailsWrap');
   if(!MY_EMAILS.length){w.innerHTML='<div class="empty"><div class="ico">📧</div>No email history yet</div>';$('myEmailsPagination').style.display='none';if($('myEmailCount'))$('myEmailCount').innerText='0 shown';return;}
